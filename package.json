@@ -1,0 +1,21 @@
+{
+  "name": "store-builder-frontend",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:dashboard": "npm run dev -w apps/merchant-dashboard",
+    "dev:admin": "npm run dev -w apps/platform-admin",
+    "dev:storefront": "npm run dev -w apps/storefront",
+    "dev:all": "concurrently -n dashboard,admin,storefront -c blue,magenta,green \"npm run dev:dashboard\" \"npm run dev:admin\" \"npm run dev:storefront\"",
+    "build:dashboard": "npm run build -w apps/merchant-dashboard",
+    "build:admin": "npm run build -w apps/platform-admin",
+    "build:storefront": "npm run build -w apps/storefront",
+    "build:all": "npm run build:dashboard && npm run build:admin && npm run build:storefront"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}

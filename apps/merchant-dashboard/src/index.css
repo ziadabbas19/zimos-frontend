@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  /* Palette — "Nile & Souk": a deep teal drawn from the river, warm amber
+     from spice markets, on a warm paper ground. Deliberately not the
+     cream+terracotta SaaS default. */
+  --color-ink: #16211f;
+  --color-ink-soft: #3c4a46;
+  --color-paper: #f5f4ef;
+  --color-paper-raised: #ffffff;
+  --color-line: #dcdace;
+
+  --color-primary: #1f5d5b;
+  --color-primary-dark: #123c3a;
+  --color-primary-soft: #e4efee;
+
+  --color-accent: #e2a33d;
+  --color-accent-dark: #b87f24;
+  --color-accent-soft: #fbf0dc;
+
+  --color-danger: #b3452f;
+  --color-danger-soft: #f6e6e1;
+  --color-success: #3b7a57;
+  --color-success-soft: #e5f0e9;
+
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-card: 0.625rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+  html {
+    color-scheme: light;
+  }
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
