@@ -3,6 +3,18 @@ import type { OrderAddressSnapshot, Variant } from "@store-builder/api-client";
 
 export { formatMoney, formatMoneyRange, parseMoney };
 
+/**
+ * Display form of a product's `productCode`, e.g. "#482910573". Returns null
+ * when the field is absent (older responses / backend not deployed) so callers
+ * can skip rendering the label entirely. Tolerates a value that already has a
+ * leading "#".
+ */
+export function formatProductCode(code: string | null | undefined): string | null {
+  if (!code) return null;
+  const digits = String(code).replace(/^#/, "").trim();
+  return digits ? `#${digits}` : null;
+}
+
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);

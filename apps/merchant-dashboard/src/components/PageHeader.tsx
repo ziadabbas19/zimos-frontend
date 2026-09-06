@@ -3,13 +3,15 @@ import { Link } from "react-router-dom";
 
 interface PageHeaderProps {
   title: string;
+  /** Small muted text after the title, e.g. a product code "#482910573". */
+  titleMeta?: string;
   description?: string;
   /** Renders a "← label" link above the title. */
   back?: { to: string; label: string };
   actions?: ReactNode;
 }
 
-export function PageHeader({ title, description, back, actions }: PageHeaderProps) {
+export function PageHeader({ title, titleMeta, description, back, actions }: PageHeaderProps) {
   return (
     <div className="mb-6">
       {back && (
@@ -22,7 +24,14 @@ export function PageHeader({ title, description, back, actions }: PageHeaderProp
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-medium text-ink">{title}</h1>
+          <h1 className="font-display text-2xl font-medium text-ink">
+            {title}
+            {titleMeta && (
+              <span className="ml-2 align-middle text-base font-normal text-ink-soft">
+                · {titleMeta}
+              </span>
+            )}
+          </h1>
           {description && <p className="mt-1 text-sm text-ink-soft">{description}</p>}
         </div>
         {actions && <div className="flex items-center gap-2">{actions}</div>}

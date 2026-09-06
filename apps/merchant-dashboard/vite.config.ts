@@ -15,9 +15,15 @@ export default defineConfig({
     // Proxy API calls to the backend so the browser talks same-origin — the
     // backend's CORS allowlist only includes the storefront (:3000), not this
     // Vite dev server. With VITE_API_BASE_URL=/api/v1 (see .env) requests hit
-    // this proxy instead.
+    // this proxy instead. `/uploads` is proxied too so product images (served
+    // by the backend with Cross-Origin-Resource-Policy: same-origin) load
+    // through the same origin instead of being blocked.
     proxy: {
       '/api': {
+        target: process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/uploads': {
         target: process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:4000',
         changeOrigin: true,
       },

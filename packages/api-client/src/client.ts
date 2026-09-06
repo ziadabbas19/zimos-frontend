@@ -14,6 +14,7 @@ import type {
   CreateVariantPayload,
   DeletedResponse,
   LoginPayload,
+  MediaUploadResponse,
   Membership,
   Offer,
   Order,
@@ -543,14 +544,19 @@ export class ApiClient {
     return updated;
   }
 
-  /** Waybill is a binary PDF, not JSON — fetch it directly and return a Blob. */
-  async getWaybillPdf(workspaceId: string, orderId: string): Promise<Blob> {
-    const path = `${this.ordersBase(workspaceId)}/${orderId}/waybill`;
+  /**
+   * Fetch a path with the Bearer token attached, one transparent retry after a
+   * silent refresh on 401, and the standard error envelope turned into ApiError.
+   * Used for non-JSON requests (binary download, multipart upload) that the
+   * JSON-oriented `request()` can't express. `init.headers` must not set
+   * Content-Type for a FormData body — the browser adds the multipart boundary.
+   */
+  private async rawFetch(path: string, init: RequestInit): Promise<Response> {
     const doFetch = () => {
-      const headers: Record<string, string> = { Accept: "application/pdf" };
+      const headers = new Headers(init.headers);
       const { accessToken } = this.tokens;
-      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
-      return fetch(`${this.baseUrl}${path}`, { headers });
+      if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+      return fetch(`${this.baseUrl}${path}`, { ...init, headers });
     };
 
     let res = await doFetch();
@@ -566,7 +572,30 @@ export class ApiClient {
       const code = payload ? payload.code || payload.error?.code : undefined;
       throw new ApiError(message, res.status, code, payload);
     }
+    return res;
+  }
+
+  /** Waybill is a binary PDF, not JSON — fetch it directly and return a Blob. */
+  async getWaybillPdf(workspaceId: string, orderId: string): Promise<Blob> {
+    const res = await this.rawFetch(`${this.ordersBase(workspaceId)}/${orderId}/waybill`, {
+      headers: { Accept: "application/pdf" },
+    });
     return res.blob();
+  }
+
+  /**
+   * Upload one image (PNG/JPEG/GIF/WEBP, max 5MB — enforced by the backend on
+   * the raw bytes). Returns the stored media object; push it onto a product's
+   * `media` array and PATCH the product to attach it.
+   */
+  async uploadMedia(workspaceId: string, file: File | Blob): Promise<MediaUploadResponse> {
+    const form = new FormData();
+    form.append("file", file, file instanceof File ? file.name : "upload");
+    const res = await this.rawFetch(`/workspaces/${workspaceId}/media`, {
+      method: "POST",
+      body: form,
+    });
+    return res.json() as Promise<MediaUploadResponse>;
   }
 
   // ---------------------------------------------------------------------

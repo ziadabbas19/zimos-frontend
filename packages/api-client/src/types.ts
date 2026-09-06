@@ -135,6 +135,25 @@ export interface ProductOption {
   values: string[];
 }
 
+/**
+ * One entry in a product's `media` array. This is exactly the object returned
+ * by POST /workspaces/:workspaceId/media — the backend stores `media` as a
+ * freeform JSONB array but the catalog schema requires each entry to be an
+ * object (an array of bare URL strings is rejected). The frontend owns the
+ * shape; the first entry is treated as the primary image.
+ */
+export interface ProductMedia {
+  /** Absolute URL (APP_URL + path). */
+  url: string;
+  /** Host-relative path, e.g. "/uploads/<workspaceId>/<uuid>.png". */
+  path: string;
+  mimeType: string;
+  size: number;
+}
+
+/** Response of POST /workspaces/:workspaceId/media (same shape as one media entry). */
+export type MediaUploadResponse = ProductMedia;
+
 export interface Variant {
   id: string;
   workspaceId: string;
@@ -197,13 +216,19 @@ export interface Product {
   id: string;
   workspaceId: string;
   websiteId: string | null;
+  /**
+   * Server-assigned 9-digit code, distinct from the UUID `id` and shown to
+   * merchants. Optional here so display code degrades gracefully if a response
+   * predates the backend field.
+   */
+  productCode?: string;
   name: string;
   slug: string;
   description: string | null;
   productType: ProductType;
   status: ProductStatus;
   options: ProductOption[];
-  media: unknown[];
+  media: ProductMedia[];
   tags: string[];
   seo: Record<string, unknown>;
   createdAt: string;
@@ -246,6 +271,7 @@ export interface CreateProductPayload {
   status?: ProductStatus;
   tags?: string[];
   options?: ProductOption[];
+  media?: ProductMedia[];
   seo?: Record<string, unknown>;
 }
 

@@ -2,10 +2,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
+import { formatProductCode } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ProductDetailsForm } from "./components/ProductDetailsForm";
+import { ProductImagesSection } from "./components/ProductImagesSection";
 import { VariantsSection } from "./components/VariantsSection";
 import { OffersSection } from "./components/OffersSection";
 import { ProductCollectionsSection } from "./components/ProductCollectionsSection";
@@ -27,7 +29,7 @@ export function ProductEditPage() {
         <PageHeader
           title="New product"
           back={{ to: "/catalog", label: "Products" }}
-          description="Save the basics first — then add variants, offers, and collections."
+          description="Name, description and at least one image are required. Add variants, offers and collections after it's created."
         />
         <ProductDetailsForm
           mode="create"
@@ -44,6 +46,7 @@ export function ProductEditPage() {
     <div className="max-w-3xl space-y-6">
       <PageHeader
         title={data?.name ?? "Product"}
+        titleMeta={formatProductCode(data?.productCode) ?? undefined}
         back={{ to: "/catalog", label: "Products" }}
         actions={data && <StatusBadge value={data.status} />}
       />
@@ -52,6 +55,12 @@ export function ProductEditPage() {
         {data && (
           <div className="space-y-6">
             <ProductDetailsForm mode="edit" product={data} onSaved={reload} />
+            <ProductImagesSection
+              mode="edit"
+              productId={data.id}
+              media={data.media ?? []}
+              onChanged={reload}
+            />
             <VariantsSection
               productId={data.id}
               variants={data.variants ?? []}
