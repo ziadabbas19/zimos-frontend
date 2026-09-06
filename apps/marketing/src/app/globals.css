@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+/* Dark mode is driven by a `.dark` class on <html>, set before first paint by
+   an inline script in the root layout and toggled by the theme switch. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------ *
+ * Palette — exact design tokens. The `--color-*` custom properties
+ * hold the light values here and are overridden under `.dark`, so any
+ * token-based utility (bg-paper, text-ink, border-line, …) flips with
+ * the theme without needing `dark:` variants.
+ * ------------------------------------------------------------------ */
+:root {
+  color-scheme: light;
+
+  --color-ink: #0b1220;
+  --color-ink-soft: #445066;
+  --color-paper: #f5f7fb;
+  --color-paper-raised: #ffffff;
+  --color-line: #dce3ee;
+  --color-primary: #2563eb;
+  --color-primary-dark: #1e3a8a;
+  --color-primary-soft: #e7eefc;
+  --color-accent: #d9a441;
+  --color-accent-dark: #b37f27;
+  --color-accent-soft: #fbf0dc;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --color-ink: #e7ecf5;
+  --color-ink-soft: #a9b4c9;
+  --color-paper: #0b1220;
+  --color-paper-raised: #121b2e;
+  --color-line: #22304a;
+  --color-primary: #5b8df6;
+  --color-primary-dark: #2563eb;
+  --color-primary-soft: #16233f;
+  --color-accent: #e8b96a;
+  --color-accent-dark: #d9a441;
+  --color-accent-soft: #2b2013;
+}
+
+/* ------------------------------------------------------------------ *
+ * Locale-driven type pairing. Font family variables come from
+ * next/font (src/app/fonts.ts). The active heading/body pair is chosen
+ * by the `lang-*` class the root layout puts on <html> — never per
+ * component.
+ * ------------------------------------------------------------------ */
+.lang-en {
+  --font-heading: var(--font-fraunces), ui-serif, Georgia, "Times New Roman", serif;
+  --font-body: var(--font-plus-jakarta), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+}
+
+.lang-ar {
+  --font-heading: var(--font-noto-kufi), "Noto Kufi Arabic", "Segoe UI", Tahoma,
+    sans-serif;
+  --font-body: var(--font-ibm-plex-arabic), "IBM Plex Sans Arabic", "Segoe UI",
+    Tahoma, sans-serif;
+}
+
+/* ------------------------------------------------------------------ *
+ * Expose the semantic tokens to Tailwind's utility generator. `inline`
+ * keeps utilities referencing `var(--color-*)` directly so the `.dark`
+ * override cascades through.
+ * ------------------------------------------------------------------ */
+@theme inline {
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-paper: var(--color-paper);
+  --color-paper-raised: var(--color-paper-raised);
+  --color-line: var(--color-line);
+  --color-primary: var(--color-primary);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-accent: var(--color-accent);
+  --color-accent-dark: var(--color-accent-dark);
+  --color-accent-soft: var(--color-accent-soft);
+
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-heading);
+
+  --radius-card: 1rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body, ui-sans-serif, system-ui, sans-serif);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading, ui-serif, Georgia, serif);
+    font-weight: 600;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+  }
+
+  /* Kufi display type sets its own rhythm — no negative tracking, more leading. */
+  .lang-ar h1,
+  .lang-ar h2,
+  .lang-ar h3,
+  .lang-ar h4,
+  .lang-ar h5,
+  .lang-ar h6 {
+    line-height: 1.28;
+    letter-spacing: 0;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Hero order-lifecycle illustration. One playhead sweeps the four
+ * stages; everything else is a quiet colour cross-fade tied to the
+ * same step change. Reduced motion freezes it on the final frame.
+ * ------------------------------------------------------------------ */
+@layer components {
+  .flow-playhead {
+    transition: block-size 620ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .flow-step {
+    transition:
+      color 380ms ease,
+      background-color 380ms ease,
+      border-color 380ms ease,
+      opacity 380ms ease;
+  }
+
+  .flow-code {
+    transition: opacity 420ms ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-playhead,
+  .flow-step,
+  .flow-code {
+    transition: none !important;
+  }
+}

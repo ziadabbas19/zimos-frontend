@@ -35,6 +35,14 @@ export interface Workspace {
   role?: string;
   status?: string;
   defaultCurrency?: string;
+  ownerUserId: string;
+  defaultLocale?: string;
+  timezone?: string;
+  settings?: Record<string, unknown>;
+  logoUrl?: string | null;
+  tagline?: string | null;
+  themeSettings?: Record<string, unknown>;
+  updatedAt?: string;
 }
 
 export interface Membership {
@@ -42,6 +50,78 @@ export interface Membership {
   workspaceId: string;
   role: string;
   status: "active" | "invited" | string;
+}
+
+export interface UpdateWorkspacePayload {
+  name?: string;
+  logoUrl?: string | null;
+  tagline?: string | null;
+  themeSettings?: Record<string, unknown>;
+}
+
+// ---------------------------------------------------------------------
+// Website templates + websites
+// Templates are the public catalogue (GET /templates); websites are the
+// per-workspace sites built from a template version
+// (/workspaces/:workspaceId/websites).
+// ---------------------------------------------------------------------
+
+export interface WebsiteTemplateSummary {
+  id: string;
+  name: string;
+  category: string | null;
+  thumbnailUrl: string | null;
+  templateVersionId: string;
+}
+
+export interface WebsiteTemplateDetail extends WebsiteTemplateSummary {
+  isPublished: boolean;
+  version: number;
+  globalStyles: Record<string, unknown>;
+  pages: Array<{
+    path: string;
+    title: string;
+    pageType: string;
+    builderData: unknown;
+    seo: Record<string, unknown>;
+  }>;
+  sections: unknown[];
+}
+
+export interface Website {
+  id: string;
+  workspaceId: string;
+  sourceTemplateVersionId: string | null;
+  name: string;
+  subdomain: string;
+  status: "draft" | "published" | "suspended";
+  globalStyles: Record<string, unknown>;
+  seo: Record<string, unknown>;
+  publishedRevisionId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WebsitePage {
+  id: string;
+  workspaceId: string;
+  websiteId: string;
+  path: string;
+  title: string;
+  pageType: "home" | "product" | "collection" | "static" | "blog_post" | "cart" | "custom";
+  draftData: unknown;
+  publishedData: unknown | null;
+  seo: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateWebsitePayload {
+  name: string;
+  subdomain?: string;
+  templateVersionId?: string;
+  globalStyles?: Record<string, unknown>;
+  seo?: Record<string, unknown>;
 }
 
 // ---------------------------------------------------------------------

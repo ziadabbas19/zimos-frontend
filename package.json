@@ -9,11 +9,13 @@
     "dev:dashboard": "npm run dev -w apps/merchant-dashboard",
     "dev:admin": "npm run dev -w apps/platform-admin",
     "dev:storefront": "npm run dev -w apps/storefront",
-    "dev:all": "concurrently -n dashboard,admin,storefront -c blue,magenta,green \"npm run dev:dashboard\" \"npm run dev:admin\" \"npm run dev:storefront\"",
+    "dev:marketing": "npm run dev -w apps/marketing",
+    "dev:all": "concurrently -n dashboard,admin,storefront,marketing -c blue,magenta,green,yellow \"npm run dev:dashboard\" \"npm run dev:admin\" \"npm run dev:storefront\" \"npm run dev:marketing\"",
     "build:dashboard": "npm run build -w apps/merchant-dashboard",
     "build:admin": "npm run build -w apps/platform-admin",
     "build:storefront": "npm run build -w apps/storefront",
-    "build:all": "npm run build:dashboard && npm run build:admin && npm run build:storefront"
+    "build:marketing": "npm run build -w apps/marketing",
+    "build:all": "npm run build:dashboard && npm run build:admin && npm run build:storefront && npm run build:marketing"
   },
   "devDependencies": {
     "concurrently": "^10.0.5"

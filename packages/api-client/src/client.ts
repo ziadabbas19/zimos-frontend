@@ -12,6 +12,7 @@ import type {
   CreateReturnPayload,
   CreateShipmentPayload,
   CreateVariantPayload,
+  CreateWebsitePayload,
   DeletedResponse,
   LoginPayload,
   MediaUploadResponse,
@@ -38,7 +39,12 @@ import type {
   UpdateProductPayload,
   UpdateShipmentPayload,
   UpdateVariantPayload,
+  UpdateWorkspacePayload,
   Variant,
+  Website,
+  WebsitePage,
+  WebsiteTemplateDetail,
+  WebsiteTemplateSummary,
   Workspace,
 } from "./types";
 
@@ -262,6 +268,24 @@ export class ApiClient {
       `/workspaces/${workspaceId}/members`
     );
     return members;
+  }
+
+  async updateWorkspace(workspaceId: string, payload: UpdateWorkspacePayload) {
+    const { workspace } = await this.request<{ workspace: Workspace }>(
+      `/workspaces/${workspaceId}`,
+      { method: "PATCH", body: payload }
+    );
+    return workspace;
+  }
+
+  async createWebsite(workspaceId: string, payload: CreateWebsitePayload) {
+    // Returns both keys — the caller needs the freshly-seeded pages, not just
+    // the website row.
+    const { website, pages } = await this.request<{ website: Website; pages: WebsitePage[] }>(
+      `/workspaces/${workspaceId}/websites`,
+      { method: "POST", body: payload }
+    );
+    return { website, pages };
   }
 
   // ---------------------------------------------------------------------
@@ -637,5 +661,27 @@ export class ApiClient {
       { auth: false }
     );
     return collections;
+  }
+
+  // ---------------------------------------------------------------------
+  // Website templates — public catalogue
+  // Unlike every other method in this file these take no workspaceId and
+  // send no Authorization header: the endpoints live at /api/v1/templates
+  // and are open to anonymous callers, so they pass `auth: false`.
+  // ---------------------------------------------------------------------
+
+  async listWebsiteTemplates() {
+    const { templates } = await this.request<{ templates: WebsiteTemplateSummary[] }>("/templates", {
+      auth: false,
+    });
+    return templates;
+  }
+
+  async getWebsiteTemplate(id: string) {
+    const { template } = await this.request<{ template: WebsiteTemplateDetail }>(
+      `/templates/${id}`,
+      { auth: false }
+    );
+    return template;
   }
 }
