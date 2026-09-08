@@ -3,6 +3,8 @@ import type {
   ArchivedResponse,
   AuthTokens,
   AuthUser,
+  Cart,
+  CheckoutPayload,
   CollectionDetail,
   CollectionSummary,
   CreateCollectionPayload,
@@ -661,6 +663,85 @@ export class ApiClient {
       { auth: false }
     );
     return collections;
+  }
+
+  // ---------------------------------------------------------------------
+  // Storefront cart + guest checkout — no auth. Cart identity travels in
+  // the X-Cart-Token header (never the body), always workspace-scoped. The
+  // cart mutation endpoints each return the whole recomputed cart, and the
+  // cart body is the object itself — not wrapped in { cart: ... }.
+  // ---------------------------------------------------------------------
+
+  /**
+   * Resolve the guest's cart, creating a fresh one when `cartToken` is missing
+   * or doesn't match an active cart in this workspace. Read `guestToken` off
+   * the result and send it as `cartToken` on every later call.
+   */
+  async getOrCreateCart(workspaceId: string, cartToken?: string) {
+    return this.request<Cart>(`/store/${workspaceId}/cart`, {
+      method: "POST",
+      body: {},
+      auth: false,
+      headers: cartToken ? { "X-Cart-Token": cartToken } : {},
+    });
+  }
+
+  async getCart(workspaceId: string, cartToken: string) {
+    return this.request<Cart>(`/store/${workspaceId}/cart`, {
+      auth: false,
+      headers: { "X-Cart-Token": cartToken },
+    });
+  }
+
+  async addCartItem(
+    workspaceId: string,
+    cartToken: string,
+    payload: { variantId: string; offerId?: string; quantity?: number }
+  ) {
+    return this.request<Cart>(`/store/${workspaceId}/cart/items`, {
+      method: "POST",
+      body: payload,
+      auth: false,
+      headers: { "X-Cart-Token": cartToken },
+    });
+  }
+
+  async updateCartItem(
+    workspaceId: string,
+    cartToken: string,
+    itemId: string,
+    quantity: number
+  ) {
+    return this.request<Cart>(`/store/${workspaceId}/cart/items/${itemId}`, {
+      method: "PATCH",
+      body: { quantity },
+      auth: false,
+      headers: { "X-Cart-Token": cartToken },
+    });
+  }
+
+  async removeCartItem(workspaceId: string, cartToken: string, itemId: string) {
+    return this.request<Cart>(`/store/${workspaceId}/cart/items/${itemId}`, {
+      method: "DELETE",
+      auth: false,
+      headers: { "X-Cart-Token": cartToken },
+    });
+  }
+
+  /**
+   * Guest checkout (no login). Pass `cartToken` to build the order from that
+   * cart's lines; omit it and put a single `item` in the payload for a "Buy
+   * Now". The server replies with `{ order }` — unwrapped here like createOrder.
+   */
+  async checkout(workspaceId: string, payload: CheckoutPayload, cartToken?: string) {
+    const { order } = await this.request<{ order: Order }>(`/store/${workspaceId}/checkout`, {
+      method: "POST",
+      body: payload,
+      auth: false,
+      idempotent: true,
+      headers: cartToken ? { "X-Cart-Token": cartToken } : {},
+    });
+    return order;
   }
 
   // ---------------------------------------------------------------------

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ApiError, formatMoney } from "@store-builder/api-client";
 import { createStorefrontApiClient } from "@/lib/apiClient";
+import { AddToCartButton } from "@/components/AddToCartButton";
 
 export const revalidate = 60;
 
@@ -25,6 +26,9 @@ export default async function ProductPage({
 
   const defaultOffer = product.offers.find((o) => o.isDefault) ?? product.offers[0];
   const price = defaultOffer?.priceAmount ?? product.variants[0]?.priceAmount;
+  // No variant picker yet — default to the first in-stock variant.
+  const purchasableVariant =
+    product.variants.find((v) => v.inStock) ?? product.variants[0];
 
   return (
     <main className="mx-auto max-w-4xl flex-1 px-6 py-10">
@@ -57,6 +61,12 @@ export default async function ProductPage({
               </div>
             ))}
           </div>
+
+          <AddToCartButton
+            variantId={purchasableVariant?.id}
+            offerId={defaultOffer?.id}
+            disabled={!purchasableVariant?.inStock}
+          />
         </div>
       </div>
     </main>

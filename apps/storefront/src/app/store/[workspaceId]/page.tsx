@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { ApiError } from "@store-builder/api-client";
 import { createStorefrontApiClient } from "@/lib/apiClient";
 import { ProductCard } from "@/components/ProductCard";
+import { CartIcon } from "@/components/CartIcon";
 
 export const revalidate = 60;
 
@@ -25,7 +26,10 @@ export default async function StoreHomePage({
 
   return (
     <main className="flex-1">
-      <header className="border-b border-line bg-paper-raised px-6 py-10 text-center">
+      <header className="relative border-b border-line bg-paper-raised px-6 py-10 text-center">
+        <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+          <CartIcon workspaceId={workspaceId} />
+        </div>
         {store.logoUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={store.logoUrl} alt={store.name} className="mx-auto mb-4 h-10" />

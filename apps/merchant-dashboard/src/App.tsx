@@ -6,6 +6,7 @@ import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { RequireWorkspace } from "@/routes/RequireWorkspace";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
+import { AuthCallbackPage } from "@/pages/AuthCallbackPage";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { WorkspacePickerPage } from "@/pages/WorkspacePickerPage";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -26,6 +27,7 @@ export default function App() {
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
               <Route element={<ProtectedRoute />}>

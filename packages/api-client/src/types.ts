@@ -199,6 +199,67 @@ export interface StorefrontCollection {
 }
 
 // ---------------------------------------------------------------------
+// Storefront cart + guest checkout (POST /store/:workspaceId/cart/...,
+// POST /store/:workspaceId/checkout — all no-auth). Cart identity travels
+// in the X-Cart-Token header, always workspace-scoped: a token from one
+// workspace resolves to nothing in another. Line/cart totals are recomputed
+// from live catalog prices on every read; `unitPriceSnapshot` is kept only
+// so the UI can flag "price changed since you added this". Snapshot and
+// current prices are integer minor units serialized as strings (Postgres
+// BIGINT over JSON); the computed `lineTotal`/`subtotal` come back as numbers.
+// ---------------------------------------------------------------------
+
+export interface CartLine {
+  id: string;
+  variantId: string;
+  offerId: string | null;
+  quantity: number;
+  unitPriceSnapshot: string;
+  currentUnitPrice: string;
+  priceChanged: boolean;
+  lineTotal: number;
+  variant: StorefrontVariant | null;
+  isOrderBump: boolean;
+}
+
+export interface Cart {
+  id: string;
+  guestToken: string;
+  currency: string;
+  status: string;
+  items: CartLine[];
+  subtotal: number;
+}
+
+export interface CheckoutContact {
+  fullName: string;
+  phone: string;
+  alternatePhone?: string;
+  email?: string;
+}
+
+export interface CheckoutAddress {
+  country: string;
+  province?: string;
+  city: string;
+  addressLine: string;
+  postalCode?: string;
+  notes?: string;
+}
+
+export interface CheckoutPayload {
+  contact: CheckoutContact;
+  shippingAddress?: CheckoutAddress;
+  paymentMethod: "cod" | "card" | "wallet" | "bank_transfer";
+  discountCode?: string;
+  funnelId?: string;
+  websiteId?: string;
+  notes?: string;
+  /** "Buy Now" — a single item straight to an order, no cart. Ignored when a cart token is sent. */
+  item?: { variantId: string; offerId?: string; quantity?: number };
+}
+
+// ---------------------------------------------------------------------
 // Merchant Catalog (auth, /workspaces/:workspaceId/catalog/...)
 // Shapes mirror src/modules/catalog/* and the DB models exactly.
 // Money amounts (`*Amount`) are integer minor units (piastres) but arrive
