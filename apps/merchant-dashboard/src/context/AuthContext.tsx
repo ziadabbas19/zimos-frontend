@@ -44,6 +44,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       status,
       async login(payload) {
         const result = await apiClient.login(payload);
+        // The backend hands out tokens to a `pending_verification` account, but
+        // its `authenticate` middleware rejects those same tokens on every
+        // protected endpoint (it requires `status === "active"`), and so does
+        // `/auth/refresh`. If we entered the "authenticated" state here, the
+        // first workspace fetch would 401 → the api-client would treat it as a
+        // dead session, wipe the freshly-issued tokens and bounce back to
+        // /login — an unexplained "logged straight back out" loop. Stop with a
+        // clear message instead.
+        if (result.user.status !== "active") {
+          apiClient.clearSession();
+          throw new ApiError(
+            "Please verify your email address before signing in — check your inbox for the verification link.",
+            403,
+            "ACCOUNT_INACTIVE"
+          );
+        }
         setUser(result.user);
         setStatus("authenticated");
       },
