@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { Button, Input, Label, Alert } from "@store-builder/ui";
 import { useAuth, ApiError } from "@/context/AuthContext";
 import { apiBaseUrl } from "@/lib/apiClient";
 import { BrandPanel } from "@/components/BrandPanel";
+import { unmetPasswordRules } from "@/lib/passwordRules";
 
 /** Brand-coloured Google "G" — an inline SVG so we don't pull in an icon set. */
 function GoogleIcon() {
@@ -37,8 +39,13 @@ export function RegisterPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const unmetRules = unmetPasswordRules(password);
 
   function handleGoogleLogin() {
     window.location.href = `${apiBaseUrl}/auth/google`;
@@ -47,6 +54,19 @@ export function RegisterPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
+
+    // Client-side gate before the API call — the backend enforces the same
+    // password rule, so blocking here just spares a round-trip and a raw
+    // server error. Typing is never blocked, only submitting.
+    if (unmetRules.length > 0) {
+      setError("الباسورد لسه ناقص شوية شروط، بصّ على القايمة اللي تحت.");
+      return;
+    }
+    if (password !== confirm) {
+      setError("الباسورد وتأكيده مش زي بعض.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       await register({ fullName, email, phone: phone || undefined, password });
@@ -134,16 +154,75 @@ export function RegisterPage() {
 
             <div className="space-y-1.5">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                minLength={8}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 8 characters"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  minLength={8}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                  className="pr-10"
+                  aria-describedby="password-rules"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "إخفاء الباسورد" : "إظهار الباسورد"}
+                  aria-pressed={showPassword}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-ink-soft transition-colors hover:text-ink"
+                >
+                  {showPassword ? (
+                    <EyeOff className="size-4" aria-hidden />
+                  ) : (
+                    <Eye className="size-4" aria-hidden />
+                  )}
+                </button>
+              </div>
+              {password.length > 0 && unmetRules.length > 0 && (
+                <ul id="password-rules" className="mt-1 space-y-1 text-xs text-ink-soft">
+                  {unmetRules.map((rule) => (
+                    <li key={rule.id} className="flex items-center gap-1.5">
+                      <span aria-hidden>•</span>
+                      {rule.label}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="confirm">Confirm password</Label>
+              <div className="relative">
+                <Input
+                  id="confirm"
+                  type={showConfirm ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  placeholder="••••••••"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm((v) => !v)}
+                  aria-label={showConfirm ? "إخفاء الباسورد" : "إظهار الباسورد"}
+                  aria-pressed={showConfirm}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-ink-soft transition-colors hover:text-ink"
+                >
+                  {showConfirm ? (
+                    <EyeOff className="size-4" aria-hidden />
+                  ) : (
+                    <Eye className="size-4" aria-hidden />
+                  )}
+                </button>
+              </div>
+              {confirm.length > 0 && password !== confirm && (
+                <p className="mt-1 text-xs text-danger">الباسورد وتأكيده مش زي بعض.</p>
+              )}
             </div>
 
             <Button type="submit" className="w-full" disabled={submitting}>

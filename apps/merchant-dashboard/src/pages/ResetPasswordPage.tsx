@@ -1,11 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { Button, Input, Label, Alert } from "@store-builder/ui";
 import { ApiError } from "@/context/AuthContext";
 import { apiClient } from "@/lib/apiClient";
 import { BrandPanel } from "@/components/BrandPanel";
-
-const MIN_PASSWORD_LENGTH = 8;
+import { MIN_PASSWORD_LENGTH, isPasswordStrong, unmetPasswordRules } from "@/lib/passwordRules";
 
 export function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -16,9 +16,13 @@ export function ResetPasswordPage() {
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+
+  const unmetRules = unmetPasswordRules(password);
 
   // On success, bounce to the login page after a short beat. The manual button
   // below covers the case where the timer is missed (tab backgrounded, etc.).
@@ -33,8 +37,8 @@ export function ResetPasswordPage() {
     if (!token) return;
     setError(null);
 
-    if (password.length < MIN_PASSWORD_LENGTH) {
-      setError("الباسورد لازم يكون 8 أحرف على الأقل.");
+    if (!isPasswordStrong(password)) {
+      setError("الباسورد لسه ناقص شوية شروط، بصّ على القايمة اللي تحت.");
       return;
     }
     if (password !== confirm) {
@@ -97,29 +101,75 @@ export function ResetPasswordPage() {
 
                 <div className="space-y-1.5">
                   <Label htmlFor="password">New password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    minLength={MIN_PASSWORD_LENGTH}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 8 characters"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      required
+                      minLength={MIN_PASSWORD_LENGTH}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="At least 8 characters"
+                      className="pr-10"
+                      aria-describedby="password-rules"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? "إخفاء الباسورد" : "إظهار الباسورد"}
+                      aria-pressed={showPassword}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-ink-soft transition-colors hover:text-ink"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="size-4" aria-hidden />
+                      ) : (
+                        <Eye className="size-4" aria-hidden />
+                      )}
+                    </button>
+                  </div>
+                  {password.length > 0 && unmetRules.length > 0 && (
+                    <ul id="password-rules" className="mt-1 space-y-1 text-xs text-ink-soft">
+                      {unmetRules.map((rule) => (
+                        <li key={rule.id} className="flex items-center gap-1.5">
+                          <span aria-hidden>•</span>
+                          {rule.label}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
                   <Label htmlFor="confirm">Confirm password</Label>
-                  <Input
-                    id="confirm"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
-                    placeholder="••••••••"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirm"
+                      type={showConfirm ? "text" : "password"}
+                      autoComplete="new-password"
+                      required
+                      value={confirm}
+                      onChange={(e) => setConfirm(e.target.value)}
+                      placeholder="••••••••"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm((v) => !v)}
+                      aria-label={showConfirm ? "إخفاء الباسورد" : "إظهار الباسورد"}
+                      aria-pressed={showConfirm}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-ink-soft transition-colors hover:text-ink"
+                    >
+                      {showConfirm ? (
+                        <EyeOff className="size-4" aria-hidden />
+                      ) : (
+                        <Eye className="size-4" aria-hidden />
+                      )}
+                    </button>
+                  </div>
+                  {confirm.length > 0 && password !== confirm && (
+                    <p className="mt-1 text-xs text-danger">الباسورد وتأكيده مش زي بعض.</p>
+                  )}
                 </div>
 
                 <Button type="submit" className="w-full" disabled={submitting}>

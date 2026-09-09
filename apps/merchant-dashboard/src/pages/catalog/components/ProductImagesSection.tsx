@@ -219,7 +219,7 @@ export function ProductImagesSection(props: Props) {
                     <Star className="size-3" aria-hidden /> Primary
                   </span>
                 )}
-                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-ink/60 px-1.5 py-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-black/60 px-1.5 py-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                   <div className="flex gap-1">
                     <button
                       type="button"

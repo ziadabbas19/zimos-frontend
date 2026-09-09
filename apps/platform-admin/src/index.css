@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* Tailwind v4 auto-detects template sources from this app's own tree only; it
+   never looks inside node_modules, which is where the workspace-linked
+   `@store-builder/ui` package resolves. Without this directive the shared
+   components' utility classes (e.g. `<Button variant="primary">`'s `bg-primary`)
+   are never emitted into the compiled CSS, so the button renders with no fill.
+   Path is resolved relative to this file: src -> platform-admin -> apps -> root. */
+@source "../../../packages/ui/src";
+
 /* Dark mode is driven by a `.dark` class on <html>, set before first paint by
    an inline script in index.html and toggled by the theme switch. */
 @custom-variant dark (&:where(.dark, .dark *));
