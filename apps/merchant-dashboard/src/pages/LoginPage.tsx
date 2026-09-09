@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button, Input, Label, Alert } from "@store-builder/ui";
 import { useAuth, ApiError } from "@/context/AuthContext";
-import { apiBaseUrl } from "@/lib/apiClient";
+import { apiBaseUrl, apiClient } from "@/lib/apiClient";
 import { BrandPanel } from "@/components/BrandPanel";
 
 /** Brand-coloured Google "G" — an inline SVG so we don't pull in an icon set. */
@@ -39,6 +39,11 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Shown only after a `pending_verification` account tries to sign in — lets
+  // them re-send the verification email straight from here.
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
 
   function handleGoogleLogin() {
     window.location.href = `${apiBaseUrl}/auth/google`;
@@ -47,6 +52,8 @@ export function LoginPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
+    setNeedsVerification(false);
+    setResent(false);
     setSubmitting(true);
     try {
       await login({ email, password });
@@ -54,11 +61,33 @@ export function LoginPage() {
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.status === 401 ? "Incorrect email or password." : err.message);
+        // AuthContext.login() throws this exact code for a pending_verification
+        // account — the only login error we offer a "resend link" affordance for.
+        if (err.code === "ACCOUNT_INACTIVE") setNeedsVerification(true);
       } else {
         setError("Something went wrong. Please try again.");
       }
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleResendVerification() {
+    setResending(true);
+    try {
+      await apiClient.resendVerification(email);
+      // Mirrors the password-reset request: a resolved call just means "show the
+      // notice", it doesn't confirm the address exists or is still unverified.
+      // `resent` then hides the button for the rest of this page load, so the
+      // link can't be spammed.
+      setResent(true);
+    } catch (err) {
+      // Only a genuine server failure reaches here; surface it so they can retry.
+      setError(
+        err instanceof ApiError ? err.message : "تعذّر إرسال الرسالة، حاول تاني."
+      );
+    } finally {
+      setResending(false);
     }
   }
 
@@ -92,6 +121,27 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && <Alert variant="danger">{error}</Alert>}
+
+            {needsVerification &&
+              (resent ? (
+                <Alert variant="success">
+                  لو في حساب مسجّل بالإيميل ده، هنبعتلك رسالة تأكيد جديدة خلال دقايق.
+                </Alert>
+              ) : (
+                <div className="text-sm text-ink-soft">
+                  مش لاقي رسالة التأكيد؟{" "}
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-sm"
+                    onClick={handleResendVerification}
+                    disabled={resending || !email}
+                  >
+                    {resending ? "جارٍ الإرسال…" : "إعادة إرسال الرسالة"}
+                  </Button>
+                </div>
+              ))}
 
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>

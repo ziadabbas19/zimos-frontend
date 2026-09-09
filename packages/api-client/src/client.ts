@@ -285,6 +285,54 @@ export class ApiClient {
     });
   }
 
+  /**
+   * Confirm a newly-registered address from the emailed verification link
+   * (`https://app.zimos.co/verify-email?token=<token>`). On success the account
+   * is expected to move from `pending_verification` to `active` so the user can
+   * sign in.
+   *
+   * ⚠️ ASSUMPTION — NOT VERIFIED AGAINST THE BACKEND. Written without access to
+   * the backend repo; the shape below is inferred from the sibling endpoints in
+   * this file (`register`, `resetPassword`) and MUST be diffed against the real
+   * route before it is relied on:
+   *   • method + path : POST /api/v1/auth/verify-email   (auth: false)
+   *   • request body  : { token }
+   *   • success body  : { success: boolean }   (could instead be { user })
+   *   • failure       : ApiError with code "INVALID_VERIFICATION_TOKEN" for an
+   *                     unknown / already-used / expired token — mirrors the
+   *                     "INVALID_RESET_TOKEN" code resetPassword documents.
+   */
+  async verifyEmail(token: string) {
+    return this.request<{ success: boolean }>("/auth/verify-email", {
+      method: "POST",
+      body: { token },
+      auth: false,
+    });
+  }
+
+  /**
+   * Re-send the verification email to a `pending_verification` account — used
+   * from the login screen when the first link expired. Like
+   * `requestPasswordReset`, this is expected to answer with the same
+   * `{ success: true }` whether or not the address is registered / already
+   * verified (account-enumeration guard), so a resolved call only means "show
+   * the check-your-inbox notice".
+   *
+   *  ASSUMPTION — NOT VERIFIED AGAINST THE BACKEND (no backend repo in this
+   * session). Inferred from `requestPasswordReset`:
+   *   • method + path : POST /api/v1/auth/verify-email/resend   (auth: false)
+   *                     (could instead be /auth/resend-verification)
+   *   • request body  : { email }
+   *   • success body  : { success: boolean }
+   */
+  async resendVerification(email: string) {
+    return this.request<{ success: boolean }>("/auth/resend-verification", {
+      method: "POST",
+      body: { email },
+      auth: false,
+    });
+  }
+
   async logout() {
     const { refreshToken } = this.tokenStorage.get();
     try {

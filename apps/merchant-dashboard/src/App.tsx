@@ -9,6 +9,7 @@ import { RegisterPage } from "@/pages/RegisterPage";
 import { AuthCallbackPage } from "@/pages/AuthCallbackPage";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
+import { VerifyEmailPage } from "@/pages/VerifyEmailPage";
 import { WorkspacePickerPage } from "@/pages/WorkspacePickerPage";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { DashboardHomePage } from "@/pages/DashboardHomePage";
@@ -37,6 +38,7 @@ export default function App() {
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
 
               <Route element={<ProtectedRoute />}>
                 <Route path="/workspaces" element={<WorkspacePickerPage />} />
