@@ -8,6 +8,7 @@ import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { AuthCallbackPage } from "@/pages/AuthCallbackPage";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
+import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { WorkspacePickerPage } from "@/pages/WorkspacePickerPage";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { DashboardHomePage } from "@/pages/DashboardHomePage";
@@ -17,6 +18,12 @@ import { CollectionsPage } from "@/pages/catalog/CollectionsPage";
 import { ProductEditPage } from "@/pages/catalog/ProductEditPage";
 import { OrdersListPage } from "@/pages/orders/OrdersListPage";
 import { OrderDetailPage } from "@/pages/orders/OrderDetailPage";
+import { ConfirmationQueuePage } from "@/pages/confirmation/ConfirmationQueuePage";
+import { CustomersPage } from "@/pages/customers/CustomersPage";
+import { CustomerDetailPage } from "@/pages/customers/CustomerDetailPage";
+import { DiscountsPage } from "@/pages/discounts/DiscountsPage";
+import { ShippingTaxPage } from "@/pages/shipping/ShippingTaxPage";
+import { SettingsPage } from "@/pages/settings/SettingsPage";
 
 export default function App() {
   return (
@@ -29,6 +36,7 @@ export default function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
 
               <Route element={<ProtectedRoute />}>
                 <Route path="/workspaces" element={<WorkspacePickerPage />} />
@@ -40,17 +48,20 @@ export default function App() {
                     <Route path="/orders" element={<OrdersListPage />} />
                     <Route path="/orders/:orderId" element={<OrderDetailPage />} />
 
+                    <Route path="/confirmation-queue" element={<ConfirmationQueuePage />} />
+
                     <Route path="/catalog" element={<CatalogProductsPage />} />
                     <Route path="/catalog/collections" element={<CollectionsPage />} />
                     <Route path="/catalog/new" element={<ProductEditPage />} />
                     <Route path="/catalog/:productId" element={<ProductEditPage />} />
 
-                    <Route path="/customers" element={<PlaceholderPage title="Customers" />} />
-                    <Route path="/discounts" element={<PlaceholderPage title="Discounts" />} />
-                    <Route path="/shipping" element={<PlaceholderPage title="Shipping & Tax" />} />
+                    <Route path="/customers" element={<CustomersPage />} />
+                    <Route path="/customers/:customerId" element={<CustomerDetailPage />} />
+                    <Route path="/discounts" element={<DiscountsPage />} />
+                    <Route path="/shipping" element={<ShippingTaxPage />} />
                     <Route path="/website" element={<PlaceholderPage title="Website" />} />
                     <Route path="/funnels" element={<PlaceholderPage title="Funnels" />} />
-                    <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
+                    <Route path="/settings" element={<SettingsPage />} />
                   </Route>
                 </Route>
               </Route>

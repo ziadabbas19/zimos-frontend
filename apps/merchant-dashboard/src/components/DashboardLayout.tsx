@@ -4,6 +4,7 @@ import { cn } from "@store-builder/ui";
 import { NAV_ITEMS } from "@/lib/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function DashboardLayout() {
   const { user, logout } = useAuth();
@@ -15,7 +16,7 @@ export function DashboardLayout() {
     <div className="flex min-h-screen bg-paper">
       <aside className="hidden w-60 shrink-0 border-r border-line bg-paper-raised md:flex md:flex-col">
         <div className="px-5 py-5">
-          <span className="font-display text-lg text-ink">Store Builder</span>
+          <span className="font-display text-lg text-ink">Zimos</span>
         </div>
         <nav className="flex-1 space-y-0.5 px-3">
           {NAV_ITEMS.map((item) => (
@@ -34,13 +35,14 @@ export function DashboardLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="border-t border-line px-3 py-4">
+        <div className="flex items-center gap-2 border-t border-line px-3 py-4">
           <button
             onClick={() => logout()}
-            className="w-full rounded-[0.5rem] px-3 py-2 text-left text-sm font-medium text-ink-soft hover:bg-danger-soft hover:text-danger"
+            className="flex-1 rounded-[0.5rem] px-3 py-2 text-left text-sm font-medium text-ink-soft hover:bg-danger-soft hover:text-danger"
           >
             Sign out
           </button>
+          <ThemeToggle />
         </div>
       </aside>
 

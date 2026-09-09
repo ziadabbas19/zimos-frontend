@@ -97,3 +97,30 @@ export function minorToMajorInput(minor: string | number | null | undefined): st
   const n = parseMoney(minor);
   return (n / 100).toFixed(2);
 }
+
+// --- Percentage helpers: the API speaks basis points where 100 = 1% --------
+// (10% -> 1000, 100% -> 10000). Same maths as the money helpers above but a
+// distinct name so call sites read correctly.
+
+/** "10" or "12.5" (percent, as typed) -> 1000 / 1250 (integer basis points). NaN if unparseable. */
+export function percentToBasisPoints(input: string): number {
+  const trimmed = input.trim();
+  if (trimmed === "") return NaN;
+  const value = Number(trimmed);
+  if (!Number.isFinite(value)) return NaN;
+  return Math.round(value * 100);
+}
+
+/** 1000 (basis points, string or number) -> "10" for an editable percent field. */
+export function basisPointsToPercentInput(bp: string | number | null | undefined): string {
+  if (bp === null || bp === undefined || bp === "") return "";
+  const n = typeof bp === "number" ? bp : Number(bp);
+  if (!Number.isFinite(n)) return "";
+  return String(n / 100);
+}
+
+/** 1000 (basis points, string or number) -> "10%" for display. */
+export function formatPercent(bp: string | number | null | undefined): string {
+  const text = basisPointsToPercentInput(bp);
+  return text === "" ? "—" : `${text}%`;
+}

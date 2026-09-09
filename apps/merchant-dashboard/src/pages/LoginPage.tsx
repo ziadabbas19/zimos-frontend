@@ -130,7 +130,7 @@ export function LoginPage() {
           </form>
 
           <p className="mt-8 text-center text-sm text-ink-soft">
-            New to Store Builder?{" "}
+            New to Zimos?{" "}
             <Link to="/register" className="font-medium text-primary hover:underline">
               Create an account
             </Link>

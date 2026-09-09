@@ -3,6 +3,7 @@ import { ApiError } from "@store-builder/api-client";
 import { createStorefrontApiClient } from "@/lib/apiClient";
 import { ProductCard } from "@/components/ProductCard";
 import { CartIcon } from "@/components/CartIcon";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const revalidate = 60;
 
@@ -27,7 +28,8 @@ export default async function StoreHomePage({
   return (
     <main className="flex-1">
       <header className="relative border-b border-line bg-paper-raised px-6 py-10 text-center">
-        <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+        <div className="absolute right-4 top-4 flex items-center gap-2 sm:right-6 sm:top-6">
+          <ThemeToggle />
           <CartIcon workspaceId={workspaceId} />
         </div>
         {store.logoUrl && (

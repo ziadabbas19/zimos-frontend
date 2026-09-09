@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "@store-builder/ui";
 import { useAuth } from "@/context/AuthContext";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV_ITEMS = [
   { label: "Overview", to: "/" },
@@ -34,13 +35,14 @@ export function AdminLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="border-t border-line px-3 py-4">
+        <div className="flex items-center gap-2 border-t border-line px-3 py-4">
           <button
             onClick={() => logout()}
-            className="w-full rounded-[0.5rem] px-3 py-2 text-left text-sm font-medium text-ink-soft hover:bg-danger-soft hover:text-danger"
+            className="flex-1 rounded-[0.5rem] px-3 py-2 text-left text-sm font-medium text-ink-soft hover:bg-danger-soft hover:text-danger"
           >
             Sign out
           </button>
+          <ThemeToggle />
         </div>
       </aside>
 

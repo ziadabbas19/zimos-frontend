@@ -11,6 +11,24 @@
       rel="stylesheet"
     />
     <title>Store Builder — Platform Admin</title>
+    <!-- Set the theme class before first paint — no flash of the wrong theme. -->
+    <script>
+      (function () {
+        try {
+          var e = document.documentElement,
+            s = null;
+          try {
+            s = localStorage.getItem("theme");
+          } catch (_) {}
+          var d =
+            s === "dark" ||
+            (s !== "light" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          e.classList.toggle("dark", d);
+          e.style.colorScheme = d ? "dark" : "light";
+        } catch (_) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

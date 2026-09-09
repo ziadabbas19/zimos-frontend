@@ -28,7 +28,7 @@ export function BrandPanel() {
   }
 
   return (
-    <div className="relative hidden overflow-hidden bg-ink px-12 py-16 text-white lg:flex lg:w-[44%] lg:flex-col lg:justify-between">
+    <div className="relative hidden overflow-hidden bg-ink px-12 py-16 text-white lg:flex lg:w-[44%] lg:flex-col lg:justify-between dark:bg-primary-dark">
       <div className="relative z-10">
         <span className="font-display text-lg tracking-tight">Store Builder</span>
         <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-white/70">

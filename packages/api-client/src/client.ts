@@ -1,21 +1,36 @@
 import { createLocalStorageTokenStorage, type TokenStorage } from "./tokenStorage";
 import type {
+  AddCustomerAddressPayload,
   ArchivedResponse,
   AuthTokens,
   AuthUser,
+  BlacklistPayload,
   Cart,
   CheckoutPayload,
   CollectionDetail,
   CollectionSummary,
+  ConfirmationTask,
+  ConfirmationTaskStatus,
   CreateCollectionPayload,
+  CreateDiscountPayload,
   CreateOfferPayload,
   CreateOrderPayload,
   CreateProductPayload,
   CreateReturnPayload,
   CreateShipmentPayload,
+  CreateShippingRatePayload,
+  CreateShippingZonePayload,
+  CreateTaxRatePayload,
   CreateVariantPayload,
   CreateWebsitePayload,
+  Customer,
+  CustomerAddress,
+  CustomerListParams,
+  CustomerListResponse,
   DeletedResponse,
+  Discount,
+  DiscountStatus,
+  InviteMemberPayload,
   LoginPayload,
   MediaUploadResponse,
   Membership,
@@ -26,20 +41,30 @@ import type {
   Product,
   ProductListParams,
   ProductListResponse,
+  RecordConfirmationOutcomePayload,
   RegisterPayload,
   ReturnListParams,
   ReturnRequest,
   Shipment,
+  ShippingRate,
+  ShippingZone,
   StorefrontCollection,
   StorefrontMeta,
   StorefrontProductDetail,
   StorefrontProductList,
   SuccessResponse,
+  TaxRate,
   UpdateCollectionPayload,
+  UpdateCustomerAddressPayload,
+  UpdateCustomerPayload,
+  UpdateDiscountPayload,
   UpdateOfferPayload,
   UpdateOrderPayload,
   UpdateProductPayload,
   UpdateShipmentPayload,
+  UpdateShippingRatePayload,
+  UpdateShippingZonePayload,
+  UpdateTaxRatePayload,
   UpdateVariantPayload,
   UpdateWorkspacePayload,
   Variant,
@@ -48,6 +73,9 @@ import type {
   WebsiteTemplateDetail,
   WebsiteTemplateSummary,
   Workspace,
+  WorkspaceInvite,
+  WorkspaceMember,
+  WorkspaceRole,
 } from "./types";
 
 function buildQuery(params: Record<string, unknown>): string {
@@ -230,6 +258,33 @@ export class ApiClient {
     return result;
   }
 
+  /**
+   * Kick off a password reset. The backend deliberately answers with the same
+   * `{ success: true }` whether or not the address is registered (account
+   * enumeration guard), so a resolved call just means "show the check-your-inbox
+   * notice" — it is not a signal that the email exists.
+   */
+  async requestPasswordReset(email: string) {
+    return this.request<{ success: boolean }>("/auth/password-reset/request", {
+      method: "POST",
+      body: { email },
+      auth: false,
+    });
+  }
+
+  /**
+   * Finish a password reset using the token from the emailed link. Rejects with
+   * ApiError (e.g. code "INVALID_RESET_TOKEN") when the token is unknown, used,
+   * or expired.
+   */
+  async resetPassword(token: string, newPassword: string) {
+    return this.request<{ success: boolean }>("/auth/password-reset/confirm", {
+      method: "POST",
+      body: { token, newPassword },
+      auth: false,
+    });
+  }
+
   async logout() {
     const { refreshToken } = this.tokenStorage.get();
     try {
@@ -288,6 +343,66 @@ export class ApiClient {
       { method: "POST", body: payload }
     );
     return { website, pages };
+  }
+
+  // ---------------------------------------------------------------------
+  // Workspace team — members, invites, roles
+  // (auth, /workspaces/:workspaceId/members | /invites | /roles)
+  // Every response is unwrapped to the row(s) the caller wants. Inviting
+  // creates a membership in "invited" state (and, backend-side, sends the
+  // email); `resendInvite` re-sends it. Changing a role or removing a
+  // member both act on the membership id.
+  // ---------------------------------------------------------------------
+
+  async listWorkspaceMembers(workspaceId: string) {
+    const { members } = await this.request<{ members: WorkspaceMember[] }>(
+      `/workspaces/${workspaceId}/members`
+    );
+    return members;
+  }
+
+  async listPendingInvites(workspaceId: string) {
+    const { invites } = await this.request<{ invites: WorkspaceInvite[] }>(
+      `/workspaces/${workspaceId}/invites`
+    );
+    return invites;
+  }
+
+  async listWorkspaceRoles(workspaceId: string) {
+    const { roles } = await this.request<{ roles: WorkspaceRole[] }>(
+      `/workspaces/${workspaceId}/roles`
+    );
+    return roles;
+  }
+
+  async inviteMember(workspaceId: string, payload: InviteMemberPayload) {
+    const { membership } = await this.request<{ membership: WorkspaceMember }>(
+      `/workspaces/${workspaceId}/members`,
+      { method: "POST", body: payload }
+    );
+    return membership;
+  }
+
+  async resendInvite(workspaceId: string, membershipId: string) {
+    return this.request<SuccessResponse>(
+      `/workspaces/${workspaceId}/invites/${membershipId}/resend`,
+      { method: "POST", body: {} }
+    );
+  }
+
+  async updateMemberRole(workspaceId: string, membershipId: string, roleId: string) {
+    const { membership } = await this.request<{ membership: WorkspaceMember }>(
+      `/workspaces/${workspaceId}/members/${membershipId}`,
+      { method: "PATCH", body: { roleId } }
+    );
+    return membership;
+  }
+
+  async removeMember(workspaceId: string, membershipId: string) {
+    return this.request<SuccessResponse>(
+      `/workspaces/${workspaceId}/members/${membershipId}`,
+      { method: "DELETE" }
+    );
   }
 
   // ---------------------------------------------------------------------
@@ -568,6 +683,265 @@ export class ApiClient {
       { method: "POST" }
     );
     return updated;
+  }
+
+  // ---------------------------------------------------------------------
+  // Confirmation queue (auth, /workspaces/:workspaceId/confirmation-tasks/...)
+  // `listConfirmationQueue` returns the tasks still needing a call; `claim`
+  // locks one to the current user; `recordConfirmationOutcome` closes it.
+  // Every response is unwrapped to the row(s) the caller wants.
+  // ---------------------------------------------------------------------
+
+  private confirmationTasksBase(workspaceId: string) {
+    return `/workspaces/${workspaceId}/confirmation-tasks`;
+  }
+
+  async listConfirmationQueue(
+    workspaceId: string,
+    params: { status?: ConfirmationTaskStatus; limit?: number } = {}
+  ) {
+    const { tasks } = await this.request<{ tasks: ConfirmationTask[] }>(
+      `${this.confirmationTasksBase(workspaceId)}${buildQuery({ ...params })}`
+    );
+    return tasks;
+  }
+
+  async claimConfirmationTask(workspaceId: string, taskId: string) {
+    const { task } = await this.request<{ task: ConfirmationTask }>(
+      `${this.confirmationTasksBase(workspaceId)}/${taskId}/claim`,
+      { method: "POST", body: {} }
+    );
+    return task;
+  }
+
+  async recordConfirmationOutcome(
+    workspaceId: string,
+    taskId: string,
+    payload: RecordConfirmationOutcomePayload
+  ) {
+    const { task } = await this.request<{ task: ConfirmationTask }>(
+      `${this.confirmationTasksBase(workspaceId)}/${taskId}/outcome`,
+      { method: "POST", body: payload }
+    );
+    return task;
+  }
+
+  // ---------------------------------------------------------------------
+  // Discounts (auth, /workspaces/:workspaceId/discounts/...)
+  // `value` is basis points for a percentage discount, integer minor units
+  // for a fixed one. DELETE archives (a redeemed discount is financial
+  // history), so it resolves to ArchivedResponse.
+  // ---------------------------------------------------------------------
+
+  private discountsBase(workspaceId: string) {
+    return `/workspaces/${workspaceId}/discounts`;
+  }
+
+  async listDiscounts(workspaceId: string) {
+    const { discounts } = await this.request<{ discounts: Discount[] }>(
+      this.discountsBase(workspaceId)
+    );
+    return discounts;
+  }
+
+  async getDiscount(workspaceId: string, discountId: string) {
+    const { discount } = await this.request<{ discount: Discount }>(
+      `${this.discountsBase(workspaceId)}/${discountId}`
+    );
+    return discount;
+  }
+
+  async createDiscount(workspaceId: string, payload: CreateDiscountPayload) {
+    const { discount } = await this.request<{ discount: Discount }>(this.discountsBase(workspaceId), {
+      method: "POST",
+      body: payload,
+    });
+    return discount;
+  }
+
+  async updateDiscount(workspaceId: string, discountId: string, payload: UpdateDiscountPayload) {
+    const { discount } = await this.request<{ discount: Discount }>(
+      `${this.discountsBase(workspaceId)}/${discountId}`,
+      { method: "PATCH", body: payload }
+    );
+    return discount;
+  }
+
+  async setDiscountStatus(workspaceId: string, discountId: string, status: DiscountStatus) {
+    const { discount } = await this.request<{ discount: Discount }>(
+      `${this.discountsBase(workspaceId)}/${discountId}/status`,
+      { method: "PATCH", body: { status } }
+    );
+    return discount;
+  }
+
+  async deleteDiscount(workspaceId: string, discountId: string) {
+    return this.request<ArchivedResponse>(`${this.discountsBase(workspaceId)}/${discountId}`, {
+      method: "DELETE",
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Shipping zones + rates (auth, /workspaces/:workspaceId/shipping/...)
+  // Hard deletes — an order copies the computed shipping amount, it never
+  // references a zone or rate by id. The zone list eager-loads each zone's
+  // rates.
+  // ---------------------------------------------------------------------
+
+  private shippingBase(workspaceId: string) {
+    return `/workspaces/${workspaceId}/shipping`;
+  }
+
+  async listShippingZones(workspaceId: string) {
+    const { zones } = await this.request<{ zones: ShippingZone[] }>(
+      `${this.shippingBase(workspaceId)}/zones`
+    );
+    return zones;
+  }
+
+  async createShippingZone(workspaceId: string, payload: CreateShippingZonePayload) {
+    const { zone } = await this.request<{ zone: ShippingZone }>(
+      `${this.shippingBase(workspaceId)}/zones`,
+      { method: "POST", body: payload }
+    );
+    return zone;
+  }
+
+  async updateShippingZone(workspaceId: string, zoneId: string, payload: UpdateShippingZonePayload) {
+    const { zone } = await this.request<{ zone: ShippingZone }>(
+      `${this.shippingBase(workspaceId)}/zones/${zoneId}`,
+      { method: "PATCH", body: payload }
+    );
+    return zone;
+  }
+
+  async deleteShippingZone(workspaceId: string, zoneId: string) {
+    return this.request<DeletedResponse>(`${this.shippingBase(workspaceId)}/zones/${zoneId}`, {
+      method: "DELETE",
+    });
+  }
+
+  async createShippingRate(workspaceId: string, zoneId: string, payload: CreateShippingRatePayload) {
+    const { rate } = await this.request<{ rate: ShippingRate }>(
+      `${this.shippingBase(workspaceId)}/zones/${zoneId}/rates`,
+      { method: "POST", body: payload }
+    );
+    return rate;
+  }
+
+  async updateShippingRate(workspaceId: string, rateId: string, payload: UpdateShippingRatePayload) {
+    const { rate } = await this.request<{ rate: ShippingRate }>(
+      `${this.shippingBase(workspaceId)}/rates/${rateId}`,
+      { method: "PATCH", body: payload }
+    );
+    return rate;
+  }
+
+  async deleteShippingRate(workspaceId: string, rateId: string) {
+    return this.request<DeletedResponse>(`${this.shippingBase(workspaceId)}/rates/${rateId}`, {
+      method: "DELETE",
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Tax rates (auth, /workspaces/:workspaceId/tax-rates/...)
+  // `rateBasisPoints` is 100ths of a percent (1000 = 10%). Hard deletes.
+  // ---------------------------------------------------------------------
+
+  private taxRatesBase(workspaceId: string) {
+    return `/workspaces/${workspaceId}/tax-rates`;
+  }
+
+  async listTaxRates(workspaceId: string) {
+    const { taxRates } = await this.request<{ taxRates: TaxRate[] }>(this.taxRatesBase(workspaceId));
+    return taxRates;
+  }
+
+  async createTaxRate(workspaceId: string, payload: CreateTaxRatePayload) {
+    const { taxRate } = await this.request<{ taxRate: TaxRate }>(this.taxRatesBase(workspaceId), {
+      method: "POST",
+      body: payload,
+    });
+    return taxRate;
+  }
+
+  async updateTaxRate(workspaceId: string, taxRateId: string, payload: UpdateTaxRatePayload) {
+    const { taxRate } = await this.request<{ taxRate: TaxRate }>(
+      `${this.taxRatesBase(workspaceId)}/${taxRateId}`,
+      { method: "PATCH", body: payload }
+    );
+    return taxRate;
+  }
+
+  async deleteTaxRate(workspaceId: string, taxRateId: string) {
+    return this.request<DeletedResponse>(`${this.taxRatesBase(workspaceId)}/${taxRateId}`, {
+      method: "DELETE",
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Customers (auth, /workspaces/:workspaceId/customers/...)
+  // The list is cursor-paginated on the customer id and returns
+  // { customers, nextCursor } — the caller maps it to the shape useCursorList
+  // expects.
+  // ---------------------------------------------------------------------
+
+  private customersBase(workspaceId: string) {
+    return `/workspaces/${workspaceId}/customers`;
+  }
+
+  async listCustomers(workspaceId: string, params: CustomerListParams = {}) {
+    return this.request<CustomerListResponse>(
+      `${this.customersBase(workspaceId)}${buildQuery({ ...params })}`
+    );
+  }
+
+  async getCustomer(workspaceId: string, customerId: string) {
+    const { customer } = await this.request<{ customer: Customer }>(
+      `${this.customersBase(workspaceId)}/${customerId}`
+    );
+    return customer;
+  }
+
+  async updateCustomer(workspaceId: string, customerId: string, payload: UpdateCustomerPayload) {
+    const { customer } = await this.request<{ customer: Customer }>(
+      `${this.customersBase(workspaceId)}/${customerId}`,
+      { method: "PATCH", body: payload }
+    );
+    return customer;
+  }
+
+  async setCustomerBlacklist(workspaceId: string, customerId: string, payload: BlacklistPayload) {
+    const { customer } = await this.request<{ customer: Customer }>(
+      `${this.customersBase(workspaceId)}/${customerId}/blacklist`,
+      { method: "PATCH", body: payload }
+    );
+    return customer;
+  }
+
+  async addCustomerAddress(
+    workspaceId: string,
+    customerId: string,
+    payload: AddCustomerAddressPayload
+  ) {
+    const { address } = await this.request<{ address: CustomerAddress }>(
+      `${this.customersBase(workspaceId)}/${customerId}/addresses`,
+      { method: "POST", body: payload }
+    );
+    return address;
+  }
+
+  async updateCustomerAddress(
+    workspaceId: string,
+    customerId: string,
+    addressId: string,
+    payload: UpdateCustomerAddressPayload
+  ) {
+    const { address } = await this.request<{ address: CustomerAddress }>(
+      `${this.customersBase(workspaceId)}/${customerId}/addresses/${addressId}`,
+      { method: "PATCH", body: payload }
+    );
+    return address;
   }
 
   /**

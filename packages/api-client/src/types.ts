@@ -60,6 +60,59 @@ export interface UpdateWorkspacePayload {
 }
 
 // ---------------------------------------------------------------------
+// Workspace team — members, invites, roles
+// (auth, /workspaces/:workspaceId/members | /invites | /roles)
+// A membership is "active" once the invited person has joined; until then
+// it is "invited" and carries no linked `user`. Roles are the assignable
+// permission sets — the `isSystem` ones (owner/admin/…) ship with every
+// workspace and can't be edited.
+// ---------------------------------------------------------------------
+
+export interface WorkspaceMemberUser {
+  id: string;
+  email: string;
+  fullName: string;
+  status: string;
+}
+
+export interface WorkspaceMemberRole {
+  id: string;
+  key: string;
+  name: string;
+}
+
+export interface WorkspaceMember {
+  id: string;
+  workspaceId: string;
+  status: "active" | "invited";
+  user: WorkspaceMemberUser | null;
+  role: WorkspaceMemberRole;
+}
+
+/**
+ * A still-pending invitation. Same row as a member minus the `user` link
+ * (the invitee has no account attached yet), plus the address it was sent
+ * to so the list can identify it.
+ */
+export interface WorkspaceInvite extends Omit<WorkspaceMember, "user"> {
+  invitedEmail: string | null;
+}
+
+export interface WorkspaceRole {
+  id: string;
+  workspaceId: string;
+  key: string;
+  name: string;
+  isSystem: boolean;
+  permissions: string[];
+}
+
+export interface InviteMemberPayload {
+  email: string;
+  roleId: string;
+}
+
+// ---------------------------------------------------------------------
 // Website templates + websites
 // Templates are the public catalogue (GET /templates); websites are the
 // per-workspace sites built from a template version
@@ -715,4 +768,290 @@ export interface CreateReturnPayload {
 
 export interface ReturnListParams {
   status?: ReturnStatus;
+}
+
+// ---------------------------------------------------------------------
+// Confirmation queue (auth, /workspaces/:workspaceId/confirmation-tasks/...)
+// A work queue for phone-confirming orders before fulfilment. A `queued`
+// task is claimed (locked to the caller) and then closed by recording an
+// outcome; `attemptCount` / `nextRetryAt` track call-backs after an
+// unreachable/postponed result. Each task carries its full `order`.
+// ---------------------------------------------------------------------
+
+export type ConfirmationOutcome = "confirmed" | "rejected" | "unreachable" | "postponed";
+export type ConfirmationTaskStatus = "queued" | "in_progress" | "done";
+
+export interface ConfirmationTask {
+  id: string;
+  workspaceId: string;
+  orderId: string;
+  status: ConfirmationTaskStatus;
+  lockedByUserId: string | null;
+  lockedAt: string | null;
+  attemptCount: number;
+  nextRetryAt: string | null;
+  outcome: ConfirmationOutcome | null;
+  rejectionReason: string | null;
+  order: Order;
+}
+
+export interface RecordConfirmationOutcomePayload {
+  outcome: ConfirmationOutcome;
+  notes?: string;
+  rejectionReason?: string;
+}
+
+// ---------------------------------------------------------------------
+// Discounts (auth, /workspaces/:workspaceId/discounts/...)
+// Shapes mirror src/modules/discounts/* and the Discount model exactly.
+// `value` and `minimumSubtotal` are BIGINT columns → strings over JSON.
+// `value` is basis points for a percentage discount (1000 = 10%), integer
+// minor units (piastres) for a fixed one, and null for free_shipping /
+// buy_x_get_y.
+// ---------------------------------------------------------------------
+
+export type DiscountType = "percentage" | "fixed" | "free_shipping" | "buy_x_get_y";
+export type DiscountStatus = "active" | "disabled" | "archived";
+
+export interface Discount {
+  id: string;
+  workspaceId: string;
+  code: string | null;
+  type: DiscountType;
+  value: string | null;
+  buyXGetYConfig: Record<string, unknown> | null;
+  minimumSubtotal: string | null;
+  productRestrictions: string[];
+  collectionRestrictions: string[];
+  customerRestrictions: string[];
+  funnelRestrictions: string[];
+  startsAt: string | null;
+  endsAt: string | null;
+  usageLimit: number | null;
+  perCustomerLimit: number | null;
+  usageCount: number;
+  stackable: boolean;
+  status: DiscountStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Mirrors discountValidation.create — `value`/`minimumSubtotal` are integers. */
+export interface CreateDiscountPayload {
+  code?: string;
+  type: DiscountType;
+  value?: number;
+  buyXGetYConfig?: Record<string, unknown>;
+  minimumSubtotal?: number;
+  productRestrictions?: string[];
+  collectionRestrictions?: string[];
+  customerRestrictions?: string[];
+  funnelRestrictions?: string[];
+  startsAt?: string;
+  endsAt?: string;
+  usageLimit?: number;
+  perCustomerLimit?: number;
+  stackable?: boolean;
+}
+
+/** Mirrors discountValidation.update — every field optional, most nullable. */
+export interface UpdateDiscountPayload {
+  code?: string | null;
+  type?: DiscountType;
+  value?: number | null;
+  buyXGetYConfig?: Record<string, unknown> | null;
+  minimumSubtotal?: number | null;
+  productRestrictions?: string[];
+  collectionRestrictions?: string[];
+  customerRestrictions?: string[];
+  funnelRestrictions?: string[];
+  startsAt?: string | null;
+  endsAt?: string | null;
+  usageLimit?: number | null;
+  perCustomerLimit?: number | null;
+  stackable?: boolean;
+  status?: DiscountStatus;
+}
+
+// ---------------------------------------------------------------------
+// Shipping zones + rates (auth, /workspaces/:workspaceId/shipping/...)
+// Shapes mirror src/modules/shipping/*. `rate.config` is a freeform JSONB
+// blob whose shape depends on `rateType` (money amounts inside are integer
+// minor units), e.g.
+//   flat:               { amount }
+//   weight_based:        { tiers: [{ upToGrams, amount }], overflowAmount }
+//   quantity_based:      { tiers: [{ upToQuantity, amount }], overflowAmount }
+//   order_value_based:   { tiers: [{ minSubtotal, amount }] }
+//   free:                {}
+// ---------------------------------------------------------------------
+
+export type ShippingRateType =
+  | "flat"
+  | "weight_based"
+  | "quantity_based"
+  | "order_value_based"
+  | "free";
+
+export interface ShippingRate {
+  id: string;
+  workspaceId: string;
+  zoneId: string;
+  name: string;
+  rateType: ShippingRateType;
+  config: Record<string, unknown>;
+  carrierCode: string | null;
+}
+
+export interface ShippingZone {
+  id: string;
+  workspaceId: string;
+  name: string;
+  countries: string[];
+  regions: string[];
+  excludedRegions: string[];
+  /** Present on the list endpoint — rates are eager-loaded per zone. */
+  rates?: ShippingRate[];
+}
+
+export interface CreateShippingZonePayload {
+  name: string;
+  countries?: string[];
+  regions?: string[];
+  excludedRegions?: string[];
+}
+
+export type UpdateShippingZonePayload = Partial<CreateShippingZonePayload>;
+
+export interface CreateShippingRatePayload {
+  name: string;
+  rateType: ShippingRateType;
+  config?: Record<string, unknown>;
+  carrierCode?: string | null;
+}
+
+export interface UpdateShippingRatePayload {
+  name?: string;
+  rateType?: ShippingRateType;
+  config?: Record<string, unknown>;
+  carrierCode?: string | null;
+}
+
+// ---------------------------------------------------------------------
+// Tax rates (auth, /workspaces/:workspaceId/tax-rates/...)
+// Shapes mirror src/modules/tax/*. `rateBasisPoints` is 100ths of a
+// percent (1000 = 10%), an integer.
+// ---------------------------------------------------------------------
+
+export interface TaxRate {
+  id: string;
+  workspaceId: string;
+  name: string;
+  country: string | null;
+  region: string | null;
+  rateBasisPoints: number;
+  appliesToShipping: boolean;
+  pricesIncludeTax: boolean;
+  productId: string | null;
+}
+
+export interface CreateTaxRatePayload {
+  name: string;
+  country?: string | null;
+  region?: string | null;
+  rateBasisPoints: number;
+  appliesToShipping?: boolean;
+  pricesIncludeTax?: boolean;
+  productId?: string | null;
+}
+
+export interface UpdateTaxRatePayload {
+  name?: string;
+  country?: string | null;
+  region?: string | null;
+  rateBasisPoints?: number;
+  appliesToShipping?: boolean;
+  pricesIncludeTax?: boolean;
+  productId?: string | null;
+}
+
+// ---------------------------------------------------------------------
+// Customers (auth, /workspaces/:workspaceId/customers/...)
+// Shapes mirror src/modules/customers/* and the Customer / CustomerAddress
+// models. Identity is keyed on the normalized phone; list pagination is
+// cursor-based on the customer id.
+// ---------------------------------------------------------------------
+
+export interface CustomerAddress {
+  id: string;
+  country: string;
+  province: string | null;
+  city: string;
+  addressLine: string;
+  postalCode: string | null;
+  notes: string | null;
+  isDefault: boolean;
+}
+
+export interface Customer {
+  id: string;
+  workspaceId: string;
+  phoneNormalized: string;
+  phoneRaw: string | null;
+  alternatePhone: string | null;
+  email: string | null;
+  fullName: string | null;
+  marketingConsent: boolean;
+  isBlacklisted: boolean;
+  blacklistReason: string | null;
+  segments: string[];
+  reliabilityScore: number;
+  totalOrders: number;
+  totalRejectedOrders: number;
+  /** Present on the detail endpoint only. */
+  addresses?: CustomerAddress[];
+}
+
+export interface CustomerListParams {
+  limit?: number;
+  cursor?: string;
+  blacklistedOnly?: boolean;
+}
+
+export interface CustomerListResponse {
+  customers: Customer[];
+  nextCursor: string | null;
+}
+
+export interface UpdateCustomerPayload {
+  fullName?: string | null;
+  email?: string | null;
+  phone?: string;
+  alternatePhone?: string | null;
+  marketingConsent?: boolean;
+}
+
+export interface BlacklistPayload {
+  isBlacklisted: boolean;
+  /** Required by the backend when isBlacklisted is true. */
+  reason?: string;
+}
+
+export interface AddCustomerAddressPayload {
+  country: string;
+  province?: string;
+  city: string;
+  addressLine: string;
+  postalCode?: string;
+  notes?: string;
+  isDefault?: boolean;
+}
+
+export interface UpdateCustomerAddressPayload {
+  country?: string;
+  province?: string | null;
+  city?: string;
+  addressLine?: string;
+  postalCode?: string | null;
+  notes?: string | null;
+  isDefault?: boolean;
 }
