@@ -26,6 +26,23 @@ export interface RegisterPayload {
   phone?: string;
 }
 
+/**
+ * Merchant-tunable knobs stored in the workspace's `settings` JSONB blob and
+ * read/written through `PATCH /workspaces/:id`. Amounts are integer minor
+ * currency units (piastres/cents). The backend merges only the keys it knows
+ * (see below) and leaves anything else in the blob untouched, hence the open
+ * index signature.
+ */
+export interface WorkspaceSettings {
+  /** Order subtotal at/above which shipping is free. `null`/absent = disabled. */
+  free_shipping_threshold_amount?: number | null;
+  /** Fallback shipping charge when no active zone/rate matches. `null`/absent = free. */
+  default_shipping_rate_amount?: number | null;
+  /** Whether tax rates are applied at checkout. Defaults to false. */
+  tax_enabled?: boolean;
+  [key: string]: unknown;
+}
+
 export interface Workspace {
   id: string;
   name: string;
@@ -38,7 +55,7 @@ export interface Workspace {
   ownerUserId: string;
   defaultLocale?: string;
   timezone?: string;
-  settings?: Record<string, unknown>;
+  settings?: WorkspaceSettings;
   logoUrl?: string | null;
   tagline?: string | null;
   themeSettings?: Record<string, unknown>;
@@ -57,6 +74,17 @@ export interface UpdateWorkspacePayload {
   logoUrl?: string | null;
   tagline?: string | null;
   themeSettings?: Record<string, unknown>;
+  /**
+   * Partial merge into the workspace's `settings` JSONB. Only these keys are
+   * honoured. Send a key as `null` to clear it back to "not configured";
+   * omitting a key leaves its stored value untouched — that is NOT the same as
+   * sending 0. Amounts are integer minor currency units.
+   */
+  settings?: {
+    free_shipping_threshold_amount?: number | null;
+    default_shipping_rate_amount?: number | null;
+    tax_enabled?: boolean;
+  };
 }
 
 // ---------------------------------------------------------------------
@@ -900,6 +928,14 @@ export interface ShippingRate {
   rateType: ShippingRateType;
   config: Record<string, unknown>;
   carrierCode: string | null;
+  /** Inactive rates stay in the CRUD but are skipped when pricing checkout. */
+  isActive: boolean;
+  /**
+   * Optional delivery-time estimate in whole days, surfaced at checkout. No
+   * effect on the priced amount. Either bound may be null independently.
+   */
+  estimatedDeliveryMinDays: number | null;
+  estimatedDeliveryMaxDays: number | null;
 }
 
 export interface ShippingZone {
@@ -909,6 +945,8 @@ export interface ShippingZone {
   countries: string[];
   regions: string[];
   excludedRegions: string[];
+  /** Inactive zones stay in the CRUD but are skipped when pricing checkout. */
+  isActive: boolean;
   /** Present on the list endpoint — rates are eager-loaded per zone. */
   rates?: ShippingRate[];
 }
@@ -918,6 +956,7 @@ export interface CreateShippingZonePayload {
   countries?: string[];
   regions?: string[];
   excludedRegions?: string[];
+  isActive?: boolean;
 }
 
 export type UpdateShippingZonePayload = Partial<CreateShippingZonePayload>;
@@ -927,6 +966,10 @@ export interface CreateShippingRatePayload {
   rateType: ShippingRateType;
   config?: Record<string, unknown>;
   carrierCode?: string | null;
+  isActive?: boolean;
+  /** Whole days; send `null` to leave unset (or to clear on update). */
+  estimatedDeliveryMinDays?: number | null;
+  estimatedDeliveryMaxDays?: number | null;
 }
 
 export interface UpdateShippingRatePayload {
@@ -934,6 +977,10 @@ export interface UpdateShippingRatePayload {
   rateType?: ShippingRateType;
   config?: Record<string, unknown>;
   carrierCode?: string | null;
+  isActive?: boolean;
+  /** Whole days; send `null` to clear a previously set estimate. */
+  estimatedDeliveryMinDays?: number | null;
+  estimatedDeliveryMaxDays?: number | null;
 }
 
 // ---------------------------------------------------------------------

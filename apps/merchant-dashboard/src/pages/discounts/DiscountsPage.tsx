@@ -1,9 +1,11 @@
-import { useState, type FormEvent } from "react";
-import { Alert, Button, Input } from "@store-builder/ui";
+import { useMemo, useState, type FormEvent } from "react";
+import { Alert, Button, Input, Label, Spinner } from "@store-builder/ui";
 import type {
   CreateDiscountPayload,
   Discount,
+  DiscountStatus,
   DiscountType,
+  Product,
   UpdateDiscountPayload,
 } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
@@ -12,6 +14,7 @@ import { useAsync } from "@/lib/useAsync";
 import { getErrorMessage, getFieldErrors } from "@/lib/errors";
 import {
   basisPointsToPercentInput,
+  formatDate,
   formatMoney,
   formatPercent,
   majorToMinor,
@@ -23,7 +26,7 @@ import { DataState } from "@/components/DataState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Modal } from "@/components/Modal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { TextField, Field } from "@/components/Field";
+import { Field } from "@/components/Field";
 import { MoneyInput } from "@/components/MoneyInput";
 import { Select } from "@/components/Select";
 import { useToast } from "@/components/Toast";
@@ -45,6 +48,38 @@ function discountValueLabel(d: Discount): string {
     default:
       return "—";
   }
+}
+
+type DisplayStatus = DiscountStatus | "scheduled" | "expired";
+
+/**
+ * `active` on the backend just means "not disabled/archived" — a discount
+ * with a future start or a past end is still stored as `active`. Compute the
+ * status a merchant actually cares about from the date range on top of it.
+ */
+function displayStatus(d: Discount): DisplayStatus {
+  if (d.status !== "active") return d.status;
+  const now = Date.now();
+  if (d.startsAt && new Date(d.startsAt).getTime() > now) return "scheduled";
+  if (d.endsAt && new Date(d.endsAt).getTime() < now) return "expired";
+  return "active";
+}
+
+function dateRangeLabel(d: Discount): string {
+  if (!d.startsAt && !d.endsAt) return "No date limit";
+  if (d.startsAt && !d.endsAt) return `From ${formatDate(d.startsAt)}`;
+  if (!d.startsAt && d.endsAt) return `Until ${formatDate(d.endsAt)}`;
+  return `${formatDate(d.startsAt)} – ${formatDate(d.endsAt)}`;
+}
+
+const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I — easy to read aloud
+
+function generateCode(): string {
+  let out = "";
+  for (let i = 0; i < 8; i++) {
+    out += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
+  }
+  return out;
 }
 
 export function DiscountsPage() {
@@ -102,6 +137,7 @@ export function DiscountsPage() {
                 <th className="px-4 py-3 font-medium">Value</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Usage</th>
+                <th className="px-4 py-3 font-medium">Dates</th>
                 <th className="px-4 py-3 font-medium" />
               </tr>
             </thead>
@@ -122,12 +158,13 @@ export function DiscountsPage() {
                   <td className="px-4 py-3 text-ink-soft">{TYPE_LABEL[d.type]}</td>
                   <td className="px-4 py-3 text-ink-soft">{discountValueLabel(d)}</td>
                   <td className="px-4 py-3">
-                    <StatusBadge value={d.status} />
+                    <StatusBadge value={displayStatus(d)} />
                   </td>
                   <td className="px-4 py-3 text-ink-soft">
                     {d.usageCount}
                     {d.usageLimit != null ? ` / ${d.usageLimit}` : ""}
                   </td>
+                  <td className="px-4 py-3 text-ink-soft">{dateRangeLabel(d)}</td>
                   <td
                     className="whitespace-nowrap px-4 py-3 text-right"
                     onClick={(e) => e.stopPropagation()}
@@ -215,6 +252,10 @@ function DiscountForm({
     discount?.perCustomerLimit != null ? String(discount.perCustomerLimit) : ""
   );
   const [stackable, setStackable] = useState(discount?.stackable ?? false);
+  const [productScope, setProductScope] = useState<"all" | "products">(
+    discount && discount.productRestrictions.length > 0 ? "products" : "all"
+  );
+  const [productIds, setProductIds] = useState<string[]>(discount?.productRestrictions ?? []);
 
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -270,7 +311,13 @@ function DiscountForm({
       }
     }
 
+    if (productScope === "products" && productIds.length === 0) {
+      setFieldErrors({ productRestrictions: "Select at least one product, or switch to all products." });
+      return;
+    }
+
     const codeValue = code.trim().toUpperCase();
+    const restrictions = productScope === "products" ? productIds : [];
 
     setSaving(true);
     try {
@@ -280,6 +327,7 @@ function DiscountForm({
           code: codeValue || null,
           value: needsValue ? valueNum : null,
           minimumSubtotal: minSubtotalNum,
+          productRestrictions: restrictions,
           startsAt: startsAt || null,
           endsAt: endsAt || null,
           usageLimit: usageLimitNum,
@@ -289,7 +337,7 @@ function DiscountForm({
         await apiClient.updateDiscount(workspaceId, discount.id, payload);
         toast.success("Discount saved.");
       } else {
-        const payload: CreateDiscountPayload = { type, stackable };
+        const payload: CreateDiscountPayload = { type, stackable, productRestrictions: restrictions };
         if (codeValue) payload.code = codeValue;
         if (needsValue && valueNum != null) payload.value = valueNum;
         if (minSubtotalNum != null) payload.minimumSubtotal = minSubtotalNum;
@@ -314,14 +362,27 @@ function DiscountForm({
     <form onSubmit={submit} className="space-y-4">
       {formError && <Alert variant="danger">{formError}</Alert>}
 
-      <TextField
+      <Field
         label="Code"
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
         error={fieldErrors.code}
         hint="Leave blank for an automatic discount with no code."
-        placeholder="SUMMER25"
-      />
+      >
+        {({ id, ...aria }) => (
+          <div className="flex gap-2">
+            <Input
+              id={id}
+              {...aria}
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="SUMMER25"
+              className={fieldErrors.code ? "border-danger focus-visible:ring-danger/30" : undefined}
+            />
+            <Button type="button" variant="outline" onClick={() => setCode(generateCode())}>
+              Generate
+            </Button>
+          </div>
+        )}
+      </Field>
 
       <Field label="Type" error={fieldErrors.type}>
         {({ id }) => (
@@ -432,6 +493,36 @@ function DiscountForm({
         </Field>
       </div>
 
+      <div className="space-y-2">
+        <Label>Applies to</Label>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm text-ink">
+            <input
+              type="radio"
+              name="discount-scope"
+              checked={productScope === "all"}
+              onChange={() => setProductScope("all")}
+            />
+            All products
+          </label>
+          <label className="flex items-center gap-2 text-sm text-ink">
+            <input
+              type="radio"
+              name="discount-scope"
+              checked={productScope === "products"}
+              onChange={() => setProductScope("products")}
+            />
+            Specific products
+          </label>
+          {productScope === "products" && (
+            <ProductScopePicker selected={productIds} onChange={setProductIds} />
+          )}
+        </div>
+        {fieldErrors.productRestrictions && (
+          <p className="text-xs font-medium text-danger">{fieldErrors.productRestrictions}</p>
+        )}
+      </div>
+
       <label className="flex items-center gap-2 text-sm text-ink">
         <input
           type="checkbox"
@@ -450,5 +541,71 @@ function DiscountForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+/** Checklist of products for the "specific products" discount scope. Fetches
+ * one page (up to the backend's max) and filters client-side — matches the
+ * catalog list's own local-filter pattern rather than adding pagination to a
+ * picker. */
+function ProductScopePicker({
+  selected,
+  onChange,
+}: {
+  selected: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const workspaceId = useWorkspaceId();
+  const products = useAsync(
+    () => apiClient.listProducts(workspaceId, { limit: 200 }).then((r) => r.products),
+    [workspaceId]
+  );
+  const [search, setSearch] = useState("");
+
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
+  const all = products.data ?? [];
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return all;
+    return all.filter((p) => p.name.toLowerCase().includes(q));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [all, search]);
+
+  function toggle(id: string) {
+    onChange(selectedSet.has(id) ? selected.filter((x) => x !== id) : [...selected, id]);
+  }
+
+  if (products.loading) return <Spinner className="size-4" />;
+  if (products.error) return <p className="text-sm text-danger">{getErrorMessage(products.error)}</p>;
+
+  return (
+    <div className="space-y-2 rounded-[var(--radius-card)] border border-line p-3">
+      <div className="flex items-center justify-between gap-2">
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Filter products…"
+          className="max-w-xs"
+        />
+        <span className="whitespace-nowrap text-xs text-ink-soft">{selected.length} selected</span>
+      </div>
+      {filtered.length === 0 ? (
+        <p className="text-sm text-ink-soft">
+          {all.length === 0 ? "No products yet — add one in Catalog first." : "No products match."}
+        </p>
+      ) : (
+        <div className="max-h-48 space-y-1 overflow-y-auto">
+          {filtered.map((p: Product) => (
+            <label
+              key={p.id}
+              className="flex items-center gap-2 rounded px-1 py-1 text-sm text-ink hover:bg-paper-raised"
+            >
+              <input type="checkbox" checked={selectedSet.has(p.id)} onChange={() => toggle(p.id)} />
+              {p.name}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

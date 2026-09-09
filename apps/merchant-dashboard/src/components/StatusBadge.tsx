@@ -17,6 +17,12 @@ const STATUS_TONE: Record<string, Tone> = {
   draft: "neutral",
   active: "success",
   archived: "neutral",
+  // discount (computed from status + date range, not a backend enum value)
+  scheduled: "info",
+  expired: "neutral",
+  disabled: "neutral",
+  // shipping zone / rate isActive flag
+  inactive: "neutral",
   // confirmation
   pending: "warning",
   confirmed: "success",

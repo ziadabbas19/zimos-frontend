@@ -1,8 +1,15 @@
 import { useState, type FormEvent } from "react";
-import { Alert, Button, Input } from "@store-builder/ui";
-import type { ShippingRate, ShippingRateType, ShippingZone, TaxRate } from "@store-builder/api-client";
+import { Alert, Button, Input, cn } from "@store-builder/ui";
+import type {
+  ShippingRate,
+  ShippingRateType,
+  ShippingZone,
+  TaxRate,
+  Workspace,
+} from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
+import { useWorkspace } from "@/context/WorkspaceContext";
 import { useAsync } from "@/lib/useAsync";
 import { getErrorMessage, getFieldErrors } from "@/lib/errors";
 import {
@@ -15,6 +22,7 @@ import {
 } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
+import { StatusBadge } from "@/components/StatusBadge";
 import { Modal } from "@/components/Modal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { TextField, Field } from "@/components/Field";
@@ -51,8 +59,41 @@ function rateSummary(r: ShippingRate): string {
   }
 }
 
+/** "2–5 days" / "3 days" / "from 2 days" / "up to 5 days" / "—". */
+function rateDeliveryLabel(r: ShippingRate): string {
+  const min = r.estimatedDeliveryMinDays;
+  const max = r.estimatedDeliveryMaxDays;
+  const unit = (n: number) => `${n} day${n === 1 ? "" : "s"}`;
+  if (min != null && max != null) return min === max ? unit(min) : `${min}–${max} days`;
+  if (min != null) return `from ${unit(min)}`;
+  if (max != null) return `up to ${unit(max)}`;
+  return "—";
+}
+
+/**
+ * Parse an optional whole-day field. "" → null (clear / leave unset), a valid
+ * 0–3650 integer → that number, anything else → "invalid". Mirrors the backend
+ * Joi rule `number().integer().min(0).max(3650).allow(null)`.
+ */
+function parseDays(input: string): number | null | "invalid" {
+  const trimmed = input.trim();
+  if (trimmed === "") return null;
+  const n = Number(trimmed);
+  if (!Number.isInteger(n) || n < 0 || n > 3650) return "invalid";
+  return n;
+}
+
 export function ShippingTaxPage() {
+  // Key the body on the workspace so all workspace-seeded state (the settings
+  // block, the lifted tax toggle) re-initialises on a store switch, mirroring
+  // how SettingsPage keys its sections. Avoids a re-sync effect.
   const workspaceId = useWorkspaceId();
+  return <ShippingTaxBody key={workspaceId} />;
+}
+
+function ShippingTaxBody() {
+  const workspaceId = useWorkspaceId();
+  const { currentWorkspace, refresh: refreshWorkspace } = useWorkspace();
   const toast = useToast();
   const zones = useAsync(() => apiClient.listShippingZones(workspaceId), [workspaceId]);
   const taxRates = useAsync(() => apiClient.listTaxRates(workspaceId), [workspaceId]);
@@ -64,10 +105,35 @@ export function ShippingTaxPage() {
   const [taxForm, setTaxForm] = useState<TaxRate | "new" | null>(null);
   const [deletingTax, setDeletingTax] = useState<TaxRate | null>(null);
 
+  // Lifted so the toggle in the settings block drives the tax section's
+  // de-emphasis live, before a save lands. Seeded from the workspace; a save
+  // persists exactly this value, so it stays consistent without re-syncing.
+  const [taxEnabled, setTaxEnabled] = useState(Boolean(currentWorkspace?.settings?.tax_enabled));
+
   const reloadZones = () => zones.refresh({ silent: true });
   const reloadTax = () => taxRates.refresh({ silent: true });
   const zoneList = zones.data ?? [];
   const taxList = taxRates.data ?? [];
+
+  async function toggleZoneActive(zone: ShippingZone) {
+    try {
+      await apiClient.updateShippingZone(workspaceId, zone.id, { isActive: !zone.isActive });
+      toast.success(zone.isActive ? `"${zone.name}" deactivated.` : `"${zone.name}" activated.`);
+      reloadZones();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  }
+
+  async function toggleRateActive(rate: ShippingRate) {
+    try {
+      await apiClient.updateShippingRate(workspaceId, rate.id, { isActive: !rate.isActive });
+      toast.success(rate.isActive ? `"${rate.name}" deactivated.` : `"${rate.name}" activated.`);
+      reloadZones();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  }
 
   async function confirmDeleteZone() {
     if (!deletingZone) return;
@@ -100,6 +166,13 @@ export function ShippingTaxPage() {
         description="Shipping zones and their rates, plus the tax rates applied at checkout."
       />
 
+      <StoreShippingTaxSettings
+        workspace={currentWorkspace}
+        taxEnabled={taxEnabled}
+        onTaxEnabledChange={setTaxEnabled}
+        onSaved={refreshWorkspace}
+      />
+
       <section>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-medium text-ink">Shipping zones</h2>
@@ -120,18 +193,28 @@ export function ShippingTaxPage() {
                 zone={zone}
                 onEditZone={() => setZoneForm(zone)}
                 onDeleteZone={() => setDeletingZone(zone)}
+                onToggleZone={() => toggleZoneActive(zone)}
                 onAddRate={() => setRateForm({ zoneId: zone.id })}
                 onEditRate={(rate) => setRateForm({ zoneId: zone.id, rate })}
                 onDeleteRate={(rate) => setDeletingRate(rate)}
+                onToggleRate={(rate) => toggleRateActive(rate)}
               />
             ))}
           </div>
         </DataState>
       </section>
 
-      <section>
+      <section className={cn("transition-opacity", !taxEnabled && "opacity-60")}>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-lg font-medium text-ink">Tax rates</h2>
+          <div>
+            <h2 className="font-display text-lg font-medium text-ink">Tax rates</h2>
+            {!taxEnabled && (
+              <p className="mt-1 text-xs text-ink-soft">
+                Tax is turned off for this store — these rates aren&rsquo;t applied at checkout.
+                Turn it on above to use them.
+              </p>
+            )}
+          </div>
           <Button onClick={() => setTaxForm("new")}>Add tax rate</Button>
         </div>
 
@@ -275,28 +358,43 @@ function ZoneCard({
   zone,
   onEditZone,
   onDeleteZone,
+  onToggleZone,
   onAddRate,
   onEditRate,
   onDeleteRate,
+  onToggleRate,
 }: {
   zone: ShippingZone;
   onEditZone: () => void;
   onDeleteZone: () => void;
+  onToggleZone: () => void;
   onAddRate: () => void;
   onEditRate: (rate: ShippingRate) => void;
   onDeleteRate: (rate: ShippingRate) => void;
+  onToggleRate: (rate: ShippingRate) => void;
 }) {
   const rates = zone.rates ?? [];
   return (
-    <div className="rounded-[var(--radius-card)] border border-line p-4">
+    <div
+      className={cn(
+        "rounded-[var(--radius-card)] border border-line p-4",
+        !zone.isActive && "opacity-60"
+      )}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-medium text-ink">{zone.name}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-medium text-ink">{zone.name}</p>
+            <StatusBadge value={zone.isActive ? "active" : "inactive"} />
+          </div>
           <p className="text-xs text-ink-soft">
             {zone.countries.length ? zone.countries.join(", ") : "No countries"}
           </p>
         </div>
         <div className="flex items-center gap-1">
+          <Button size="sm" variant="ghost" onClick={onToggleZone}>
+            {zone.isActive ? "Deactivate" : "Activate"}
+          </Button>
           <Button size="sm" variant="ghost" onClick={onEditZone}>
             Edit
           </Button>
@@ -316,24 +414,39 @@ function ZoneCard({
           <p className="text-sm text-ink-soft">No rates in this zone yet.</p>
         ) : (
           <div className="overflow-x-auto rounded-[0.5rem] border border-line">
-            <table className="w-full min-w-[520px] text-sm">
+            <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-line bg-paper-raised text-left text-xs uppercase tracking-wide text-ink-soft">
                   <th className="px-3 py-2 font-medium">Rate</th>
                   <th className="px-3 py-2 font-medium">Type</th>
                   <th className="px-3 py-2 font-medium">Detail</th>
+                  <th className="px-3 py-2 font-medium">Delivery</th>
                   <th className="px-3 py-2 font-medium">Carrier</th>
+                  <th className="px-3 py-2 font-medium">Status</th>
                   <th className="px-3 py-2 font-medium" />
                 </tr>
               </thead>
               <tbody>
                 {rates.map((rate) => (
-                  <tr key={rate.id} className="border-b border-line last:border-0">
+                  <tr
+                    key={rate.id}
+                    className={cn(
+                      "border-b border-line last:border-0",
+                      !rate.isActive && "opacity-60"
+                    )}
+                  >
                     <td className="px-3 py-2 text-ink">{rate.name}</td>
                     <td className="px-3 py-2 text-ink-soft">{RATE_TYPE_LABEL[rate.rateType]}</td>
                     <td className="px-3 py-2 text-ink-soft">{rateSummary(rate)}</td>
+                    <td className="px-3 py-2 text-ink-soft">{rateDeliveryLabel(rate)}</td>
                     <td className="px-3 py-2 text-ink-soft">{rate.carrierCode || "—"}</td>
+                    <td className="px-3 py-2">
+                      <StatusBadge value={rate.isActive ? "active" : "inactive"} />
+                    </td>
                     <td className="whitespace-nowrap px-3 py-2 text-right">
+                      <Button size="sm" variant="ghost" onClick={() => onToggleRate(rate)}>
+                        {rate.isActive ? "Deactivate" : "Activate"}
+                      </Button>
                       <Button size="sm" variant="ghost" onClick={() => onEditRate(rate)}>
                         Edit
                       </Button>
@@ -477,6 +590,12 @@ function RateForm({
       amount: minorToMajorInput(numOrUndef(t.amount)),
     }));
   });
+  const [estMinDays, setEstMinDays] = useState(
+    rate?.estimatedDeliveryMinDays != null ? String(rate.estimatedDeliveryMinDays) : ""
+  );
+  const [estMaxDays, setEstMaxDays] = useState(
+    rate?.estimatedDeliveryMaxDays != null ? String(rate.estimatedDeliveryMaxDays) : ""
+  );
 
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -565,6 +684,19 @@ function RateForm({
       return;
     }
 
+    const minDays = parseDays(estMinDays);
+    const maxDays = parseDays(estMaxDays);
+    const dayErrors: Record<string, string> = {};
+    if (minDays === "invalid") dayErrors.estimatedDeliveryMinDays = "Whole number of days, 0–3650.";
+    if (maxDays === "invalid") dayErrors.estimatedDeliveryMaxDays = "Whole number of days, 0–3650.";
+    if (typeof minDays === "number" && typeof maxDays === "number" && minDays > maxDays) {
+      dayErrors.estimatedDeliveryMaxDays = "Max days can't be less than min days.";
+    }
+    if (Object.keys(dayErrors).length > 0) {
+      setFieldErrors(dayErrors);
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = {
@@ -572,6 +704,8 @@ function RateForm({
         rateType,
         config: result.config,
         carrierCode: carrierCode.trim() || null,
+        estimatedDeliveryMinDays: minDays === "invalid" ? null : minDays,
+        estimatedDeliveryMaxDays: maxDays === "invalid" ? null : maxDays,
       };
       if (rate) {
         await apiClient.updateShippingRate(workspaceId, rate.id, payload);
@@ -713,6 +847,43 @@ function RateForm({
         error={fieldErrors.carrierCode}
         hint="Optional."
       />
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field
+          label="Est. delivery — min days"
+          error={fieldErrors.estimatedDeliveryMinDays}
+          hint="Optional. Shown to shoppers at checkout."
+        >
+          {({ id, ...aria }) => (
+            <Input
+              id={id}
+              {...aria}
+              type="number"
+              min={0}
+              max={3650}
+              value={estMinDays}
+              onChange={(e) => setEstMinDays(e.target.value)}
+            />
+          )}
+        </Field>
+        <Field
+          label="Est. delivery — max days"
+          error={fieldErrors.estimatedDeliveryMaxDays}
+          hint="Optional."
+        >
+          {({ id, ...aria }) => (
+            <Input
+              id={id}
+              {...aria}
+              type="number"
+              min={0}
+              max={3650}
+              value={estMaxDays}
+              onChange={(e) => setEstMaxDays(e.target.value)}
+            />
+          )}
+        </Field>
+      </div>
 
       <div className="flex justify-end gap-3 pt-1">
         <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
@@ -874,5 +1045,127 @@ function TaxRateForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+/**
+ * Storewide shipping/tax knobs kept in `workspace.settings` and saved through
+ * the same `PATCH /workspaces/:id` used elsewhere. A blank money field is sent
+ * as `null` (clear the key), never 0 — matching the backend's merge, where a
+ * missing key is left untouched and `null` resets it to "not configured".
+ * `taxEnabled` is owned by the page so the tax section below can react to it
+ * before a save lands.
+ */
+function StoreShippingTaxSettings({
+  workspace,
+  taxEnabled,
+  onTaxEnabledChange,
+  onSaved,
+}: {
+  workspace: Workspace | null;
+  taxEnabled: boolean;
+  onTaxEnabledChange: (value: boolean) => void;
+  onSaved: () => Promise<void> | void;
+}) {
+  const workspaceId = useWorkspaceId();
+  const toast = useToast();
+  const settings = workspace?.settings;
+
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(
+    minorToMajorInput(settings?.free_shipping_threshold_amount)
+  );
+  const [defaultShippingRate, setDefaultShippingRate] = useState(
+    minorToMajorInput(settings?.default_shipping_rate_amount)
+  );
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  /** "" → null (clear the key); a valid ≥ 0 amount → minor units; else "invalid". */
+  function parseAmount(input: string): number | null | "invalid" {
+    if (input.trim() === "") return null;
+    const minor = majorToMinor(input);
+    if (!Number.isFinite(minor) || minor < 0) return "invalid";
+    return minor;
+  }
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setFormError(null);
+    setFieldErrors({});
+
+    const threshold = parseAmount(freeShippingThreshold);
+    const fallback = parseAmount(defaultShippingRate);
+    const errs: Record<string, string> = {};
+    if (threshold === "invalid") errs.free_shipping_threshold_amount = "Enter a valid amount.";
+    if (fallback === "invalid") errs.default_shipping_rate_amount = "Enter a valid amount.";
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await apiClient.updateWorkspace(workspaceId, {
+        settings: {
+          free_shipping_threshold_amount: threshold === "invalid" ? null : threshold,
+          default_shipping_rate_amount: fallback === "invalid" ? null : fallback,
+          tax_enabled: taxEnabled,
+        },
+      });
+      toast.success("Store shipping & tax settings saved.");
+      await onSaved();
+    } catch (err) {
+      const fields = getFieldErrors(err);
+      setFieldErrors(fields);
+      if (Object.keys(fields).length === 0) setFormError(getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="rounded-[var(--radius-card)] border border-line p-5">
+      <h2 className="font-display text-lg font-medium text-ink">Store shipping &amp; tax</h2>
+      <p className="mt-1 text-sm text-ink-soft">
+        Storewide rules applied at checkout, before any individual zone or rate.
+      </p>
+
+      <form onSubmit={submit} className="mt-4 space-y-4">
+        {formError && <Alert variant="danger">{formError}</Alert>}
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <MoneyInput
+            label="Free shipping threshold"
+            value={freeShippingThreshold}
+            onChange={setFreeShippingThreshold}
+            error={fieldErrors.free_shipping_threshold_amount}
+            hint="Orders at or above this subtotal ship free. Leave blank to disable."
+          />
+          <MoneyInput
+            label="Default shipping rate"
+            value={defaultShippingRate}
+            onChange={setDefaultShippingRate}
+            error={fieldErrors.default_shipping_rate_amount}
+            hint="Charged when no active zone or rate matches. Leave blank to fall back to free."
+          />
+        </div>
+
+        <label className="flex items-center gap-2 text-sm text-ink">
+          <input
+            type="checkbox"
+            checked={taxEnabled}
+            onChange={(e) => onTaxEnabledChange(e.target.checked)}
+          />
+          Charge tax at checkout
+        </label>
+
+        <div className="flex justify-end">
+          <Button type="submit" disabled={saving}>
+            {saving ? "Saving…" : "Save settings"}
+          </Button>
+        </div>
+      </form>
+    </section>
   );
 }
