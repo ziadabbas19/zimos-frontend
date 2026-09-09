@@ -25,6 +25,7 @@ import { CustomerDetailPage } from "@/pages/customers/CustomerDetailPage";
 import { DiscountsPage } from "@/pages/discounts/DiscountsPage";
 import { ShippingTaxPage } from "@/pages/shipping/ShippingTaxPage";
 import { WebsitePage } from "@/pages/website/WebsitePage";
+import { WebsiteEditorPage } from "@/pages/website/editor/WebsiteEditorPage";
 import { SettingsPage } from "@/pages/settings/SettingsPage";
 
 export default function App() {
@@ -63,6 +64,7 @@ export default function App() {
                     <Route path="/discounts" element={<DiscountsPage />} />
                     <Route path="/shipping" element={<ShippingTaxPage />} />
                     <Route path="/website" element={<WebsitePage />} />
+                    <Route path="/website/:websiteId/edit" element={<WebsiteEditorPage />} />
                     <Route path="/funnels" element={<PlaceholderPage title="Funnels" />} />
                     <Route path="/settings" element={<SettingsPage />} />
                   </Route>

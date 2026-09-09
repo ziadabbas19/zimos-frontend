@@ -183,6 +183,77 @@ export interface Website {
   updatedAt: string;
 }
 
+/**
+ * Page content is a strict 4-level tree, not raw HTML — the backend validates
+ * every write against it (modules/pages/pageTree.js) and rejects anything else:
+ *
+ *   PageTree -> sections[] -> rows[] -> columns[] -> elements[]
+ *
+ * Only `elements` carry a meaningful `type`; sections/rows/columns are pure
+ * containers whose `type` is always the literal "section"/"row"/"column".
+ */
+export const PAGE_ELEMENT_TYPES = [
+  "heading",
+  "text",
+  "rich_text",
+  "image",
+  "gallery",
+  "button",
+  "video",
+  "embed",
+  "spacer",
+  "divider",
+  "icon",
+  "list",
+  "accordion",
+  "faq",
+  "testimonial",
+  "countdown",
+  "form",
+  "map",
+  "social_icons",
+  "product_card",
+  "product_list",
+  "collection_list",
+  "cart",
+] as const;
+
+/** The backend's ALLOWED_ELEMENT_TYPES allowlist — anything else is a 422. */
+export type PageElementType = (typeof PAGE_ELEMENT_TYPES)[number];
+
+export interface PageElement {
+  id: string;
+  type: PageElementType;
+  props?: Record<string, unknown>;
+  settings?: Record<string, unknown>;
+}
+
+export interface PageColumn {
+  id: string;
+  type: "column";
+  /** 1-12; the backend caps it at 12. */
+  span?: number;
+  elements: PageElement[];
+}
+
+export interface PageRow {
+  id: string;
+  type: "row";
+  columns: PageColumn[];
+}
+
+export interface PageSection {
+  id: string;
+  type: "section";
+  rows: PageRow[];
+}
+
+export interface PageTree {
+  version?: number;
+  globalStyles?: Record<string, unknown>;
+  sections: PageSection[];
+}
+
 export interface WebsitePage {
   id: string;
   workspaceId: string;
@@ -190,11 +261,34 @@ export interface WebsitePage {
   path: string;
   title: string;
   pageType: "home" | "product" | "collection" | "static" | "blog_post" | "cart" | "custom";
-  draftData: unknown;
-  publishedData: unknown | null;
+  draftData: PageTree | null;
+  publishedData: PageTree | null;
   seo: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
+  /** Present on list/get/update responses: true once the page has been published. */
+  isLive?: boolean;
+}
+
+/** GET /workspaces/:workspaceId/websites/:websiteId */
+export interface WebsiteDetail {
+  website: Website;
+  pages: WebsitePage[];
+  publishedRevision: {
+    id: string;
+    revisionNumber: number;
+    note: string | null;
+    createdAt: string;
+  } | null;
+}
+
+/** PATCH body for a page. `.min(1)` server-side — send at least one key. */
+export interface UpdateWebsitePagePayload {
+  path?: string;
+  title?: string;
+  pageType?: WebsitePage["pageType"];
+  draftData?: PageTree;
+  seo?: Record<string, unknown>;
 }
 
 export interface CreateWebsitePayload {

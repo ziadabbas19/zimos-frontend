@@ -68,7 +68,9 @@ import type {
   UpdateVariantPayload,
   UpdateWorkspacePayload,
   Variant,
+  UpdateWebsitePagePayload,
   Website,
+  WebsiteDetail,
   WebsitePage,
   WebsiteTemplateDetail,
   WebsiteTemplateSummary,
@@ -391,6 +393,46 @@ export class ApiClient {
       { method: "POST", body: payload }
     );
     return { website, pages };
+  }
+
+  async listWebsites(workspaceId: string) {
+    const { websites } = await this.request<{ websites: Website[] }>(
+      `/workspaces/${workspaceId}/websites`
+    );
+    return websites;
+  }
+
+  /**
+   * The website row plus every one of its pages (each with its full
+   * `draftData` tree) — one call is enough to open the editor.
+   */
+  async getWebsite(workspaceId: string, websiteId: string) {
+    return this.request<WebsiteDetail>(`/workspaces/${workspaceId}/websites/${websiteId}`);
+  }
+
+  async getWebsitePage(workspaceId: string, websiteId: string, pageId: string) {
+    const { page } = await this.request<{ page: WebsitePage }>(
+      `/workspaces/${workspaceId}/websites/${websiteId}/pages/${pageId}`
+    );
+    return page;
+  }
+
+  /**
+   * Saves the page. A `draftData` tree is deep-validated server-side by
+   * pageTree.validatePageTree, so a malformed tree comes back as a 422 whose
+   * `details[]` names the offending node path (e.g. "data.sections[1].rows").
+   */
+  async updateWebsitePage(
+    workspaceId: string,
+    websiteId: string,
+    pageId: string,
+    payload: UpdateWebsitePagePayload
+  ) {
+    const { page } = await this.request<{ page: WebsitePage }>(
+      `/workspaces/${workspaceId}/websites/${websiteId}/pages/${pageId}`,
+      { method: "PATCH", body: payload }
+    );
+    return page;
   }
 
   // ---------------------------------------------------------------------

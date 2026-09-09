@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { ArrowLeft, CheckCircle2, LayoutTemplate } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowLeft, CheckCircle2, LayoutTemplate, Pencil } from "lucide-react";
 import { Alert, Button, Spinner } from "@store-builder/ui";
 import type {
   CreateWebsitePayload,
@@ -178,6 +179,45 @@ function UseTemplateForm({
   );
 }
 
+/**
+ * Sites the workspace already has. Without this the editor is only reachable
+ * in the moments right after creating a site — a reload would strand it.
+ */
+function ExistingSites() {
+  const workspaceId = useWorkspaceId();
+  const sites = useAsync(() => apiClient.listWebsites(workspaceId), [workspaceId]);
+  const list = sites.data ?? [];
+
+  // A workspace with no site yet is the normal first-run case, and the template
+  // gallery below already tells that story — stay quiet rather than showing an
+  // empty state. Same for an error: it must not block picking a template.
+  if (sites.loading || sites.error || list.length === 0) return null;
+
+  return (
+    <div className="mb-8">
+      <h2 className="mb-2 font-display text-base font-medium text-ink">Your sites</h2>
+      <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] border border-line bg-paper-raised">
+        {list.map((site) => (
+          <li key={site.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-ink">{site.name}</p>
+              <p className="truncate text-xs text-ink-soft">
+                {site.subdomain} · {humanize(site.status)}
+              </p>
+            </div>
+            <Button asChild size="sm" variant="outline">
+              <Link to={`/website/${site.id}/edit`}>
+                <Pencil className="size-4" aria-hidden />
+                Edit
+              </Link>
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function CreatedPanel({
   result,
   onBack,
@@ -200,14 +240,21 @@ function CreatedPanel({
           <span className="font-medium text-ink">{website.subdomain}</span>
         </p>
         <p className="pt-2">
-          محرر الموقع الكامل بالسحب والإفلات لسه جاي قريب. الموقع اتحفظ عندك كمسودة، وهتقدر تكمّل
-          تحريره من هنا أول ما المحرر ينزل — مش محتاج تعمل حاجة دلوقتي.
+          الموقع اتحفظ كمسودة. افتح المحرر عشان ترتّب الأقسام وتظبّط المحتوى قبل النشر.
         </p>
       </div>
-      <Button type="button" variant="outline" className="mt-5" onClick={onBack}>
-        <ArrowLeft className="size-4" aria-hidden />
-        Back to templates
-      </Button>
+      <div className="mt-5 flex flex-wrap gap-3">
+        <Button asChild>
+          <Link to={`/website/${website.id}/edit`}>
+            <Pencil className="size-4" aria-hidden />
+            Open editor
+          </Link>
+        </Button>
+        <Button type="button" variant="outline" onClick={onBack}>
+          <ArrowLeft className="size-4" aria-hidden />
+          Back to templates
+        </Button>
+      </div>
     </div>
   );
 }
@@ -232,6 +279,8 @@ export function WebsitePage() {
       {created ? (
         <CreatedPanel result={created} onBack={() => setCreated(null)} />
       ) : (
+        <>
+          <ExistingSites />
         <DataState
           loading={templates.loading}
           error={templates.error}
@@ -248,7 +297,8 @@ export function WebsitePage() {
               />
             ))}
           </div>
-        </DataState>
+          </DataState>
+        </>
       )}
 
       <Modal
