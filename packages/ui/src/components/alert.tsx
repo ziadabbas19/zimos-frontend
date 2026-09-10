@@ -1,30 +1,84 @@
-import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "../lib/cn";
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+import { cn } from "cn"
 
-const alertVariants = cva("rounded-[0.5rem] border px-4 py-3 text-sm leading-relaxed", {
-  variants: {
-    variant: {
-      danger: "border-danger/30 bg-danger-soft text-danger",
-      success: "border-success/30 bg-success-soft text-success",
-      info: "border-primary/30 bg-primary-soft text-primary-dark",
+const alertVariants = cva(
+  "group/alert relative grid w-full gap-0.5 rounded-lg border px-4 py-3 text-left text-sm has-data-[slot=alert-action]:relative has-data-[slot=alert-action]:pr-18 has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-2.5 *:[svg]:row-span-2 *:[svg]:translate-y-0.5 *:[svg]:text-current *:[svg:not([class*='size-'])]:size-4",
+  {
+    variants: {
+      variant: {
+        default: "bg-card text-card-foreground",
+        destructive:
+          "bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 *:[svg]:text-current",
+        // Deprecated aliases kept so the existing call sites in the apps keep
+        // working. `danger` was the old destructive; `info` the old default.
+        danger:
+          "bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 *:[svg]:text-current",
+        success:
+          "bg-card text-emerald-700 *:data-[slot=alert-description]:text-emerald-700/90 *:[svg]:text-current dark:text-emerald-400 dark:*:data-[slot=alert-description]:text-emerald-400/90",
+        info: "bg-card text-card-foreground",
+      },
     },
-  },
-  defaultVariants: {
-    variant: "info",
-  },
-});
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+)
 
-export interface AlertProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof alertVariants> {}
-
-export function Alert({ className, variant, role, ...props }: AlertProps) {
+function Alert({
+  className,
+  variant,
+  role,
+  ...props
+}: React.ComponentProps<"div"> & VariantProps<typeof alertVariants>) {
+  const isError = variant === "destructive" || variant === "danger"
   return (
     <div
-      role={role ?? (variant === "danger" ? "alert" : "status")}
+      data-slot="alert"
+      role={role ?? (isError ? "alert" : "status")}
       className={cn(alertVariants({ variant }), className)}
       {...props}
     />
-  );
+  )
 }
+
+function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="alert-title"
+      className={cn(
+        "font-medium group-has-[>svg]/alert:col-start-2 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-foreground",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function AlertDescription({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="alert-description"
+      className={cn(
+        "text-sm text-balance text-muted-foreground md:text-pretty [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-foreground [&_p:not(:last-child)]:mb-4",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function AlertAction({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="alert-action"
+      className={cn("absolute top-2.5 right-3", className)}
+      {...props}
+    />
+  )
+}
+
+export { Alert, AlertTitle, AlertDescription, AlertAction }
