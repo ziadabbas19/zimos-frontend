@@ -282,6 +282,15 @@ export interface WebsiteDetail {
   } | null;
 }
 
+/** POST body for a new page. `path` and `title` are required server-side. */
+export interface CreateWebsitePagePayload {
+  path: string;
+  title: string;
+  pageType?: WebsitePage["pageType"];
+  draftData?: PageTree;
+  seo?: Record<string, unknown>;
+}
+
 /** PATCH body for a page. `.min(1)` server-side — send at least one key. */
 export interface UpdateWebsitePagePayload {
   path?: string;

@@ -22,6 +22,7 @@ import type {
   CreateShippingZonePayload,
   CreateTaxRatePayload,
   CreateVariantPayload,
+  CreateWebsitePagePayload,
   CreateWebsitePayload,
   Customer,
   CustomerAddress,
@@ -415,6 +416,34 @@ export class ApiClient {
       `/workspaces/${workspaceId}/websites/${websiteId}/pages/${pageId}`
     );
     return page;
+  }
+
+  /**
+   * Adds a page to a website. `path` must be unique within the website — a
+   * clash comes back as a 409. Omitting `draftData` creates an empty page the
+   * editor can start filling in.
+   */
+  async createPage(
+    workspaceId: string,
+    websiteId: string,
+    payload: CreateWebsitePagePayload
+  ) {
+    const { page } = await this.request<{ page: WebsitePage }>(
+      `/workspaces/${workspaceId}/websites/${websiteId}/pages`,
+      { method: "POST", body: payload }
+    );
+    return page;
+  }
+
+  /**
+   * Removes a page. Note the backend does **not** protect the home page — the
+   * editor is what keeps it from being deleted.
+   */
+  async deletePage(workspaceId: string, websiteId: string, pageId: string) {
+    await this.request<void>(
+      `/workspaces/${workspaceId}/websites/${websiteId}/pages/${pageId}`,
+      { method: "DELETE" }
+    );
   }
 
   /**

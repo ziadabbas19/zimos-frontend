@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   DndContext,
@@ -17,7 +17,12 @@ import {
 } from "@dnd-kit/sortable";
 import { Save } from "lucide-react";
 import { Alert, Button, Spinner } from "@store-builder/ui";
-import type { PageSection, PageTree, WebsitePage } from "@store-builder/api-client";
+import type {
+  CreateWebsitePagePayload,
+  PageSection,
+  PageTree,
+  WebsitePage,
+} from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
@@ -29,23 +34,22 @@ import { useToast } from "@/components/Toast";
 import { BlockLibrary } from "./BlockLibrary";
 import { SectionCard } from "./SectionCard";
 import { SectionInspector } from "./SectionInspector";
+import { NewPageDialog } from "./NewPageDialog";
+import { PageTabs } from "./PageTabs";
 import { createSection, moveSection, normalizeTree, sectionLabel, type BlockPreset } from "./blocks";
 
 /**
- * Phase 1 of the website editor: one page, sections reordered by drag, basic
- * content editing, save.
+ * The website editor: pick a page, reorder its sections by drag, edit their
+ * content, save. Pages can be added and removed from the tab strip above the
+ * canvas.
  *
- * The page it edits is the site's home page (`pageType: "home"`, else path
- * "/", else the first page) — there is no multi-page navigation yet, so the
- * other pages of a template are loaded but left untouched.
- *
- * `draftData` is the only field written back. The rest of the tree —
+ * `draftData` is the only field written back on save. The rest of the tree —
  * `version`, any `globalStyles` — is carried through verbatim: this editor has
  * no styling controls, and dropping keys it can't edit would silently destroy
  * template data.
  */
 
-/** Which of a site's pages the editor opens. */
+/** Which page the editor opens by default, and falls back to after a delete. */
 function pickEditablePage(pages: WebsitePage[]): WebsitePage | null {
   if (pages.length === 0) return null;
   return (
@@ -63,7 +67,15 @@ export function WebsiteEditorPage() {
     [workspaceId, websiteId]
   );
 
-  const page = useMemo(() => pickEditablePage(site.data?.pages ?? []), [site.data]);
+  const pages = site.data?.pages ?? [];
+
+  // Which page is open. Adjusted during render (below) whenever it no longer
+  // names a real page — on first load, and after the open page is deleted.
+  const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
+  if (pages.length > 0 && !pages.some((p) => p.id === selectedPageId)) {
+    setSelectedPageId(pickEditablePage(pages)!.id);
+  }
+  const page = pages.find((p) => p.id === selectedPageId) ?? null;
 
   // Editing state. `baseline` is the tree as last loaded/saved — the dirty
   // check compares against it rather than tracking every mutation.
@@ -73,6 +85,12 @@ export function WebsiteEditorPage() {
   const [pendingDelete, setPendingDelete] = useState<PageSection | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Page-level dialogs.
+  const [showNewPage, setShowNewPage] = useState(false);
+  const [pendingPageDelete, setPendingPageDelete] = useState<WebsitePage | null>(null);
+  /** Page the merchant asked to switch to while the canvas had unsaved edits. */
+  const [pendingSwitchId, setPendingSwitchId] = useState<string | null>(null);
 
   // Everything in the tree the editor doesn't touch, preserved across a save.
   const [treeMeta, setTreeMeta] = useState<Omit<PageTree, "sections">>({ version: 1 });
@@ -123,7 +141,7 @@ export function WebsiteEditorPage() {
       const to = prev.findIndex((s) => s.id === over.id);
       return moveSection(prev, from, to);
     });
-  }, []);
+  }, [setSections]);
 
   function addBlock(preset: BlockPreset) {
     const section = createSection(preset);
@@ -139,6 +157,43 @@ export function WebsiteEditorPage() {
     setSections((prev) => prev.filter((s) => s.id !== section.id));
     setSelectedId((prev) => (prev === section.id ? null : prev));
     setPendingDelete(null);
+  }
+
+  /**
+   * Switching pages throws away whatever is in the canvas, so an unsaved tree
+   * has to be confirmed away first.
+   */
+  function requestPageSwitch(pageId: string) {
+    if (pageId === selectedPageId) return;
+    if (dirty) {
+      setPendingSwitchId(pageId);
+      return;
+    }
+    setSelectedPageId(pageId);
+  }
+
+  async function createPage(payload: CreateWebsitePagePayload) {
+    const created = await apiClient.createPage(workspaceId, websiteId, payload);
+    const detail = site.data;
+    if (detail) site.setData({ ...detail, pages: [...detail.pages, created] });
+    // Open it straight away — the canvas re-seeds off the new id.
+    setSelectedPageId(created.id);
+    setShowNewPage(false);
+    toast.success(`"${created.title}" created.`);
+  }
+
+  async function deletePage(target: WebsitePage) {
+    // The backend deletes any page, home included; this is the real guard, not
+    // just the disabled button in the tab strip.
+    if (target.pageType === "home") return;
+    await apiClient.deletePage(workspaceId, websiteId, target.id);
+    const detail = site.data;
+    if (detail) {
+      site.setData({ ...detail, pages: detail.pages.filter((p) => p.id !== target.id) });
+    }
+    // If that was the open page, the render-time check above reselects home.
+    setPendingPageDelete(null);
+    toast.success(`"${target.title}" deleted.`);
   }
 
   async function save() {
@@ -206,69 +261,83 @@ export function WebsiteEditorPage() {
         <DataState
           loading={site.loading}
           error={site.error}
-          empty={!page}
+          empty={!site.data}
           emptyMessage="This site has no pages to edit yet."
           onRetry={() => site.refresh()}
         >
-          <div className="flex h-full min-h-0">
-            <aside className="hidden w-56 shrink-0 border-r border-line bg-paper-raised lg:block">
-              <BlockLibrary onAdd={addBlock} />
-            </aside>
+          <div className="flex h-full min-h-0 flex-col">
+            <PageTabs
+              pages={pages}
+              selectedId={selectedPageId}
+              onSelect={requestPageSwitch}
+              onDelete={setPendingPageDelete}
+              onAdd={() => setShowNewPage(true)}
+            />
 
-            <main className="min-w-0 flex-1 overflow-y-auto bg-paper p-6">
-              <div className="mx-auto max-w-2xl">
-                {sections.length === 0 ? (
-                  <div className="rounded-[var(--radius-card)] border border-dashed border-line px-6 py-16 text-center text-sm text-ink-soft">
-                    This page is empty. Add a block from the left to get started.
-                  </div>
-                ) : (
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    modifiers={[restrictToVerticalAxis, restrictToParentElement]}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <SortableContext
-                      items={sections.map((s) => s.id)}
-                      strategy={verticalListSortingStrategy}
+            <div className="flex min-h-0 flex-1">
+              <aside className="hidden w-56 shrink-0 border-r border-line bg-paper-raised lg:block">
+                <BlockLibrary onAdd={addBlock} />
+              </aside>
+
+              <main className="min-w-0 flex-1 overflow-y-auto bg-paper p-6">
+                <div className="mx-auto max-w-2xl">
+                  {!page ? (
+                    <div className="rounded-[var(--radius-card)] border border-dashed border-line px-6 py-16 text-center text-sm text-ink-soft">
+                      This site has no pages yet. Use “New page” above to add one.
+                    </div>
+                  ) : sections.length === 0 ? (
+                    <div className="rounded-[var(--radius-card)] border border-dashed border-line px-6 py-16 text-center text-sm text-ink-soft">
+                      This page is empty. Add a block from the left to get started.
+                    </div>
+                  ) : (
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+                      onDragEnd={handleDragEnd}
                     >
-                      <div className="space-y-3">
-                        {sections.map((section) => (
-                          <SectionCard
-                            key={section.id}
-                            section={section}
-                            selected={section.id === selectedId}
-                            onSelect={() => setSelectedId(section.id)}
-                            onDelete={() => setPendingDelete(section)}
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
-                  </DndContext>
-                )}
+                      <SortableContext
+                        items={sections.map((s) => s.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="space-y-3">
+                          {sections.map((section) => (
+                            <SectionCard
+                              key={section.id}
+                              section={section}
+                              selected={section.id === selectedId}
+                              onSelect={() => setSelectedId(section.id)}
+                              onDelete={() => setPendingDelete(section)}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  )}
 
-                {/* The library lives in the sidebar on desktop; on small screens
-                    it moves below the canvas so the editor stays usable. */}
-                <div className="mt-6 rounded-[var(--radius-card)] border border-line bg-paper-raised lg:hidden">
-                  <BlockLibrary onAdd={addBlock} />
+                  {/* The library lives in the sidebar on desktop; on small screens
+                      it moves below the canvas so the editor stays usable. */}
+                  <div className="mt-6 rounded-[var(--radius-card)] border border-line bg-paper-raised lg:hidden">
+                    <BlockLibrary onAdd={addBlock} />
+                  </div>
                 </div>
-              </div>
-            </main>
+              </main>
 
-            <aside className="hidden w-80 shrink-0 border-l border-line bg-paper-raised xl:block">
-              {selected ? (
-                <SectionInspector
-                  section={selected}
-                  onChange={updateSection}
-                  onDelete={() => setPendingDelete(selected)}
-                  onClose={() => setSelectedId(null)}
-                />
-              ) : (
-                <p className="px-4 py-6 text-sm text-ink-soft">
-                  Select a section on the canvas to edit its content.
-                </p>
-              )}
-            </aside>
+              <aside className="hidden w-80 shrink-0 border-l border-line bg-paper-raised xl:block">
+                {selected ? (
+                  <SectionInspector
+                    section={selected}
+                    onChange={updateSection}
+                    onDelete={() => setPendingDelete(selected)}
+                    onClose={() => setSelectedId(null)}
+                  />
+                ) : (
+                  <p className="px-4 py-6 text-sm text-ink-soft">
+                    Select a section on the canvas to edit its content.
+                  </p>
+                )}
+              </aside>
+            </div>
           </div>
         </DataState>
       </div>
@@ -297,6 +366,39 @@ export function WebsiteEditorPage() {
         destructive
         onCancel={() => setPendingDelete(null)}
         onConfirm={() => pendingDelete && deleteSection(pendingDelete)}
+      />
+
+      <NewPageDialog
+        open={showNewPage}
+        onClose={() => setShowNewPage(false)}
+        onCreate={createPage}
+      />
+
+      <ConfirmDialog
+        open={pendingPageDelete !== null}
+        title="Delete this page?"
+        description={
+          pendingPageDelete
+            ? `"${pendingPageDelete.title}" (${pendingPageDelete.path}) and everything on it will be permanently deleted. This can't be undone.`
+            : undefined
+        }
+        confirmLabel="Delete page"
+        destructive
+        onCancel={() => setPendingPageDelete(null)}
+        onConfirm={() => pendingPageDelete && deletePage(pendingPageDelete)}
+      />
+
+      <ConfirmDialog
+        open={pendingSwitchId !== null}
+        title="Leave without saving?"
+        description="This page has changes you haven't saved. Switching pages will discard them."
+        confirmLabel="Discard and switch"
+        destructive
+        onCancel={() => setPendingSwitchId(null)}
+        onConfirm={() => {
+          setSelectedPageId(pendingSwitchId);
+          setPendingSwitchId(null);
+        }}
       />
     </div>
   );

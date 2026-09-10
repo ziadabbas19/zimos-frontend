@@ -1,13 +1,8 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, LayoutTemplate, Pencil } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { LayoutTemplate, Pencil } from "lucide-react";
 import { Alert, Button, Spinner } from "@store-builder/ui";
-import type {
-  CreateWebsitePayload,
-  Website,
-  WebsitePage as WebsitePageType,
-  WebsiteTemplateSummary,
-} from "@store-builder/api-client";
+import type { CreateWebsitePayload, WebsiteTemplateSummary } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -68,22 +63,22 @@ function TemplateCard({
 
 /**
  * Modal body: previews the picked template (pages it ships with) and takes a
- * site name, then calls createWebsite. The template detail fetch is purely
- * informational — a failure shows an inline notice but never blocks creation,
- * because the summary already carries the `templateVersionId` the API needs.
+ * site name, then calls createWebsite and drops the merchant straight into the
+ * editor for the new site. The template detail fetch is purely informational —
+ * a failure shows an inline notice but never blocks creation, because the
+ * summary already carries the `templateVersionId` the API needs.
  */
 function UseTemplateForm({
   template,
-  onCreated,
   onCancel,
 }: {
   template: WebsiteTemplateSummary;
-  onCreated: (result: { website: Website; pages: WebsitePageType[] }) => void;
   onCancel: () => void;
 }) {
   const workspaceId = useWorkspaceId();
   const { currentWorkspace } = useWorkspace();
   const toast = useToast();
+  const navigate = useNavigate();
 
   const detail = useAsync(() => apiClient.getWebsiteTemplate(template.id), [template.id]);
 
@@ -104,7 +99,7 @@ function UseTemplateForm({
     try {
       const result = await apiClient.createWebsite(workspaceId, payload);
       toast.success(`Site "${result.website.name}" created.`);
-      onCreated(result);
+      navigate(`/website/${result.website.id}/edit`);
     } catch (err) {
       const fields = getFieldErrors(err);
       setFieldErrors(fields);
@@ -218,54 +213,10 @@ function ExistingSites() {
   );
 }
 
-function CreatedPanel({
-  result,
-  onBack,
-}: {
-  result: { website: Website; pages: WebsitePageType[] };
-  onBack: () => void;
-}) {
-  const { website, pages } = result;
-  return (
-    <div className="max-w-xl rounded-[var(--radius-card)] border border-line bg-paper-raised p-6">
-      <CheckCircle2 className="size-8 text-success" aria-hidden />
-      <h2 className="mt-3 font-display text-xl font-medium text-ink">Your site has been created</h2>
-      <div className="mt-2 space-y-1 text-sm text-ink-soft">
-        <p>
-          تم إنشاء موقع <span className="font-medium text-ink">{website.name}</span> بنجاح
-          {pages.length > 0 && <> مع {pages.length} {pages.length === 1 ? "صفحة" : "صفحات"} من القالب</>}.
-        </p>
-        <p>
-          الاسم المختصر (subdomain):{" "}
-          <span className="font-medium text-ink">{website.subdomain}</span>
-        </p>
-        <p className="pt-2">
-          الموقع اتحفظ كمسودة. افتح المحرر عشان ترتّب الأقسام وتظبّط المحتوى قبل النشر.
-        </p>
-      </div>
-      <div className="mt-5 flex flex-wrap gap-3">
-        <Button asChild>
-          <Link to={`/website/${website.id}/edit`}>
-            <Pencil className="size-4" aria-hidden />
-            Open editor
-          </Link>
-        </Button>
-        <Button type="button" variant="outline" onClick={onBack}>
-          <ArrowLeft className="size-4" aria-hidden />
-          Back to templates
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 export function WebsitePage() {
   const templates = useAsync(() => apiClient.listWebsiteTemplates(), []);
 
   const [selected, setSelected] = useState<WebsiteTemplateSummary | null>(null);
-  const [created, setCreated] = useState<{ website: Website; pages: WebsitePageType[] } | null>(
-    null
-  );
 
   const list = templates.data ?? [];
 
@@ -276,30 +227,25 @@ export function WebsitePage() {
         description="Pick a template to start your store's website. You can rename it now and customise it later."
       />
 
-      {created ? (
-        <CreatedPanel result={created} onBack={() => setCreated(null)} />
-      ) : (
-        <>
-          <ExistingSites />
-        <DataState
-          loading={templates.loading}
-          error={templates.error}
-          empty={list.length === 0}
-          emptyMessage="No website templates are available right now. Check back soon."
-          onRetry={() => templates.refresh()}
-        >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {list.map((template) => (
-              <TemplateCard
-                key={template.id}
-                template={template}
-                onSelect={() => setSelected(template)}
-              />
-            ))}
-          </div>
-          </DataState>
-        </>
-      )}
+      <ExistingSites />
+
+      <DataState
+        loading={templates.loading}
+        error={templates.error}
+        empty={list.length === 0}
+        emptyMessage="No website templates are available right now. Check back soon."
+        onRetry={() => templates.refresh()}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {list.map((template) => (
+            <TemplateCard
+              key={template.id}
+              template={template}
+              onSelect={() => setSelected(template)}
+            />
+          ))}
+        </div>
+      </DataState>
 
       <Modal
         open={selected !== null}
@@ -308,14 +254,7 @@ export function WebsitePage() {
         description="Preview what this template ships with, then name your site."
       >
         {selected && (
-          <UseTemplateForm
-            template={selected}
-            onCancel={() => setSelected(null)}
-            onCreated={(result) => {
-              setSelected(null);
-              setCreated(result);
-            }}
-          />
+          <UseTemplateForm template={selected} onCancel={() => setSelected(null)} />
         )}
       </Modal>
     </div>
