@@ -46,7 +46,7 @@ export function PageTabs({
                   onClick={() => onSelect(page.id)}
                   aria-current={active ? "page" : undefined}
                   title={page.path}
-                  className="flex items-center gap-1.5 py-1.5 text-sm"
+                  className="cursor-pointer flex items-center gap-1.5 py-1.5 text-sm"
                 >
                   {home && <Home className="size-3.5 shrink-0 text-ink-soft" aria-hidden />}
                   <span
@@ -65,7 +65,7 @@ export function PageTabs({
                   title={home ? HOME_DELETE_HINT : `Delete "${page.title}"`}
                   aria-label={home ? HOME_DELETE_HINT : `Delete "${page.title}"`}
                   className={cn(
-                    "rounded p-1 text-ink-soft transition-colors",
+                    "cursor-pointer rounded p-1 text-ink-soft transition-colors",
                     home
                       ? "cursor-not-allowed opacity-30"
                       : "hover:bg-danger hover:text-white"
@@ -82,7 +82,7 @@ export function PageTabs({
       <button
         type="button"
         onClick={onAdd}
-        className="ml-1 flex shrink-0 items-center gap-1 rounded-[0.5rem] border border-dashed border-line px-2.5 py-1.5 text-sm font-medium text-ink-soft transition-colors hover:border-primary hover:text-primary-dark"
+        className="cursor-pointer ml-1 flex shrink-0 items-center gap-1 rounded-[0.5rem] border border-dashed border-line px-2.5 py-1.5 text-sm font-medium text-ink-soft transition-colors hover:border-primary hover:text-primary-dark"
       >
         <Plus className="size-3.5" aria-hidden />
         New page

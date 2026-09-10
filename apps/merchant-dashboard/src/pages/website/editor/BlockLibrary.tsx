@@ -33,7 +33,7 @@ export function BlockLibrary({ onAdd }: { onAdd: (preset: BlockPreset) => void }
                       type="button"
                       onClick={() => onAdd(preset)}
                       title={preset.description}
-                      className="group flex w-full items-center gap-2 rounded-[0.5rem] px-2 py-2 text-left text-sm text-ink transition-colors hover:bg-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                      className="cursor-pointer group flex w-full items-center gap-2 rounded-[0.5rem] px-2 py-2 text-left text-sm text-ink transition-colors hover:bg-paper focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                     >
                       <Icon className="size-4 shrink-0 text-ink-soft group-hover:text-primary" aria-hidden />
                       <span className="min-w-0 flex-1 truncate">{preset.label}</span>

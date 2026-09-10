@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { cn } from "@store-builder/ui";
 import { NAV_ITEMS } from "@/lib/navigation";
@@ -16,7 +16,12 @@ export function DashboardLayout() {
     <div className="flex min-h-screen bg-paper">
       <aside className="hidden w-60 shrink-0 border-r border-line bg-paper-raised md:flex md:flex-col">
         <div className="px-5 py-5">
-          <span className="font-display text-lg text-ink">Zimos</span>
+          <Link
+            to="/"
+            className="font-display text-lg text-ink transition-opacity hover:opacity-80"
+          >
+            Zimos
+          </Link>
         </div>
         <nav className="flex-1 space-y-0.5 px-3">
           {NAV_ITEMS.map((item) => (
@@ -38,7 +43,7 @@ export function DashboardLayout() {
         <div className="flex items-center gap-2 border-t border-line px-3 py-4">
           <button
             onClick={() => logout()}
-            className="flex-1 rounded-[0.5rem] px-3 py-2 text-left text-sm font-medium text-ink-soft hover:bg-danger-soft hover:text-danger"
+            className="cursor-pointer flex-1 rounded-[0.5rem] px-3 py-2 text-left text-sm font-medium text-ink-soft hover:bg-danger-soft hover:text-danger"
           >
             Sign out
           </button>
@@ -51,7 +56,7 @@ export function DashboardLayout() {
           <div className="relative">
             <button
               onClick={() => setSwitcherOpen((v) => !v)}
-              className="flex items-center gap-2 rounded-[0.5rem] px-2 py-1.5 text-sm font-medium text-ink hover:bg-paper"
+              className="cursor-pointer flex items-center gap-2 rounded-[0.5rem] px-2 py-1.5 text-sm font-medium text-ink hover:bg-paper"
             >
               {currentWorkspace?.name ?? "Select a store"}
               <span className="text-ink-soft">▾</span>
@@ -66,7 +71,7 @@ export function DashboardLayout() {
                       setSwitcherOpen(false);
                     }}
                     className={cn(
-                      "block w-full px-3 py-2 text-left text-sm hover:bg-primary-soft",
+                      "block w-full cursor-pointer px-3 py-2 text-left text-sm hover:bg-primary-soft",
                       workspace.id === currentWorkspace?.id && "font-medium text-primary-dark"
                     )}
                   >
@@ -79,7 +84,7 @@ export function DashboardLayout() {
                     setSwitcherOpen(false);
                     navigate("/workspaces");
                   }}
-                  className="block w-full px-3 py-2 text-left text-sm text-primary hover:bg-primary-soft"
+                  className="cursor-pointer block w-full px-3 py-2 text-left text-sm text-primary hover:bg-primary-soft"
                 >
                   + New store
                 </button>

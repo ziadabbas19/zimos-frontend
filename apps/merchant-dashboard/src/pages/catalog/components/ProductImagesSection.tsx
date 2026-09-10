@@ -248,7 +248,7 @@ export function ProductImagesSection(props: Props) {
                       onClick={() => move(i, -1)}
                       disabled={i === 0}
                       aria-label="Move image earlier"
-                      className="rounded p-1 text-white hover:bg-white/20 disabled:opacity-30"
+                      className="cursor-pointer rounded p-1 text-white hover:bg-white/20 disabled:opacity-30"
                     >
                       <ChevronUp className="size-4" aria-hidden />
                     </button>
@@ -257,7 +257,7 @@ export function ProductImagesSection(props: Props) {
                       onClick={() => move(i, 1)}
                       disabled={i === items.length - 1}
                       aria-label="Move image later"
-                      className="rounded p-1 text-white hover:bg-white/20 disabled:opacity-30"
+                      className="cursor-pointer rounded p-1 text-white hover:bg-white/20 disabled:opacity-30"
                     >
                       <ChevronDown className="size-4" aria-hidden />
                     </button>
@@ -266,7 +266,7 @@ export function ProductImagesSection(props: Props) {
                     type="button"
                     onClick={() => remove(i)}
                     aria-label="Remove image"
-                    className="rounded p-1 text-white hover:bg-danger"
+                    className="cursor-pointer rounded p-1 text-white hover:bg-danger"
                   >
                     <Trash2 className="size-4" aria-hidden />
                   </button>

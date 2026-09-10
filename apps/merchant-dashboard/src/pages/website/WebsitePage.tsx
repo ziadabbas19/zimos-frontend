@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LayoutTemplate, Pencil } from "lucide-react";
+import { LayoutTemplate, Pencil, Trash2 } from "lucide-react";
 import { Alert, Button, Spinner } from "@store-builder/ui";
-import type { CreateWebsitePayload, WebsiteTemplateSummary } from "@store-builder/api-client";
+import type { CreateWebsitePayload, Website, WebsiteTemplateSummary } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -12,6 +12,7 @@ import { humanize } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
 import { Modal } from "@/components/Modal";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { TextField } from "@/components/Field";
 import { useToast } from "@/components/Toast";
 
@@ -47,7 +48,7 @@ function TemplateCard({
     <button
       type="button"
       onClick={onSelect}
-      className="flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-line bg-paper-raised text-left transition-colors hover:border-primary"
+      className="cursor-pointer flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-line bg-paper-raised text-left transition-colors hover:border-primary"
     >
       <TemplateThumb url={template.thumbnailUrl} name={template.name} />
       <div className="flex flex-1 flex-col gap-1 p-4">
@@ -126,7 +127,7 @@ function UseTemplateForm({
             <button
               type="button"
               onClick={() => detail.refresh()}
-              className="font-medium text-primary hover:underline"
+              className="cursor-pointer font-medium text-primary hover:underline"
             >
               إعادة المحاولة
             </button>
@@ -180,13 +181,27 @@ function UseTemplateForm({
  */
 function ExistingSites() {
   const workspaceId = useWorkspaceId();
+  const toast = useToast();
   const sites = useAsync(() => apiClient.listWebsites(workspaceId), [workspaceId]);
+  const [pendingDelete, setPendingDelete] = useState<Website | null>(null);
   const list = sites.data ?? [];
 
   // A workspace with no site yet is the normal first-run case, and the template
   // gallery below already tells that story — stay quiet rather than showing an
   // empty state. Same for an error: it must not block picking a template.
   if (sites.loading || sites.error || list.length === 0) return null;
+
+  // Throwing keeps ConfirmDialog open with the error inline; resolving lets it
+  // close. Refetching (rather than filtering locally) also catches sites deleted
+  // from another tab.
+  async function confirmDelete() {
+    const site = pendingDelete;
+    if (!site) return;
+    await apiClient.deleteWebsite(workspaceId, site.id);
+    setPendingDelete(null);
+    toast.success(`Site "${site.name}" deleted.`);
+    await sites.refresh({ silent: true });
+  }
 
   return (
     <div className="mb-8">
@@ -200,15 +215,50 @@ function ExistingSites() {
                 {site.subdomain} · {humanize(site.status)}
               </p>
             </div>
-            <Button asChild size="sm" variant="outline">
-              <Link to={`/website/${site.id}/edit`}>
-                <Pencil className="size-4" aria-hidden />
-                Edit
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button asChild size="sm" variant="outline">
+                <Link to={`/website/${site.id}/edit`}>
+                  <Pencil className="size-4" aria-hidden />
+                  Edit
+                </Link>
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                aria-label={`Delete ${site.name}`}
+                className="text-danger hover:bg-danger-soft hover:text-danger"
+                onClick={() => setPendingDelete(site)}
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </Button>
+            </div>
           </li>
         ))}
       </ul>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete this site?"
+        confirmLabel="Delete site"
+        destructive
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={confirmDelete}
+      >
+        <div className="space-y-3 text-sm text-ink-soft">
+          <p>
+            <span className="font-medium text-ink">{pendingDelete?.name}</span> and all of its
+            pages, published revisions and any domain bound to it will be deleted permanently.
+            This cannot be undone.
+          </p>
+          {pendingDelete?.status === "published" && (
+            <Alert variant="danger">
+              This site is live right now. Deleting it takes it offline immediately — anyone
+              visiting <span className="font-medium">{pendingDelete.subdomain}</span> will stop
+              seeing your store.
+            </Alert>
+          )}
+        </div>
+      </ConfirmDialog>
     </div>
   );
 }

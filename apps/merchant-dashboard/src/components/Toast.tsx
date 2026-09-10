@@ -53,7 +53,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={toast.id}
             onClick={() => dismiss(toast.id)}
             className={cn(
-              "pointer-events-auto w-full max-w-md rounded-[0.5rem] border px-4 py-3 text-left text-sm shadow-lg transition-colors",
+              "cursor-pointer pointer-events-auto w-full max-w-md rounded-[0.5rem] border px-4 py-3 text-left text-sm shadow-lg transition-colors",
               toast.kind === "success"
                 ? "border-success/30 bg-success-soft text-success"
                 : "border-danger/30 bg-danger-soft text-danger"

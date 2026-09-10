@@ -270,16 +270,38 @@ export interface WebsitePage {
   isLive?: boolean;
 }
 
+/** One published snapshot of a website. `revisionNumber` starts at 1. */
+export interface WebsiteRevision {
+  id: string;
+  revisionNumber: number;
+  note: string | null;
+  createdAt: string;
+}
+
 /** GET /workspaces/:workspaceId/websites/:websiteId */
 export interface WebsiteDetail {
   website: Website;
   pages: WebsitePage[];
-  publishedRevision: {
-    id: string;
-    revisionNumber: number;
-    note: string | null;
-    createdAt: string;
-  } | null;
+  publishedRevision: WebsiteRevision | null;
+}
+
+/** 201 body of POST .../websites/:websiteId/publish */
+export interface PublishWebsiteResult {
+  website: Website;
+  revision: WebsiteRevision;
+}
+
+/**
+ * One entry of the 422 `error.details[]` a failed publish comes back with.
+ * Unlike an ordinary form 422 these are *page*-scoped, not field-scoped —
+ * `path` names the offending page (e.g. "/about"), so they can't be fed to
+ * `getFieldErrors`; render them as a list instead.
+ */
+export interface PublishProblem {
+  field: string;
+  message: string;
+  pageId?: string;
+  path?: string;
 }
 
 /** POST body for a new page. `path` and `title` are required server-side. */
@@ -373,6 +395,40 @@ export interface StorefrontProductList {
   products: StorefrontProduct[];
   nextCursor: string | null;
 }
+
+/**
+ * GET /store/:workspaceId/pages — the published render data for one page of the
+ * workspace's live website. Mirrors buildRenderData in pagesService.js.
+ */
+export interface StorefrontPageData {
+  page: {
+    path: string;
+    title: string;
+    pageType: WebsitePage["pageType"];
+    tree: PageTree | null;
+    seo: Record<string, unknown>;
+    /** Open Graph tags the backend has already resolved for this page. */
+    og: {
+      title: string;
+      description: string;
+      image: string | null;
+      url: string;
+      type: string;
+    };
+  };
+  site: {
+    name: string;
+    subdomain: string;
+    globalStyles: Record<string, unknown>;
+    seo: Record<string, unknown>;
+  };
+}
+
+/** What `getStorefrontPage` can come back with — see its doc comment. */
+export type StorefrontPageResult =
+  | { kind: "page"; data: StorefrontPageData }
+  | { kind: "redirect"; to: string; statusCode: number }
+  | { kind: "notFound" };
 
 export interface StorefrontCollection {
   id: string;

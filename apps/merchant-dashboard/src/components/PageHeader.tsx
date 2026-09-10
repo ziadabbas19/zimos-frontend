@@ -5,13 +5,15 @@ interface PageHeaderProps {
   title: string;
   /** Small muted text after the title, e.g. a product code "#482910573". */
   titleMeta?: string;
+  /** Rendered on the title line, after the title and any `titleMeta`. */
+  titleBadge?: ReactNode;
   description?: string;
   /** Renders a "← label" link above the title. */
   back?: { to: string; label: string };
   actions?: ReactNode;
 }
 
-export function PageHeader({ title, titleMeta, description, back, actions }: PageHeaderProps) {
+export function PageHeader({ title, titleMeta, titleBadge, description, back, actions }: PageHeaderProps) {
   return (
     <div className="mb-6">
       {back && (
@@ -31,6 +33,7 @@ export function PageHeader({ title, titleMeta, description, back, actions }: Pag
                 · {titleMeta}
               </span>
             )}
+            {titleBadge && <span className="ml-2 align-middle">{titleBadge}</span>}
           </h1>
           {description && <p className="mt-1 text-sm text-ink-soft">{description}</p>}
         </div>

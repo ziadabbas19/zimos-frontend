@@ -72,7 +72,7 @@ export function ProductCollectionsSection({ productId, memberships, onChanged }:
               <button
                 onClick={() => remove(c.id)}
                 disabled={busy}
-                className="text-ink-soft hover:text-danger"
+                className="cursor-pointer text-ink-soft hover:text-danger"
                 aria-label={`Remove from ${c.name}`}
               >
                 ✕

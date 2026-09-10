@@ -112,7 +112,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       aria-label={label}
       title={label}
       suppressHydrationWarning
-      className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-line bg-paper text-ink transition-colors hover:border-primary hover:text-primary-dark ${className}`}
+      className={`cursor-pointer inline-flex h-10 w-10 items-center justify-center rounded-full border border-line bg-paper text-ink transition-colors hover:border-primary hover:text-primary-dark ${className}`}
     >
       <span suppressHydrationWarning>
         {theme === "dark" ? <SunIcon /> : <MoonIcon />}

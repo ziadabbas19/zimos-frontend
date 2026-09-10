@@ -43,7 +43,7 @@ export function AddToCartButton({
         type="button"
         onClick={handleClick}
         disabled={unavailable || status === "loading"}
-        className="w-full rounded-[0.5rem] bg-primary px-5 py-3 text-sm font-medium text-paper-raised transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+        className="cursor-pointer w-full rounded-[0.5rem] bg-primary px-5 py-3 text-sm font-medium text-paper-raised transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
       >
         {unavailable
           ? "غير متوفر حاليًا"

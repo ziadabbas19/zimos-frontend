@@ -42,6 +42,7 @@ import type {
   Product,
   ProductListParams,
   ProductListResponse,
+  PublishWebsiteResult,
   RecordConfirmationOutcomePayload,
   RegisterPayload,
   ReturnListParams,
@@ -53,6 +54,8 @@ import type {
   StorefrontMeta,
   StorefrontProductDetail,
   StorefrontProductList,
+  StorefrontPageData,
+  StorefrontPageResult,
   SuccessResponse,
   TaxRate,
   UpdateCollectionPayload,
@@ -119,6 +122,13 @@ interface RequestOptions {
   auth?: boolean; // attach Authorization header (default true)
   idempotent?: boolean; // attach a fresh Idempotency-Key header
   signal?: AbortSignal;
+  /**
+   * Passed straight to fetch. Only the storefront page lookup needs it: that
+   * endpoint answers a moved page with a 301 whose Location is a *store* path,
+   * which the default "follow" would resolve against the API host and turn into
+   * a 404. "manual" keeps the 301 (and its JSON body) intact.
+   */
+  redirect?: RequestRedirect;
 }
 
 function randomKey(): string {
@@ -159,7 +169,15 @@ export class ApiClient {
   /** Low-level request used by every typed method below. Handles one
    * transparent retry after a silent refresh if the server returns 401. */
   async request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
-    const { method = "GET", body, headers = {}, auth = true, idempotent = false, signal } = opts;
+    const {
+      method = "GET",
+      body,
+      headers = {},
+      auth = true,
+      idempotent = false,
+      signal,
+      redirect,
+    } = opts;
 
     const doFetch = async (): Promise<Response> => {
       const finalHeaders: Record<string, string> = {
@@ -178,6 +196,7 @@ export class ApiClient {
         headers: finalHeaders,
         body: body !== undefined ? JSON.stringify(body) : undefined,
         signal,
+        redirect,
       });
     };
 
@@ -401,6 +420,35 @@ export class ApiClient {
       `/workspaces/${workspaceId}/websites`
     );
     return websites;
+  }
+
+  /**
+   * Permanently removes a site. Its pages, revisions and any bound domain go
+   * with it (ON DELETE CASCADE server-side) — there is no undo, and a published
+   * site stops serving the moment this returns.
+   */
+  async deleteWebsite(workspaceId: string, websiteId: string): Promise<void> {
+    await this.request<{ deleted: true }>(`/workspaces/${workspaceId}/websites/${websiteId}`, {
+      method: "DELETE",
+    });
+  }
+
+  /**
+   * Publishes the site's *saved* draft — it snapshots `draftData` straight from
+   * the database, so unsaved editor state is not included. Needs the
+   * WEBSITE_PUBLISH permission (stricter than WEBSITE_EDIT) and an active
+   * subscription.
+   *
+   * A site that isn't publishable yet comes back as a 422 whose
+   * `error.details[]` lists every problem at once as `PublishProblem`s (missing
+   * home page, empty pages) — page-scoped, not field-scoped, so render them as
+   * a list rather than passing them through `getFieldErrors`.
+   */
+  async publishWebsite(workspaceId: string, websiteId: string, note?: string) {
+    return this.request<PublishWebsiteResult>(
+      `/workspaces/${workspaceId}/websites/${websiteId}/publish`,
+      { method: "POST", body: note ? { note } : {} }
+    );
   }
 
   /**
@@ -1156,6 +1204,43 @@ export class ApiClient {
       { auth: false }
     );
     return collections;
+  }
+
+  /**
+   * The published content of one page of the workspace's live website, as
+   * built in the merchant's website editor.
+   *
+   * Reads only the frozen snapshot of the published revision, so an unpublished
+   * draft can never leak. Three outcomes, all normal:
+   *
+   *  - `page`      — render `data.page.tree` with the storefront's PageRenderer.
+   *  - `redirect`  — the page moved (its path was renamed); send the visitor on.
+   *  - `notFound`  — no such path, *or* this workspace has no published site at
+   *                  all. The API can't tell those apart, and callers generally
+   *                  don't need to.
+   *
+   * `path` is sent as a query parameter rather than as `/pages/:slug` so nested
+   * paths ("/help/shipping") work — `:slug` only matches a single segment.
+   */
+  async getStorefrontPage(workspaceId: string, path = "/"): Promise<StorefrontPageResult> {
+    try {
+      const data = await this.request<StorefrontPageData>(
+        `/store/${workspaceId}/pages?path=${encodeURIComponent(path)}`,
+        { auth: false, redirect: "manual" }
+      );
+      return { kind: "page", data };
+    } catch (err) {
+      if (!(err instanceof ApiError)) throw err;
+      if (err.status === 404) return { kind: "notFound" };
+      if (err.status >= 300 && err.status < 400) {
+        const body = err.details as { redirect?: { to?: string; statusCode?: number } } | undefined;
+        const to = body?.redirect?.to;
+        if (typeof to === "string") {
+          return { kind: "redirect", to, statusCode: body?.redirect?.statusCode ?? err.status };
+        }
+      }
+      throw err;
+    }
   }
 
   // ---------------------------------------------------------------------

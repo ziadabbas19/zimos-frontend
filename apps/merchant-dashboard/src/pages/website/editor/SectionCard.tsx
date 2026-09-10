@@ -122,7 +122,7 @@ export function SectionCard({
           {...attributes}
           {...listeners}
           aria-label={`Reorder ${sectionLabel(section)}`}
-          className="cursor-grab rounded-[0.375rem] p-1.5 text-ink-soft hover:bg-paper hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:cursor-grabbing"
+          className="cursor-pointer cursor-grab rounded-[0.375rem] p-1.5 text-ink-soft hover:bg-paper hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:cursor-grabbing"
         >
           <GripVertical className="size-4" aria-hidden />
         </button>
@@ -130,7 +130,7 @@ export function SectionCard({
         <button
           type="button"
           onClick={onSelect}
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-[0.375rem] px-1 py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          className="cursor-pointer flex min-w-0 flex-1 items-center gap-2 rounded-[0.375rem] px-1 py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
         >
           <NodeIcon icon={icon} className="size-4 shrink-0 text-primary" />
           <span className="truncate text-sm font-medium text-ink">{sectionLabel(section)}</span>
@@ -140,7 +140,7 @@ export function SectionCard({
           type="button"
           onClick={onDelete}
           aria-label={`Delete ${sectionLabel(section)}`}
-          className="rounded-[0.375rem] p-1.5 text-ink-soft hover:bg-danger-soft hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40"
+          className="cursor-pointer rounded-[0.375rem] p-1.5 text-ink-soft hover:bg-danger-soft hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40"
         >
           <Trash2 className="size-4" aria-hidden />
         </button>
@@ -149,7 +149,7 @@ export function SectionCard({
       <button
         type="button"
         onClick={onSelect}
-        className="block w-full space-y-1.5 px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        className="cursor-pointer block w-full space-y-1.5 px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
       >
         {elements.length === 0 ? (
           <span className="text-sm text-ink-soft">Empty section</span>

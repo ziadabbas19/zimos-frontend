@@ -147,7 +147,7 @@ export function NewPageDialog({
         </Field>
 
         {/* Lets Enter submit the form without a visible duplicate button. */}
-        <button type="submit" className="hidden" tabIndex={-1} aria-hidden />
+        <button type="submit" className="cursor-pointer hidden" tabIndex={-1} aria-hidden />
       </form>
     </Modal>
   );

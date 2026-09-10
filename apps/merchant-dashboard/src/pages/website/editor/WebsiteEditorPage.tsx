@@ -15,21 +15,23 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Save } from "lucide-react";
+import { Rocket, Save } from "lucide-react";
 import { Alert, Button, Spinner } from "@store-builder/ui";
 import type {
   CreateWebsitePagePayload,
   PageSection,
   PageTree,
+  PublishProblem,
   WebsitePage,
 } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
-import { getErrorMessage, getFieldErrors } from "@/lib/errors";
+import { ApiError, getErrorMessage, getFieldErrors } from "@/lib/errors";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
 import { BlockLibrary } from "./BlockLibrary";
 import { SectionCard } from "./SectionCard";
@@ -48,6 +50,21 @@ import { createSection, moveSection, normalizeTree, sectionLabel, type BlockPres
  * no styling controls, and dropping keys it can't edit would silently destroy
  * template data.
  */
+
+/**
+ * The pre-publish check's 422 body. Its `details[]` is page-scoped
+ * (`{ field, message, pageId?, path? }`) rather than the flat form-field shape
+ * `getFieldErrors` expects, so it is unpacked here instead.
+ */
+function publishProblemsOf(err: unknown): PublishProblem[] {
+  if (!(err instanceof ApiError) || err.status !== 422) return [];
+  const body = err.details as { error?: { details?: unknown } } | undefined;
+  const details = body?.error?.details;
+  if (!Array.isArray(details)) return [];
+  return (details as PublishProblem[]).filter(
+    (d) => d && typeof d.message === "string"
+  );
+}
 
 /** Which page the editor opens by default, and falls back to after a delete. */
 function pickEditablePage(pages: WebsitePage[]): WebsitePage | null {
@@ -85,6 +102,12 @@ export function WebsiteEditorPage() {
   const [pendingDelete, setPendingDelete] = useState<PageSection | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Publishing. A failed publish comes back with a *list* of problems (one per
+  // offending page), so they get their own state rather than sharing saveError.
+  const [publishing, setPublishing] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [publishProblems, setPublishProblems] = useState<PublishProblem[]>([]);
 
   // Page-level dialogs.
   const [showNewPage, setShowNewPage] = useState(false);
@@ -232,6 +255,39 @@ export function WebsiteEditorPage() {
 
   const website = site.data?.website;
 
+  /**
+   * Publishes the whole site. The server snapshots `draftData` as it is stored,
+   * so this deliberately refuses to run while the canvas is dirty — publishing
+   * unsaved edits would silently ship the *previous* content.
+   */
+  async function publish() {
+    if (!website || dirty) return;
+    setPublishing(true);
+    setPublishError(null);
+    setPublishProblems([]);
+    try {
+      const { website: published, revision } = await apiClient.publishWebsite(
+        workspaceId,
+        websiteId
+      );
+      const detail = site.data;
+      if (detail) site.setData({ ...detail, website: published, publishedRevision: revision });
+      toast.success(`Site published — revision ${revision.revisionNumber} is live.`);
+    } catch (err) {
+      // A 422 is the pre-publish check: it reports every problem at once, keyed
+      // by page rather than by form field, so getFieldErrors can't flatten it.
+      const problems = publishProblemsOf(err);
+      if (problems.length > 0) {
+        setPublishProblems(problems);
+      } else {
+        setPublishError(getErrorMessage(err));
+      }
+      toast.error("Couldn't publish the site.");
+    } finally {
+      setPublishing(false);
+    }
+  }
+
   return (
     <div className="-m-6 flex h-[calc(100vh-4rem)] flex-col">
       <div className="border-b border-line bg-paper-raised px-6 py-4">
@@ -244,6 +300,20 @@ export function WebsiteEditorPage() {
               ? `Editing "${page.title}". Drag sections to reorder, click one to edit its content.`
               : undefined
           }
+          titleBadge={
+            website && (
+              <StatusBadge
+                value={website.status}
+                tone={
+                  website.status === "published"
+                    ? "success"
+                    : website.status === "suspended"
+                      ? "danger"
+                      : "neutral"
+                }
+              />
+            )
+          }
           actions={
             <>
               {dirty && <span className="text-xs text-ink-soft">Unsaved changes</span>}
@@ -251,10 +321,42 @@ export function WebsiteEditorPage() {
                 {saving ? <Spinner className="size-4" /> : <Save className="size-4" aria-hidden />}
                 {saving ? "Saving…" : "Save"}
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void publish()}
+                disabled={!website || dirty || publishing}
+                title={
+                  dirty
+                    ? "Save your changes first — publishing ships the last saved version."
+                    : "Publish the saved draft of every page"
+                }
+              >
+                {publishing ? (
+                  <Spinner className="size-4" />
+                ) : (
+                  <Rocket className="size-4" aria-hidden />
+                )}
+                {publishing ? "Publishing…" : "Publish"}
+              </Button>
             </>
           }
         />
         {saveError && <Alert variant="danger">{saveError}</Alert>}
+        {publishError && <Alert variant="danger">{publishError}</Alert>}
+        {publishProblems.length > 0 && (
+          <Alert variant="danger">
+            <p className="font-medium">This site can&rsquo;t be published yet:</p>
+            <ul className="mt-1 list-disc space-y-0.5 ps-5">
+              {publishProblems.map((problem, i) => (
+                <li key={`${problem.pageId ?? problem.field}-${i}`}>
+                  {problem.path && <span className="font-medium">{problem.path}: </span>}
+                  {problem.message}
+                </li>
+              ))}
+            </ul>
+          </Alert>
+        )}
       </div>
 
       <div className="min-h-0 flex-1">

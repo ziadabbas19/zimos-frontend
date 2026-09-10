@@ -76,7 +76,7 @@ export default function CartPage() {
                           run(line.id, () => removeItem(line.id), "تعذّر حذف الصنف")
                         }
                         disabled={rowBusy}
-                        className="shrink-0 text-xs text-danger hover:underline disabled:opacity-50"
+                        className="cursor-pointer shrink-0 text-xs text-danger hover:underline disabled:opacity-50"
                       >
                         حذف
                       </button>
@@ -104,7 +104,7 @@ export default function CartPage() {
                             )
                           }
                           disabled={rowBusy || line.quantity <= 1}
-                          className="px-3 py-1 text-sm text-ink-soft disabled:opacity-40"
+                          className="cursor-pointer px-3 py-1 text-sm text-ink-soft disabled:opacity-40"
                         >
                           −
                         </button>
@@ -122,7 +122,7 @@ export default function CartPage() {
                             )
                           }
                           disabled={rowBusy}
-                          className="px-3 py-1 text-sm text-ink-soft disabled:opacity-40"
+                          className="cursor-pointer px-3 py-1 text-sm text-ink-soft disabled:opacity-40"
                         >
                           +
                         </button>

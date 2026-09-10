@@ -60,7 +60,7 @@ export function ColorField({
               aria-label={`Use ${preset}`}
               aria-pressed={active}
               className={cn(
-                "flex size-7 items-center justify-center rounded-full border transition-transform hover:scale-110",
+                "cursor-pointer flex size-7 items-center justify-center rounded-full border transition-transform hover:scale-110",
                 active ? "border-ink" : "border-line"
               )}
               style={{ backgroundColor: preset }}

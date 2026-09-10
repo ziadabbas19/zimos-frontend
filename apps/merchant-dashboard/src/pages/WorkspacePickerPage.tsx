@@ -44,7 +44,7 @@ export function WorkspacePickerPage() {
             </h1>
             <p className="mt-2 text-sm text-ink-soft">
               Signed in as {user?.email}.{" "}
-              <button onClick={() => logout()} className="text-primary hover:underline">
+              <button onClick={() => logout()} className="cursor-pointer text-primary hover:underline">
                 Sign out
               </button>
             </p>
@@ -63,7 +63,7 @@ export function WorkspacePickerPage() {
                   <button
                     key={workspace.id}
                     onClick={() => goToDashboard(workspace.id)}
-                    className="flex w-full items-center justify-between rounded-[var(--radius-card)] border border-line bg-paper-raised px-5 py-4 text-left transition-colors hover:border-primary"
+                    className="cursor-pointer flex w-full items-center justify-between rounded-[var(--radius-card)] border border-line bg-paper-raised px-5 py-4 text-left transition-colors hover:border-primary"
                   >
                     <div>
                       <p className="font-medium text-ink">{workspace.name}</p>

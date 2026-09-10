@@ -174,7 +174,7 @@ export function CollectionsPage() {
                     )}
                     <button
                       onClick={() => setExpanded((cur) => (cur === c.id ? null : c.id))}
-                      className="mt-2 text-xs text-primary hover:underline"
+                      className="cursor-pointer mt-2 text-xs text-primary hover:underline"
                     >
                       {expanded === c.id ? "Hide products" : "Show products"}
                     </button>

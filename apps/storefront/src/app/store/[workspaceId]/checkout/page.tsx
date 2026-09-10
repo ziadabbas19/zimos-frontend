@@ -298,7 +298,7 @@ export default function CheckoutPage() {
           <button
             type="submit"
             disabled={submitting || items.length === 0}
-            className="w-full rounded-[0.5rem] bg-primary px-6 py-3 text-sm font-medium text-paper-raised transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+            className="cursor-pointer w-full rounded-[0.5rem] bg-primary px-6 py-3 text-sm font-medium text-paper-raised transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? "جارٍ تأكيد الطلب…" : "تأكيد الطلب"}
           </button>

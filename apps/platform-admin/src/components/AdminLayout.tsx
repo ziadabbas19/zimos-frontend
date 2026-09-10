@@ -38,7 +38,7 @@ export function AdminLayout() {
         <div className="flex items-center gap-2 border-t border-line px-3 py-4">
           <button
             onClick={() => logout()}
-            className="flex-1 rounded-[0.5rem] px-3 py-2 text-left text-sm font-medium text-ink-soft hover:bg-danger-soft hover:text-danger"
+            className="cursor-pointer flex-1 rounded-[0.5rem] px-3 py-2 text-left text-sm font-medium text-ink-soft hover:bg-danger-soft hover:text-danger"
           >
             Sign out
           </button>

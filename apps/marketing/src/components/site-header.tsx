@@ -65,7 +65,7 @@ export function SiteHeader() {
           </a>
           <button
             type="button"
-            className="inline-flex size-9 items-center justify-center rounded-full border border-line bg-paper-raised text-ink-soft transition-colors hover:text-ink md:hidden"
+            className="cursor-pointer inline-flex size-9 items-center justify-center rounded-full border border-line bg-paper-raised text-ink-soft transition-colors hover:text-ink md:hidden"
             aria-expanded={open}
             aria-controls={menuId}
             aria-label={open ? nav.closeMenu : nav.openMenu}

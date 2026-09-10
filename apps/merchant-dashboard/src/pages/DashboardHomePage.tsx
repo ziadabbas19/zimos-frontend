@@ -79,16 +79,22 @@ export function DashboardHomePage() {
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[
-          { title: "Orders", desc: "Track and fulfill customer orders." },
-          { title: "Catalog", desc: "Manage products, variants, and offers." },
-          { title: "Customers", desc: "See who's buying and manage their details." },
+          { title: "Orders", desc: "Track and fulfill customer orders.", to: "/orders" },
+          { title: "Catalog", desc: "Manage products, variants, and offers.", to: "/catalog" },
+          {
+            title: "Customers",
+            desc: "See who's buying and manage their details.",
+            to: "/customers",
+          },
         ].map((item) => (
-          <Card key={item.title}>
-            <CardHeader>
-              <CardTitle>{item.title}</CardTitle>
-              <CardDescription>{item.desc}</CardDescription>
-            </CardHeader>
-          </Card>
+          <Link key={item.title} to={item.to} className="block">
+            <Card className="h-full transition-colors hover:border-primary/40">
+              <CardHeader>
+                <CardTitle>{item.title}</CardTitle>
+                <CardDescription>{item.desc}</CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
         ))}
       </div>
     </div>

@@ -79,7 +79,7 @@ function Thumb({ src, onRemove }: { src: string; onRemove: () => void }) {
         type="button"
         onClick={onRemove}
         aria-label="Remove image"
-        className="absolute right-1 top-1 rounded-full bg-ink/70 p-1 text-paper opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+        className="cursor-pointer absolute right-1 top-1 rounded-full bg-ink/70 p-1 text-paper opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
       >
         <X className="size-3" aria-hidden />
       </button>
