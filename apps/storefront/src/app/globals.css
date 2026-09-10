@@ -15,6 +15,12 @@
 :root {
   color-scheme: light;
 
+  /* Merchant branding. The store layout overrides these two per workspace from
+     `themeSettings`; these values are the fallback when nothing is saved and
+     deliberately mirror --color-primary / --color-accent below. */
+  --brand-primary: #1f5d5b;
+  --brand-secondary: #e2a33d;
+
   --color-ink: #16211f;
   --color-ink-soft: #3c4a46;
   --color-paper: #f5f4ef;
@@ -41,6 +47,9 @@
 .dark {
   color-scheme: dark;
 
+  --brand-primary: #5b8df6;
+  --brand-secondary: #e8b96a;
+
   /* ink / paper / line / primary / accent — same identity as the
      marketing site's dark palette so the platform reads as one system. */
   --color-ink: #e7ecf5;
@@ -61,6 +70,34 @@
      hue-tinted ground with text light enough to read on it. */
   --color-danger: #e8846a;
   --color-danger-soft: #2b1613;
+}
+
+/* ------------------------------------------------------------------ *
+ * Per-store branding. The store layout puts this class on its wrapper and
+ * sets --brand-primary / --brand-secondary inline from the workspace's
+ * themeSettings; re-pointing the semantic primary/accent tokens at them
+ * here means every existing `bg-primary` / `text-accent` / `border-primary`
+ * utility inside the store picks up the merchant's colours, instead of
+ * each component having to opt in. The -dark / -soft steps are derived so
+ * a single hex still yields a coherent ramp.
+ * ------------------------------------------------------------------ */
+.brand-theme {
+  --color-primary: var(--brand-primary);
+  --color-primary-dark: color-mix(in oklab, var(--brand-primary) 78%, #000);
+  --color-primary-soft: color-mix(in oklab, var(--brand-primary) 12%, #fff);
+
+  --color-accent: var(--brand-secondary);
+  --color-accent-dark: color-mix(in oklab, var(--brand-secondary) 78%, #000);
+  --color-accent-soft: color-mix(in oklab, var(--brand-secondary) 16%, #fff);
+}
+
+/* On dark backgrounds the "soft" tints have to sink toward the paper colour
+   rather than white, or they read as glaring light blocks. */
+.dark .brand-theme {
+  --color-primary-dark: color-mix(in oklab, var(--brand-primary) 72%, #fff);
+  --color-primary-soft: color-mix(in oklab, var(--brand-primary) 22%, #0b1220);
+  --color-accent-dark: color-mix(in oklab, var(--brand-secondary) 72%, #fff);
+  --color-accent-soft: color-mix(in oklab, var(--brand-secondary) 20%, #0b1220);
 }
 
 /* ------------------------------------------------------------------ *

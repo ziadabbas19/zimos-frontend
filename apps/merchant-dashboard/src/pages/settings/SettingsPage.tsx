@@ -12,6 +12,14 @@ import { useWorkspace } from "@/context/WorkspaceContext";
 import { useAuth } from "@/context/AuthContext";
 import { useAsync } from "@/lib/useAsync";
 import { getErrorMessage, getFieldErrors } from "@/lib/errors";
+import { ACCEPTED_IMAGE_ACCEPT, compressImageIfNeeded, validateImageFile } from "@/lib/media";
+import { ColorField } from "@/components/ColorField";
+import {
+  DEFAULT_PRIMARY,
+  DEFAULT_SECONDARY,
+  normalizeHex,
+  readThemeColor,
+} from "@/lib/brandColors";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
 import { Modal } from "@/components/Modal";
@@ -48,24 +56,41 @@ function WorkspaceProfileSection() {
   const [name, setName] = useState(currentWorkspace?.name ?? "");
   const [tagline, setTagline] = useState(currentWorkspace?.tagline ?? "");
   const [logoUrl, setLogoUrl] = useState<string | null>(currentWorkspace?.logoUrl ?? null);
-  const [uploading, setUploading] = useState(false);
+  const [logoStage, setLogoStage] = useState<"preparing" | "uploading" | null>(null);
+  const uploading = logoStage !== null;
+  const [primaryColor, setPrimaryColor] = useState(() =>
+    readThemeColor(currentWorkspace?.themeSettings, "primaryColor", DEFAULT_PRIMARY)
+  );
+  const [secondaryColor, setSecondaryColor] = useState(() =>
+    readThemeColor(currentWorkspace?.themeSettings, "secondaryColor", DEFAULT_SECONDARY)
+  );
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const colorsValid = Boolean(normalizeHex(primaryColor) && normalizeHex(secondaryColor));
 
   async function onLogoFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = ""; // let the same file be picked again after a failure
     if (!file) return;
-    setUploading(true);
     setFormError(null);
     try {
-      const media = await apiClient.uploadMedia(workspaceId, file);
+      // Resize first if it is over the 5 MB cap, so a big logo export uploads
+      // instead of being rejected.
+      setLogoStage("preparing");
+      const prepared = await compressImageIfNeeded(file);
+      const problem = validateImageFile(prepared);
+      if (problem) {
+        setFormError(problem);
+        return;
+      }
+      setLogoStage("uploading");
+      const media = await apiClient.uploadMedia(workspaceId, prepared);
       setLogoUrl(media.url);
     } catch (err) {
       setFormError(getErrorMessage(err));
     } finally {
-      setUploading(false);
+      setLogoStage(null);
     }
   }
 
@@ -79,6 +104,13 @@ function WorkspaceProfileSection() {
         name: name.trim(),
         tagline: tagline.trim() || null,
         logoUrl,
+        // Merge, never replace: themeSettings is a shared blob and may already
+        // carry keys owned by other parts of the product.
+        themeSettings: {
+          ...(currentWorkspace?.themeSettings ?? {}),
+          primaryColor: normalizeHex(primaryColor) ?? DEFAULT_PRIMARY,
+          secondaryColor: normalizeHex(secondaryColor) ?? DEFAULT_SECONDARY,
+        },
       });
       toast.success("Store profile saved.");
       // Refresh the workspace list so the new name shows in the header switcher.
@@ -130,10 +162,10 @@ function WorkspaceProfileSection() {
                 uploading && "pointer-events-none opacity-50"
               )}
             >
-              {uploading ? "Uploading…" : "Upload logo"}
+              {logoStage === "preparing" ? "Resizing…" : logoStage === "uploading" ? "Uploading…" : "Upload logo"}
               <input
                 type="file"
-                accept="image/png,image/jpeg,image/gif,image/webp"
+                accept={ACCEPTED_IMAGE_ACCEPT}
                 className="hidden"
                 disabled={uploading}
                 onChange={onLogoFile}
@@ -156,8 +188,59 @@ function WorkspaceProfileSection() {
           hint="Optional — a short line shown under your store name."
         />
 
+        <div className="space-y-4 rounded-[0.5rem] border border-line p-4">
+          <div>
+            <h3 className="text-sm font-medium text-ink">Store colours</h3>
+            <p className="mt-0.5 text-xs text-ink-soft">
+              Used for your storefront header, buttons and links.
+            </p>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <ColorField
+              label="Primary"
+              hint="Buttons, links and highlights."
+              value={primaryColor}
+              onChange={setPrimaryColor}
+            />
+            <ColorField
+              label="Secondary"
+              hint="Accents and badges."
+              value={secondaryColor}
+              onChange={setSecondaryColor}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Preview</Label>
+            <div
+              className="flex flex-wrap items-center gap-3 rounded-[0.5rem] border border-line p-3"
+              style={{ backgroundColor: `${normalizeHex(primaryColor) ?? DEFAULT_PRIMARY}14` }}
+            >
+              <span
+                className="rounded-[0.5rem] px-3 py-1.5 text-sm font-medium text-white"
+                style={{ backgroundColor: normalizeHex(primaryColor) ?? DEFAULT_PRIMARY }}
+              >
+                Add to cart
+              </span>
+              <span
+                className="rounded-full px-2.5 py-1 text-xs font-medium text-white"
+                style={{ backgroundColor: normalizeHex(secondaryColor) ?? DEFAULT_SECONDARY }}
+              >
+                Sale
+              </span>
+              <span
+                className="text-sm font-medium"
+                style={{ color: normalizeHex(primaryColor) ?? DEFAULT_PRIMARY }}
+              >
+                View details
+              </span>
+            </div>
+          </div>
+        </div>
+
         <div className="flex justify-end">
-          <Button type="submit" disabled={saving || uploading || !name.trim()}>
+          <Button type="submit" disabled={saving || uploading || !name.trim() || !colorsValid}>
             {saving ? "Saving…" : "Save"}
           </Button>
         </div>

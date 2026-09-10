@@ -4,7 +4,7 @@ import { Alert, Button, Label, Spinner } from "@store-builder/ui";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { getErrorMessage } from "@/lib/errors";
-import { ACCEPTED_IMAGE_ACCEPT, validateImageFile } from "@/lib/media";
+import { ACCEPTED_IMAGE_ACCEPT, compressImageIfNeeded, validateImageFile } from "@/lib/media";
 
 /**
  * Image picker for a page element's props. Uploads through the same R2 flow the
@@ -21,17 +21,32 @@ function useUpload() {
 
   async function upload(files: File[]): Promise<string[]> {
     if (files.length === 0) return [];
+
+    // Over-limit images are resized in the browser first, so validateImageFile
+    // only rejects what could not be brought under the cap.
+    setBusy(true);
+    const prepared: File[] = [];
+    try {
+      for (const file of files) prepared.push(await compressImageIfNeeded(file));
+    } catch {
+      setBusy(false);
+      setError("Could not prepare the selected image.");
+      return [];
+    }
+
     const rejected: string[] = [];
     const valid: File[] = [];
-    for (const file of files) {
+    for (const file of prepared) {
       const problem = validateImageFile(file);
       if (problem) rejected.push(problem);
       else valid.push(file);
     }
     setError(rejected.length > 0 ? rejected.join(" ") : null);
-    if (valid.length === 0) return [];
+    if (valid.length === 0) {
+      setBusy(false);
+      return [];
+    }
 
-    setBusy(true);
     const urls: string[] = [];
     try {
       for (const file of valid) {

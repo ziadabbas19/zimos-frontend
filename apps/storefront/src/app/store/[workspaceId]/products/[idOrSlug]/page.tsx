@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ApiError, formatMoney } from "@store-builder/api-client";
 import { createStorefrontApiClient } from "@/lib/apiClient";
+import { getStoreMeta } from "@/lib/storeMeta";
 import { AddToCartButton } from "@/components/AddToCartButton";
 
 export const revalidate = 60;
@@ -14,15 +15,16 @@ export default async function ProductPage({
   const { workspaceId, idOrSlug } = await params;
   const client = createStorefrontApiClient();
 
+  // getStoreMeta is React-cached, so this shares the layout's single fetch.
   const [store, product] = await Promise.all([
-    client.getStorefrontMeta(workspaceId),
+    getStoreMeta(workspaceId),
     client.getStorefrontProduct(workspaceId, idOrSlug).catch((err) => {
       if (err instanceof ApiError && err.status === 404) return null;
       throw err;
     }),
   ]);
 
-  if (!product) notFound();
+  if (!store || !product) notFound();
 
   const defaultOffer = product.offers.find((o) => o.isDefault) ?? product.offers[0];
   const price = defaultOffer?.priceAmount ?? product.variants[0]?.priceAmount;

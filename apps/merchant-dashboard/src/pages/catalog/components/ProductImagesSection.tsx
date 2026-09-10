@@ -5,7 +5,7 @@ import type { ProductMedia } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { getErrorMessage } from "@/lib/errors";
-import { ACCEPTED_IMAGE_ACCEPT, validateImageFile } from "@/lib/media";
+import { ACCEPTED_IMAGE_ACCEPT, compressImageIfNeeded, validateImageFile } from "@/lib/media";
 import { useToast } from "@/components/Toast";
 import { ProductImage } from "@/components/ProductImage";
 
@@ -48,6 +48,7 @@ export function ProductImagesSection(props: Props) {
   }, [savedJson]);
 
   const [uploading, setUploading] = useState(0);
+  const [preparing, setPreparing] = useState(0);
   const [errors, setErrors] = useState<string[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -58,9 +59,9 @@ export function ProductImagesSection(props: Props) {
 
   // Let the parent (create flow) disable "Create product" while uploads run.
   useEffect(() => {
-    if (props.mode === "create") props.onUploadingChange?.(uploading);
+    if (props.mode === "create") props.onUploadingChange?.(uploading + preparing);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uploading]);
+  }, [uploading, preparing]);
 
   function commit(next: ProductMedia[]) {
     if (props.mode === "create") props.onChange(next);
@@ -70,9 +71,24 @@ export function ProductImagesSection(props: Props) {
   async function addFiles(fileList: FileList | File[]) {
     const files = Array.from(fileList);
     if (files.length === 0) return;
+
+    // Shrink anything over the 5 MB cap before it reaches validateImageFile, so
+    // a large camera photo uploads instead of being rejected outright. Done one
+    // at a time to keep several full-size bitmaps out of memory at once.
+    setPreparing(files.length);
+    const prepared: File[] = [];
+    try {
+      for (const file of files) {
+        prepared.push(await compressImageIfNeeded(file));
+        setPreparing((n) => n - 1);
+      }
+    } finally {
+      setPreparing(0);
+    }
+
     const nextErrors: string[] = [];
     const valid: File[] = [];
-    for (const file of files) {
+    for (const file of prepared) {
       const err = validateImageFile(file);
       if (err) nextErrors.push(err);
       else valid.push(file);
@@ -146,15 +162,15 @@ export function ProductImagesSection(props: Props) {
               <Button size="sm" variant="ghost" onClick={() => setEditItems(savedMedia)} disabled={saving}>
                 Discard
               </Button>
-              <Button size="sm" onClick={save} disabled={saving || uploading > 0}>
+              <Button size="sm" onClick={save} disabled={saving || uploading > 0 || preparing > 0}>
                 {saving ? "Saving…" : "Save images"}
               </Button>
             </div>
           )}
         </div>
         <p className="mb-4 text-sm text-ink-soft">
-          PNG, JPEG, GIF or WEBP, up to 5&nbsp;MB each. The first image is the primary one shown in
-          the catalog and storefront.
+          PNG, JPEG, GIF or WEBP. Anything over 5&nbsp;MB is resized automatically before upload.
+          The first image is the primary one shown in the catalog and storefront.
         </p>
 
         {props.mode === "create" && props.error && (
@@ -199,6 +215,12 @@ export function ProductImagesSection(props: Props) {
             }}
           />
         </label>
+
+        {preparing > 0 && (
+          <p className="mt-3 flex items-center gap-2 text-sm text-ink-soft">
+            <Spinner className="size-4" /> Preparing {preparing} image{preparing === 1 ? "" : "s"}…
+          </p>
+        )}
 
         {uploading > 0 && (
           <p className="mt-3 flex items-center gap-2 text-sm text-ink-soft">
@@ -253,7 +275,8 @@ export function ProductImagesSection(props: Props) {
             ))}
           </ul>
         ) : (
-          uploading === 0 && <p className="mt-4 text-sm text-ink-soft">No images yet.</p>
+          uploading === 0 &&
+          preparing === 0 && <p className="mt-4 text-sm text-ink-soft">No images yet.</p>
         )}
       </CardContent>
     </Card>
