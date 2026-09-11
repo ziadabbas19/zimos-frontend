@@ -1,7 +1,7 @@
 import { cache } from "react";
 import type { CSSProperties } from "react";
 import { ApiError, type StorefrontMeta } from "@store-builder/api-client";
-import { createStorefrontApiClient } from "./apiClient";
+import { createServerStorefrontApiClient } from "./serverApiClient";
 
 /**
  * Store metadata, deduped per request. The layout needs it for the brand
@@ -11,7 +11,7 @@ import { createStorefrontApiClient } from "./apiClient";
  * Returns null for an unknown workspace so callers can `notFound()`.
  */
 export const getStoreMeta = cache(async (workspaceId: string): Promise<StorefrontMeta | null> => {
-  const client = createStorefrontApiClient();
+  const client = await createServerStorefrontApiClient();
   try {
     return await client.getStorefrontMeta(workspaceId);
   } catch (err) {

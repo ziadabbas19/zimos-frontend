@@ -1,5 +1,5 @@
 import { notFound, permanentRedirect, redirect } from "next/navigation";
-import { createStorefrontApiClient } from "@/lib/apiClient";
+import { createServerStorefrontApiClient } from "@/lib/serverApiClient";
 import { getStoreMeta } from "@/lib/storeMeta";
 import { PageRenderer } from "@/components/page-renderer";
 import { StoreHeader } from "@/components/StoreHeader";
@@ -25,9 +25,10 @@ export default async function CustomStorePage({
   // trailing slashes itself.
   const pagePath = `/${(path ?? []).join("/")}`;
 
+  const client = await createServerStorefrontApiClient();
   const [store, result] = await Promise.all([
     getStoreMeta(workspaceId),
-    createStorefrontApiClient().getStorefrontPage(workspaceId, pagePath),
+    client.getStorefrontPage(workspaceId, pagePath),
   ]);
 
   if (!store) notFound();

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ApiError, formatMoney } from "@store-builder/api-client";
-import { createStorefrontApiClient } from "@/lib/apiClient";
+import { createServerStorefrontApiClient } from "@/lib/serverApiClient";
 import { getStoreMeta } from "@/lib/storeMeta";
 import { AddToCartButton } from "@/components/AddToCartButton";
 
@@ -13,7 +13,7 @@ export default async function ProductPage({
   params: Promise<{ workspaceId: string; idOrSlug: string }>;
 }) {
   const { workspaceId, idOrSlug } = await params;
-  const client = createStorefrontApiClient();
+  const client = await createServerStorefrontApiClient();
 
   // getStoreMeta is React-cached, so this shares the layout's single fetch.
   const [store, product] = await Promise.all([

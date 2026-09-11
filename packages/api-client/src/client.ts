@@ -113,6 +113,8 @@ export interface ApiClientOptions {
   tokenStorage?: TokenStorage;
   /** Called whenever refresh fails / the session becomes invalid. */
   onSessionExpired?: () => void;
+  /** Sent with every request; a call's own headers win on a clash. */
+  defaultHeaders?: Record<string, string>;
 }
 
 interface RequestOptions {
@@ -142,12 +144,14 @@ export class ApiClient {
   private baseUrl: string;
   private tokenStorage: TokenStorage;
   private onSessionExpired?: () => void;
+  private defaultHeaders: Record<string, string>;
   private refreshPromise: Promise<boolean> | null = null;
 
   constructor(options: ApiClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
     this.tokenStorage = options.tokenStorage ?? createLocalStorageTokenStorage();
     this.onSessionExpired = options.onSessionExpired;
+    this.defaultHeaders = options.defaultHeaders ?? {};
   }
 
   get tokens() {
@@ -182,6 +186,7 @@ export class ApiClient {
     const doFetch = async (): Promise<Response> => {
       const finalHeaders: Record<string, string> = {
         "Content-Type": "application/json",
+        ...this.defaultHeaders,
         ...headers,
       };
       if (auth) {
@@ -1120,7 +1125,8 @@ export class ApiClient {
    */
   private async rawFetch(path: string, init: RequestInit): Promise<Response> {
     const doFetch = () => {
-      const headers = new Headers(init.headers);
+      const headers = new Headers(this.defaultHeaders);
+      new Headers(init.headers).forEach((value, key) => headers.set(key, value));
       const { accessToken } = this.tokens;
       if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
       return fetch(`${this.baseUrl}${path}`, { ...init, headers });

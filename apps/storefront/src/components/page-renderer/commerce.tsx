@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ApiError, formatMoney, type StorefrontProduct } from "@store-builder/api-client";
-import { createStorefrontApiClient } from "@/lib/apiClient";
+import { createServerStorefrontApiClient } from "@/lib/serverApiClient";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductCard } from "@/components/ProductCard";
 import { CartSummary } from "./CartSummary";
@@ -22,7 +22,8 @@ function priceOf(product: StorefrontProduct): number | undefined {
 
 async function listProducts(workspaceId: string, limit: number): Promise<StorefrontProduct[]> {
   try {
-    const { products } = await createStorefrontApiClient().listStorefrontProducts(workspaceId, {
+    const client = await createServerStorefrontApiClient();
+    const { products } = await client.listStorefrontProducts(workspaceId, {
       limit,
     });
     return products;
@@ -92,7 +93,7 @@ export async function ProductCardElement({
   currency: string;
 }) {
   const productId = str(props, "productId").trim();
-  const client = createStorefrontApiClient();
+  const client = await createServerStorefrontApiClient();
 
   let product: StorefrontProduct | null = null;
   try {
@@ -165,7 +166,8 @@ export async function CollectionListElement({
 
   let collections;
   try {
-    collections = await createStorefrontApiClient().listStorefrontCollections(workspaceId);
+    const client = await createServerStorefrontApiClient();
+    collections = await client.listStorefrontCollections(workspaceId);
   } catch {
     return null;
   }

@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { createStorefrontApiClient } from "@/lib/apiClient";
+import { createServerStorefrontApiClient } from "@/lib/serverApiClient";
 import { getStoreMeta } from "@/lib/storeMeta";
 import { PageRenderer } from "@/components/page-renderer";
 import { ProductCard } from "@/components/ProductCard";
@@ -27,7 +27,7 @@ export default async function StoreHomePage({
   params: Promise<{ workspaceId: string }>;
 }) {
   const { workspaceId } = await params;
-  const client = createStorefrontApiClient();
+  const client = await createServerStorefrontApiClient();
 
   // getStoreMeta is React-cached, so this shares the layout's single fetch.
   const [store, published] = await Promise.all([
