@@ -26,11 +26,6 @@ const IP_LIKE = /^[0-9a-f:.]{2,45}$/i;
  */
 export async function createServerStorefrontApiClient() {
   const requestHeaders = await headers();
-  console.log("[TEMP DEBUG headers]", JSON.stringify({
-    "x-real-ip": requestHeaders.get("x-real-ip"),
-    "x-forwarded-for": requestHeaders.get("x-forwarded-for"),
-    "cf-connecting-ip": requestHeaders.get("cf-connecting-ip"),
-  }));
   const secret = process.env.STOREFRONT_PROXY_SECRET?.trim();
   const defaultHeaders: Record<string, string> = {};
   if (secret) {
