@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Alert, Button } from "@store-builder/ui";
-import type { CreateWebsitePagePayload, WebsitePage } from "@store-builder/api-client";
+import { isApiErrorCode, type CreateWebsitePagePayload, type WebsitePage } from "@store-builder/api-client";
 import { Modal } from "@/components/Modal";
 import { Field, TextField } from "@/components/Field";
 import { Select } from "@/components/Select";
 import { getErrorMessage, getFieldErrors } from "@/lib/errors";
+import { useErrorMessage } from "@/lib/errorMessages";
 
 /** The backend's pageType enum, minus nothing — all seven are selectable. */
 const PAGE_TYPES: { value: WebsitePage["pageType"]; label: string }[] = [
@@ -46,6 +47,7 @@ export function NewPageDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const errorMessage = useErrorMessage();
 
   function reset() {
     setTitle("");
@@ -76,6 +78,12 @@ export function NewPageDialog({
       await onCreate({ title: title.trim(), path: effectivePath, pageType });
       reset();
     } catch (err) {
+      // A reserved path (/cart, /checkout…) belongs under the path field, in
+      // our own words rather than the server's.
+      if (isApiErrorCode(err, "PAGE_PATH_RESERVED")) {
+        setFieldErrors({ path: errorMessage(err) });
+        return;
+      }
       const fields = getFieldErrors(err);
       setFieldErrors(fields);
       if (Object.keys(fields).length === 0) setError(getErrorMessage(err));

@@ -39,7 +39,14 @@ export type ApiErrorCode =
   | "CART_TOKEN_OR_ITEM_REQUIRED"
   // funnel runtime
   | "STEP_MISMATCH"
-  | "FUNNEL_PAUSED"
+  | "FUNNEL_PAUSED" // 410
+  | "FUNNEL_NOT_FOUND" // 404
+  | "FUNNEL_SESSION_NOT_FOUND" // 404
+  | "FUNNEL_STEP_NOT_FOUND" // 404
+  | "FUNNEL_OFFER_UNAVAILABLE" // 404
+  | "FUNNEL_OFFER_NEEDS_ORDER" // 422, details[].field = "session"
+  // website pages
+  | "PAGE_PATH_RESERVED" // 422, details[0] = { field: "path", message, reserved }
   // couriers
   | "CARRIERS_NOT_CONFIGURED"
   | "CARRIER_AUTH_FAILED"
