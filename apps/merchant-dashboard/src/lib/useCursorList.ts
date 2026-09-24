@@ -18,6 +18,16 @@ interface CursorListState<T> {
   setItems: (updater: (prev: T[]) => T[]) => void;
 }
 
+interface CursorListOptions {
+  /**
+   * Whether a failed "load more" means the cursor itself went stale (its
+   * anchor row was deleted, or the URL came from another workspace). When it
+   * returns true the list quietly restarts from the first page instead of
+   * showing an error.
+   */
+  isStaleCursor?: (err: unknown) => boolean;
+}
+
 /**
  * Accumulating cursor pagination. `fetchPage(cursor)` returns one page; the hook
  * concatenates pages and re-fetches from scratch whenever `deps` change.
@@ -25,8 +35,11 @@ interface CursorListState<T> {
  */
 export function useCursorList<T>(
   fetchPage: (cursor?: string) => Promise<Page<T>>,
-  deps: unknown[]
+  deps: unknown[],
+  options: CursorListOptions = {}
 ): CursorListState<T> {
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
   const [items, setItemsState] = useState<T[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,7 +50,7 @@ export function useCursorList<T>(
   fetchRef.current = fetchPage;
   const runId = useRef(0);
 
-  const load = useCallback(async (cursor?: string) => {
+  const load = useCallback(async (cursor?: string): Promise<void> => {
     const id = ++runId.current;
     const append = Boolean(cursor);
     if (append) setLoadingMore(true);
@@ -49,7 +62,12 @@ export function useCursorList<T>(
       setItemsState((prev) => (append ? [...prev, ...page.items] : page.items));
       setNextCursor(page.nextCursor);
     } catch (err) {
-      if (id === runId.current) setError(err);
+      if (id !== runId.current) return;
+      if (append && optionsRef.current.isStaleCursor?.(err)) {
+        setLoadingMore(false);
+        return load(undefined);
+      }
+      setError(err);
     } finally {
       if (id === runId.current) {
         setLoading(false);

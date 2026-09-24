@@ -1,7 +1,21 @@
-import { formatMoney, formatMoneyRange, parseMoney } from "@store-builder/api-client";
+import { formatMoney as formatMoneyIn, formatMoneyRange, parseMoney } from "@store-builder/api-client";
 import type { OrderAddressSnapshot, Variant } from "@store-builder/api-client";
+import { getIntlLocale, getLocale } from "@/i18n/LocaleContext";
 
-export { formatMoney, formatMoneyRange, parseMoney };
+export { formatMoneyRange, parseMoney };
+
+/**
+ * Integer minor units -> display string, in the app's language: Arabic
+ * digits under "ar", Latin digits under "en". Both use the Egyptian region
+ * (ar-EG / en-EG). An explicit `locale` still wins.
+ */
+export function formatMoney(
+  amountMinorUnits: number | string | null | undefined,
+  currency = "EGP",
+  locale: string = getLocale() === "ar" ? "ar-EG" : "en-EG"
+): string {
+  return formatMoneyIn(amountMinorUnits, currency, locale);
+}
 
 /**
  * Display form of a product's `productCode`, e.g. "#482910573". Returns null
@@ -19,14 +33,14 @@ export function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  return d.toLocaleDateString(getIntlLocale(), { year: "numeric", month: "short", day: "numeric" });
 }
 
 export function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString(undefined, {
+  return d.toLocaleString(getIntlLocale(), {
     year: "numeric",
     month: "short",
     day: "numeric",

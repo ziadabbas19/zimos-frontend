@@ -19,7 +19,21 @@ import type {
   AuthTokens,
   AuthUser,
   BlacklistPayload,
+  BlocklistEntry,
+  BlockPhonePayload,
+  BlockPhoneResult,
+  CaptureCheckoutSessionPayload,
+  CarrierCity,
+  CarrierList,
   Cart,
+  CheckoutRecoveryStatus,
+  CheckoutSession,
+  CheckoutSessionListParams,
+  CheckoutSessionListResponse,
+  ConnectCarrierPayload,
+  ConnectCarrierResult,
+  FlaggedOrderListParams,
+  FlaggedOrderListResponse,
   CheckoutPayload,
   CollectionDetail,
   CollectionSummary,
@@ -54,6 +68,8 @@ import type {
   Order,
   OrderListParams,
   OrderListResponse,
+  OrderPipeline,
+  OrderSearchParams,
   Product,
   ProductListParams,
   ProductListResponse,
@@ -65,6 +81,7 @@ import type {
   Review,
   ReviewListParams,
   Shipment,
+  ShipmentSyncResult,
   ShippingRate,
   ShippingZone,
   StorefrontCollection,
@@ -1125,6 +1142,17 @@ export class ApiClient {
     );
   }
 
+  /**
+   * Tab counts for the orders screen. Takes the same q/from/to as the list
+   * (never `stage` — this is the answer for every stage at once).
+   */
+  async getOrderPipeline(workspaceId: string, params: OrderSearchParams = {}, signal?: AbortSignal) {
+    return this.request<OrderPipeline>(
+      `${this.ordersBase(workspaceId)}/pipeline${buildQuery({ ...params })}`,
+      { signal }
+    );
+  }
+
   async getOrder(workspaceId: string, orderId: string) {
     const { order } = await this.request<{ order: Order }>(
       `${this.ordersBase(workspaceId)}/${orderId}`
@@ -1183,6 +1211,27 @@ export class ApiClient {
       { method: "PATCH", body: payload }
     );
     return shipment;
+  }
+
+  /**
+   * Pull a courier-booked shipment's status from the courier now. 409
+   * SHIPMENT_NOT_CARRIER_MANAGED for manual shipments, 409
+   * CARRIER_NOT_CONNECTED once the courier was disconnected.
+   */
+  async syncShipment(workspaceId: string, orderId: string, shipmentId: string) {
+    return this.request<ShipmentSyncResult>(
+      `${this.ordersBase(workspaceId)}/${orderId}/shipments/${shipmentId}/sync`,
+      { method: "POST" }
+    );
+  }
+
+  /** The courier's own printable label (AWB) for a courier-booked shipment, as a PDF Blob. */
+  async getShipmentLabel(workspaceId: string, orderId: string, shipmentId: string): Promise<Blob> {
+    const res = await this.rawFetch(
+      `${this.ordersBase(workspaceId)}/${orderId}/shipments/${shipmentId}/label`,
+      { headers: { Accept: "application/pdf" } }
+    );
+    return res.blob();
   }
 
   async listOrderReturns(workspaceId: string, orderId: string) {
@@ -1503,6 +1552,126 @@ export class ApiClient {
     return address;
   }
 
+  // ---------------------------------------------------------------------
+  // Fraud (/workspaces/:workspaceId/fraud/...). The rules themselves are
+  // workspace settings: read `settings.fraud_rules` from listWorkspaces(),
+  // write with updateWorkspace() (needs workspace.manage).
+  // ---------------------------------------------------------------------
+
+  private fraudBase(workspaceId: string) {
+    return `/workspaces/${workspaceId}/fraud`;
+  }
+
+  /** Orders carrying a risk flag, newest first. A stale `before` is a 422 on "before". */
+  async listFlaggedOrders(workspaceId: string, params: FlaggedOrderListParams = {}) {
+    return this.request<FlaggedOrderListResponse>(
+      `${this.fraudBase(workspaceId)}/flagged-orders${buildQuery({ ...params })}`
+    );
+  }
+
+  /** Clears the order's risk flags and nothing else. Idempotent. */
+  async approveFlaggedOrder(workspaceId: string, orderId: string) {
+    const { order } = await this.request<{ order: { id: string; riskFlags: string[] } }>(
+      `${this.fraudBase(workspaceId)}/flagged-orders/${orderId}/approve`,
+      { method: "POST" }
+    );
+    return order;
+  }
+
+  /**
+   * Every blacklisted customer (capped at 500 by the server, not paged).
+   * Unblocking is setCustomerBlacklist(…, { isBlacklisted: false }).
+   */
+  async listBlocklist(workspaceId: string) {
+    const body = await this.request<unknown>(`${this.fraudBase(workspaceId)}/blocklist`);
+    return unwrapList<BlocklistEntry>(body, "entries");
+  }
+
+  /**
+   * Blocks a phone, whether or not it has ever ordered. Re-blocking only
+   * updates the reason (`created: false`). 422 INVALID_PHONE for a phone that
+   * doesn't normalize.
+   */
+  async blockPhone(workspaceId: string, payload: BlockPhonePayload): Promise<BlockPhoneResult> {
+    const res = await this.rawFetch(`${this.fraudBase(workspaceId)}/blocklist`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const { entry } = (await res.json()) as { entry: BlockPhoneResult["entry"] };
+    return { created: res.status === 201, entry };
+  }
+
+  // ---------------------------------------------------------------------
+  // Abandoned checkouts (/workspaces/:workspaceId/checkout-sessions)
+  // ---------------------------------------------------------------------
+
+  async listCheckoutSessions(workspaceId: string, params: CheckoutSessionListParams = {}) {
+    return this.request<CheckoutSessionListResponse>(
+      `/workspaces/${workspaceId}/checkout-sessions${buildQuery({ ...params })}`
+    );
+  }
+
+  /**
+   * Record the merchant's follow-up. "contacted" stamps contactedAt the first
+   * time; an order from that shopper later turns "contacted" into
+   * "recovered" on its own.
+   */
+  async updateCheckoutSessionRecovery(
+    workspaceId: string,
+    sessionId: string,
+    recoveryStatus: CheckoutRecoveryStatus
+  ) {
+    const { session } = await this.request<{ session: CheckoutSession }>(
+      `/workspaces/${workspaceId}/checkout-sessions/${sessionId}`,
+      { method: "PATCH", body: { recoveryStatus } }
+    );
+    return session;
+  }
+
+  // ---------------------------------------------------------------------
+  // Courier integrations (/workspaces/:workspaceId/carriers)
+  // Reads: shipping.manage OR orders.manage. Connect/disconnect: shipping.manage.
+  // ---------------------------------------------------------------------
+
+  private carriersBase(workspaceId: string) {
+    return `/workspaces/${workspaceId}/carriers`;
+  }
+
+  /** Always 200 — check `configured` before offering to connect anything. */
+  async listCarriers(workspaceId: string) {
+    return this.request<CarrierList>(this.carriersBase(workspaceId));
+  }
+
+  /**
+   * Connect, or change the settings of an existing connection (omit
+   * `credentials` to keep the stored key — it is re-verified either way).
+   * Nothing is stored when verification fails.
+   */
+  async connectCarrier(workspaceId: string, code: string, payload: ConnectCarrierPayload) {
+    return this.request<ConnectCarrierResult>(`${this.carriersBase(workspaceId)}/${code}`, {
+      method: "PUT",
+      body: payload,
+    });
+  }
+
+  async disconnectCarrier(workspaceId: string, code: string) {
+    return this.request<{ disconnected: boolean }>(`${this.carriersBase(workspaceId)}/${code}`, {
+      method: "DELETE",
+    });
+  }
+
+  /**
+   * The courier's city → district list (cached ~1h server-side). Pass
+   * `cityId` for just that city — 404 NOT_FOUND if it isn't in the list.
+   */
+  async listCarrierCities(workspaceId: string, code: string, cityId?: string) {
+    const body = await this.request<unknown>(
+      `${this.carriersBase(workspaceId)}/${code}/cities${buildQuery({ cityId })}`
+    );
+    return unwrapList<CarrierCity>(body, "cities");
+  }
+
   /**
    * Fetch a path with the Bearer token attached, one transparent retry after a
    * silent refresh on 401, and the standard error envelope turned into ApiError.
@@ -1735,6 +1904,20 @@ export class ApiClient {
       headers: cartToken ? { "X-Cart-Token": cartToken } : {},
     });
     return order;
+  }
+
+  /**
+   * Checkout-form autosave for abandoned-checkout recovery (no auth). An
+   * upsert keyed on `visitorId`, so replays are harmless. Returns the session
+   * id to send as `checkoutSessionId` with the order. Callers treat a failure
+   * as silent — it must never block the checkout.
+   */
+  async captureCheckoutSession(workspaceId: string, payload: CaptureCheckoutSessionPayload) {
+    const { session } = await this.request<{ session: { id: string } }>(
+      `/store/${workspaceId}/checkout-sessions`,
+      { method: "POST", body: payload, auth: false }
+    );
+    return session;
   }
 
   // ---------------------------------------------------------------------

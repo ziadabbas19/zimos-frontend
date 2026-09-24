@@ -40,6 +40,10 @@ export interface WorkspaceSettings {
   default_shipping_rate_amount?: number | null;
   /** Whether tax rates are applied at checkout. Defaults to false. */
   tax_enabled?: boolean;
+  /** Which optional storefront checkout fields are shown/required. Absent keys use the defaults. */
+  checkout_settings?: Partial<CheckoutSettings>;
+  /** Storefront fraud rules as stored. Absent keys are "off" — see `resolveFraudRules`. */
+  fraud_rules?: Partial<FraudRules>;
   [key: string]: unknown;
 }
 
@@ -107,6 +111,17 @@ export interface UpdateWorkspacePayload {
     free_shipping_threshold_amount?: number | null;
     default_shipping_rate_amount?: number | null;
     tax_enabled?: boolean;
+    /**
+     * Sub-keys merge; `null` on a sub-key restores its default, `null` on the
+     * whole object restores every default.
+     */
+    checkout_settings?: { [K in keyof CheckoutSettings]?: CheckoutSettings[K] | null } | null;
+    /**
+     * Needs workspace.manage on top of website.edit — any mention of the key,
+     * `null` included, is refused with 403 otherwise. Same merge rules as
+     * `checkout_settings`; a `null` rule is "off".
+     */
+    fraud_rules?: { [K in keyof FraudRules]?: FraudRules[K] | null } | null;
   };
 }
 
@@ -367,6 +382,8 @@ export interface StorefrontMeta {
   /** Opaque per-theme blob — the frontend owns its shape, backend just stores it. */
   themeSettings: Record<string, unknown>;
   currency: string;
+  /** Always fully populated — an unconfigured store gets the defaults. */
+  checkout: CheckoutSettings;
 }
 
 export interface StorefrontVariant {
@@ -543,11 +560,18 @@ export interface CheckoutAddress {
 export interface CheckoutPayload {
   contact: CheckoutContact;
   shippingAddress?: CheckoutAddress;
-  paymentMethod: "cod" | "card" | "wallet" | "bank_transfer";
+  /** Cash on delivery only: the storefront checkout refuses every other method (422). */
+  paymentMethod: "cod";
   discountCode?: string;
   funnelId?: string;
   websiteId?: string;
   notes?: string;
+  /**
+   * The autosaved checkout session (`captureCheckoutSession`) this checkout
+   * came from. A hint only — the server ignores anything it can't use and
+   * never fails the order over it.
+   */
+  checkoutSessionId?: string;
   /** "Buy Now" — a single item straight to an order, no cart. Ignored when a cart token is sent. */
   item?: { variantId: string; offerId?: string; quantity?: number };
 }
@@ -577,6 +601,11 @@ export interface ProductOption {
  * shape; the first entry is treated as the primary image.
  */
 export interface ProductMedia {
+  /**
+   * The media-library row id. Set on everything uploaded since the library
+   * existed; older entries in a product's `media` array may not have it.
+   */
+  id?: string;
   /** Absolute URL (APP_URL + path). */
   url: string;
   /** Host-relative path, e.g. "/uploads/<workspaceId>/<uuid>.png". */
@@ -586,7 +615,7 @@ export interface ProductMedia {
 }
 
 /** Response of POST /workspaces/:workspaceId/media (same shape as one media entry). */
-export type MediaUploadResponse = ProductMedia;
+export type MediaUploadResponse = ProductMedia & { id: string };
 
 export interface Variant {
   id: string;
@@ -878,10 +907,27 @@ export interface Shipment {
   waybillNumber: string | null;
   status: ShipmentStatus;
   trackingUrl: string | null;
+  /**
+   * Set only on shipments booked through a connected courier (then
+   * `waybillNumber` is the courier's tracking number). Null for manual ones.
+   */
+  carrierResponse: ShipmentCarrierResponse | null;
   shippedAt: string | null;
   deliveredAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/** The courier's own view of a shipment, as the backend stores it. */
+export interface ShipmentCarrierResponse {
+  /** Present on every courier-booked shipment — its presence is what marks one. */
+  carrierShipmentId?: string;
+  trackingNumber?: string | null;
+  labelUrl?: string | null;
+  address?: { cityId: string; districtId: string; zoneId: string | null };
+  /** The last state the courier reported (sync / webhook). */
+  lastCarrierStatus?: CarrierShipmentStatus | null;
+  [key: string]: unknown;
 }
 
 export type ReturnStatus = "requested" | "approved" | "rejected" | "received" | "refunded";
@@ -941,6 +987,11 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
   items: OrderItem[];
+  /**
+   * Derived pipeline stage. Present on the list and on GET one; absent on
+   * create/cancel/update responses.
+   */
+  stage?: OrderStage;
   /** Present on detail (GET one) only. */
   payments?: Payment[];
   shipments?: Shipment[];
@@ -951,12 +1002,56 @@ export interface OrderListResponse {
   nextCursor: string | null;
 }
 
-export interface OrderListParams {
+/**
+ * The tab an order sits under — derived server-side (orders/orderStage.js),
+ * never stored. Listed in the backend's order.
+ */
+export const ORDER_STAGES = [
+  "pending_confirmation",
+  "needs_follow_up",
+  "ready_to_ship",
+  "shipped",
+  "out_for_delivery",
+  "delivery_failed",
+  "delivered",
+  "returned",
+  "cancelled",
+] as const;
+
+export type OrderStage = (typeof ORDER_STAGES)[number];
+
+/**
+ * Search + date range, shared by the list and the tab counts.
+ *
+ * `q` (2–100 chars after trimming) matches the order number (with or without
+ * '#'), the customer's name or email (Arabic letter variants folded), or —
+ * only when it holds 10+ digits — the phone, compared on its last 10 digits.
+ * `from`/`to` are ISO dates on created_at, in UTC; `to` includes its whole day.
+ */
+export interface OrderSearchParams {
+  q?: string;
+  from?: string;
+  to?: string;
+}
+
+export interface OrderListParams extends OrderSearchParams {
+  /** 1–200, default 50. */
   limit?: number;
+  /**
+   * The previous page's `nextCursor` (an order id). An unknown one is a 422
+   * VALIDATION_ERROR with `details[].field === "cursor"`.
+   */
   cursor?: string;
+  stage?: OrderStage;
   confirmationState?: ConfirmationState;
   financialState?: FinancialState;
   fulfillmentState?: FulfillmentState;
+}
+
+/** GET /orders/pipeline — every stage is present, zero-filled. */
+export interface OrderPipeline {
+  stages: Record<OrderStage, number>;
+  total: number;
 }
 
 export interface OrderAddressInput {
@@ -989,9 +1084,21 @@ export interface UpdateOrderPayload {
 }
 
 export interface CreateShipmentPayload {
+  /**
+   * "manual", or a connected courier's code ("bosta") to book it with that
+   * courier. A courier code the store has NOT connected is stored as a manual
+   * shipment, exactly as before.
+   */
   carrierCode: string;
+  /** Manual shipments only — a courier assigns its own. */
   waybillNumber?: string;
   trackingUrl?: string;
+  /**
+   * Courier bookings only: the courier's ids for the drop-off address, sent
+   * after a 422 CARRIER_ADDRESS_UNMATCHED.
+   */
+  carrierAddress?: { cityId: string; districtId: string };
+  notes?: string;
 }
 
 export interface UpdateShipmentPayload {
@@ -1771,4 +1878,349 @@ export interface AdminOverview {
   /** Last 30 days, zero-filled by the server — every bucket is present. */
   ordersPerDay: AdminChartPoint[];
   attention: AdminAttentionItem[];
+}
+
+// ---------------------------------------------------------------------
+// Storefront checkout settings (workspace.settings.checkout_settings, read
+// back publicly as StorefrontMeta.checkout). Backend:
+// src/modules/checkout/checkoutSettings.js
+// ---------------------------------------------------------------------
+
+export type CheckoutFieldMode = "hidden" | "optional" | "required";
+/** A note the shopper never sees can't be demanded of them — no "required". */
+export type CheckoutNotesMode = "hidden" | "optional";
+
+/**
+ * Keys are named after the request fields they govern on the backend:
+ *   email       -> contact.email
+ *   postal_code -> shippingAddress.postalCode
+ *   notes       -> the order note
+ * "required" is enforced server-side (422 VALIDATION_ERROR on that field).
+ */
+export interface CheckoutSettings {
+  email: CheckoutFieldMode;
+  postal_code: CheckoutFieldMode;
+  notes: CheckoutNotesMode;
+}
+
+export const CHECKOUT_SETTINGS_DEFAULTS: CheckoutSettings = {
+  email: "optional",
+  postal_code: "optional",
+  notes: "optional",
+};
+
+/** The effective checkout settings for a stored blob — mirrors resolveCheckoutSettings. */
+export function resolveCheckoutSettings(
+  stored: Partial<CheckoutSettings> | null | undefined
+): CheckoutSettings {
+  const s = stored ?? {};
+  const modes: CheckoutFieldMode[] = ["hidden", "optional", "required"];
+  return {
+    email: s.email && modes.includes(s.email) ? s.email : CHECKOUT_SETTINGS_DEFAULTS.email,
+    postal_code:
+      s.postal_code && modes.includes(s.postal_code)
+        ? s.postal_code
+        : CHECKOUT_SETTINGS_DEFAULTS.postal_code,
+    notes: s.notes === "hidden" || s.notes === "optional" ? s.notes : CHECKOUT_SETTINGS_DEFAULTS.notes,
+  };
+}
+
+// ---------------------------------------------------------------------
+// Fraud (auth, /workspaces/:workspaceId/fraud/...). Backend: src/modules/fraud
+// Rules live in workspace.settings.fraud_rules (read via GET /workspaces,
+// written via PATCH /workspaces/:id — needs workspace.manage).
+// ---------------------------------------------------------------------
+
+export type FraudAction = "flag" | "block";
+
+export interface FraudRules {
+  /** What a triggered counting rule does. Default "flag". */
+  action: FraudAction;
+  /** Refuse blacklisted customers whatever `action` says. Default false. */
+  block_blacklisted: boolean;
+  /** Same customer + any same variant within N minutes (1–10080). null = off. */
+  duplicate_window_minutes: number | null;
+  /** Customer already has N orders in the last 24h (1–100). null = off. */
+  max_orders_per_phone_per_day: number | null;
+  /** customer.totalRejectedOrders >= N (1–100). null = off. */
+  high_rejection_threshold: number | null;
+}
+
+/** The effective rules for a stored blob — mirrors fraudRules.resolveFraudRules. */
+export function resolveFraudRules(stored: Partial<FraudRules> | null | undefined): FraudRules {
+  const s = stored ?? {};
+  return {
+    action: s.action === "block" ? "block" : "flag",
+    block_blacklisted: s.block_blacklisted === true,
+    duplicate_window_minutes: s.duplicate_window_minutes ?? null,
+    max_orders_per_phone_per_day: s.max_orders_per_phone_per_day ?? null,
+    high_rejection_threshold: s.high_rejection_threshold ?? null,
+  };
+}
+
+/**
+ * Flags an order can carry. `blacklisted_customer` is set on any order from a
+ * blacklisted customer; the other three come from the fraud rules.
+ */
+export type RiskFlag =
+  | "blacklisted_customer"
+  | "duplicate_order"
+  | "phone_daily_limit"
+  | "high_rejection_customer";
+
+/** One row of GET /fraud/flagged-orders — a slim projection, not a full Order. */
+export interface FlaggedOrder {
+  id: string;
+  orderNumber: string;
+  createdAt: string;
+  /** Usually RiskFlag values; typed open so an unknown future flag still renders. */
+  riskFlags: string[];
+  customerName: string | null;
+  phone: string | null;
+  /** Integer minor units, already a number here. */
+  totalAmount: number;
+  currency: string;
+  confirmationState: ConfirmationState;
+  cancelled: boolean;
+}
+
+export interface FlaggedOrderListParams {
+  /** 1–100, default 30. */
+  limit?: number;
+  /** The previous page's `nextCursor` (an order id). */
+  before?: string;
+  /** Default false: only orders still waiting on the COD call. */
+  includeResolved?: boolean;
+}
+
+export interface FlaggedOrderListResponse {
+  orders: FlaggedOrder[];
+  nextCursor: string | null;
+}
+
+export interface BlocklistEntry {
+  customerId: string;
+  fullName: string | null;
+  phone: string;
+  reason: string | null;
+  totalOrders: number;
+  totalRejectedOrders: number;
+  blockedAt: string | null;
+}
+
+export interface BlockPhonePayload {
+  phone: string;
+  /** 2–300 chars. */
+  reason: string;
+  fullName?: string;
+}
+
+/** POST /fraud/blocklist. `created` is false when the phone was already blocked (200, reason updated). */
+export interface BlockPhoneResult {
+  created: boolean;
+  entry: { customerId: string; phone: string; reason: string | null };
+}
+
+// ---------------------------------------------------------------------
+// Abandoned checkouts. Public autosave: POST /store/:workspaceId/checkout-sessions.
+// Merchant: /workspaces/:workspaceId/checkout-sessions.
+// Backend: src/modules/checkoutSessions. "abandoned" = no autosave for 60
+// minutes, derived server-side at read time.
+// ---------------------------------------------------------------------
+
+export interface CaptureCheckoutSessionPayload {
+  contact: { phone: string; fullName?: string; email?: string };
+  /** 1–20 lines, quantity 1–100. Priced server-side. */
+  items: Array<{ variantId: string; offerId?: string; quantity: number }>;
+  source?: "store" | "funnel";
+  /** 8–64 chars; the upsert key — one open session per visitor. */
+  visitorId: string;
+}
+
+export type CheckoutSessionStatus = "in_progress" | "abandoned" | "converted";
+export type CheckoutRecoveryStatus = "not_contacted" | "contacted" | "recovered" | "lost";
+
+export interface CheckoutSessionItem {
+  productId: string;
+  variantId: string;
+  productName: string;
+  options: Record<string, string> | null;
+  offerName: string | null;
+  quantity: number;
+  lineTotalAmount: number;
+}
+
+export interface CheckoutSession {
+  id: string;
+  status: CheckoutSessionStatus;
+  recoveryStatus: CheckoutRecoveryStatus;
+  customerName: string | null;
+  phone: string | null;
+  email: string | null;
+  items: CheckoutSessionItem[];
+  /** Integer minor units, already a number here. */
+  subtotalAmount: number;
+  currency: string;
+  source: "store" | "funnel";
+  lastActivityAt: string;
+  contactedAt: string | null;
+  createdAt: string;
+  convertedOrder: { id: string; orderNumber: string } | null;
+}
+
+export interface CheckoutSessionListParams {
+  /** Default "abandoned". In-progress sessions only show under "all". */
+  view?: "abandoned" | "converted" | "all";
+  recoveryStatus?: CheckoutRecoveryStatus;
+  /** 1–100, default 30. */
+  limit?: number;
+  /** The previous page's `nextCursor` (a session id). */
+  before?: string;
+}
+
+export interface CheckoutSessionListResponse {
+  sessions: CheckoutSession[];
+  nextCursor: string | null;
+}
+
+// ---------------------------------------------------------------------
+// Courier integrations (auth, /workspaces/:workspaceId/carriers).
+// Backend: src/modules/shipping. Credentials are write-only — no response
+// ever carries them.
+// ---------------------------------------------------------------------
+
+export interface CarrierFieldDescriptor {
+  key: string;
+  label: string;
+  secret?: boolean;
+  options?: string[];
+}
+
+export interface CarrierConnection {
+  /** "invalid" once the courier rejected the stored key — reconnect needed. */
+  status: "active" | "invalid";
+  settings: Record<string, unknown>;
+  lastVerifiedAt: string | null;
+  connectedAt: string;
+  updatedAt: string;
+  webhookUrl: string;
+}
+
+export interface CarrierInfo {
+  code: string;
+  name: string;
+  webhookSetup: "per_shipment" | "account";
+  supportsLabel: boolean;
+  credentialFields: CarrierFieldDescriptor[];
+  settingFields: CarrierFieldDescriptor[];
+  /** null when this workspace hasn't connected it. */
+  connection: CarrierConnection | null;
+}
+
+/**
+ * GET /carriers. Always 200: `configured: false` means the server has no
+ * credentials key, and every other carrier call answers 503
+ * CARRIERS_NOT_CONFIGURED.
+ */
+export interface CarrierList {
+  configured: boolean;
+  carriers: CarrierInfo[];
+}
+
+export const BOSTA_PACKAGE_TYPES = ["Parcel", "Document", "Light Bulky", "Heavy Bulky"] as const;
+export type BostaPackageType = (typeof BOSTA_PACKAGE_TYPES)[number];
+
+export interface BostaSettings {
+  /** A pickup location id from the verification; Bosta's default when empty. */
+  businessLocationId?: string | null;
+  packageType?: BostaPackageType;
+  awbType?: "A4" | "A6";
+  awbLang?: "ar" | "en";
+}
+
+/**
+ * PUT /carriers/:code. `credentials` may be omitted to change only the
+ * settings of an existing connection (the stored key is re-verified).
+ */
+export interface ConnectCarrierPayload {
+  credentials?: Record<string, unknown>;
+  settings?: Record<string, unknown>;
+}
+
+export interface CarrierPickupLocation {
+  id: string;
+  name: string | null;
+  isDefault: boolean;
+}
+
+export interface ConnectCarrierResult {
+  carrier: CarrierInfo;
+  webhook: { url: string; setup: "per_shipment" | "account"; manualSetupRequired: boolean };
+  /** Bosta: the account's pickup locations — only obtainable from this call. */
+  verification: { pickupLocations?: CarrierPickupLocation[] } & Record<string, unknown>;
+}
+
+export interface CarrierDistrict {
+  id: string;
+  name: string | null;
+  nameAr: string | null;
+  zoneId: string | null;
+  zoneName: string | null;
+  zoneNameAr: string | null;
+  dropOffAvailable: boolean;
+}
+
+export interface CarrierCity {
+  id: string;
+  name: string | null;
+  nameAr: string | null;
+  dropOffAvailable: boolean;
+  districts: CarrierDistrict[];
+}
+
+/** One option in `details.candidates` of a 422 CARRIER_ADDRESS_UNMATCHED. */
+export interface CarrierAddressCandidate {
+  cityId: string;
+  cityName: string | null;
+  cityNameAr: string | null;
+  /** null at level "city": the candidates are cities, pick a district next. */
+  districtId: string | null;
+  districtName: string | null;
+  districtNameAr: string | null;
+  zoneId: string | null;
+  zoneName: string | null;
+  /** Sorted first; the matcher's best guesses. */
+  suggested: boolean;
+}
+
+/** `details` of 422 CARRIER_ADDRESS_UNMATCHED. */
+export interface CarrierAddressUnmatchedDetails {
+  carrierCode: string;
+  level: "city" | "district";
+  orderAddress: { province: string | null; city: string | null };
+  /** Set at level "district": the city that did match. */
+  matchedCity: { id: string; name: string | null; nameAr: string | null } | null;
+  candidates: CarrierAddressCandidate[];
+}
+
+/** `details` of 409 CARRIER_CANCEL_FAILED. */
+export interface CarrierCancelFailedDetails {
+  shipmentId: string;
+  carrierCode: string;
+  /** The courier-side failure, e.g. "CARRIER_PERMISSION_DENIED". */
+  carrierErrorCode: string | null;
+}
+
+export interface CarrierShipmentStatus {
+  code: number | null;
+  value: string | null;
+  type: string | null;
+}
+
+/** POST .../shipments/:shipmentId/sync */
+export interface ShipmentSyncResult {
+  shipment: Shipment;
+  /** Whether our shipment status moved. */
+  changed: boolean;
+  carrierStatus: CarrierShipmentStatus | null;
 }
