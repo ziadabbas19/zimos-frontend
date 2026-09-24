@@ -79,12 +79,7 @@ export function OrderDetailPage() {
 
             <OrderSummary order={data} />
 
-            <ShipmentsSection
-              orderId={data.id}
-              shipments={data.shipments ?? []}
-              orderCancelled={Boolean(data.cancelledAt)}
-              onChanged={reload}
-            />
+            <ShipmentsSection order={data} onChanged={reload} />
 
             <ReturnsSection order={data} onOrderMaybeChanged={reload} />
           </div>

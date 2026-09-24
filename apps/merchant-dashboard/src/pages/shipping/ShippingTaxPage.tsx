@@ -29,6 +29,7 @@ import { TextField, Field } from "@/components/Field";
 import { MoneyInput } from "@/components/MoneyInput";
 import { Select } from "@/components/Select";
 import { useToast } from "@/components/Toast";
+import { CarrierConnectionsSection } from "./CarrierConnectionsSection";
 
 const RATE_TYPE_LABEL: Record<ShippingRateType, string> = {
   flat: "Flat",
@@ -165,6 +166,8 @@ function ShippingTaxBody() {
         title="Shipping & Tax"
         description="Shipping zones and their rates, plus the tax rates applied at checkout."
       />
+
+      <CarrierConnectionsSection />
 
       <StoreShippingTaxSettings
         workspace={currentWorkspace}

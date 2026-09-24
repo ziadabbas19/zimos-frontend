@@ -1,5 +1,12 @@
 import { useCallback } from "react";
-import { ApiError, apiErrorCode, type ApiErrorCode } from "@store-builder/api-client";
+import {
+  ApiError,
+  apiErrorCode,
+  apiErrorDetails,
+  type ApiErrorCode,
+  type CarrierCancelFailedDetails,
+} from "@store-builder/api-client";
+import { fmt } from "@/i18n/LocaleContext";
 import { useT, type Messages } from "@/i18n/LocaleContext";
 
 /**
@@ -53,6 +60,11 @@ const STRINGS = {
     CARRIER_CREDENTIALS_UNREADABLE: "The saved courier key can't be read anymore. Connect the courier again.",
     SHIPMENT_NOT_CARRIER_MANAGED: "This shipment wasn't booked through a connected courier.",
     LABEL_NOT_AVAILABLE: "This courier doesn't provide printable labels.",
+    cancelFailedPermission:
+      "The courier refused to cancel the delivery: the connected API key doesn't have Full Access. The order was not cancelled. Reconnect the courier with a Full Access key under Shipping, or cancel the delivery in the courier's dashboard first.",
+    cancelFailedAuth:
+      "The courier rejected the saved API key, so the delivery wasn't cancelled and the order is unchanged. Reconnect the courier under Shipping.",
+    courierReply: "Courier's reply: {message}",
   },
   ar: {
     network: "تعذّر الوصول إلى الخادم. تحقق من اتصالك وحاول مرة أخرى.",
@@ -92,10 +104,19 @@ const STRINGS = {
     CARRIER_CREDENTIALS_UNREADABLE: "تعذّرت قراءة مفتاح شركة الشحن المحفوظ. أعد ربط الشركة.",
     SHIPMENT_NOT_CARRIER_MANAGED: "هذه الشحنة لم تُحجز عبر شركة شحن مربوطة.",
     LABEL_NOT_AVAILABLE: "شركة الشحن هذه لا توفر ملصقات قابلة للطباعة.",
+    cancelFailedPermission:
+      "رفضت شركة الشحن إلغاء الشحنة لأن مفتاح API المربوط ليس بصلاحية Full Access. لم يتم إلغاء الأوردر. أعد ربط الشركة بمفتاح Full Access من صفحة الشحن، أو ألغِ الشحنة من لوحة تحكم الشركة أولًا.",
+    cancelFailedAuth:
+      "رفضت شركة الشحن مفتاح API المحفوظ، لذلك لم تُلغَ الشحنة ولم يتغير الأوردر. أعد ربط الشركة من صفحة الشحن.",
+    courierReply: "رد شركة الشحن: {message}",
   },
 } satisfies Messages;
 
-type CodeKey = Exclude<keyof typeof STRINGS.en, "network" | "generic">;
+type CodeKey = Exclude<
+  keyof typeof STRINGS.en,
+  "network" | "generic" | "cancelFailedPermission" | "cancelFailedAuth" | "courierReply"
+>;
+const OWN_KEYS: ReadonlySet<string> = new Set(["network", "generic", "cancelFailedPermission", "cancelFailedAuth", "courierReply"]);
 
 /** Codes whose server message is shown as-is, never replaced. */
 const VERBATIM_CODES: ReadonlySet<string> = new Set<ApiErrorCode>(["CARRIER_ERROR"]);
@@ -125,7 +146,17 @@ export function useErrorMessage() {
         const override = overrides?.[code];
         if (override) return override;
         if (VERBATIM_CODES.has(code) && err instanceof ApiError && err.message) return err.message;
-        if (code in t && code !== "network" && code !== "generic") return t[code as CodeKey];
+        if (code === "CARRIER_CANCEL_FAILED") {
+          // Only order cancellation raises it. The courier-side cause decides
+          // what the merchant can do next; the courier's own words come along
+          // for anything we can't name.
+          const cause = apiErrorDetails<CarrierCancelFailedDetails>(err)?.carrierErrorCode;
+          if (cause === "CARRIER_PERMISSION_DENIED") return t.cancelFailedPermission;
+          if (cause === "CARRIER_AUTH_FAILED") return t.cancelFailedAuth;
+          const reply = err instanceof ApiError ? err.message : "";
+          return reply ? `${t.CARRIER_CANCEL_FAILED} ${fmt(t.courierReply, { message: reply })}` : t.CARRIER_CANCEL_FAILED;
+        }
+        if (code in t && !OWN_KEYS.has(code)) return t[code as CodeKey];
       }
       if (err instanceof ApiError) {
         if (err.status === 403) return t.FORBIDDEN;

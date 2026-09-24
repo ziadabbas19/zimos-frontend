@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Alert, Button } from "@store-builder/ui";
-import type { Order, UpdateOrderPayload } from "@store-builder/api-client";
+import { isApiErrorCode, type Order, type UpdateOrderPayload } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { getFieldErrors } from "@/lib/errors";
@@ -11,6 +11,7 @@ import { Modal } from "@/components/Modal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { TextField, Field } from "@/components/Field";
 import { Textarea } from "@/components/Textarea";
+import { isCarrierBooked } from "@/pages/shipping/carriers";
 
 const SHIPPED_STATES = ["fulfilled", "partially_fulfilled", "returned"];
 
@@ -32,6 +33,11 @@ const STRINGS = {
     reasonPlaceholder: "Customer changed their mind",
     reasonRequired: "Enter a reason for the cancellation.",
     cancelledToast: "Order cancelled. The stock reservation has been released.",
+    courierCancelNote:
+      "This order has a courier delivery that hasn't been collected. It's cancelled with the courier first; if the courier refuses, nothing is cancelled and the order stays active.",
+    courierFailedNote:
+      "This order has a courier delivery marked Failed. Cancelling the order does NOT cancel it with the courier: cancel it in the courier's dashboard too, or the parcel may still be delivered.",
+    notCancelled: "Nothing was cancelled: the order is still active.",
     editTitle: "Edit {number}",
     updatedToast: "Order updated.",
     editNote: "Only the shipping address and internal notes can be edited. Totals aren't re-priced.",
@@ -62,6 +68,11 @@ const STRINGS = {
     reasonPlaceholder: "العميل غيّر رأيه",
     reasonRequired: "أدخل سبب الإلغاء.",
     cancelledToast: "تم إلغاء الأوردر وتحرير حجز المخزون.",
+    courierCancelNote:
+      "لهذا الأوردر شحنة مع شركة شحن لم تُستلم بعد. سيتم إلغاؤها لدى الشركة أولًا؛ وإذا رفضت الشركة، فلن يُلغى أي شيء ويبقى الأوردر نشطًا.",
+    courierFailedNote:
+      "لهذا الأوردر شحنة مع شركة شحن حالتها «فشل». إلغاء الأوردر لا يلغيها لدى الشركة: ألغِها من لوحة تحكم الشركة أيضًا، وإلا فقد يتم توصيل الطرد.",
+    notCancelled: "لم يتم إلغاء أي شيء: الأوردر ما زال نشطًا.",
     editTitle: "تعديل {number}",
     updatedToast: "تم تحديث الأوردر.",
     editNote: "يمكن تعديل عنوان الشحن والملاحظات الداخلية فقط. لا يُعاد حساب الإجماليات.",
@@ -96,6 +107,11 @@ export function OrderActions({ order, onChanged }: Props) {
   const isShipped = SHIPPED_STATES.includes(order.fulfillmentState);
   const canCancel = !isCancelled && !isShipped;
   const canEdit = !isCancelled && !isShipped;
+  // The backend cancels only 'created' courier deliveries at the courier
+  // (cancelCarrierShipmentsForOrder); a 'failed' one is left there untouched.
+  const courierShipments = (order.shipments ?? []).filter(isCarrierBooked);
+  const courierToCancel = courierShipments.some((s) => s.status === "created");
+  const courierFailed = courierShipments.some((s) => s.status === "failed");
 
   async function confirmCancel() {
     if (reason.trim().length === 0) throw new Error(t.reasonRequired);
@@ -104,6 +120,12 @@ export function OrderActions({ order, onChanged }: Props) {
     } catch (err) {
       // ConfirmDialog shows a thrown Error's message as-is; hand it the
       // translated one.
+      if (isApiErrorCode(err, "CARRIER_CANCEL_FAILED")) {
+        // The whole cancellation rolled back. Refresh anyway: a rejected key
+        // is marked invalid on the courier account even so.
+        onChanged();
+        throw new Error(`${t.notCancelled} ${errorMessage(err)}`);
+      }
       throw new Error(errorMessage(err));
     }
     toast.success(t.cancelledToast);
@@ -176,6 +198,12 @@ export function OrderActions({ order, onChanged }: Props) {
           onChange={(e) => setReason(e.target.value)}
           placeholder={t.reasonPlaceholder}
         />
+        {courierToCancel && <p className="mt-3 text-sm text-ink-soft">{t.courierCancelNote}</p>}
+        {courierFailed && (
+          <p className="mt-3 rounded-[0.5rem] border border-accent/40 bg-accent-soft px-3 py-2 text-sm text-accent-dark">
+            {t.courierFailedNote}
+          </p>
+        )}
       </ConfirmDialog>
 
       <Modal
