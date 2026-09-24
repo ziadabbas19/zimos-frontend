@@ -7,6 +7,7 @@ import {
   Settings,
   ShieldAlert,
   ShoppingBag,
+  ShoppingCart,
   Star,
   Tag,
   Truck,
@@ -22,6 +23,7 @@ export type NavKey =
   | "confirmationQueue"
   | "fraud"
   | "returns"
+  | "abandonedCarts"
   | "catalog"
   | "reviews"
   | "customers"
@@ -71,6 +73,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: "confirmationQueue", to: "/confirmation-queue", icon: ClipboardCheck },
       { key: "fraud", to: "/fraud", icon: ShieldAlert },
       { key: "returns", to: "/returns", icon: Undo2 },
+      { key: "abandonedCarts", to: "/abandoned-carts", icon: ShoppingCart },
     ],
   },
   {
@@ -129,6 +132,7 @@ export const NAV_LABELS = {
     confirmationQueue: "Confirmation Queue",
     fraud: "Fraud protection",
     returns: "Returns",
+    abandonedCarts: "Abandoned carts",
     catalog: "Catalog",
     reviews: "Reviews",
     customers: "Customers",
@@ -144,6 +148,7 @@ export const NAV_LABELS = {
     confirmationQueue: "قائمة التأكيد",
     fraud: "الحماية من الاحتيال",
     returns: "المرتجعات",
+    abandonedCarts: "السلات المتروكة",
     catalog: "الكتالوج",
     reviews: "التقييمات",
     customers: "العملاء",

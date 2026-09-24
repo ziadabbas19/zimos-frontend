@@ -15,6 +15,7 @@ import {
   type OrderFormValues,
 } from "@/lib/orderForm";
 import { afterOrder, orderErrorMessage, placeCodOrder, type OrderLine } from "@/lib/placeOrder";
+import { useCheckoutAutosave } from "@/lib/useCheckoutAutosave";
 import {
   defaultOfferOf,
   discountPercent,
@@ -106,6 +107,11 @@ export function ProductLanding({
 
   const total = pricing.total + (bumpOn && bump ? bump.priceAmount : 0);
 
+  // The hook keys on the lines' content, so a fresh array each render is fine.
+  const autosaveLines: OrderLine[] = mainLine ? [mainLine] : [];
+  if (bumpOn && bump) autosaveLines.push({ variantId: bump.variantId, offerId: bump.offerId, quantity: 1 });
+  const autosave = useCheckoutAutosave({ client, workspaceId, values, lines: autosaveLines });
+
   function onFieldChange(field: OrderFormField, value: string) {
     setValues((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -130,12 +136,13 @@ export function ProductLanding({
 
     const bumpLine: OrderLine | null =
       bumpOn && bump ? { variantId: bump.variantId, offerId: bump.offerId, quantity: 1 } : null;
-    const payload = toCheckoutPayload(values, {
-      item: bumpLine ? undefined : mainLine,
-    });
-
     setSubmitting(true);
     setFormError(null);
+    const checkoutSessionId = await autosave.stop();
+    const payload = {
+      ...toCheckoutPayload(values, { item: bumpLine ? undefined : mainLine }),
+      ...(checkoutSessionId ? { checkoutSessionId } : {}),
+    };
     try {
       const order = await placeCodOrder({
         client,
@@ -147,6 +154,7 @@ export function ProductLanding({
     } catch (err) {
       setFormError(orderErrorMessage(err, t.form.errors.generic));
       setSubmitting(false);
+      autosave.resume();
     }
   }
 

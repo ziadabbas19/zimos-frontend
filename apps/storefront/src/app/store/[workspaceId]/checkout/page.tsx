@@ -23,6 +23,7 @@ import { afterOrder, orderErrorMessage, placeCodOrder } from "@/lib/placeOrder";
 import { variantLabel } from "@/lib/product";
 import { useStore } from "@/lib/StoreContext";
 import { useCatalog } from "@/lib/useCatalog";
+import { useCheckoutAutosave } from "@/lib/useCheckoutAutosave";
 
 const FORM_PREFIX = "checkout";
 
@@ -46,6 +47,7 @@ export default function CheckoutPage() {
 
   const currency = cart?.currency ?? "EGP";
   const items = cart?.items ?? [];
+  const autosave = useCheckoutAutosave({ client, workspaceId, values, lines: items });
 
   const bump = useMemo(() => {
     if (!loaded) return null;
@@ -85,19 +87,24 @@ export default function CheckoutPage() {
 
     setSubmitting(true);
     setFormError(null);
+    const checkoutSessionId = await autosave.stop();
     try {
       if (bumpOn && bump && !bumpAdded.current) {
         await addItem(bump.variantId, bump.offerId, 1);
         bumpAdded.current = true;
       }
 
-      const payload = toCheckoutPayload(values, { discountCode: appliedCode, systemNotes });
+      const payload = {
+        ...toCheckoutPayload(values, { discountCode: appliedCode, systemNotes }),
+        ...(checkoutSessionId ? { checkoutSessionId } : {}),
+      };
       const order = await placeCodOrder({ client, workspaceId, payload, cartToken: cart.guestToken });
       clearCart();
       router.push(afterOrder({ workspaceId, basePath, order, phone: payload.contact.phone }));
     } catch (err) {
       setFormError(orderErrorMessage(err, t.form.errors.generic));
       setSubmitting(false);
+      autosave.resume();
     }
   }
 
