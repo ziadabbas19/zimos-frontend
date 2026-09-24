@@ -1,21 +1,24 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
-import { parseMoney, type StorefrontProductDetail } from "@store-builder/api-client";
+import { parseMoney, type CheckoutSettings, type StorefrontProductDetail } from "@store-builder/api-client";
 import { createStorefrontApiClient } from "@/lib/apiClient";
 import { bundlePricing, bundleTiers, type OrderBumpOffer } from "@/lib/commerce";
 import {
   EMPTY_ORDER_FORM,
   FIELD_ORDER,
+  quickFormFields,
   toCheckoutPayload,
   validateOrderForm,
   type OrderFormErrors,
   type OrderFormField,
   type OrderFormValues,
 } from "@/lib/orderForm";
-import { afterOrder, orderErrorMessage, placeCodOrder, type OrderLine } from "@/lib/placeOrder";
+import { afterOrder, orderErrorMessage, placeCodOrder, serverFieldErrors, type OrderLine } from "@/lib/placeOrder";
 import { useCheckoutAutosave } from "@/lib/useCheckoutAutosave";
+import { useOrderFormFields } from "@/lib/useOrderFormFields";
 import {
   defaultOfferOf,
   discountPercent,
@@ -45,13 +48,18 @@ export function ProductLanding({
   product,
   bump,
   countdownHours,
+  checkoutSettings,
 }: {
   workspaceId: string;
   product: StorefrontProductDetail;
   bump: OrderBumpOffer | null;
   countdownHours: number | null;
+  /** From this page's own render, not the layout's — see useFreshCheckoutSettings. */
+  checkoutSettings: CheckoutSettings;
 }) {
   const { t, money } = useStore();
+  const quickFields = useMemo(() => quickFormFields(checkoutSettings), [checkoutSettings]);
+  const { fields, reveal } = useOrderFormFields(quickFields);
   const basePath = useStoreBasePath();
   const router = useRouter();
   const [client] = useState(() => createStorefrontApiClient());
@@ -121,7 +129,7 @@ export function ProductLanding({
     e.preventDefault();
     if (submitting) return;
 
-    const found = validateOrderForm(values, t);
+    const found = validateOrderForm(values, t, fields);
     setErrors(found);
     const invalid = FIELD_ORDER.filter((k) => found[k]);
     if (invalid.length > 0) {
@@ -140,7 +148,7 @@ export function ProductLanding({
     setFormError(null);
     const checkoutSessionId = await autosave.stop();
     const payload = {
-      ...toCheckoutPayload(values, { item: bumpLine ? undefined : mainLine }),
+      ...toCheckoutPayload(values, fields, { item: bumpLine ? undefined : mainLine }),
       ...(checkoutSessionId ? { checkoutSessionId } : {}),
     };
     try {
@@ -152,8 +160,22 @@ export function ProductLanding({
       });
       router.push(afterOrder({ workspaceId, basePath, order, phone: payload.contact.phone }));
     } catch (err) {
-      setFormError(orderErrorMessage(err, t.form.errors.generic));
-      setSubmitting(false);
+      const fromServer = serverFieldErrors(err, t.form.errors);
+      const invalid = FIELD_ORDER.filter((k) => fromServer[k]);
+      if (invalid.length > 0) {
+        // Commit first: a field the server named may be one this form was
+        // hiding, and it has to exist before it can take focus.
+        flushSync(() => {
+          reveal(fromServer);
+          setErrors(fromServer);
+          setFormError(t.form.errors.summary(invalid.length));
+          setSubmitting(false);
+        });
+        document.getElementById(fieldId(FORM_PREFIX, invalid[0]))?.focus();
+      } else {
+        setFormError(orderErrorMessage(err, t.form.errors));
+        setSubmitting(false);
+      }
       autosave.resume();
     }
   }
@@ -345,7 +367,13 @@ export function ProductLanding({
         <p className="mt-1 text-sm text-ink-soft">{t.form.subtitle}</p>
 
         <form onSubmit={handleSubmit} noValidate className="mt-5 space-y-5">
-          <OrderFormFields idPrefix={FORM_PREFIX} values={values} errors={errors} onChange={onFieldChange} />
+          <OrderFormFields
+            idPrefix={FORM_PREFIX}
+            values={values}
+            errors={errors}
+            onChange={onFieldChange}
+            fields={fields}
+          />
 
           <dl className="space-y-2 rounded-xl bg-paper p-4 text-sm ">
             <div className="flex justify-between gap-3">

@@ -15,6 +15,12 @@ import { Modal } from "@/components/Modal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { TextField } from "@/components/Field";
 import { useToast } from "@/components/Toast";
+import { useT, type Messages } from "@/i18n/LocaleContext";
+
+const THUMB_STRINGS = {
+  en: { noPreview: "No preview yet" },
+  ar: { noPreview: "لا توجد معاينة بعد" },
+} satisfies Messages;
 
 /** Square-ish preview for a template card — the thumbnail, or a placeholder. */
 function TemplateThumb({ url, name }: { url: string | null; name: string }) {
@@ -30,9 +36,40 @@ function TemplateThumb({ url, name }: { url: string | null; name: string }) {
       />
     );
   }
+  return <TemplatePlaceholder />;
+}
+
+/**
+ * Stands in for a template with no thumbnail (or one that fails to load): a
+ * sketch of a storefront page — header, hero, product grid — so the gallery
+ * keeps its rhythm instead of showing a bare icon. Decorative; the card's
+ * text already names the template.
+ */
+function TemplatePlaceholder() {
+  const t = useT(THUMB_STRINGS);
   return (
-    <div className="flex aspect-[4/3] w-full items-center justify-center bg-primary-soft text-primary-dark dark:text-primary">
-      <LayoutTemplate className="size-8" aria-hidden />
+    <div className="relative flex aspect-[4/3] w-full flex-col gap-2 overflow-hidden bg-primary-soft p-3 pb-8 text-primary-dark dark:text-primary">
+      <div aria-hidden className="flex items-center gap-1.5 rounded-sm bg-paper-raised/80 px-2 py-1.5">
+        <span className="size-2 rounded-full bg-current opacity-60" />
+        <span className="h-1.5 w-10 rounded-full bg-current opacity-40" />
+        <span className="ms-auto h-1.5 w-6 rounded-full bg-current opacity-25" />
+      </div>
+      <div aria-hidden className="flex flex-1 items-center gap-2 rounded-sm bg-paper-raised/60 p-2">
+        <div className="flex-1 space-y-1.5">
+          <span className="block h-2 w-3/4 rounded-full bg-current opacity-40" />
+          <span className="block h-1.5 w-1/2 rounded-full bg-current opacity-25" />
+          <span className="mt-2 block h-3 w-10 rounded-sm bg-current opacity-50" />
+        </div>
+        <LayoutTemplate className="size-8 shrink-0 opacity-50" />
+      </div>
+      <div aria-hidden className="grid grid-cols-3 gap-2">
+        {[0, 1, 2].map((i) => (
+          <span key={i} className="block h-6 rounded-sm bg-paper-raised/60" />
+        ))}
+      </div>
+      <span className="absolute inset-x-0 bottom-0 bg-paper-raised/90 py-1 text-center text-xs font-medium text-ink-soft">
+        {t.noPreview}
+      </span>
     </div>
   );
 }

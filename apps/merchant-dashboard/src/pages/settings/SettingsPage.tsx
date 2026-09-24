@@ -28,6 +28,7 @@ import { TextField, Field } from "@/components/Field";
 import { Select } from "@/components/Select";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
+import { CheckoutSettingsSection } from "./CheckoutSettingsSection";
 
 export function SettingsPage() {
   const workspaceId = useWorkspaceId();
@@ -39,6 +40,7 @@ export function SettingsPage() {
         description="Your store profile and the people who can manage it."
       />
       <WorkspaceProfileSection key={`profile-${workspaceId}`} />
+      <CheckoutSettingsSection key={`checkout-${workspaceId}`} />
       <TeamSection key={`team-${workspaceId}`} />
     </div>
   );

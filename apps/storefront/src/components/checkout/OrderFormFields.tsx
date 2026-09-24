@@ -2,7 +2,14 @@
 
 import type { ReactNode } from "react";
 import { GOVERNORATES } from "@/lib/egypt";
-import type { OrderFormErrors, OrderFormField, OrderFormValues } from "@/lib/orderForm";
+import {
+  NOTES_MAX,
+  POSTAL_CODE_MAX,
+  type OrderFormErrors,
+  type OrderFormField,
+  type OrderFormFieldModes,
+  type OrderFormValues,
+} from "@/lib/orderForm";
 import { useStore } from "@/lib/StoreContext";
 import { input, label as labelClass } from "../ui";
 
@@ -59,21 +66,23 @@ function Field({
 /**
  * The COD address/contact fields. Controlled; validation lives in
  * lib/orderForm.ts so the product quick form and checkout behave identically.
+ * `fields` decides whether email, postal code and notes are hidden, optional
+ * or required — the store's checkout settings, as that form applies them.
  */
 export function OrderFormFields({
   idPrefix,
   values,
   errors,
   onChange,
+  fields,
   showAltPhone = false,
-  showEmail = false,
 }: {
   idPrefix: string;
   values: OrderFormValues;
   errors: OrderFormErrors;
   onChange: (field: OrderFormField, value: string) => void;
+  fields: OrderFormFieldModes;
   showAltPhone?: boolean;
-  showEmail?: boolean;
 }) {
   const { t, locale } = useStore();
 
@@ -143,10 +152,11 @@ export function OrderFormFields({
         </Field>
       )}
 
-      {showEmail && (
+      {fields.email !== "hidden" && (
         <Field
           id={fieldId(idPrefix, "email")}
           label={t.form.email}
+          required={fields.email === "required"}
           optionalLabel={t.common.optional}
           error={errors.email}
           className="sm:col-span-2"
@@ -156,6 +166,7 @@ export function OrderFormFields({
             type="email"
             inputMode="email"
             autoComplete="email"
+            required={fields.email === "required"}
             dir="ltr"
             value={values.email}
             onChange={(e) => onChange("email", e.target.value)}
@@ -221,16 +232,49 @@ export function OrderFormFields({
         />
       </Field>
 
-      <Field id={fieldId(idPrefix, "notes")} label={t.form.notes} optionalLabel={t.common.optional} className="sm:col-span-2">
-        <textarea
-          {...a11y("notes")}
-          rows={2}
-          placeholder={t.form.notesPlaceholder}
-          value={values.notes}
-          onChange={(e) => onChange("notes", e.target.value)}
-          className={`${input} min-h-20 resize-y`}
-        />
-      </Field>
+      {fields.postal_code !== "hidden" && (
+        <Field
+          id={fieldId(idPrefix, "postalCode")}
+          label={t.form.postalCode}
+          required={fields.postal_code === "required"}
+          optionalLabel={t.common.optional}
+          error={errors.postalCode}
+          className="sm:col-span-2"
+        >
+          <input
+            {...a11y("postalCode")}
+            type="text"
+            inputMode="numeric"
+            autoComplete="postal-code"
+            required={fields.postal_code === "required"}
+            dir="ltr"
+            maxLength={POSTAL_CODE_MAX}
+            value={values.postalCode}
+            onChange={(e) => onChange("postalCode", e.target.value)}
+            className={`${input} text-start rtl:text-end sm:max-w-56`}
+          />
+        </Field>
+      )}
+
+      {fields.notes !== "hidden" && (
+        <Field
+          id={fieldId(idPrefix, "notes")}
+          label={t.form.notes}
+          optionalLabel={t.common.optional}
+          error={errors.notes}
+          className="sm:col-span-2"
+        >
+          <textarea
+            {...a11y("notes")}
+            rows={2}
+            maxLength={NOTES_MAX}
+            placeholder={t.form.notesPlaceholder}
+            value={values.notes}
+            onChange={(e) => onChange("notes", e.target.value)}
+            className={`${input} min-h-20 resize-y`}
+          />
+        </Field>
+      )}
     </div>
   );
 }

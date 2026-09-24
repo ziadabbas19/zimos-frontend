@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { StoreFooter } from "@/components/StoreFooter";
 import { StoreHeader } from "@/components/StoreHeader";
+import { resolveCheckoutSettings } from "@store-builder/api-client";
 import { StoreRouteProvider } from "@/components/StoreRoute";
 import { storeOrigin } from "@/lib/domains";
 import { dirFor, getDictionary, intlLocaleFor } from "@/lib/i18n";
@@ -81,6 +82,9 @@ export default async function StoreLayout({
     currency: store.currency,
     logoUrl: store.logoUrl,
     phone: storePhone(store),
+    // Re-resolved rather than trusted: an older API without `checkout` must
+    // still give the forms the defaults.
+    checkout: resolveCheckoutSettings(store.checkout),
   };
 
   return (

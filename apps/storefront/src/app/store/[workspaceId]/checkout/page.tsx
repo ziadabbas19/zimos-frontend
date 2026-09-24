@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
+import { flushSync } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import { OrderBumpCard } from "@/components/checkout/OrderBumpCard";
 import { OrderFormFields, fieldId } from "@/components/checkout/OrderFormFields";
@@ -19,11 +20,12 @@ import {
   type OrderFormField,
   type OrderFormValues,
 } from "@/lib/orderForm";
-import { afterOrder, orderErrorMessage, placeCodOrder } from "@/lib/placeOrder";
+import { afterOrder, orderErrorMessage, placeCodOrder, serverFieldErrors } from "@/lib/placeOrder";
 import { variantLabel } from "@/lib/product";
 import { useStore } from "@/lib/StoreContext";
 import { useCatalog } from "@/lib/useCatalog";
 import { useCheckoutAutosave } from "@/lib/useCheckoutAutosave";
+import { useFreshCheckoutSettings, useOrderFormFields } from "@/lib/useOrderFormFields";
 
 const FORM_PREFIX = "checkout";
 
@@ -34,6 +36,7 @@ export default function CheckoutPage() {
   const { cart, addItem, clearCart } = useCart();
   const { t, money } = useStore();
   const [client] = useState(() => createStorefrontApiClient());
+  const { fields, reveal } = useOrderFormFields(useFreshCheckoutSettings(client, workspaceId));
   const { products, byVariant, loaded } = useCatalog(workspaceId);
 
   const [values, setValues] = useState<OrderFormValues>(EMPTY_ORDER_FORM);
@@ -43,7 +46,8 @@ export default function CheckoutPage() {
   const [codeInput, setCodeInput] = useState("");
   const [appliedCode, setAppliedCode] = useState("");
   const [bumpOn, setBumpOn] = useState(false);
-  const bumpAdded = useRef(false);
+  // True once the bump is a real cart line (a failed order leaves it there).
+  const [bumpAdded, setBumpAdded] = useState(false);
 
   const currency = cart?.currency ?? "EGP";
   const items = cart?.items ?? [];
@@ -57,7 +61,7 @@ export default function CheckoutPage() {
   }, [loaded, products]);
 
   // Once the bump is a real line in the cart, the cart subtotal already has it.
-  const bumpInTotals = bumpOn && bump && !bumpAdded.current ? bump.priceAmount : 0;
+  const bumpInTotals = bumpOn && bump && !bumpAdded ? bump.priceAmount : 0;
   const subtotal = cart?.subtotal ?? 0;
   const total = subtotal + bumpInTotals;
 
@@ -70,7 +74,7 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (submitting) return;
 
-    const found = validateOrderForm(values, t);
+    const found = validateOrderForm(values, t, fields);
     setErrors(found);
     const invalid = FIELD_ORDER.filter((k) => found[k]);
     if (invalid.length > 0) {
@@ -89,21 +93,35 @@ export default function CheckoutPage() {
     setFormError(null);
     const checkoutSessionId = await autosave.stop();
     try {
-      if (bumpOn && bump && !bumpAdded.current) {
+      if (bumpOn && bump && !bumpAdded) {
         await addItem(bump.variantId, bump.offerId, 1);
-        bumpAdded.current = true;
+        setBumpAdded(true);
       }
 
       const payload = {
-        ...toCheckoutPayload(values, { discountCode: appliedCode, systemNotes }),
+        ...toCheckoutPayload(values, fields, { discountCode: appliedCode, systemNotes }),
         ...(checkoutSessionId ? { checkoutSessionId } : {}),
       };
       const order = await placeCodOrder({ client, workspaceId, payload, cartToken: cart.guestToken });
       clearCart();
       router.push(afterOrder({ workspaceId, basePath, order, phone: payload.contact.phone }));
     } catch (err) {
-      setFormError(orderErrorMessage(err, t.form.errors.generic));
-      setSubmitting(false);
+      const fromServer = serverFieldErrors(err, t.form.errors);
+      const invalid = FIELD_ORDER.filter((k) => fromServer[k]);
+      if (invalid.length > 0) {
+        // Commit first: a field the server named may be one this form was
+        // hiding, and it has to exist before it can take focus.
+        flushSync(() => {
+          reveal(fromServer);
+          setErrors(fromServer);
+          setFormError(t.form.errors.summary(invalid.length));
+          setSubmitting(false);
+        });
+        document.getElementById(fieldId(FORM_PREFIX, invalid[0]))?.focus();
+      } else {
+        setFormError(orderErrorMessage(err, t.form.errors));
+        setSubmitting(false);
+      }
       autosave.resume();
     }
   }
@@ -131,8 +149,8 @@ export default function CheckoutPage() {
                 values={values}
                 errors={errors}
                 onChange={onFieldChange}
+                fields={fields}
                 showAltPhone
-                showEmail
               />
             </div>
           </section>
@@ -141,29 +159,14 @@ export default function CheckoutPage() {
             <h2 id="payment-title" className="text-lg font-semibold text-ink">
               {t.checkout.payment}
             </h2>
-            <fieldset className="mt-4 space-y-2">
-              <legend className="sr-only">{t.checkout.payment}</legend>
-              <label className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border-2 border-primary bg-primary-soft px-4 py-3">
-                <input type="radio" name="paymentMethod" value="cod" defaultChecked className="h-5 w-5 accent-primary" />
-                <CashIcon className="text-primary" />
-                <span>
-                  <span className="block text-sm font-semibold text-ink">{t.checkout.cod}</span>
-                  <span className="block text-xs text-ink-soft">{t.checkout.codHint}</span>
-                </span>
-              </label>
-              {[t.checkout.card, t.checkout.wallet, t.checkout.bank].map((name) => (
-                <label
-                  key={name}
-                  className="flex min-h-12 cursor-not-allowed items-center gap-3 rounded-xl border border-line px-4 py-2.5 text-sm text-ink-soft"
-                >
-                  <input type="radio" name="paymentMethod" disabled className="h-5 w-5" />
-                  <span>{name}</span>
-                  <span className="ms-auto rounded-full bg-paper px-2 py-0.5 text-xs">
-                    {t.checkout.soon}
-                  </span>
-                </label>
-              ))}
-            </fieldset>
+            {/* Cash on delivery is the only method the checkout accepts — a fact, not a choice. */}
+            <div className="mt-4 flex min-h-14 items-center gap-3 rounded-xl border-2 border-primary bg-primary-soft px-4 py-3">
+              <CashIcon className="shrink-0 text-primary" />
+              <p>
+                <span className="block text-sm font-semibold text-ink">{t.checkout.cod}</span>
+                <span className="block text-xs text-ink-soft">{t.checkout.codHint}</span>
+              </p>
+            </div>
           </section>
         </div>
 

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import type { StorefrontProduct } from "@store-builder/api-client";
+import { resolveCheckoutSettings, type StorefrontProduct } from "@store-builder/api-client";
 import { ArrowIcon } from "@/components/Icons";
 import { Faq } from "@/components/product/Faq";
 import { ProductGallery } from "@/components/product/ProductGallery";
@@ -109,6 +109,7 @@ export default async function ProductPage({ params }: { params: Params }) {
             product={product}
             bump={bump}
             countdownHours={countdownHoursFrom(store.themeSettings)}
+            checkoutSettings={resolveCheckoutSettings(store.checkout)}
           />
         </div>
 

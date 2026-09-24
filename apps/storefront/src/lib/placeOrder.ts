@@ -1,5 +1,14 @@
-import { ApiError, type ApiClient, type CheckoutPayload, type Order } from "@store-builder/api-client";
+import {
+  ApiError,
+  apiFieldProblems,
+  isApiErrorCode,
+  type ApiClient,
+  type CheckoutPayload,
+  type Order,
+} from "@store-builder/api-client";
 import { saveOrderSnapshot, snapshotFromOrder } from "./commerce";
+import type { Dictionary } from "./i18n";
+import type { OrderFormErrors, OrderFormField } from "./orderForm";
 import { storeHref } from "./storeHref";
 
 export interface OrderLine {
@@ -64,8 +73,45 @@ export function afterOrder({
   return storeHref(basePath, `/offer/${order.id}?${q.toString()}`);
 }
 
-export function orderErrorMessage(err: unknown, fallback: string): string {
+type OrderErrorCopy = Dictionary["form"]["errors"];
+
+/** The request fields a checkout 422 can name, mapped onto the form's fields. */
+const SERVER_FIELDS: Record<string, OrderFormField> = {
+  "contact.fullName": "fullName",
+  "contact.phone": "phone",
+  "contact.alternatePhone": "altPhone",
+  "contact.email": "email",
+  "shippingAddress.province": "governorate",
+  "shippingAddress.city": "city",
+  "shippingAddress.addressLine": "address",
+  "shippingAddress.postalCode": "postalCode",
+  "shippingAddress.notes": "notes",
+};
+
+/**
+ * Field errors the server reported (e.g. a field the merchant made required
+ * after this page loaded), in the shopper's language rather than Joi's.
+ */
+export function serverFieldErrors(err: unknown, copy: OrderErrorCopy): OrderFormErrors {
+  const out: OrderFormErrors = {};
+  if (isApiErrorCode(err, "INVALID_PHONE")) out.phone = copy.phone;
+  for (const problem of apiFieldProblems(err)) {
+    const field = SERVER_FIELDS[problem.field];
+    if (!field || out[field]) continue;
+    out[field] =
+      field === "email" && /required/i.test(problem.message) ? copy.emailRequired : copy[field];
+  }
+  return out;
+}
+
+/**
+ * The banner for a failed order. A refused order (ORDER_REJECTED) always gets
+ * the same polite, generic copy: the reason is the merchant's business, and
+ * naming it would tell a fraudster which rule to dodge.
+ */
+export function orderErrorMessage(err: unknown, copy: OrderErrorCopy): string {
+  if (isApiErrorCode(err, "ORDER_REJECTED")) return copy.rejected;
   if (err instanceof ApiError && err.message) return err.message;
   if (err instanceof Error && err.message && !/fetch/i.test(err.message)) return err.message;
-  return fallback;
+  return copy.generic;
 }
