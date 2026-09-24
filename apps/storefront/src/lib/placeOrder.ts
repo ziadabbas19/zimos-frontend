@@ -53,9 +53,9 @@ export async function placeCodOrder({
 }
 
 /**
- * Remember the order on this device (thank-you + tracking) and return the next
- * URL, resolved against how this store is being served — `basePath` comes from
- * `useStoreBasePath()`, and is empty on the store's own subdomain.
+ * Remember the order on this device (thank-you + tracking) and return its
+ * thank-you URL, resolved against how this store is being served — `basePath`
+ * comes from `useStoreBasePath()`, and is empty on the store's own subdomain.
  */
 export function afterOrder({
   workspaceId,
@@ -70,7 +70,7 @@ export function afterOrder({
 }): string {
   saveOrderSnapshot(workspaceId, snapshotFromOrder(order, phone));
   const q = new URLSearchParams({ number: order.orderNumber });
-  return storeHref(basePath, `/offer/${order.id}?${q.toString()}`);
+  return storeHref(basePath, `/orders/${order.id}?${q.toString()}`);
 }
 
 type OrderErrorCopy = Dictionary["form"]["errors"];

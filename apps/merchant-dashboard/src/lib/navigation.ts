@@ -53,7 +53,8 @@ export interface NavGroup {
 
 /**
  * Sidebar structure. Order mirrors a merchant's day: what came in, what to
- * confirm, then the catalog behind it, then growth tooling, then the storefront
+ * confirm, what slipped away or looks suspicious, then getting it delivered
+ * (and back); then the catalog behind it, growth tooling, and the storefront
  * and its settings.
  *
  * Every entry here must map to a route in App.tsx — the sidebar is not a
@@ -71,9 +72,10 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: "orders", to: "/orders", icon: ShoppingBag },
       { key: "confirmationQueue", to: "/confirmation-queue", icon: ClipboardCheck },
-      { key: "fraud", to: "/fraud", icon: ShieldAlert },
-      { key: "returns", to: "/returns", icon: Undo2 },
       { key: "abandonedCarts", to: "/abandoned-carts", icon: ShoppingCart },
+      { key: "fraud", to: "/fraud", icon: ShieldAlert },
+      { key: "shipping", to: "/shipping", icon: Truck },
+      { key: "returns", to: "/returns", icon: Undo2 },
     ],
   },
   {
@@ -96,10 +98,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     id: "storefront",
     labelKey: "storefront",
-    items: [
-      { key: "website", to: "/website", icon: Globe },
-      { key: "shipping", to: "/shipping", icon: Truck },
-    ],
+    items: [{ key: "website", to: "/website", icon: Globe }],
   },
   {
     id: "config",
@@ -129,7 +128,7 @@ export const NAV_LABELS = {
   en: {
     overview: "Overview",
     orders: "Orders",
-    confirmationQueue: "Confirmation Queue",
+    confirmationQueue: "Confirmation queue",
     fraud: "Fraud protection",
     returns: "Returns",
     abandonedCarts: "Abandoned carts",

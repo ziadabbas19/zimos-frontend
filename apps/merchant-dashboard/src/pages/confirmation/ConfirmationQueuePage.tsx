@@ -24,7 +24,7 @@ const OUTCOMES: ConfirmationOutcome[] = ["confirmed", "rejected", "unreachable",
 
 const STRINGS = {
   en: {
-    title: "Confirmation Queue",
+    title: "Confirmation queue",
     description: "Call each customer to confirm their order before it moves to fulfilment.",
     empty: "No orders are waiting for confirmation right now.",
     outcomeConfirmed: "Confirmed",

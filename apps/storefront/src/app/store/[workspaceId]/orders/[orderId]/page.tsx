@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { CheckIcon, CopyIcon, ShareIcon, WhatsAppIcon } from "@/components/Icons";
 import { StatusTimeline } from "@/components/StatusTimeline";
@@ -15,6 +15,7 @@ import {
 } from "@/lib/commerce";
 import { useStore } from "@/lib/StoreContext";
 import { storeHref } from "@/lib/storeHref";
+import { useIsClient } from "@/lib/useIsClient";
 
 function Confirmation() {
   const { workspaceId, orderId } = useParams<{ workspaceId: string; orderId: string }>();
@@ -22,21 +23,23 @@ function Confirmation() {
   const basePath = useStoreBasePath();
   const { t, money, store } = useStore();
 
-  // Read on this device after mount (localStorage), so SSR and hydration agree.
-  const [snapshot, setSnapshot] = useState<OrderSnapshot | null>(null);
-  const [upsell, setUpsell] = useState<AcceptedUpsell | null>(null);
-  const [storeUrl, setStoreUrl] = useState("");
   const [copied, setCopied] = useState(false);
-  const [canShare, setCanShare] = useState(false);
 
-  useEffect(() => {
-    setSnapshot(getOrderSnapshot(workspaceId, orderId));
-    setUpsell(getAcceptedUpsell(workspaceId, orderId));
-    // The store’s shareable address: its own origin on a subdomain, the
-    // /store/<workspaceId> path on the shared host.
-    setStoreUrl(`${window.location.origin}${storeHref(basePath, "/")}`);
-    setCanShare(typeof navigator !== "undefined" && typeof navigator.share === "function");
-  }, [workspaceId, orderId, basePath]);
+  // Read on this device only once hydrated (localStorage), so SSR and
+  // hydration agree.
+  const isClient = useIsClient();
+  const snapshot = useMemo<OrderSnapshot | null>(
+    () => (isClient ? getOrderSnapshot(workspaceId, orderId) : null),
+    [isClient, workspaceId, orderId]
+  );
+  const upsell = useMemo<AcceptedUpsell | null>(
+    () => (isClient ? getAcceptedUpsell(workspaceId, orderId) : null),
+    [isClient, workspaceId, orderId]
+  );
+  // The store’s shareable address: its own origin on a subdomain, the
+  // /store/<workspaceId> path on the shared host.
+  const storeUrl = isClient ? `${window.location.origin}${storeHref(basePath, "/")}` : "";
+  const canShare = isClient && typeof navigator.share === "function";
 
   const orderNumber = snapshot?.orderNumber ?? search.get("number");
   const currency = snapshot?.currency ?? store?.currency;
