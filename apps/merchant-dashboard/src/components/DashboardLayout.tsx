@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { StoreLinkBar } from "@/components/StoreLinkBar";
 import { ZimosLogo } from "@/components/ZimosLogo";
+import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 
 const STRINGS = {
   en: {
@@ -307,7 +308,11 @@ export function DashboardLayout() {
         </header>
 
         <main className="flex-1 p-4 sm:p-6">
-          <Outlet />
+          {/* One crashing page shows an error here; the sidebar and header
+              stay up so the merchant can move on. */}
+          <RouteErrorBoundary resetKey={location.pathname}>
+            <Outlet />
+          </RouteErrorBoundary>
         </main>
       </div>
     </div>

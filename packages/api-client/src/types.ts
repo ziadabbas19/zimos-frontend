@@ -1192,7 +1192,9 @@ export interface ReviewListParams {
 // A work queue for phone-confirming orders before fulfilment. A `queued`
 // task is claimed (locked to the caller) and then closed by recording an
 // outcome; `attemptCount` / `nextRetryAt` track call-backs after an
-// unreachable/postponed result. Each task carries its full `order`.
+// unreachable/postponed result. Each task carries its `order` with the
+// order's `items` (list, claim and outcome alike). It is the bare order row:
+// no `stage`, `payments` or `shipments`.
 // ---------------------------------------------------------------------
 
 export type ConfirmationOutcome = "confirmed" | "rejected" | "unreachable" | "postponed";
@@ -1209,8 +1211,11 @@ export interface ConfirmationTask {
   nextRetryAt: string | null;
   outcome: ConfirmationOutcome | null;
   rejectionReason: string | null;
-  order: Order;
+  order: ConfirmationTaskOrder;
 }
+
+/** The order on a confirmation task: the order row plus its items. */
+export type ConfirmationTaskOrder = Omit<Order, "stage" | "payments" | "shipments">;
 
 export interface RecordConfirmationOutcomePayload {
   outcome: ConfirmationOutcome;

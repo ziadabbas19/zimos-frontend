@@ -93,8 +93,23 @@ export function ConfirmationQueuePage() {
   );
   const tasks = queue.data ?? [];
 
+  // A claim changes the task (status and lock), never the order: take only
+  // those fields and keep the order the card is already showing.
   function patchTask(updated: ConfirmationTask) {
-    queue.setData((prev) => (prev ?? []).map((t) => (t.id === updated.id ? updated : t)));
+    queue.setData((prev) =>
+      (prev ?? []).map((t) =>
+        t.id === updated.id
+          ? {
+              ...t,
+              status: updated.status,
+              lockedByUserId: updated.lockedByUserId,
+              lockedAt: updated.lockedAt,
+              attemptCount: updated.attemptCount,
+              nextRetryAt: updated.nextRetryAt,
+            }
+          : t
+      )
+    );
   }
 
   function removeTask(taskId: string) {
