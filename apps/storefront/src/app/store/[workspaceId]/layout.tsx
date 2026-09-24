@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { HideInFunnel } from "@/components/HideInFunnel";
 import { StoreFooter } from "@/components/StoreFooter";
 import { StoreHeader } from "@/components/StoreHeader";
 import { resolveCheckoutSettings } from "@store-builder/api-client";
@@ -60,6 +61,8 @@ export async function generateMetadata({
  *    is for;
  *  - the shared header/footer, so every page of the store — including one the
  *    merchant built in the website editor — sits under the same branding.
+ *    Funnel pages (`/f/…`) are the exception: they draw their own masthead,
+ *    so HideInFunnel leaves these two out there.
  */
 export default async function StoreLayout({
   children,
@@ -78,6 +81,8 @@ export default async function StoreLayout({
   const locale = await getStoreLocale(store);
   const info: StoreInfo = {
     workspaceId,
+    id: store.id,
+    slug: store.slug,
     name: store.name,
     currency: store.currency,
     logoUrl: store.logoUrl,
@@ -97,9 +102,13 @@ export default async function StoreLayout({
           style={brandStyle(store.themeSettings)}
         >
           <DocumentLocale locale={locale} />
-          <StoreHeader store={store} locale={locale} />
+          <HideInFunnel>
+            <StoreHeader store={store} locale={locale} />
+          </HideInFunnel>
           <div className="flex flex-1 flex-col">{children}</div>
-          <StoreFooter store={store} locale={locale} />
+          <HideInFunnel>
+            <StoreFooter store={store} locale={locale} />
+          </HideInFunnel>
         </div>
       </StoreContextProvider>
     </StoreRouteProvider>

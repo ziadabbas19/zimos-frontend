@@ -52,11 +52,24 @@ import { SPAN_CLASS, propsOf } from "./props";
  * validated server-side — never the props inside an element.
  */
 
+/**
+ * Funnel mode. A funnel keeps the shopper on one path, so the commerce blocks'
+ * ways out — "order now" and "view details" on a product card, every card in
+ * a product grid — go to the funnel step's own actions instead of the product
+ * page, and the cart block is left out. `nextHref` is store-relative, like a
+ * merchant link, so StoreLink puts the right prefix on it for either host.
+ * Unset, nothing changes.
+ */
+export interface PageRendererFunnel {
+  nextHref: string;
+}
+
 interface Ctx {
   workspaceId: string;
   currency: string;
   locale: Locale;
   t: Dictionary;
+  funnel?: PageRendererFunnel;
 }
 
 function ElementNode({ element, ctx }: { element: PageElement; ctx: Ctx }) {
@@ -104,16 +117,29 @@ function ElementNode({ element, ctx }: { element: PageElement; ctx: Ctx }) {
       return <SocialIconsElement props={props} t={t} />;
     case "product_card":
       return (
-        <ProductCardElement props={props} workspaceId={ctx.workspaceId} currency={ctx.currency} locale={ctx.locale} />
+        <ProductCardElement
+          props={props}
+          workspaceId={ctx.workspaceId}
+          currency={ctx.currency}
+          locale={ctx.locale}
+          funnel={ctx.funnel}
+        />
       );
     case "product_list":
       return (
-        <ProductListElement props={props} workspaceId={ctx.workspaceId} currency={ctx.currency} locale={ctx.locale} />
+        <ProductListElement
+          props={props}
+          workspaceId={ctx.workspaceId}
+          currency={ctx.currency}
+          locale={ctx.locale}
+          funnel={ctx.funnel}
+        />
       );
     case "collection_list":
       return <CollectionListElement props={props} workspaceId={ctx.workspaceId} />;
     case "cart":
-      return <CartElement props={props} />;
+      // The cart is a way out of a funnel.
+      return ctx.funnel ? null : <CartElement props={props} />;
     default:
       // Unreachable for the 23 allowed types, but a tree written before this
       // renderer knew about a new type must not blank the page.
@@ -167,15 +193,18 @@ export function PageRenderer({
   workspaceId,
   currency,
   locale,
+  funnel,
 }: {
   tree: PageTree | null;
   workspaceId: string;
   currency: string;
   locale: Locale;
+  /** A running funnel's step page — see PageRendererFunnel. */
+  funnel?: PageRendererFunnel;
 }) {
   const sections = Array.isArray(tree?.sections) ? tree.sections : [];
   if (sections.length === 0) return null;
-  const ctx: Ctx = { workspaceId, currency, locale, t: getDictionary(locale) };
+  const ctx: Ctx = { workspaceId, currency, locale, t: getDictionary(locale), funnel };
 
   return (
     <div className="divide-y divide-line">

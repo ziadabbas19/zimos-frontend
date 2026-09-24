@@ -29,3 +29,6 @@ export const label = "mb-1.5 block text-sm font-medium text-ink";
 export const sectionTitle = "text-lg font-semibold text-ink";
 
 export const container = "mx-auto w-full max-w-6xl px-4 sm:px-6";
+
+/** A loading placeholder block; size it at the call site. Holds still under reduced motion. */
+export const skeleton = "animate-pulse rounded-xl bg-line/60 motion-reduce:animate-none";

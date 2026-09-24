@@ -3,6 +3,7 @@
 import { Suspense, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { CheckIcon, CopyIcon, ShareIcon, WhatsAppIcon } from "@/components/Icons";
+import { ConfirmationHeading, OrderSnapshotSummary } from "@/components/OrderConfirmation";
 import { StatusTimeline } from "@/components/StatusTimeline";
 import { StoreLink, useStoreBasePath } from "@/components/StoreRoute";
 import { btnPrimary, btnSecondary, card, container } from "@/components/ui";
@@ -67,32 +68,7 @@ function Confirmation() {
   return (
     <main className={`${container} flex-1 py-10 sm:py-14`}>
       <div className="mx-auto max-w-2xl">
-        <div className="flex flex-col items-center text-center">
-          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-success-soft text-success">
-            <CheckIcon size={32} />
-          </span>
-          <h1 className="mt-5 font-display text-2xl font-bold text-ink sm:text-3xl">{t.thankYou.title}</h1>
-          {orderNumber && (
-            <p className="mt-3 text-sm text-ink-soft">
-              {t.thankYou.orderNumber}:{" "}
-              <span dir="ltr" className="font-bold text-ink">
-                #{orderNumber}
-              </span>
-            </p>
-          )}
-          <p className="mt-3 max-w-md text-sm leading-relaxed text-ink-soft">
-            {t.thankYou.callNotice}
-            {snapshot?.phone && (
-              <>
-                {" "}
-                {t.thankYou.onPhone}{" "}
-                <span dir="ltr" className="font-semibold text-ink">
-                  {snapshot.phone}
-                </span>
-              </>
-            )}
-          </p>
-        </div>
+        <ConfirmationHeading orderNumber={orderNumber} phone={snapshot?.phone} />
 
         {upsell && (
           <div className="mt-6 rounded-2xl border border-primary/30 bg-primary-soft px-5 py-4 text-sm" role="status">
@@ -111,49 +87,13 @@ function Confirmation() {
         </section>
 
         {snapshot && (
-          <section className={`${card} mt-6 p-5 sm:p-6`} aria-labelledby="summary-title">
-            <div className="flex items-center justify-between gap-3">
-              <h2 id="summary-title" className="text-lg font-semibold text-ink">
-                {t.thankYou.summary}
-              </h2>
-              <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-semibold text-primary">
-                {t.thankYou.payOnDelivery}
-              </span>
-            </div>
-            <ul className="mt-4 space-y-3">
-              {snapshot.items.map((item, i) => (
-                <li key={i} className="flex justify-between gap-3 text-sm">
-                  <span className="min-w-0 text-ink">
-                    {item.name}
-                    {item.options && <span className="block text-xs text-ink-soft">{item.options}</span>}
-                    <span className="text-xs text-ink-soft"> × {item.quantity}</span>
-                  </span>
-                  <span className="shrink-0 text-ink">{money(item.lineTotal, currency)}</span>
-                </li>
-              ))}
-            </ul>
-            <dl className="mt-4 space-y-2 border-t border-line pt-4 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-ink-soft">{t.thankYou.subtotal}</dt>
-                <dd className="text-ink">{money(snapshot.subtotalAmount, currency)}</dd>
-              </div>
-              {snapshot.discountAmount > 0 && (
-                <div className="flex justify-between text-success">
-                  <dt>{t.thankYou.discount}</dt>
-                  <dd>−{money(snapshot.discountAmount, currency)}</dd>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <dt className="text-ink-soft">{t.thankYou.shipping}</dt>
-                <dd className="text-ink">{money(snapshot.shippingAmount, currency)}</dd>
-              </div>
-              <div className="flex justify-between border-t border-line pt-3 text-base font-bold text-ink">
-                <dt>{t.thankYou.total}</dt>
-                <dd>{money(snapshot.totalAmount, currency)}</dd>
-              </div>
-            </dl>
-            {upsell && <p className="mt-3 text-xs text-ink-soft">{t.checkout.finalNote}</p>}
-          </section>
+          <div className="mt-6">
+            <OrderSnapshotSummary
+              snapshot={snapshot}
+              currency={currency}
+              footnote={upsell ? t.checkout.finalNote : undefined}
+            />
+          </div>
         )}
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">

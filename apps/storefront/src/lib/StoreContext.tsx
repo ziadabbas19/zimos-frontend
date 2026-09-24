@@ -13,7 +13,11 @@ import {
 } from "./i18n";
 
 export interface StoreInfo {
+  /** The route segment the store was reached by — its UUID or its slug. */
   workspaceId: string;
+  /** The workspace's real UUID, whichever way the store was reached. */
+  id: string;
+  slug: string;
   name: string;
   currency: string;
   logoUrl: string | null;

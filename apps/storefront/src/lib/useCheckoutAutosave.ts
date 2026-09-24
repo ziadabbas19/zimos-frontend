@@ -36,11 +36,14 @@ export function useCheckoutAutosave({
   workspaceId,
   values,
   lines,
+  source = "store",
 }: {
   client: ApiClient;
   workspaceId: string;
   values: OrderFormValues;
   lines: AutosaveLine[];
+  /** Where the checkout is happening — a funnel's checkout step reports "funnel". */
+  source?: CaptureCheckoutSessionPayload["source"];
 }) {
   const stopped = useRef(false);
   const sessionId = useRef<string | undefined>(undefined);
@@ -76,7 +79,7 @@ export function useCheckoutAutosave({
     const payload: CaptureCheckoutSessionPayload = {
       contact: { phone, ...(fullName ? { fullName } : {}), ...(email ? { email } : {}) },
       items,
-      source: "store",
+      source,
       visitorId: getVisitorId(workspaceId),
     };
 
@@ -100,7 +103,7 @@ export function useCheckoutAutosave({
       if (timer.current) clearTimeout(timer.current);
       timer.current = null;
     };
-  }, [client, workspaceId, phone, fullName, email, items, payloadKey]);
+  }, [client, workspaceId, phone, fullName, email, items, payloadKey, source]);
 
   const stop = useCallback(async (): Promise<string | undefined> => {
     stopped.current = true;
