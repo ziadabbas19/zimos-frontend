@@ -30,6 +30,7 @@ export type ApiErrorCode =
   | "ORDER_NOT_CONFIRMED"
   | "ORDER_NOT_PAID"
   | "SHIPMENT_ALREADY_EXISTS"
+  | "CARRIER_NAME_RESERVED"
   | "SHIPPING_ADDRESS_REQUIRED"
   // storefront checkout / fraud / autosave
   | "ORDER_REJECTED"

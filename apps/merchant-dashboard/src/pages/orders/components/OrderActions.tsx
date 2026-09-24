@@ -34,9 +34,7 @@ const STRINGS = {
     reasonRequired: "Enter a reason for the cancellation.",
     cancelledToast: "Order cancelled. The stock reservation has been released.",
     courierCancelNote:
-      "This order has a courier delivery that hasn't been collected. It's cancelled with the courier first; if the courier refuses, nothing is cancelled and the order stays active.",
-    courierFailedNote:
-      "This order has a courier delivery marked Failed. Cancelling the order does NOT cancel it with the courier: cancel it in the courier's dashboard too, or the parcel may still be delivered.",
+      "This order has a courier delivery that hasn't been collected or is marked Failed. It's cancelled with the courier first; if the courier refuses, nothing is cancelled and the order stays active.",
     notCancelled: "Nothing was cancelled: the order is still active.",
     editTitle: "Edit {number}",
     updatedToast: "Order updated.",
@@ -69,9 +67,7 @@ const STRINGS = {
     reasonRequired: "أدخل سبب الإلغاء.",
     cancelledToast: "تم إلغاء الأوردر وتحرير حجز المخزون.",
     courierCancelNote:
-      "لهذا الأوردر شحنة مع شركة شحن لم تُستلم بعد. سيتم إلغاؤها لدى الشركة أولًا؛ وإذا رفضت الشركة، فلن يُلغى أي شيء ويبقى الأوردر نشطًا.",
-    courierFailedNote:
-      "لهذا الأوردر شحنة مع شركة شحن حالتها «فشل». إلغاء الأوردر لا يلغيها لدى الشركة: ألغِها من لوحة تحكم الشركة أيضًا، وإلا فقد يتم توصيل الطرد.",
+      "لهذا الأوردر شحنة مع شركة شحن لم تُستلم بعد أو حالتها «فشل». سيتم إلغاؤها لدى الشركة أولًا؛ وإذا رفضت الشركة، فلن يُلغى أي شيء ويبقى الأوردر نشطًا.",
     notCancelled: "لم يتم إلغاء أي شيء: الأوردر ما زال نشطًا.",
     editTitle: "تعديل {number}",
     updatedToast: "تم تحديث الأوردر.",
@@ -107,11 +103,11 @@ export function OrderActions({ order, onChanged }: Props) {
   const isShipped = SHIPPED_STATES.includes(order.fulfillmentState);
   const canCancel = !isCancelled && !isShipped;
   const canEdit = !isCancelled && !isShipped;
-  // The backend cancels only 'created' courier deliveries at the courier
-  // (cancelCarrierShipmentsForOrder); a 'failed' one is left there untouched.
-  const courierShipments = (order.shipments ?? []).filter(isCarrierBooked);
-  const courierToCancel = courierShipments.some((s) => s.status === "created");
-  const courierFailed = courierShipments.some((s) => s.status === "failed");
+  // The backend cancels 'created' and 'failed' courier deliveries at the
+  // courier first (cancelCarrierShipmentsForOrder), all-or-nothing.
+  const courierToCancel = (order.shipments ?? []).some(
+    (s) => isCarrierBooked(s) && (s.status === "created" || s.status === "failed"),
+  );
 
   async function confirmCancel() {
     if (reason.trim().length === 0) throw new Error(t.reasonRequired);
@@ -199,11 +195,6 @@ export function OrderActions({ order, onChanged }: Props) {
           placeholder={t.reasonPlaceholder}
         />
         {courierToCancel && <p className="mt-3 text-sm text-ink-soft">{t.courierCancelNote}</p>}
-        {courierFailed && (
-          <p className="mt-3 rounded-[0.5rem] border border-accent/40 bg-accent-soft px-3 py-2 text-sm text-accent-dark">
-            {t.courierFailedNote}
-          </p>
-        )}
       </ConfirmDialog>
 
       <Modal

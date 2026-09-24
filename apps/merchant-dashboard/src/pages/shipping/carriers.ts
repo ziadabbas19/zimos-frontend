@@ -13,6 +13,32 @@ export const SHIPPING_ROLES: ReadonlySet<string> = new Set(["owner", "workspace_
 
 export const BOSTA = "bosta";
 
+/**
+ * A courier name reduced to what distinguishes it, as the backend folds it
+ * (carriers/index.js foldCourierName): case, spacing and separators dropped;
+ * for Arabic, tatweel and diacritics dropped and ة read as ه.
+ */
+function foldCourierName(name: string): string {
+  return name
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, "")
+    .replace(/ة/g, "ه")
+    .replace(/[\s\-_.]+/g, "");
+}
+
+/** Bosta's code and nameAliases (Backend carriers/bosta.js), folded. */
+const RESERVED_COURIER_NAMES: ReadonlySet<string> = new Set([BOSTA, "بوسطة", "بوسته"].map(foldCourierName));
+
+/**
+ * Whether free text spells a courier's name ("Bosta", "bo-sta", "بوسطه").
+ * The backend refuses those as manual courier names (422
+ * CARRIER_NAME_RESERVED) so a manual row never passes for a booking.
+ */
+export function isReservedCourierName(name: string): boolean {
+  return RESERVED_COURIER_NAMES.has(foldCourierName(name));
+}
+
 /** "The COD amount should be less than or equal 30000 EGP" — Bosta error 3007. In piastres. */
 export const BOSTA_MAX_COD_MINOR = 30_000 * 100;
 

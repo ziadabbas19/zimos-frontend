@@ -31,6 +31,7 @@ import {
   SHIPPING_ROLES,
   codAmountFor,
   isCarrierBooked,
+  isReservedCourierName,
   placeName,
 } from "@/pages/shipping/carriers";
 import { useOrderLabels } from "../orderLabels";
@@ -92,6 +93,9 @@ const STRINGS = {
     carrierNamePlaceholder: "e.g. Aramex",
     carrierNameHint: "Optional. Leave empty for your own delivery.",
     useCourierOption: "{carrier} is connected. Choose the {carrier} option above to book it through your account.",
+    connectCourierFirst:
+      "“{carrier}” can't be a manual courier name. To ship with {carrier}, connect it under Shipping, then choose the {carrier} option.",
+    alreadyExistsToast: "This order already has an active shipment, now shown above. Cancel it before adding another.",
     trackingUrl: "Tracking link",
     create: "Add shipment",
     creating: "Adding…",
@@ -172,6 +176,9 @@ const STRINGS = {
     carrierNamePlaceholder: "مثلًا: أرامكس",
     carrierNameHint: "اختياري. اتركه فارغًا إذا كنت توصّل بنفسك.",
     useCourierOption: "{carrier} مربوطة. اختر {carrier} بالأعلى لحجزها عبر حسابك.",
+    connectCourierFirst:
+      "لا يمكن استخدام «{carrier}» كاسم شركة شحن يدوي. للشحن مع {carrier}، اربطها من صفحة الشحن ثم اختر خيار {carrier}.",
+    alreadyExistsToast: "لهذا الأوردر شحنة نشطة بالفعل، وتظهر الآن بالأعلى. ألغِها قبل إضافة شحنة أخرى.",
     trackingUrl: "رابط التتبع",
     create: "إضافة الشحنة",
     creating: "جارٍ الإضافة…",
@@ -630,10 +637,10 @@ function CreateShipmentForm({
   async function submitManual(e: FormEvent) {
     e.preventDefault();
     const name = carrierName.trim();
-    // A connected courier's code as free text would be booked with that
-    // courier by the server — send the merchant to the right option instead.
-    if (courierConnected && courier && name.toLowerCase() === courier.code) {
-      setFieldErrors({ carrierCode: fmt(t.useCourierOption, { carrier: courierName }) });
+    // The server refuses a courier's name (any spelling, en/ar) as a manual
+    // courier: it would pass for a booking that never happened.
+    if (isReservedCourierName(name)) {
+      setFieldErrors({ carrierCode: reservedNameMessage(courierConnected) });
       return;
     }
     setSubmitting(true);
@@ -693,15 +700,33 @@ function CreateShipmentForm({
         setUncertain(true);
       }
       if (isApiErrorCode(err, "CARRIER_NOT_CONNECTED")) onCourierStale();
-      if (isApiErrorCode(err, "SHIPMENT_ALREADY_EXISTS")) onCreated();
       handleError(err);
     } finally {
       setSubmitting(false);
     }
   }
 
+  function reservedNameMessage(connected: boolean) {
+    return fmt(connected ? t.useCourierOption : t.connectCourierFirst, { carrier: courierName });
+  }
+
   function handleError(err: unknown) {
     if (onForbidden(err)) return;
+    if (isApiErrorCode(err, "SHIPMENT_ALREADY_EXISTS")) {
+      // Another tab or teammate got there first. The refresh swaps this form
+      // for the "active shipment" note, so say it in a toast.
+      toast.error(t.alreadyExistsToast);
+      onCreated();
+      return;
+    }
+    if (isApiErrorCode(err, "CARRIER_NAME_RESERVED")) {
+      // details: [{ field: "carrierCode", connected, ... }]; the server's
+      // sentence is English-only, so use ours.
+      const details = apiErrorDetails<unknown>(err);
+      const connected = Array.isArray(details) ? (details[0] as { connected?: boolean } | undefined)?.connected : undefined;
+      setFieldErrors({ carrierCode: reservedNameMessage(connected ?? courierConnected) });
+      return;
+    }
     const problems = apiFieldProblems(err);
     if (problems.length > 0) {
       const fields: Record<string, string> = {};
