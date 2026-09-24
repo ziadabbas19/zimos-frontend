@@ -23,7 +23,12 @@ interface WorkspaceContextValue {
   loading: boolean;
   selectWorkspace: (workspaceId: string) => void;
   createWorkspace: (name: string, slug?: string) => Promise<CreateWorkspaceResult>;
-  refresh: () => Promise<void>;
+  /**
+   * Re-read the workspace list. `silent` keeps the current list on screen —
+   * without it `loading` flips and RequireWorkspace swaps the whole layout
+   * for a spinner, which is wrong after an in-page save.
+   */
+  refresh: (opts?: { silent?: boolean }) => Promise<void>;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
@@ -36,7 +41,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   );
   const [loading, setLoading] = useState(true);
 
-  const refresh = async () => {
+  const refresh = async (opts?: { silent?: boolean }) => {
     // Auth is still resolving on a fresh page load — stay in the loading state
     // rather than briefly reporting "no workspaces" (which bounces deep links
     // and refreshes to the workspace picker).
@@ -49,7 +54,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    if (!opts?.silent) setLoading(true);
     try {
       const list = await apiClient.listWorkspaces();
       setWorkspaces(list);

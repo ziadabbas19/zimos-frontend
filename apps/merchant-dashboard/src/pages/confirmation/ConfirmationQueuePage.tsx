@@ -17,6 +17,8 @@ import { DataState } from "@/components/DataState";
 import { TextField, Field } from "@/components/Field";
 import { Textarea } from "@/components/Textarea";
 import { useToast } from "@/components/Toast";
+import { StatusBadge } from "@/components/StatusBadge";
+import { useOrderLabels } from "@/pages/orders/orderLabels";
 
 const OUTCOMES: ConfirmationOutcome[] = ["confirmed", "rejected", "unreachable", "postponed"];
 
@@ -138,7 +140,9 @@ function ConfirmationCard({
   const toast = useToast();
   const t = useT(STRINGS);
   const outcomeLabel = useOutcomeLabels();
+  const orderLabels = useOrderLabels();
   const { order } = task;
+  const riskFlags = order.riskFlags ?? [];
   const contact = order.contactSnapshot;
 
   const [busy, setBusy] = useState(false);
@@ -194,16 +198,26 @@ function ConfirmationCard({
     <Card className="space-y-4 p-5">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <Link
-            to={`/orders/${order.id}`}
-            className="font-display text-lg font-medium text-ink hover:text-primary"
-          >
-            {order.orderNumber}
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to={`/orders/${order.id}`}
+              className="font-display text-lg font-medium text-ink hover:text-primary"
+            >
+              <bdi dir="ltr">{order.orderNumber}</bdi>
+            </Link>
+            {riskFlags.length > 0 && (
+              <StatusBadge value="flagged" tone="danger" text={orderLabels.flagged} />
+            )}
+          </div>
           <p className="mt-0.5 text-sm text-ink-soft">
             {itemCount === 1 ? t.itemsOne : fmt(t.itemsOther, { n: itemCount })} ·{" "}
             {formatMoney(order.totalAmount, order.currency)}
           </p>
+          {riskFlags.length > 0 && (
+            <p className="mt-0.5 text-xs font-medium text-danger">
+              {riskFlags.map((flag) => orderLabels.riskFlag(flag)).join(" · ")}
+            </p>
+          )}
         </div>
         {attempts > 0 && (
           <span className="rounded-full border border-accent/40 bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-dark">
@@ -216,8 +230,8 @@ function ConfirmationCard({
         <p className="text-sm font-medium text-ink">{contact.fullName || t.unnamedCustomer}</p>
         <p className="mt-0.5 font-display text-xl font-medium text-ink">
           {contact.phone ? (
-            <a href={`tel:${contact.phone}`} className="hover:text-primary" dir="ltr">
-              {contact.phone}
+            <a href={`tel:${contact.phone}`} className="hover:text-primary">
+              <bdi dir="ltr">{contact.phone}</bdi>
             </a>
           ) : (
             <span className="text-ink-soft">{t.noPhone}</span>

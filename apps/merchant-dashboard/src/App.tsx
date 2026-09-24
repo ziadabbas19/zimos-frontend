@@ -21,6 +21,7 @@ import { OrdersListPage } from "@/pages/orders/OrdersListPage";
 import { OrderDetailPage } from "@/pages/orders/OrderDetailPage";
 import { ConfirmationQueuePage } from "@/pages/confirmation/ConfirmationQueuePage";
 import { ReturnsPage } from "@/pages/returns/ReturnsPage";
+import { FraudPage } from "@/pages/fraud/FraudPage";
 import { ReviewsPage } from "@/pages/reviews/ReviewsPage";
 import { CustomersPage } from "@/pages/customers/CustomersPage";
 import { CustomerDetailPage } from "@/pages/customers/CustomerDetailPage";
@@ -58,6 +59,7 @@ export default function App() {
                       <Route path="/orders/:orderId" element={<OrderDetailPage />} />
 
                       <Route path="/confirmation-queue" element={<ConfirmationQueuePage />} />
+                      <Route path="/fraud" element={<FraudPage />} />
                       <Route path="/returns" element={<ReturnsPage />} />
 
                       <Route path="/catalog" element={<CatalogProductsPage />} />

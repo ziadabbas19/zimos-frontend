@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Package,
   Settings,
+  ShieldAlert,
   ShoppingBag,
   Star,
   Tag,
@@ -19,6 +20,7 @@ export type NavKey =
   | "overview"
   | "orders"
   | "confirmationQueue"
+  | "fraud"
   | "returns"
   | "catalog"
   | "reviews"
@@ -67,6 +69,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { key: "orders", to: "/orders", icon: ShoppingBag },
       { key: "confirmationQueue", to: "/confirmation-queue", icon: ClipboardCheck },
+      { key: "fraud", to: "/fraud", icon: ShieldAlert },
       { key: "returns", to: "/returns", icon: Undo2 },
     ],
   },
@@ -124,6 +127,7 @@ export const NAV_LABELS = {
     overview: "Overview",
     orders: "Orders",
     confirmationQueue: "Confirmation Queue",
+    fraud: "Fraud protection",
     returns: "Returns",
     catalog: "Catalog",
     reviews: "Reviews",
@@ -138,6 +142,7 @@ export const NAV_LABELS = {
     overview: "نظرة عامة",
     orders: "الطلبات",
     confirmationQueue: "قائمة التأكيد",
+    fraud: "الحماية من الاحتيال",
     returns: "المرتجعات",
     catalog: "الكتالوج",
     reviews: "التقييمات",
