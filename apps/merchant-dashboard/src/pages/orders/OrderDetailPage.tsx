@@ -9,6 +9,7 @@ import { DataState } from "@/components/DataState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { OrderSummary } from "./components/OrderSummary";
 import { OrderActions } from "./components/OrderActions";
+import { ConfirmationPanel } from "./components/ConfirmationPanel";
 import { ShipmentsSection } from "./components/ShipmentsSection";
 import { ReturnsSection } from "./components/ReturnsSection";
 import { STAGE_TONE, useOrderLabels } from "./orderLabels";
@@ -76,6 +77,8 @@ export function OrderDetailPage() {
             </div>
 
             <OrderActions order={data} onChanged={reload} />
+
+            <ConfirmationPanel order={data} onChanged={reload} />
 
             <OrderSummary order={data} />
 

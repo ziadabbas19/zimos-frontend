@@ -1024,6 +1024,8 @@ export interface Order {
   /** Present on detail (GET one) only. */
   payments?: Payment[];
   shipments?: Shipment[];
+  /** Present on detail (GET one) only; null for an order that never had a task (prepaid). */
+  confirmationTask?: OrderConfirmationTaskSummary | null;
 }
 
 export interface OrderListResponse {
@@ -1189,16 +1191,45 @@ export interface ReviewListParams {
 
 // ---------------------------------------------------------------------
 // Confirmation queue (auth, /workspaces/:workspaceId/confirmation-tasks/...)
-// A work queue for phone-confirming orders before fulfilment. A `queued`
-// task is claimed (locked to the caller) and then closed by recording an
-// outcome; `attemptCount` / `nextRetryAt` track call-backs after an
-// unreachable/postponed result. Each task carries its `order` with the
-// order's `items` (list, claim and outcome alike). It is the bare order row:
-// no `stage`, `payments` or `shipments`.
+// A work queue for phone-confirming COD orders before fulfilment.
+//
+//   queued ─claim─▶ in_progress ─outcome─▶ done      (confirmed / rejected)
+//                        └──────outcome─▶ queued    (unreachable / postponed,
+//                                                    `nextRetryAt` set)
+//
+// A claim locks the task to one agent until `lockExpiresAt`
+// (CONFIRMATION_LOCK_TTL_MINUTES on the server, 15 by default). An expired
+// lock returns the task to Pending on the next read; the holder or a manager
+// can also release it. A done task can be corrected (confirmed ⇄ rejected)
+// by a manager while the order hasn't shipped — `correctable` says whether
+// that will succeed. Each task carries its `order` with the order's `items`:
+// the bare order row, no `stage`, `payments` or `shipments`.
 // ---------------------------------------------------------------------
 
 export type ConfirmationOutcome = "confirmed" | "rejected" | "unreachable" | "postponed";
 export type ConfirmationTaskStatus = "queued" | "in_progress" | "done";
+/** The queue's tabs. `pending` lists `queued` tasks, due callbacks first. */
+export type ConfirmationQueueTab = "pending" | "in_progress" | "done";
+/** Where an outcome was recorded. */
+export type ConfirmationAttemptSource = "queue" | "order_page" | "correction";
+
+export interface ConfirmationUser {
+  id: string;
+  fullName: string;
+}
+
+export interface ConfirmationAttempt {
+  id: string;
+  taskId: string;
+  agentUserId: string;
+  agent: ConfirmationUser | null;
+  outcome: ConfirmationOutcome;
+  notes: string | null;
+  source: ConfirmationAttemptSource;
+  /** On a correction, the outcome it replaced. */
+  previousOutcome: ConfirmationOutcome | null;
+  createdAt: string;
+}
 
 export interface ConfirmationTask {
   id: string;
@@ -1207,20 +1238,68 @@ export interface ConfirmationTask {
   status: ConfirmationTaskStatus;
   lockedByUserId: string | null;
   lockedAt: string | null;
+  /** Who holds the lock; set while the task is in progress. */
+  lockedBy: ConfirmationUser | null;
+  /** When the lock lapses; null unless in progress. May be in the past until the next read. */
+  lockExpiresAt: string | null;
   attemptCount: number;
   nextRetryAt: string | null;
   outcome: ConfirmationOutcome | null;
   rejectionReason: string | null;
+  /** When the task reached `done`. */
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** Oldest first. */
+  attempts: ConfirmationAttempt[];
+  /** A done task whose outcome a manager may still correct. */
+  correctable: boolean;
   order: ConfirmationTaskOrder;
 }
 
 /** The order on a confirmation task: the order row plus its items. */
-export type ConfirmationTaskOrder = Omit<Order, "stage" | "payments" | "shipments">;
+export type ConfirmationTaskOrder = Omit<Order, "stage" | "payments" | "shipments" | "confirmationTask">;
+
+export interface ConfirmationQueuePage {
+  tasks: ConfirmationTask[];
+  /** Pass back as `cursor` for the next page; null on the last one. */
+  nextCursor: string | null;
+}
+
+export interface ConfirmationQueueCounts {
+  pending: number;
+  /** Pending tasks with no callback scheduled, or one that is due. */
+  pendingDue: number;
+  inProgress: number;
+  inProgressMine: number;
+  done: number;
+}
+
+/** GET order detail: the order's current confirmation task, if it has one. */
+export interface OrderConfirmationTaskSummary {
+  id: string;
+  status: ConfirmationTaskStatus;
+  outcome: ConfirmationOutcome | null;
+  attemptCount: number;
+  nextRetryAt: string | null;
+  completedAt: string | null;
+  /** Set only while another claim is live. */
+  lockedBy: ConfirmationUser | null;
+  lockedAt: string | null;
+  lockExpiresAt: string | null;
+}
 
 export interface RecordConfirmationOutcomePayload {
   outcome: ConfirmationOutcome;
   notes?: string;
   rejectionReason?: string;
+}
+
+export interface CorrectConfirmationOutcomePayload {
+  outcome: "confirmed" | "rejected";
+  /** Why the outcome changed; also the rejection reason when correcting to rejected. */
+  reason: string;
+  notes?: string;
 }
 
 // ---------------------------------------------------------------------

@@ -106,6 +106,8 @@ const STRINGS = {
       "{carrier} collects at most {limit} cash on delivery, and this order's amount is {amount}. It can't be booked with {carrier}; ship it manually instead.",
     currencyBlocked: "{carrier} only collects cash in EGP, and this order is in {currency}.",
     notConfirmed: "Confirm this cash-on-delivery order before booking a courier.",
+    notConfirmedManual: "Confirm this cash-on-delivery order before shipping it.",
+    notPaidManual: "This prepaid order must be paid before shipping it.",
     notPaid: "This prepaid order must be paid before booking a courier.",
     noAddress: "This order has no shipping address.",
     deliverTo: "Deliver to",
@@ -189,6 +191,8 @@ const STRINGS = {
       "أقصى مبلغ تحصّله {carrier} عند الاستلام هو {limit}، ومبلغ هذا الأوردر {amount}. لا يمكن حجزه مع {carrier}؛ اشحنه يدويًا.",
     currencyBlocked: "{carrier} تحصّل بالجنيه المصري فقط، وهذا الأوردر بعملة {currency}.",
     notConfirmed: "أكّد أوردر الدفع عند الاستلام قبل حجز شركة الشحن.",
+    notConfirmedManual: "أكّد أوردر الدفع عند الاستلام قبل شحنه.",
+    notPaidManual: "يجب دفع هذا الأوردر المدفوع مسبقًا قبل شحنه.",
     notPaid: "يجب دفع هذا الأوردر المدفوع مسبقًا قبل حجز شركة الشحن.",
     noAddress: "لا يوجد عنوان شحن لهذا الأوردر.",
     deliverTo: "التوصيل إلى",
@@ -625,6 +629,12 @@ function CreateShipmentForm({
   if (order.paymentMethod === "cod" && order.confirmationState !== "confirmed") blockers.push(t.notConfirmed);
   if (order.paymentMethod !== "cod" && order.financialState !== "paid") blockers.push(t.notPaid);
   if (!order.shippingAddressSnapshot) blockers.push(t.noAddress);
+  // A manual shipment has the same confirmation/payment rule as a booking
+  // (the server answers ORDER_NOT_CONFIRMED / ORDER_NOT_PAID), none of the
+  // courier's own limits.
+  const manualBlockers: string[] = [];
+  if (order.paymentMethod === "cod" && order.confirmationState !== "confirmed") manualBlockers.push(t.notConfirmedManual);
+  if (order.paymentMethod !== "cod" && order.financialState !== "paid") manualBlockers.push(t.notPaidManual);
 
   const pickerIncomplete = picker !== null && (!cityId || !districtId);
 
@@ -636,6 +646,7 @@ function CreateShipmentForm({
 
   async function submitManual(e: FormEvent) {
     e.preventDefault();
+    if (manualBlockers.length > 0) return;
     const name = carrierName.trim();
     // The server refuses a courier's name (any spelling, en/ar) as a manual
     // courier: it would pass for a booking that never happened.
@@ -775,6 +786,13 @@ function CreateShipmentForm({
 
       {method === "manual" ? (
         <form onSubmit={submitManual} className="space-y-3">
+          {manualBlockers.length > 0 && (
+            <div className="space-y-1 rounded-[0.5rem] border border-accent/40 bg-accent-soft px-4 py-3 text-sm text-accent-dark">
+              {manualBlockers.map((b) => (
+                <p key={b}>{b}</p>
+              ))}
+            </div>
+          )}
           <div className="grid gap-3 sm:grid-cols-3">
             <TextInput
               label={t.carrierName}
@@ -804,7 +822,7 @@ function CreateShipmentForm({
             />
           </div>
           <div className="flex justify-end">
-            <Button type="submit" className="min-h-11" disabled={submitting}>
+            <Button type="submit" className="min-h-11" disabled={submitting || manualBlockers.length > 0}>
               {submitting ? t.creating : t.create}
             </Button>
           </div>

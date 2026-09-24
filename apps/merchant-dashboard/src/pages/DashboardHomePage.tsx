@@ -56,8 +56,9 @@ export function DashboardHomePage() {
     () =>
       Promise.all([
         fetchOrderStats(workspaceId),
-        apiClient.listConfirmationQueue(workspaceId, { status: "queued", limit: 200 }),
-      ]).then(([stats, queued]) => ({ stats, awaitingConfirmation: queued.length })),
+        apiClient.getConfirmationQueueCounts(workspaceId),
+        // Awaiting = not finished yet: waiting for a call, or someone on it.
+      ]).then(([stats, counts]) => ({ stats, awaitingConfirmation: counts.pending + counts.inProgress })),
     [workspaceId]
   );
 

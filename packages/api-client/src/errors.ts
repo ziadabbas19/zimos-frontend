@@ -32,6 +32,16 @@ export type ApiErrorCode =
   | "SHIPMENT_ALREADY_EXISTS"
   | "CARRIER_NAME_RESERVED"
   | "SHIPPING_ADDRESS_REQUIRED"
+  | "ORDER_NOT_COD" // 409 — only COD orders are confirmed by phone
+  | "ORDER_ALREADY_CONFIRMED" // 409
+  // confirmation queue
+  | "TASK_ALREADY_LOCKED" // 409, details = ConfirmationLockDetails
+  | "TASK_ALREADY_DONE" // 409 — claim/outcome/release on a finished task
+  | "TASK_NOT_LOCKED_BY_YOU" // 403 — claim first, or your claim expired and was taken
+  | "TASK_NOT_CLAIMED" // 409 — release on a task nobody holds
+  | "TASK_NOT_DONE" // 409 — correction on an open task
+  | "OUTCOME_UNCHANGED" // 409 — correction to the outcome it already has
+  | "CORRECTION_NOT_ALLOWED" // 409 — merchant-cancelled order, or no final outcome
   // storefront checkout / fraud / autosave
   | "ORDER_REJECTED"
   | "INVALID_PHONE"
@@ -65,6 +75,12 @@ export type ApiErrorCode =
   | "SHIPMENT_NOT_CARRIER_MANAGED"
   | "LABEL_NOT_AVAILABLE"
   | (string & {});
+
+/** `details` of a 409 TASK_ALREADY_LOCKED: who holds the task and until when. */
+export interface ConfirmationLockDetails {
+  lockedBy: { id: string; fullName: string } | null;
+  lockExpiresAt: string | null;
+}
 
 /** One entry of a VALIDATION_ERROR's `details` list. */
 export interface ApiFieldProblem {

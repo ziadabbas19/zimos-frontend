@@ -22,7 +22,7 @@ export {
   isInvalidCursorError,
   productInFunnelIds,
 } from "./errors";
-export type { ApiErrorCode, ApiFieldProblem } from "./errors";
+export type { ApiErrorCode, ApiFieldProblem, ConfirmationLockDetails } from "./errors";
 // Funnels live in their own endpoint module (functions over the shared client).
 export * from "./endpoints/funnels";
 export * from "./endpoints/funnelRuntime";

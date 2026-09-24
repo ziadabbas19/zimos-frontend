@@ -37,8 +37,11 @@ import type {
   CheckoutPayload,
   CollectionDetail,
   CollectionSummary,
+  ConfirmationQueueCounts,
+  ConfirmationQueuePage,
+  ConfirmationQueueTab,
   ConfirmationTask,
-  ConfirmationTaskStatus,
+  CorrectConfirmationOutcomePayload,
   CreateCollectionPayload,
   CreateDiscountPayload,
   CreateOfferPayload,
@@ -1323,9 +1326,11 @@ export class ApiClient {
 
   // ---------------------------------------------------------------------
   // Confirmation queue (auth, /workspaces/:workspaceId/confirmation-tasks/...)
-  // `listConfirmationQueue` returns the tasks still needing a call; `claim`
-  // locks one to the current user; `recordConfirmationOutcome` closes it.
-  // Every response is unwrapped to the row(s) the caller wants.
+  // `listConfirmationQueue` pages one tab; `claim` locks a task to the
+  // current user (again: extends the lock); `release` hands it back;
+  // `recordConfirmationOutcome` records a call; `correctConfirmationOutcome`
+  // changes a finished outcome (orders.manage). `confirmOrder` is the order
+  // page's Confirm, under the orders routes.
   // ---------------------------------------------------------------------
 
   private confirmationTasksBase(workspaceId: string) {
@@ -1334,17 +1339,31 @@ export class ApiClient {
 
   async listConfirmationQueue(
     workspaceId: string,
-    params: { status?: ConfirmationTaskStatus; limit?: number } = {}
+    params: { status?: ConfirmationQueueTab; mine?: boolean; cursor?: string; limit?: number } = {}
   ) {
-    const { tasks } = await this.request<{ tasks: ConfirmationTask[] }>(
+    return this.request<ConfirmationQueuePage>(
       `${this.confirmationTasksBase(workspaceId)}${buildQuery({ ...params })}`
     );
-    return tasks;
+  }
+
+  async getConfirmationQueueCounts(workspaceId: string) {
+    const { counts } = await this.request<{ counts: ConfirmationQueueCounts }>(
+      `${this.confirmationTasksBase(workspaceId)}/counts`
+    );
+    return counts;
   }
 
   async claimConfirmationTask(workspaceId: string, taskId: string) {
     const { task } = await this.request<{ task: ConfirmationTask }>(
       `${this.confirmationTasksBase(workspaceId)}/${taskId}/claim`,
+      { method: "POST", body: {} }
+    );
+    return task;
+  }
+
+  async releaseConfirmationTask(workspaceId: string, taskId: string) {
+    const { task } = await this.request<{ task: ConfirmationTask }>(
+      `${this.confirmationTasksBase(workspaceId)}/${taskId}/release`,
       { method: "POST", body: {} }
     );
     return task;
@@ -1360,6 +1379,26 @@ export class ApiClient {
       { method: "POST", body: payload }
     );
     return task;
+  }
+
+  async correctConfirmationOutcome(
+    workspaceId: string,
+    taskId: string,
+    payload: CorrectConfirmationOutcomePayload
+  ) {
+    const { task } = await this.request<{ task: ConfirmationTask }>(
+      `${this.confirmationTasksBase(workspaceId)}/${taskId}/correction`,
+      { method: "POST", body: payload }
+    );
+    return task;
+  }
+
+  /** Confirms a COD order from the order page; resolves to the refreshed order detail. */
+  async confirmOrder(workspaceId: string, orderId: string, notes?: string) {
+    return this.request<{ order: Order; task: ConfirmationTask }>(
+      `${this.ordersBase(workspaceId)}/${orderId}/confirmation`,
+      { method: "POST", body: notes ? { notes } : {} }
+    );
   }
 
   // ---------------------------------------------------------------------
