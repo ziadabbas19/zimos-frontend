@@ -8,7 +8,10 @@ import type {
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
-import { getErrorMessage, getFieldErrors } from "@/lib/errors";
+import { getFieldErrors } from "@/lib/errors";
+import { useErrorMessage } from "@/lib/errorMessages";
+import { useT, fmt, type Messages } from "@/i18n/LocaleContext";
+import { useCatalogLabels } from "./catalogLabels";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
 import { Modal } from "@/components/Modal";
@@ -16,6 +19,67 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { TextField, Field } from "@/components/Field";
 import { Textarea } from "@/components/Textarea";
 import { useToast } from "@/components/Toast";
+
+const STRINGS = {
+  en: {
+    title: "Collections",
+    products: "Products",
+    description: "Storefront groupings. Add or remove products from a product's own page.",
+    newCollection: "New collection",
+    empty: "No collections yet. Create your first one.",
+    showProducts: "Show products",
+    hideProducts: "Hide products",
+    noProducts: "No products in this collection yet.",
+    rename: "Rename",
+    delete: "Delete",
+    editTitle: "Edit collection",
+    deleteTitle: "Delete “{name}”?",
+    deleteDescription:
+      "A collection is only a storefront grouping — deleting it is permanent, but the products in it are not affected.",
+    deleteConfirm: "Delete collection",
+    deleting: "Deleting…",
+    deletedToast: "“{name}” deleted. Products themselves are untouched.",
+    name: "Name",
+    namePlaceholder: "Summer",
+    descriptionLabel: "Description",
+    descriptionPlaceholder: "Warm-weather picks",
+    cancel: "Cancel",
+    saving: "Saving…",
+    save: "Save",
+    create: "Create",
+    savedToast: "Collection saved.",
+    createdToast: "“{name}” created.",
+  },
+  ar: {
+    title: "المجموعات",
+    products: "المنتجات",
+    description: "مجموعات المنتجات في المتجر. أضف المنتجات أو أزلها من صفحة كل منتج.",
+    newCollection: "مجموعة جديدة",
+    empty: "لا توجد مجموعات بعد. أنشئ أول مجموعة.",
+    showProducts: "عرض المنتجات",
+    hideProducts: "إخفاء المنتجات",
+    noProducts: "لا توجد منتجات في هذه المجموعة بعد.",
+    rename: "إعادة تسمية",
+    delete: "حذف",
+    editTitle: "تعديل المجموعة",
+    deleteTitle: "حذف “{name}”؟",
+    deleteDescription:
+      "المجموعة مجرد تجميع في المتجر — حذفها نهائي، لكن المنتجات التي بداخلها لن تتأثر.",
+    deleteConfirm: "حذف المجموعة",
+    deleting: "جارٍ الحذف…",
+    deletedToast: "تم حذف “{name}”. المنتجات نفسها لم تتغير.",
+    name: "الاسم",
+    namePlaceholder: "الصيف",
+    descriptionLabel: "الوصف",
+    descriptionPlaceholder: "اختيارات للجو الحار",
+    cancel: "إلغاء",
+    saving: "جارٍ الحفظ…",
+    save: "حفظ",
+    create: "إنشاء",
+    savedToast: "تم حفظ المجموعة.",
+    createdToast: "تم إنشاء “{name}”.",
+  },
+} satisfies Messages;
 
 function CollectionForm({
   collection,
@@ -26,6 +90,8 @@ function CollectionForm({
   onDone: () => void;
   onCancel: () => void;
 }) {
+  const t = useT(STRINGS);
+  const errorMessage = useErrorMessage();
   const workspaceId = useWorkspaceId();
   const toast = useToast();
   const [name, setName] = useState(collection?.name ?? "");
@@ -36,6 +102,7 @@ function CollectionForm({
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (saving) return;
     setSaving(true);
     setFormError(null);
     setFieldErrors({});
@@ -46,16 +113,16 @@ function CollectionForm({
     try {
       if (collection) {
         await apiClient.updateCollection(workspaceId, collection.id, payload);
-        toast.success("Collection saved.");
+        toast.success(t.savedToast);
       } else {
         await apiClient.createCollection(workspaceId, payload);
-        toast.success(`"${payload.name}" created.`);
+        toast.success(fmt(t.createdToast, { name: payload.name }));
       }
       onDone();
     } catch (err) {
       const fields = getFieldErrors(err);
       setFieldErrors(fields);
-      if (Object.keys(fields).length === 0) setFormError(getErrorMessage(err));
+      if (Object.keys(fields).length === 0) setFormError(errorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -65,29 +132,29 @@ function CollectionForm({
     <form onSubmit={submit} className="space-y-4">
       {formError && <Alert variant="danger">{formError}</Alert>}
       <TextField
-        label="Name"
+        label={t.name}
         required
         value={name}
         onChange={(e) => setName(e.target.value)}
         error={fieldErrors.name}
-        placeholder="Summer"
+        placeholder={t.namePlaceholder}
       />
-      <Field label="Description" error={fieldErrors.description}>
+      <Field label={t.descriptionLabel} error={fieldErrors.description}>
         {({ id }) => (
           <Textarea
             id={id}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Warm-weather picks"
+            placeholder={t.descriptionPlaceholder}
           />
         )}
       </Field>
       <div className="flex justify-end gap-3">
         <Button type="button" variant="outline" onClick={onCancel} disabled={saving}>
-          Cancel
+          {t.cancel}
         </Button>
         <Button type="submit" disabled={saving || name.trim().length === 0}>
-          {saving ? "Saving…" : collection ? "Save" : "Create"}
+          {saving ? t.saving : collection ? t.save : t.create}
         </Button>
       </div>
     </form>
@@ -95,6 +162,9 @@ function CollectionForm({
 }
 
 function CollectionProducts({ collectionId }: { collectionId: string }) {
+  const t = useT(STRINGS);
+  const labels = useCatalogLabels();
+  const errorMessage = useErrorMessage();
   const workspaceId = useWorkspaceId();
   const detail = useAsync(
     () => apiClient.getCollection(workspaceId, collectionId),
@@ -103,11 +173,11 @@ function CollectionProducts({ collectionId }: { collectionId: string }) {
 
   if (detail.loading) return <Spinner className="size-4" />;
   if (detail.error)
-    return <p className="text-sm text-danger">{getErrorMessage(detail.error)}</p>;
+    return <p className="text-sm text-danger">{errorMessage(detail.error)}</p>;
 
   const products = detail.data?.products ?? [];
   if (products.length === 0)
-    return <p className="text-sm text-ink-soft">No products in this collection yet.</p>;
+    return <p className="text-sm text-ink-soft">{t.noProducts}</p>;
 
   return (
     <ul className="space-y-1 text-sm">
@@ -116,7 +186,7 @@ function CollectionProducts({ collectionId }: { collectionId: string }) {
           <Link to={`/catalog/${p.id}`} className="text-primary hover:underline">
             {p.name}
           </Link>
-          <span className="ms-2 text-xs text-ink-soft">{p.status}</span>
+          <span className="ms-2 text-xs text-ink-soft">{labels.status(p.status)}</span>
         </li>
       ))}
     </ul>
@@ -124,6 +194,8 @@ function CollectionProducts({ collectionId }: { collectionId: string }) {
 }
 
 export function CollectionsPage() {
+  const t = useT(STRINGS);
+  const errorMessage = useErrorMessage();
   const workspaceId = useWorkspaceId();
   const toast = useToast();
   const list = useAsync(() => apiClient.listCollections(workspaceId), [workspaceId]);
@@ -137,8 +209,12 @@ export function CollectionsPage() {
 
   async function confirmDelete() {
     if (!deleting) return;
-    await apiClient.deleteCollection(workspaceId, deleting.id);
-    toast.success(`"${deleting.name}" deleted. Products themselves are untouched.`);
+    try {
+      await apiClient.deleteCollection(workspaceId, deleting.id);
+    } catch (err) {
+      throw new Error(errorMessage(err));
+    }
+    toast.success(fmt(t.deletedToast, { name: deleting.name }));
     setDeleting(null);
     reload();
   }
@@ -148,17 +224,17 @@ export function CollectionsPage() {
   return (
     <div className="max-w-3xl">
       <PageHeader
-        title="Collections"
-        back={{ to: "/catalog", label: "Products" }}
-        description="Storefront groupings. Add or remove products from a product's own page."
-        actions={<Button onClick={() => setCreating(true)}>New collection</Button>}
+        title={t.title}
+        back={{ to: "/catalog", label: t.products }}
+        description={t.description}
+        actions={<Button onClick={() => setCreating(true)}>{t.newCollection}</Button>}
       />
 
       <DataState
         loading={list.loading}
         error={list.error}
         empty={collections.length === 0}
-        emptyMessage="No collections yet. Create your first one."
+        emptyMessage={t.empty}
         onRetry={() => list.refresh()}
       >
         <div className="space-y-2">
@@ -176,7 +252,7 @@ export function CollectionsPage() {
                       onClick={() => setExpanded((cur) => (cur === c.id ? null : c.id))}
                       className="cursor-pointer mt-2 text-xs text-primary hover:underline"
                     >
-                      {expanded === c.id ? "Hide products" : "Show products"}
+                      {expanded === c.id ? t.hideProducts : t.showProducts}
                     </button>
                     {expanded === c.id && (
                       <div className="mt-2 border-s-2 border-line ps-3">
@@ -186,7 +262,7 @@ export function CollectionsPage() {
                   </div>
                   <div className="whitespace-nowrap">
                     <Button size="sm" variant="ghost" onClick={() => setEditing(c)}>
-                      Rename
+                      {t.rename}
                     </Button>
                     <Button
                       size="sm"
@@ -194,7 +270,7 @@ export function CollectionsPage() {
                       className="text-danger hover:bg-danger-soft"
                       onClick={() => setDeleting(c)}
                     >
-                      Delete
+                      {t.delete}
                     </Button>
                   </div>
                 </div>
@@ -204,7 +280,7 @@ export function CollectionsPage() {
         </div>
       </DataState>
 
-      <Modal open={creating} onClose={() => setCreating(false)} title="New collection">
+      <Modal open={creating} onClose={() => setCreating(false)} title={t.newCollection}>
         <CollectionForm
           onCancel={() => setCreating(false)}
           onDone={() => {
@@ -214,7 +290,7 @@ export function CollectionsPage() {
         />
       </Modal>
 
-      <Modal open={editing !== null} onClose={() => setEditing(null)} title="Edit collection">
+      <Modal open={editing !== null} onClose={() => setEditing(null)} title={t.editTitle}>
         {editing && (
           <CollectionForm
             collection={editing}
@@ -229,9 +305,11 @@ export function CollectionsPage() {
 
       <ConfirmDialog
         open={deleting !== null}
-        title={`Delete "${deleting?.name ?? ""}"?`}
-        description="A collection is only a storefront grouping — deleting it is permanent, but the products in it are not affected."
-        confirmLabel="Delete collection"
+        title={fmt(t.deleteTitle, { name: deleting?.name ?? "" })}
+        description={t.deleteDescription}
+        confirmLabel={t.deleteConfirm}
+        busyLabel={t.deleting}
+        cancelLabel={t.cancel}
         destructive
         onCancel={() => setDeleting(null)}
         onConfirm={confirmDelete}

@@ -634,6 +634,11 @@ export interface Variant {
   weightGrams: number | null;
   dimensions: Record<string, unknown> | null;
   status: CatalogEntityStatus;
+  /**
+   * True when archiving the product took this variant down; restoring the
+   * product revives only these. A status set by hand clears it.
+   */
+  archivedWithProduct?: boolean;
   version: number;
   createdAt: string;
   updatedAt: string;
@@ -658,6 +663,8 @@ export interface Offer {
   isDefault: boolean;
   shippingOverride: Record<string, unknown> | null;
   status: CatalogEntityStatus;
+  /** See Variant.archivedWithProduct. */
+  archivedWithProduct?: boolean;
   lines: OfferLine[];
   createdAt?: string;
   updatedAt?: string;
@@ -720,7 +727,8 @@ export interface ProductListResponse {
 }
 
 export interface ProductListParams {
-  status?: ProductStatus;
+  /** One status, or several (sent comma-separated, e.g. "draft,active"). */
+  status?: ProductStatus | ProductStatus[];
   collectionId?: string;
   limit?: number;
   cursor?: string;
@@ -736,9 +744,30 @@ export interface CreateProductPayload {
   options?: ProductOption[];
   media?: ProductMedia[];
   seo?: Record<string, unknown>;
+  /**
+   * Optional first variant, created with the product in one transaction so a
+   * simple product is priced and stocked straight away. Money is integer
+   * minor units; initial stock is recorded as a restock movement.
+   */
+  variant?: CreateProductVariantPayload;
 }
 
-export type UpdateProductPayload = Partial<CreateProductPayload>;
+export interface CreateProductVariantPayload {
+  priceAmount: number;
+  compareAtAmount?: number | null;
+  sku?: string | null;
+  stockOnHand?: number;
+  allowOverselling?: boolean;
+}
+
+/** POST product — `variant` is present only when the request created one. */
+export interface CreateProductResponse {
+  product: Product;
+  variant?: Variant;
+}
+
+/** Variants are edited through their own endpoints, never via PATCH product. */
+export type UpdateProductPayload = Partial<Omit<CreateProductPayload, "variant">>;
 
 export interface CreateVariantPayload {
   sku?: string | null;

@@ -20,6 +20,7 @@ export {
   apiFieldProblems,
   isApiErrorCode,
   isInvalidCursorError,
+  productInFunnelIds,
 } from "./errors";
 export type { ApiErrorCode, ApiFieldProblem } from "./errors";
 // Funnels live in their own endpoint module (functions over the shared client).

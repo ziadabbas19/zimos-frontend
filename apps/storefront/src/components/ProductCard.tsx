@@ -47,7 +47,7 @@ export function ProductCard({
         )}
         {!anyInStock && (
           <span className="absolute end-3 top-3 rounded-full bg-paper-raised/95 px-2.5 py-1 text-xs font-semibold text-danger">
-            {t.common.outOfStock}
+            {product.variants.length === 0 ? t.common.unavailable : t.common.outOfStock}
           </span>
         )}
       </div>

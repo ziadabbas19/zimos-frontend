@@ -4,9 +4,37 @@ import type { CollectionSummary } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
-import { getErrorMessage } from "@/lib/errors";
+import { useErrorMessage } from "@/lib/errorMessages";
+import { useT, fmt, type Messages } from "@/i18n/LocaleContext";
 import { useToast } from "@/components/Toast";
 import { Select } from "@/components/Select";
+
+const STRINGS = {
+  en: {
+    title: "Collections",
+    description: "Storefront groupings this product appears in.",
+    none: "Not in any collection yet.",
+    removeFrom: "Remove from {name}",
+    noCollections: "No collections exist yet — create one on the Collections page.",
+    inAll: "In every collection already.",
+    pick: "Add to a collection…",
+    add: "Add",
+    addedToast: "Added to collection.",
+    removedToast: "Removed from collection.",
+  },
+  ar: {
+    title: "المجموعات",
+    description: "مجموعات المتجر التي يظهر فيها هذا المنتج.",
+    none: "ليس ضمن أي مجموعة بعد.",
+    removeFrom: "إزالة من {name}",
+    noCollections: "لا توجد مجموعات بعد — أنشئ واحدة من صفحة المجموعات.",
+    inAll: "موجود في كل المجموعات بالفعل.",
+    pick: "أضف إلى مجموعة…",
+    add: "إضافة",
+    addedToast: "تمت الإضافة إلى المجموعة.",
+    removedToast: "تمت الإزالة من المجموعة.",
+  },
+} satisfies Messages;
 
 interface Props {
   productId: string;
@@ -16,6 +44,8 @@ interface Props {
 }
 
 export function ProductCollectionsSection({ productId, memberships, onChanged }: Props) {
+  const t = useT(STRINGS);
+  const errorMessage = useErrorMessage();
   const workspaceId = useWorkspaceId();
   const toast = useToast();
   const all = useAsync(() => apiClient.listCollections(workspaceId), [workspaceId]);
@@ -26,28 +56,29 @@ export function ProductCollectionsSection({ productId, memberships, onChanged }:
   const available = (all.data ?? []).filter((c) => !memberIds.has(c.id));
 
   async function add() {
-    if (!pick) return;
+    if (!pick || busy) return;
     setBusy(true);
     try {
       await apiClient.addProductToCollection(workspaceId, productId, pick);
-      toast.success("Added to collection.");
+      toast.success(t.addedToast);
       setPick("");
       onChanged();
     } catch (err) {
-      toast.error(getErrorMessage(err));
+      toast.error(errorMessage(err));
     } finally {
       setBusy(false);
     }
   }
 
   async function remove(collectionId: string) {
+    if (busy) return;
     setBusy(true);
     try {
       await apiClient.removeProductFromCollection(workspaceId, productId, collectionId);
-      toast.success("Removed from collection.");
+      toast.success(t.removedToast);
       onChanged();
     } catch (err) {
-      toast.error(getErrorMessage(err));
+      toast.error(errorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -56,12 +87,12 @@ export function ProductCollectionsSection({ productId, memberships, onChanged }:
   return (
     <Card>
       <CardContent className="pt-6">
-        <h2 className="font-display text-lg font-medium text-ink">Collections</h2>
-        <p className="text-sm text-ink-soft">Storefront groupings this product appears in.</p>
+        <h2 className="font-display text-lg font-medium text-ink">{t.title}</h2>
+        <p className="text-sm text-ink-soft">{t.description}</p>
 
         <div className="mt-4 flex flex-wrap gap-2">
           {memberships.length === 0 && (
-            <span className="text-sm text-ink-soft">Not in any collection yet.</span>
+            <span className="text-sm text-ink-soft">{t.none}</span>
           )}
           {memberships.map((c) => (
             <span
@@ -73,7 +104,7 @@ export function ProductCollectionsSection({ productId, memberships, onChanged }:
                 onClick={() => remove(c.id)}
                 disabled={busy}
                 className="cursor-pointer text-ink-soft hover:text-danger"
-                aria-label={`Remove from ${c.name}`}
+                aria-label={fmt(t.removeFrom, { name: c.name })}
               >
                 ✕
               </button>
@@ -85,17 +116,17 @@ export function ProductCollectionsSection({ productId, memberships, onChanged }:
           {all.loading ? (
             <Spinner className="size-4" />
           ) : all.error ? (
-            <span className="text-sm text-danger">{getErrorMessage(all.error)}</span>
+            <span className="text-sm text-danger">{errorMessage(all.error)}</span>
           ) : available.length === 0 ? (
             <span className="text-sm text-ink-soft">
               {(all.data ?? []).length === 0
-                ? "No collections exist yet — create one on the Collections page."
-                : "In every collection already."}
+                ? t.noCollections
+                : t.inAll}
             </span>
           ) : (
             <>
               <Select value={pick} onChange={(e) => setPick(e.target.value)} className="max-w-xs">
-                <option value="">Add to a collection…</option>
+                <option value="">{t.pick}</option>
                 {available.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -103,7 +134,7 @@ export function ProductCollectionsSection({ productId, memberships, onChanged }:
                 ))}
               </Select>
               <Button size="sm" onClick={add} disabled={!pick || busy}>
-                Add
+                {t.add}
               </Button>
             </>
           )}

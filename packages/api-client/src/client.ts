@@ -44,6 +44,7 @@ import type {
   CreateOfferPayload,
   CreateOrderPayload,
   CreateProductPayload,
+  CreateProductResponse,
   CreateReturnPayload,
   CreateShipmentPayload,
   CreateShippingRatePayload,
@@ -970,8 +971,12 @@ export class ApiClient {
   }
 
   async listProducts(workspaceId: string, params: ProductListParams = {}) {
+    const { status, ...rest } = params;
     return this.request<ProductListResponse>(
-      `${this.catalogBase(workspaceId)}/products${buildQuery({ ...params })}`
+      `${this.catalogBase(workspaceId)}/products${buildQuery({
+        ...rest,
+        status: Array.isArray(status) ? status.join(",") || undefined : status,
+      })}`
     );
   }
 
@@ -983,11 +988,10 @@ export class ApiClient {
   }
 
   async createProduct(workspaceId: string, payload: CreateProductPayload) {
-    const { product } = await this.request<{ product: Product }>(
-      `${this.catalogBase(workspaceId)}/products`,
-      { method: "POST", body: payload }
-    );
-    return product;
+    return this.request<CreateProductResponse>(`${this.catalogBase(workspaceId)}/products`, {
+      method: "POST",
+      body: payload,
+    });
   }
 
   async updateProduct(workspaceId: string, productId: string, payload: UpdateProductPayload) {
@@ -998,9 +1002,33 @@ export class ApiClient {
     return product;
   }
 
+  /** Archives the product (and cascades to its active variants/offers). */
   async deleteProduct(workspaceId: string, productId: string) {
     return this.request<ArchivedResponse>(
       `${this.catalogBase(workspaceId)}/products/${productId}`,
+      { method: "DELETE" }
+    );
+  }
+
+  /**
+   * Brings an archived product back as a DRAFT, reviving only the variants and
+   * offers its archive took down. 409 PRODUCT_NOT_ARCHIVED otherwise.
+   */
+  async restoreProduct(workspaceId: string, productId: string) {
+    const { product } = await this.request<{ product: Product }>(
+      `${this.catalogBase(workspaceId)}/products/${productId}/restore`,
+      { method: "POST" }
+    );
+    return product;
+  }
+
+  /**
+   * Hard delete. 409 PRODUCT_HAS_ORDERS (archive instead) or
+   * PRODUCT_IN_FUNNEL (details[0].funnelIds).
+   */
+  async deleteProductPermanently(workspaceId: string, productId: string) {
+    return this.request<DeletedResponse>(
+      `${this.catalogBase(workspaceId)}/products/${productId}/permanent`,
       { method: "DELETE" }
     );
   }

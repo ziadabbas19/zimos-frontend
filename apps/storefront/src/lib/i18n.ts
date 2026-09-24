@@ -69,6 +69,8 @@ const en = {
     menu: "Menu",
     save: (pct: number) => `Save ${pct}%`,
     outOfStock: "Out of stock",
+    /** A product with no variants: nothing to sell, as opposed to sold out. */
+    unavailable: "Unavailable",
     inStock: "In stock",
     piece: (n: number) => (n === 1 ? "1 piece" : `${n} pieces`),
   },
@@ -383,6 +385,7 @@ const ar: Dictionary = {
     menu: "القائمة",
     save: (pct) => `وفّر ${arNum(pct)}٪`,
     outOfStock: "نفدت الكمية",
+    unavailable: "غير متاح",
     inStock: "متوفر",
     piece: (n) => (n === 1 ? "قطعة واحدة" : n === 2 ? "قطعتين" : `${arNum(n)} قطع`),
   },

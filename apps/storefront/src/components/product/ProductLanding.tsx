@@ -219,7 +219,11 @@ export function ProductLanding({
         </div>
         <p className={`mt-2 flex items-center gap-1.5 text-sm font-medium ${available ? "text-success" : "text-danger"}`}>
           {available && <CheckIcon size={16} />}
-          {available ? t.common.inStock : t.common.outOfStock}
+          {available
+            ? t.common.inStock
+            : product.variants.length === 0
+              ? t.common.unavailable
+              : t.common.outOfStock}
         </p>
       </div>
 

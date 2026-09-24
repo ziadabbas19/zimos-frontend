@@ -45,6 +45,10 @@ export type ApiErrorCode =
   | "FUNNEL_STEP_NOT_FOUND" // 404
   | "FUNNEL_OFFER_UNAVAILABLE" // 404
   | "FUNNEL_OFFER_NEEDS_ORDER" // 422, details[].field = "session"
+  // catalog
+  | "PRODUCT_HAS_ORDERS" // 409 — permanent delete refused; archive instead
+  | "PRODUCT_IN_FUNNEL" // 409, details[0] = { field: "funnelIds", message, funnelIds }
+  | "PRODUCT_NOT_ARCHIVED" // 409 — restore on a product that isn't archived
   // website pages
   | "PAGE_PATH_RESERVED" // 422, details[0] = { field: "path", message, reserved }
   // couriers
@@ -118,4 +122,16 @@ export function apiErrorRequestId(err: unknown): string | undefined {
   const body = err.details as { error?: { requestId?: unknown } } | null | undefined;
   const id = body && typeof body === "object" ? body.error?.requestId : undefined;
   return typeof id === "string" ? id : undefined;
+}
+
+/**
+ * The funnels blocking a permanent product delete — PRODUCT_IN_FUNNEL puts
+ * them at `details[0].funnelIds`. [] for any other error.
+ */
+export function productInFunnelIds(err: unknown): string[] {
+  if (!isApiErrorCode(err, "PRODUCT_IN_FUNNEL")) return [];
+  const details = apiErrorDetails<unknown>(err);
+  const first = Array.isArray(details) ? (details[0] as { funnelIds?: unknown } | undefined) : undefined;
+  const ids = first?.funnelIds;
+  return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : [];
 }
