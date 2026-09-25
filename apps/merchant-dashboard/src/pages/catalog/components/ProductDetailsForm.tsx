@@ -17,6 +17,8 @@ import { useT, fmt, type Messages } from "@/i18n/LocaleContext";
 import { useToast } from "@/components/Toast";
 import { Field, TextField } from "@/components/Field";
 import { MoneyInput } from "@/components/MoneyInput";
+import { WeightInput } from "@/components/WeightInput";
+import { kgInputToGrams } from "@/lib/weight";
 import { Textarea } from "@/components/Textarea";
 import { Select } from "@/components/Select";
 import { useCatalogLabels } from "../catalogLabels";
@@ -54,6 +56,10 @@ const STRINGS = {
     priceInvalid: "Enter a valid price (0 or more).",
     compareAtInvalid: "Enter a valid amount, or leave it blank.",
     stockInvalid: "Enter a whole number, 0 or more.",
+    weight: "Weight",
+    weightUnit: "kg",
+    weightHint: "Used for shipping price and the courier's package. Leave blank if unknown.",
+    weightInvalid: "Enter a weight between 0 and 1000 kg, or leave it blank.",
     skuTaken: "That SKU is already used by another variant.",
     saving: "Saving…",
     uploading: "Uploading images…",
@@ -90,6 +96,10 @@ const STRINGS = {
     priceInvalid: "أدخل سعرًا صحيحًا (صفر أو أكثر).",
     compareAtInvalid: "أدخل مبلغًا صحيحًا، أو اتركه فارغًا.",
     stockInvalid: "أدخل رقمًا صحيحًا، صفر أو أكثر.",
+    weight: "الوزن",
+    weightUnit: "كجم",
+    weightHint: "يُستخدم لحساب سعر الشحن ونوع الشحنة عند شركة الشحن. اتركه فارغًا لو غير معروف.",
+    weightInvalid: "أدخل وزنًا بين 0 و1000 كجم، أو اتركه فارغًا.",
     skuTaken: "رمز SKU هذا مستخدم لمتغير آخر.",
     saving: "جارٍ الحفظ…",
     uploading: "جارٍ رفع الصور…",
@@ -106,6 +116,7 @@ const VARIANT_FIELD: Record<string, string> = {
   "variant.compareAtAmount": "compareAt",
   "variant.sku": "sku",
   "variant.stockOnHand": "stock",
+  "variant.weightGrams": "weight",
 };
 
 interface Props {
@@ -136,6 +147,7 @@ export function ProductDetailsForm({ mode, product, onCreated, onSaved }: Props)
   const [compareAt, setCompareAt] = useState("");
   const [sku, setSku] = useState("");
   const [stock, setStock] = useState("0");
+  const [weight, setWeight] = useState("");
   const [allowOverselling, setAllowOverselling] = useState(false);
 
   const [saving, setSaving] = useState(false);
@@ -162,7 +174,9 @@ export function ProductDetailsForm({ mode, product, onCreated, onSaved }: Props)
       if (compareMinor !== null && (!Number.isFinite(compareMinor) || compareMinor < 0))
         errs.compareAt = t.compareAtInvalid;
       if (!Number.isInteger(stockValue) || stockValue < 0) errs.stock = t.stockInvalid;
+      if (Number.isNaN(kgInputToGrams(weight))) errs.weight = t.weightInvalid;
     }
+    const weightGrams = kgInputToGrams(weight);
 
     if (Object.keys(errs).length > 0 || missingImage) {
       setFieldErrors(errs);
@@ -197,6 +211,7 @@ export function ProductDetailsForm({ mode, product, onCreated, onSaved }: Props)
             ...(compareMinor !== null ? { compareAtAmount: compareMinor } : {}),
             ...(sku.trim() ? { sku: sku.trim() } : {}),
             stockOnHand: stockValue,
+            ...(weightGrams !== null && productType === "physical" ? { weightGrams } : {}),
             allowOverselling,
           },
         };
@@ -346,6 +361,18 @@ export function ProductDetailsForm({ mode, product, onCreated, onSaved }: Props)
                   hint={t.stockHint}
                 />
               </div>
+
+              {productType === "physical" && (
+                <WeightInput
+                  label={t.weight}
+                  unit={t.weightUnit}
+                  value={weight}
+                  onChange={setWeight}
+                  error={fieldErrors.weight}
+                  hint={t.weightHint}
+                  className="sm:max-w-[calc(50%-0.5rem)]"
+                />
+              )}
 
               <label className="flex items-center gap-2 text-sm text-ink">
                 <input

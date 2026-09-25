@@ -13,6 +13,8 @@ import { useErrorMessage } from "@/lib/errorMessages";
 import { majorToMinor, minorToMajorInput, formatOptions } from "@/lib/format";
 import { TextField, Field } from "@/components/Field";
 import { MoneyInput } from "@/components/MoneyInput";
+import { WeightInput } from "@/components/WeightInput";
+import { gramsToKgInput, kgInputToGrams } from "@/lib/weight";
 import { Select } from "@/components/Select";
 import { useT, fmt, type Messages } from "@/i18n/LocaleContext";
 import { useCatalogLabels } from "../catalogLabels";
@@ -38,6 +40,10 @@ const STRINGS = {
     priceInvalid: "Enter a valid price (0 or more).",
     costInvalid: "Enter a valid cost, or leave it blank.",
     compareAtInvalid: "Enter a valid amount, or leave it blank.",
+    weight: "Weight",
+    weightUnit: "kg",
+    weightHint: "Used for shipping price and the courier's package. Leave blank if unknown.",
+    weightInvalid: "Enter a weight between 0 and 1000 kg, or leave it blank.",
     skuTaken: "That SKU is already used by another variant.",
     cancel: "Cancel",
     saving: "Saving…",
@@ -64,6 +70,10 @@ const STRINGS = {
     priceInvalid: "أدخل سعرًا صحيحًا (صفر أو أكثر).",
     costInvalid: "أدخل تكلفة صحيحة، أو اتركها فارغة.",
     compareAtInvalid: "أدخل مبلغًا صحيحًا، أو اتركه فارغًا.",
+    weight: "الوزن",
+    weightUnit: "كجم",
+    weightHint: "يُستخدم لحساب سعر الشحن ونوع الشحنة عند شركة الشحن. اتركه فارغًا لو غير معروف.",
+    weightInvalid: "أدخل وزنًا بين 0 و1000 كجم، أو اتركه فارغًا.",
     skuTaken: "رمز SKU هذا مستخدم لمتغير آخر.",
     cancel: "إلغاء",
     saving: "جارٍ الحفظ…",
@@ -109,6 +119,7 @@ export function VariantForm({ productId, variant, onDone, onCancel }: Props) {
   const [price, setPrice] = useState(minorToMajorInput(variant?.priceAmount));
   const [cost, setCost] = useState(minorToMajorInput(variant?.costAmount));
   const [compareAt, setCompareAt] = useState(minorToMajorInput(variant?.compareAtAmount));
+  const [weight, setWeight] = useState(gramsToKgInput(variant?.weightGrams));
   const [stock, setStock] = useState("0");
   const [options, setOptions] = useState(stringifyOptionValues(variant?.optionValues));
   const [allowOverselling, setAllowOverselling] = useState(variant?.allowOverselling ?? false);
@@ -139,6 +150,11 @@ export function VariantForm({ productId, variant, onDone, onCancel }: Props) {
       setFieldErrors({ compareAtAmount: t.compareAtInvalid });
       return;
     }
+    const weightGrams = kgInputToGrams(weight);
+    if (weightGrams !== null && Number.isNaN(weightGrams)) {
+      setFieldErrors({ weightGrams: t.weightInvalid });
+      return;
+    }
 
     setSaving(true);
     try {
@@ -148,6 +164,7 @@ export function VariantForm({ productId, variant, onDone, onCancel }: Props) {
           priceAmount: priceMinor,
           costAmount: costMinor,
           compareAtAmount: compareMinor,
+          weightGrams,
           allowOverselling,
           status,
         };
@@ -160,6 +177,7 @@ export function VariantForm({ productId, variant, onDone, onCancel }: Props) {
           costAmount: costMinor,
           compareAtAmount: compareMinor,
           optionValues: parseOptionValues(options),
+          weightGrams,
           allowOverselling,
           stockOnHand: Number.isFinite(stockValue) && stockValue > 0 ? Math.floor(stockValue) : 0,
         };
@@ -214,6 +232,15 @@ export function VariantForm({ productId, variant, onDone, onCancel }: Props) {
         error={fieldErrors.compareAtAmount}
         hint={t.compareAtHint}
         currency={variant?.currency ?? "EGP"}
+      />
+
+      <WeightInput
+        label={t.weight}
+        unit={t.weightUnit}
+        value={weight}
+        onChange={setWeight}
+        error={fieldErrors.weightGrams}
+        hint={t.weightHint}
       />
 
       {!isEdit && (

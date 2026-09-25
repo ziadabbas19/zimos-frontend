@@ -74,6 +74,10 @@ export type ApiErrorCode =
   | "CARRIER_CREDENTIALS_UNREADABLE"
   | "SHIPMENT_NOT_CARRIER_MANAGED"
   | "LABEL_NOT_AVAILABLE"
+  | "CARRIER_TIER_UNMAPPED" // 422, details = { tierId } — the booked tier has no package mapping
+  // weight tiers
+  | "SHIPPING_TIERS_REQUIRED" // 422 — tier pricing needs at least one tier
+  | "DEFAULT_ITEM_WEIGHT_REQUIRED" // 422 — tier pricing needs a default item weight
   | (string & {});
 
 /** `details` of a 409 TASK_ALREADY_LOCKED: who holds the task and until when. */

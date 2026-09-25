@@ -30,6 +30,7 @@ import { MoneyInput } from "@/components/MoneyInput";
 import { Select } from "@/components/Select";
 import { useToast } from "@/components/Toast";
 import { CarrierConnectionsSection } from "./CarrierConnectionsSection";
+import { WeightTiersSection } from "./WeightTiersSection";
 
 const RATE_TYPE_LABEL: Record<ShippingRateType, string> = {
   flat: "Flat",
@@ -174,6 +175,13 @@ function ShippingTaxBody() {
         taxEnabled={taxEnabled}
         onTaxEnabledChange={setTaxEnabled}
         onSaved={refreshWorkspace}
+      />
+
+      <WeightTiersSection
+        zones={zoneList}
+        workspace={currentWorkspace}
+        currency="EGP"
+        onWorkspaceChanged={refreshWorkspace}
       />
 
       <section>

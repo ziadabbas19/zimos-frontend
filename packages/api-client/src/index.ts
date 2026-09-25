@@ -9,6 +9,8 @@ export {
   ORDER_STAGES,
   CHECKOUT_SETTINGS_DEFAULTS,
   BOSTA_PACKAGE_TYPES,
+  BOSTA_PARCEL_SIZES,
+  MAX_WEIGHT_GRAMS,
   resolveCheckoutSettings,
   resolveFraudRules,
 } from "./types";

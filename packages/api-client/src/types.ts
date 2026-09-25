@@ -44,6 +44,14 @@ export interface WorkspaceSettings {
   checkout_settings?: Partial<CheckoutSettings>;
   /** Storefront fraud rules as stored. Absent keys are "off" — see `resolveFraudRules`. */
   fraud_rules?: Partial<FraudRules>;
+  /**
+   * Grams standing in for a product with no weight (tier pricing, courier
+   * parcel weight). Required while `shipping_pricing_mode` is "weight_tiers";
+   * clearing it then is refused with 422 DEFAULT_ITEM_WEIGHT_REQUIRED.
+   */
+  default_item_weight_grams?: number | null;
+  /** Read-only here — changed through POST /shipping/pricing-mode. Absent = "rates". */
+  shipping_pricing_mode?: ShippingPricingMode;
   [key: string]: unknown;
 }
 
@@ -111,6 +119,8 @@ export interface UpdateWorkspacePayload {
     free_shipping_threshold_amount?: number | null;
     default_shipping_rate_amount?: number | null;
     tax_enabled?: boolean;
+    /** Grams; null clears it (refused with 422 while tier pricing is on). */
+    default_item_weight_grams?: number | null;
     /**
      * Sub-keys merge; `null` on a sub-key restores its default, `null` on the
      * whole object restores every default.
@@ -631,8 +641,9 @@ export interface Variant {
   stockOnHand: number;
   reservedStock: number;
   allowOverselling: boolean;
+  /** Shipping weight in grams; null = not set ("No weight"). 0 is a real weight. */
   weightGrams: number | null;
-  dimensions: Record<string, unknown> | null;
+  dimensions: VariantDimensions | null;
   status: CatalogEntityStatus;
   /**
    * True when archiving the product took this variant down; restoring the
@@ -752,12 +763,24 @@ export interface CreateProductPayload {
   variant?: CreateProductVariantPayload;
 }
 
+/** Package dimensions in centimetres — all three or none. */
+export interface VariantDimensions {
+  lengthCm: number;
+  widthCm: number;
+  heightCm: number;
+}
+
+/** Largest weight the API accepts, in grams (1 tonne). */
+export const MAX_WEIGHT_GRAMS = 1_000_000;
+
 export interface CreateProductVariantPayload {
   priceAmount: number;
   compareAtAmount?: number | null;
   sku?: string | null;
   stockOnHand?: number;
   allowOverselling?: boolean;
+  weightGrams?: number | null;
+  dimensions?: VariantDimensions | null;
 }
 
 /** POST product — `variant` is present only when the request created one. */
@@ -779,6 +802,7 @@ export interface CreateVariantPayload {
   currency?: string;
   allowOverselling?: boolean;
   weightGrams?: number | null;
+  dimensions?: VariantDimensions | null;
   /** Initial stock — only settable at creation; later changes go through inventory. */
   stockOnHand?: number;
 }
@@ -790,6 +814,9 @@ export interface UpdateVariantPayload {
   compareAtAmount?: number | null;
   costAmount?: number | null;
   allowOverselling?: boolean;
+  /** null clears the weight. */
+  weightGrams?: number | null;
+  dimensions?: VariantDimensions | null;
   status?: CatalogEntityStatus;
 }
 
@@ -890,6 +917,8 @@ export interface OrderItem {
   lineTotalAmount: string;
   isOrderBump: boolean;
   isUpsell: boolean;
+  /** One unit of the line (one bundle for an offer); null when unknown or placed before weights were stored. */
+  unitWeightGrams?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -1013,6 +1042,12 @@ export interface Order {
   cancelledAt: string | null;
   cancellationReason: string | null;
   linkedFromOrderId: string | null;
+  /** Weight at checkout. null on older orders, or when an item had no weight and no default applied. */
+  totalWeightGrams?: number | null;
+  /** The weight tier at checkout; null when the store had no tiers. */
+  weightTierSnapshot?: OrderWeightTier | null;
+  /** True when some item's weight came from the store's default item weight. */
+  weightEstimated?: boolean;
   createdAt: string;
   updatedAt: string;
   items: OrderItem[];
@@ -1130,6 +1165,8 @@ export interface CreateShipmentPayload {
    */
   carrierAddress?: { cityId: string; districtId: string };
   notes?: string;
+  /** Courier bookings only: book as this weight tier instead of the order's. */
+  tierId?: string;
 }
 
 export interface UpdateShipmentPayload {
@@ -1433,6 +1470,91 @@ export interface CreateShippingZonePayload {
 }
 
 export type UpdateShippingZonePayload = Partial<CreateShippingZonePayload>;
+
+// ---------------------------------------------------------------------
+// Weight tiers + tier pricing (auth, /workspaces/:workspaceId/shipping/...)
+// Grams everywhere. A tier covers (fromGrams, upToGrams]; the first starts
+// at 0; only the last may be open-ended (upToGrams null).
+// ---------------------------------------------------------------------
+
+export type ShippingPricingMode = "rates" | "weight_tiers";
+
+export interface WeightTier {
+  id: string;
+  position: number;
+  fromGrams: number;
+  upToGrams: number | null;
+}
+
+/** Stored on an order at checkout. */
+export interface OrderWeightTier extends WeightTier {
+  /** "weight_over_last_tier" when the weight was above a closed last tier (charged as that tier). */
+  flags: string[];
+}
+
+export interface ZoneTierPrice {
+  zoneId: string;
+  tierId: string;
+  amount: number;
+}
+
+/** GET /shipping/weight-tiers */
+export interface WeightTierSettings {
+  pricingMode: ShippingPricingMode;
+  defaultItemWeightGrams: number | null;
+  tiers: WeightTier[];
+  prices: ZoneTierPrice[];
+  /** Active variants of live physical products with no weight set. */
+  variantsWithoutWeight: number;
+}
+
+/** PUT /shipping/weight-tiers — the whole set, in order. Keep `id` to keep a tier. */
+export interface ReplaceWeightTiersPayload {
+  tiers: Array<{ id?: string; upToGrams: number | null }>;
+}
+
+export interface TierPriceProposal extends ZoneTierPrice {
+  /** "rates": from the zone's current rates; "default_rate": the store's default rate. */
+  basis: "rates" | "default_rate";
+}
+
+export interface SetPricingModePayload {
+  mode: ShippingPricingMode;
+  defaultItemWeightGrams?: number;
+  /** Fill empty zone × tier cells from the current rates (default true). */
+  prefill?: boolean;
+  /** Only return the proposals; nothing is written. */
+  dryRun?: boolean;
+}
+
+export interface SetPricingModeResult {
+  pricingMode: ShippingPricingMode;
+  defaultItemWeightGrams: number | null;
+  dryRun: boolean;
+  /** dryRun only. */
+  proposals?: TierPriceProposal[];
+  /** Cells actually filled by the switch. */
+  prefilled?: TierPriceProposal[];
+}
+
+/** POST /store/:ws/shipping-quote — `items`, or the cart named by X-Cart-Token. */
+export interface ShippingQuotePayload {
+  /** Defaults to "EG". */
+  country?: string;
+  /** The same province string the checkout sends in shippingAddress.province. */
+  governorate?: string | null;
+  items?: Array<{ variantId: string; offerId?: string; quantity?: number }>;
+}
+
+export interface ShippingQuote {
+  pricingMode: ShippingPricingMode;
+  amount: number;
+  currency: string;
+  subtotal: number;
+  weightGrams: number | null;
+  weightEstimated: boolean;
+  tier: OrderWeightTier | null;
+}
 
 export interface CreateShippingRatePayload {
   name: string;
@@ -2207,6 +2329,10 @@ export interface CarrierFieldDescriptor {
   label: string;
   secret?: boolean;
   options?: string[];
+  /** "tier_map": not a plain field — edited as a tier → package mapping. */
+  kind?: "tier_map";
+  packageTypes?: string[];
+  parcelSizes?: string[];
 }
 
 export interface CarrierConnection {
@@ -2243,10 +2369,25 @@ export interface CarrierList {
 export const BOSTA_PACKAGE_TYPES = ["Parcel", "Document", "Light Bulky", "Heavy Bulky"] as const;
 export type BostaPackageType = (typeof BOSTA_PACKAGE_TYPES)[number];
 
+export const BOSTA_PARCEL_SIZES = ["SMALL", "MEDIUM", "LARGE"] as const;
+export type BostaParcelSize = (typeof BOSTA_PARCEL_SIZES)[number];
+
+/** A Parcel needs a size; other package types take none. */
+export interface BostaTierPackage {
+  packageType: BostaPackageType;
+  size?: BostaParcelSize;
+}
+
 export interface BostaSettings {
   /** A pickup location id from the verification; Bosta's default when empty. */
   businessLocationId?: string | null;
+  /** Used when there is no tierMap, and for orders placed before the store had tiers. */
   packageType?: BostaPackageType;
+  /**
+   * Weight tier id -> package. With a map, booking an unmapped tier is
+   * refused with 422 CARRIER_TIER_UNMAPPED ({ tierId }).
+   */
+  tierMap?: Record<string, BostaTierPackage>;
   awbType?: "A4" | "A6";
   awbLang?: "ar" | "en";
 }

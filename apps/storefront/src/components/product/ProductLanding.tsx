@@ -5,6 +5,8 @@ import { flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import { parseMoney, type CheckoutSettings, type StorefrontProductDetail } from "@store-builder/api-client";
 import { createStorefrontApiClient } from "@/lib/apiClient";
+import { useShippingQuote } from "@/lib/useShippingQuote";
+import { ShippingFee } from "@/components/checkout/ShippingFee";
 import { bundlePricing, bundleTiers, type OrderBumpOffer } from "@/lib/commerce";
 import {
   EMPTY_ORDER_FORM,
@@ -113,12 +115,13 @@ export function ProductLanding({
   const [submitting, setSubmitting] = useState(false);
   const [bumpOn, setBumpOn] = useState(false);
 
-  const total = pricing.total + (bumpOn && bump ? bump.priceAmount : 0);
-
   // The hook keys on the lines' content, so a fresh array each render is fine.
   const autosaveLines: OrderLine[] = mainLine ? [mainLine] : [];
   if (bumpOn && bump) autosaveLines.push({ variantId: bump.variantId, offerId: bump.offerId, quantity: 1 });
   const autosave = useCheckoutAutosave({ client, workspaceId, values, lines: autosaveLines });
+  const shipping = useShippingQuote({ client, workspaceId, governorate: values.governorate, lines: autosaveLines });
+
+  const total = pricing.total + (bumpOn && bump ? bump.priceAmount : 0) + shipping.amount;
 
   function onFieldChange(field: OrderFormField, value: string) {
     setValues((prev) => ({ ...prev, [field]: value }));
@@ -400,7 +403,9 @@ export function ProductLanding({
             )}
             <div className="flex justify-between gap-3">
               <dt className="text-ink-soft">{t.checkout.shippingFee}</dt>
-              <dd className="shrink-0 text-ink">{t.checkout.shippingOnConfirmation}</dd>
+              <dd className="shrink-0 text-ink">
+                <ShippingFee line={shipping.line} />
+              </dd>
             </div>
             <div className="flex justify-between gap-3 border-t border-line pt-2 text-base font-bold text-ink">
               <dt>{t.form.total}</dt>

@@ -22,6 +22,8 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Select } from "@/components/Select";
 import { useToast } from "@/components/Toast";
 import { BOSTA, SHIPPING_ROLES } from "./carriers";
+import { BostaTierMapField } from "./BostaTierMapField";
+import { pruneTierMap, useWeightTiers } from "./weightTiers";
 
 const STRINGS = {
   en: {
@@ -77,6 +79,7 @@ const STRINGS = {
     summaryPickup: "Pickup: {value}",
     summaryPackage: "Package: {value}",
     summaryLabel: "Label: {size}, {lang}",
+    summaryTiers: "Tiers mapped: {mapped} of {total}",
     webhookAuto: "Status updates arrive automatically. You can also press Sync on a shipment at any time.",
     webhookManual:
       "Automatic status updates need the server on a public HTTPS address, so for now use Sync on each shipment to pull its status.",
@@ -139,6 +142,7 @@ const STRINGS = {
     summaryPickup: "الاستلام: {value}",
     summaryPackage: "الطرد: {value}",
     summaryLabel: "البوليصة: {size}، {lang}",
+    summaryTiers: "الشرائح المربوطة: {mapped} من {total}",
     webhookAuto: "تصل تحديثات الحالة تلقائيًا. ويمكنك أيضًا الضغط على مزامنة في أي شحنة.",
     webhookManual: "التحديثات التلقائية تحتاج أن يكون الخادم على عنوان HTTPS عام، لذلك استخدم حاليًا زر المزامنة في كل شحنة.",
     unknownLocation: "مكان لم يعد موجودًا",
@@ -246,6 +250,8 @@ function CarrierCard({
   const [disconnecting, setDisconnecting] = useState(false);
 
   const current = (connection?.settings ?? {}) as BostaSettings;
+  const tiers = useWeightTiers();
+  const mappedTiers = Object.keys(pruneTierMap(current.tierMap, tiers.data) ?? {}).length;
 
   function fail(err: unknown) {
     if (err instanceof ApiError && err.status === 403) {
@@ -324,7 +330,13 @@ function CarrierCard({
     setBusy("save");
     setError(null);
     try {
-      await put({ settings: { ...draft, businessLocationId: draft.businessLocationId || null } });
+      await put({
+        settings: {
+          ...draft,
+          businessLocationId: draft.businessLocationId || null,
+          tierMap: pruneTierMap(draft.tierMap, tiers.data) ?? {},
+        },
+      });
       toast.success(fmt(t.savedToast, { name }));
       setMode("view");
       setNotice(null);
@@ -414,6 +426,9 @@ function CarrierCard({
               </>
             )}
           </p>
+          {mappedTiers > 0 && tiers.data && (
+            <p>{fmt(t.summaryTiers, { mapped: mappedTiers, total: tiers.data.length })}</p>
+          )}
           <p className="text-xs">
             {/^https:\/\//i.test(connection.webhookUrl) ? t.webhookAuto : t.webhookManual}
           </p>
@@ -521,6 +536,13 @@ function CarrierCard({
               disabled={busy !== null}
             />
           </div>
+          <BostaTierMapField
+            tiers={tiers.data}
+            loading={tiers.loading}
+            value={pruneTierMap(draft.tierMap, tiers.data)}
+            onChange={(tierMap) => setDraft((d) => ({ ...d, tierMap }))}
+            disabled={busy !== null}
+          />
           <div className="flex flex-wrap justify-end gap-2">
             <Button
               type="button"

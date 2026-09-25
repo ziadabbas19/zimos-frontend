@@ -74,6 +74,9 @@ const STRINGS = {
     CARRIER_CREDENTIALS_UNREADABLE: "The saved courier key can't be read anymore. Connect the courier again.",
     SHIPMENT_NOT_CARRIER_MANAGED: "This shipment wasn't booked through a connected courier.",
     LABEL_NOT_AVAILABLE: "This courier doesn't provide printable labels.",
+    CARRIER_TIER_UNMAPPED: "This weight tier has no package type for the courier. Book it as another tier, or map it in the courier settings.",
+    SHIPPING_TIERS_REQUIRED: "Add at least one weight tier before pricing shipping by weight.",
+    DEFAULT_ITEM_WEIGHT_REQUIRED: "Set a default item weight first. It's required while shipping is priced by weight tier.",
     cancelFailedPermission:
       "The courier refused to cancel the delivery: the connected API key doesn't have Full Access. The order was not cancelled. Reconnect the courier with a Full Access key under Shipping, or cancel the delivery in the courier's dashboard first.",
     cancelFailedAuth:
@@ -132,6 +135,9 @@ const STRINGS = {
     CARRIER_CREDENTIALS_UNREADABLE: "تعذّرت قراءة مفتاح شركة الشحن المحفوظ. أعد ربط الشركة.",
     SHIPMENT_NOT_CARRIER_MANAGED: "هذه الشحنة لم تُحجز عبر شركة شحن مربوطة.",
     LABEL_NOT_AVAILABLE: "شركة الشحن هذه لا توفر ملصقات قابلة للطباعة.",
+    CARRIER_TIER_UNMAPPED: "شريحة الوزن هذه ليس لها نوع طرد عند شركة الشحن. احجزها كشريحة أخرى، أو اربطها من إعدادات الشركة.",
+    SHIPPING_TIERS_REQUIRED: "أضف شريحة وزن واحدة على الأقل قبل تسعير الشحن بالوزن.",
+    DEFAULT_ITEM_WEIGHT_REQUIRED: "حدد الوزن الافتراضي للمنتج أولًا. هو مطلوب طالما الشحن يُسعَّر حسب شريحة الوزن.",
     cancelFailedPermission:
       "رفضت شركة الشحن إلغاء الشحنة لأن مفتاح API المربوط ليس بصلاحية Full Access. لم يتم إلغاء الأوردر. أعد ربط الشركة بمفتاح Full Access من صفحة الشحن، أو ألغِ الشحنة من لوحة تحكم الشركة أولًا.",
     cancelFailedAuth:

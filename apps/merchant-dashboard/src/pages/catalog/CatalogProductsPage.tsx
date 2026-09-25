@@ -47,6 +47,8 @@ const STRINGS = {
     noVariants: "No variants",
     stock: "{total} in stock · {count} variants",
     stockOne: "{total} in stock · 1 variant",
+    noWeight: "No weight",
+    noWeightHint: "A variant has no weight. Shipping uses your default item weight for it.",
     edit: "Edit",
     delete: "Delete",
     restore: "Restore",
@@ -81,6 +83,8 @@ const STRINGS = {
     noVariants: "بدون متغيرات",
     stock: "المخزون: {total} · المتغيرات: {count}",
     stockOne: "المخزون: {total} · متغير واحد",
+    noWeight: "بدون وزن",
+    noWeightHint: "يوجد متغير بدون وزن. الشحن يستخدم الوزن الافتراضي للمنتج بدلًا منه.",
     edit: "تعديل",
     delete: "حذف",
     restore: "استعادة",
@@ -119,6 +123,17 @@ function priceRange(product: Product): string {
   if (variants.length === 0) return "—";
   const prices = variants.map((v) => parseMoney(v.priceAmount));
   return formatMoneyRange(Math.min(...prices), Math.max(...prices), variants[0].currency);
+}
+
+/** A live physical product with an active variant that has no weight set. */
+function missingWeight(product: Product): boolean {
+  if (product.productType !== "physical" || product.status === "archived") return false;
+  return (product.variants ?? []).some((v) => v.status === "active" && v.weightGrams === null);
+}
+
+function NoWeightBadge({ product, t }: { product: Product; t: Strings }) {
+  if (!missingWeight(product)) return null;
+  return <StatusBadge value="no_weight" tone="warning" text={t.noWeight} className="ms-1.5" />;
 }
 
 function stockSummary(product: Product, t: Strings): string {
@@ -375,7 +390,10 @@ function ProductTable({ products, t, statusLabel, renderActions }: RowsProps) {
                 <div className="text-xs text-ink-soft">{product.slug}</div>
               </td>
               <td className="px-4 py-3">
-                <StatusBadge value={product.status} text={statusLabel(product.status)} />
+                <span className="inline-flex flex-wrap items-center gap-y-1" title={missingWeight(product) ? t.noWeightHint : undefined}>
+                  <StatusBadge value={product.status} text={statusLabel(product.status)} />
+                  <NoWeightBadge product={product} t={t} />
+                </span>
               </td>
               <td className="px-4 py-3 text-ink-soft">{priceRange(product)}</td>
               <td className="px-4 py-3 text-ink-soft">{stockSummary(product, t)}</td>
@@ -419,7 +437,10 @@ function ProductGrid({ products, t, statusLabel, renderActions }: RowsProps) {
                   </span>
                 )}
               </div>
-              <StatusBadge value={product.status} text={statusLabel(product.status)} />
+              <span className="flex shrink-0 flex-col items-end gap-1" title={missingWeight(product) ? t.noWeightHint : undefined}>
+                <StatusBadge value={product.status} text={statusLabel(product.status)} />
+                <NoWeightBadge product={product} t={t} />
+              </span>
             </div>
             <div className="mt-auto space-y-0.5 text-sm text-ink-soft">
               <div>{priceRange(product)}</div>

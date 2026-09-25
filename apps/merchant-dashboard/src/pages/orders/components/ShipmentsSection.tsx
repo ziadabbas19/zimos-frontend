@@ -35,6 +35,7 @@ import {
   placeName,
 } from "@/pages/shipping/carriers";
 import { useOrderLabels } from "../orderLabels";
+import { BookingWeightField } from "./BookingWeightField";
 
 const STATUSES: ShipmentStatus[] = [
   "created",
@@ -607,6 +608,9 @@ function CreateShipmentForm({
   const [picker, setPicker] = useState<PickerSource | null>(null);
   const [cityId, setCityId] = useState("");
   const [districtId, setDistrictId] = useState("");
+  // "" books with the order's own weight tier.
+  const [tierId, setTierId] = useState("");
+  const [tierUnmapped, setTierUnmapped] = useState(false);
   // A create that got no answer may still exist at the courier. No retry
   // from this screen until the merchant has checked and reloaded.
   const [uncertain, setUncertain] = useState(false);
@@ -686,6 +690,7 @@ function CreateShipmentForm({
         carrierCode: courier.code,
         carrierAddress: picker && cityId && districtId ? { cityId, districtId } : undefined,
         notes: notes.trim() || undefined,
+        tierId: tierId || undefined,
       });
       toast.success(
         fmt(t.bookedToast, { carrier: courierName, number: isolate(shipment.waybillNumber ?? shipment.trackingCode) })
@@ -694,8 +699,11 @@ function CreateShipmentForm({
       setPicker(null);
       setCityId("");
       setDistrictId("");
+      setTierId("");
+      setTierUnmapped(false);
       onCreated();
     } catch (err) {
+      setTierUnmapped(isApiErrorCode(err, "CARRIER_TIER_UNMAPPED"));
       if (isApiErrorCode(err, "CARRIER_ADDRESS_UNMATCHED")) {
         const details = apiErrorDetails<CarrierAddressUnmatchedDetails>(err);
         if (details) {
@@ -841,6 +849,18 @@ function CreateShipmentForm({
               </p>
             </div>
           </div>
+
+          <BookingWeightField
+            order={order}
+            carrierName={courierName}
+            value={tierId}
+            onChange={(next) => {
+              setTierId(next);
+              setTierUnmapped(false);
+            }}
+            unmapped={tierUnmapped}
+            disabled={submitting}
+          />
 
           {blockers.length > 0 && (
             <div className="space-y-1 rounded-[0.5rem] border border-accent/40 bg-accent-soft px-4 py-3 text-sm text-accent-dark">

@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import { OrderBumpCard } from "@/components/checkout/OrderBumpCard";
 import { OrderFormFields, fieldId } from "@/components/checkout/OrderFormFields";
+import { ShippingFee } from "@/components/checkout/ShippingFee";
 import { ArrowIcon, CashIcon } from "@/components/Icons";
 import { StoreLink, useStoreBasePath } from "@/components/StoreRoute";
 import { btnPrimaryLg, btnSecondary, card, container, input } from "@/components/ui";
@@ -25,6 +26,7 @@ import { variantLabel } from "@/lib/product";
 import { useStore } from "@/lib/StoreContext";
 import { useCatalog } from "@/lib/useCatalog";
 import { useCheckoutAutosave } from "@/lib/useCheckoutAutosave";
+import { useShippingQuote } from "@/lib/useShippingQuote";
 import { useFreshCheckoutSettings, useOrderFormFields } from "@/lib/useOrderFormFields";
 
 const FORM_PREFIX = "checkout";
@@ -63,7 +65,11 @@ export default function CheckoutPage() {
   // Once the bump is a real line in the cart, the cart subtotal already has it.
   const bumpInTotals = bumpOn && bump && !bumpAdded ? bump.priceAmount : 0;
   const subtotal = cart?.subtotal ?? 0;
-  const total = subtotal + bumpInTotals;
+  // The bump counts toward the parcel's weight as soon as it's ticked.
+  const quoteLines = items.map((l) => ({ variantId: l.variantId, offerId: l.offerId, quantity: l.quantity }));
+  if (bumpInTotals > 0 && bump) quoteLines.push({ variantId: bump.variantId, offerId: bump.offerId ?? null, quantity: 1 });
+  const shipping = useShippingQuote({ client, workspaceId, governorate: values.governorate, lines: quoteLines });
+  const total = subtotal + bumpInTotals + shipping.amount;
 
   function onFieldChange(field: OrderFormField, value: string) {
     setValues((prev) => ({ ...prev, [field]: value }));
@@ -249,7 +255,9 @@ export default function CheckoutPage() {
               )}
               <div className="flex justify-between gap-3">
                 <dt className="text-ink-soft">{t.checkout.shippingFee}</dt>
-                <dd className="text-ink">{t.checkout.shippingOnConfirmation}</dd>
+                <dd className="text-ink">
+                  <ShippingFee line={shipping.line} currency={currency} />
+                </dd>
               </div>
               <div className="flex justify-between gap-3 border-t border-line pt-3 text-base font-bold text-ink">
                 <dt>{t.checkout.totalEstimate}</dt>

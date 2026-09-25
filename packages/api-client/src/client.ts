@@ -50,6 +50,13 @@ import type {
   CreateProductResponse,
   CreateReturnPayload,
   CreateShipmentPayload,
+  ReplaceWeightTiersPayload,
+  SetPricingModePayload,
+  SetPricingModeResult,
+  ShippingQuote,
+  ShippingQuotePayload,
+  WeightTier,
+  WeightTierSettings,
   CreateShippingRatePayload,
   CreateShippingZonePayload,
   CreateTaxRatePayload,
@@ -1518,6 +1525,41 @@ export class ApiClient {
     });
   }
 
+  /** Tiers, the zone × tier price grid, the pricing mode and the "no weight" count, in one read. */
+  async getWeightTiers(workspaceId: string) {
+    return this.request<WeightTierSettings>(`${this.shippingBase(workspaceId)}/weight-tiers`);
+  }
+
+  /** Replaces the whole set, in order. An entry with `id` keeps that tier; a left-out tier is deleted with its prices. */
+  async replaceWeightTiers(workspaceId: string, payload: ReplaceWeightTiersPayload) {
+    const { tiers } = await this.request<{ tiers: WeightTier[] }>(`${this.shippingBase(workspaceId)}/weight-tiers`, {
+      method: "PUT",
+      body: payload,
+    });
+    return tiers;
+  }
+
+  async getZoneTierPrices(workspaceId: string, zoneId: string) {
+    return this.request<{ zoneId: string; prices: Array<{ tierId: string; amount: number }> }>(
+      `${this.shippingBase(workspaceId)}/zones/${zoneId}/tier-prices`
+    );
+  }
+
+  /** Replaces the zone's prices; a tier left out has no price in this zone. */
+  async replaceZoneTierPrices(workspaceId: string, zoneId: string, prices: Array<{ tierId: string; amount: number }>) {
+    return this.request<{ zoneId: string; prices: Array<{ tierId: string; amount: number }> }>(
+      `${this.shippingBase(workspaceId)}/zones/${zoneId}/tier-prices`,
+      { method: "PUT", body: { prices } }
+    );
+  }
+
+  async setShippingPricingMode(workspaceId: string, payload: SetPricingModePayload) {
+    return this.request<SetPricingModeResult>(`${this.shippingBase(workspaceId)}/pricing-mode`, {
+      method: "POST",
+      body: payload,
+    });
+  }
+
   // ---------------------------------------------------------------------
   // Tax rates (auth, /workspaces/:workspaceId/tax-rates/...)
   // `rateBasisPoints` is 100ths of a percent (1000 = 10%). Hard deletes.
@@ -1971,6 +2013,20 @@ export class ApiClient {
       headers: cartToken ? { "X-Cart-Token": cartToken } : {},
     });
     return order;
+  }
+
+  /**
+   * The shipping line a checkout would get (no auth). Send `items`, or omit
+   * them and pass `cartToken` to quote that cart. Read-only.
+   */
+  async getShippingQuote(workspaceId: string, payload: ShippingQuotePayload, cartToken?: string) {
+    const { quote } = await this.request<{ quote: ShippingQuote }>(`/store/${workspaceId}/shipping-quote`, {
+      method: "POST",
+      body: payload,
+      auth: false,
+      headers: cartToken ? { "X-Cart-Token": cartToken } : {},
+    });
+    return quote;
   }
 
   /**

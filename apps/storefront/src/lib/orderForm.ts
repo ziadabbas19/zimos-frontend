@@ -94,6 +94,16 @@ export function validateOrderForm(
 }
 
 /**
+ * The governorate as the order stores it in shippingAddress.province: its
+ * Arabic name with the English one alongside. The shipping quote sends the
+ * same string, so a zone's regions match the quote and the order alike.
+ */
+export function provinceFor(code: string): string | undefined {
+  const gov = findGovernorate(code);
+  return gov ? `${gov.ar} (${gov.en})` : undefined;
+}
+
+/**
  * Builds the COD checkout payload. The governorate is sent by its Arabic name —
  * what Egyptian couriers and confirmation agents read — with the English name
  * alongside so either reads naturally in the merchant dashboard. A field the
@@ -105,7 +115,7 @@ export function toCheckoutPayload(
   fields: OrderFormFieldModes,
   options: { discountCode?: string; systemNotes?: string[]; item?: CheckoutPayload["item"] } = {}
 ): CheckoutPayload {
-  const gov = findGovernorate(values.governorate);
+  const province = provinceFor(values.governorate);
   const altPhone = values.altPhone.trim() ? normalizePhone(values.altPhone) : "";
   const email = fields.email !== "hidden" ? values.email.trim() : "";
   const postalCode = fields.postal_code !== "hidden" ? values.postalCode.trim() : "";
@@ -121,7 +131,7 @@ export function toCheckoutPayload(
     },
     shippingAddress: {
       country: "EG",
-      ...(gov ? { province: `${gov.ar} (${gov.en})` } : {}),
+      ...(province ? { province } : {}),
       city: values.city.trim(),
       addressLine: values.address.trim(),
       ...(postalCode ? { postalCode } : {}),
