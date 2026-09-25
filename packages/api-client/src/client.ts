@@ -25,6 +25,15 @@ import type {
   CaptureCheckoutSessionPayload,
   CarrierCity,
   CarrierList,
+  CheckoutResult,
+  PaymentTimeline,
+  Refund,
+  ConnectPaymentGatewayPayload,
+  PaymentGatewayInfo,
+  PaymentGatewayList,
+  PaymentMethodList,
+  ShopperPaymentStatus,
+  StorefrontPaymentMethod,
   Cart,
   CheckoutRecoveryStatus,
   CheckoutSession,
@@ -1781,6 +1790,84 @@ export class ApiClient {
     return unwrapList<CarrierCity>(body, "cities");
   }
 
+  /** Attempts, gateway events, refunds and what can still be refunded (orders.view). */
+  async getPaymentTimeline(workspaceId: string, orderId: string) {
+    const { timeline } = await this.request<{ timeline: PaymentTimeline }>(
+      `/workspaces/${workspaceId}/orders/${orderId}/payment-timeline`
+    );
+    return timeline;
+  }
+
+  /** "Sync payment status": ask the gateway now (orders.manage). */
+  async syncOrderPayments(workspaceId: string, orderId: string) {
+    const { timeline } = await this.request<{ timeline: PaymentTimeline }>(
+      `/workspaces/${workspaceId}/orders/${orderId}/payments/sync`,
+      { method: "POST", body: {} }
+    );
+    return timeline;
+  }
+
+  /**
+   * Refund (refunds.manage). Gateway-paid orders: `status` may come back
+   * 'pending' (the gateway has not finished) or 'failed' (with failureReason);
+   * `paymentId` picks which payment when there are several.
+   */
+  async refundOrder(workspaceId: string, orderId: string, body: { amount: number; reason?: string; paymentId?: string }) {
+    const { refund } = await this.request<{ refund: Refund }>(`/workspaces/${workspaceId}/orders/${orderId}/refunds`, {
+      method: "POST",
+      body,
+    });
+    return refund;
+  }
+
+  // ---------------------------------------------------------------------
+  // Online payments: merchant settings (owner / workspace manager only)
+  // ---------------------------------------------------------------------
+
+  private paymentsBase(workspaceId: string) {
+    return `/workspaces/${workspaceId}/payments`;
+  }
+
+  /** Always 200: check `configured` before offering to connect anything. */
+  async listPaymentGateways(workspaceId: string) {
+    return this.request<PaymentGatewayList>(`${this.paymentsBase(workspaceId)}/gateways`);
+  }
+
+  /** Connect, or update settings (omit `credentials` to keep the stored keys). Keys are never returned. */
+  async connectPaymentGateway(workspaceId: string, code: string, payload: ConnectPaymentGatewayPayload) {
+    return this.request<PaymentGatewayInfo>(`${this.paymentsBase(workspaceId)}/gateways/${code}`, {
+      method: "PUT",
+      body: payload,
+    });
+  }
+
+  /** 409 GATEWAY_HAS_PENDING_PAYMENTS while an order still waits on a payment through it. */
+  async disconnectPaymentGateway(workspaceId: string, code: string) {
+    return this.request<{ disconnected: boolean }>(`${this.paymentsBase(workspaceId)}/gateways/${code}`, {
+      method: "DELETE",
+    });
+  }
+
+  async listPaymentMethods(workspaceId: string) {
+    return this.request<PaymentMethodList>(`${this.paymentsBase(workspaceId)}/methods`);
+  }
+
+  /** The full ordered list. 422 when no available method would stay on. */
+  async updatePaymentMethods(workspaceId: string, methods: Array<{ id: string; enabled: boolean }>) {
+    return this.request<PaymentMethodList>(`${this.paymentsBase(workspaceId)}/methods`, {
+      method: "PUT",
+      body: { methods },
+    });
+  }
+
+  /** A 2-hour token that shows test-mode methods on this store's own storefront. */
+  async createPaymentPreviewToken(workspaceId: string) {
+    return this.request<{ token: string; expiresAt: string }>(`${this.paymentsBase(workspaceId)}/preview-token`, {
+      method: "POST",
+      body: {},
+    });
+  }
+
   /**
    * Fetch a path with the Bearer token attached, one transparent retry after a
    * silent refresh on 401, and the standard error envelope turned into ApiError.
@@ -2013,6 +2100,94 @@ export class ApiClient {
       headers: cartToken ? { "X-Cart-Token": cartToken } : {},
     });
     return order;
+  }
+
+  /**
+   * Checkout, full answer. For an online method the body also carries
+   * `payment` (send the shopper to `payment.redirectUrl`) and `paymentToken`
+   * (keep it: it is the only key to the order's payment endpoints).
+   * `previewToken` (X-Store-Preview) unlocks test-mode methods.
+   */
+  async placeCheckout(
+    workspaceId: string,
+    payload: CheckoutPayload,
+    opts: { cartToken?: string; previewToken?: string } = {}
+  ) {
+    const headers: Record<string, string> = {};
+    if (opts.cartToken) headers["X-Cart-Token"] = opts.cartToken;
+    if (opts.previewToken) headers["X-Store-Preview"] = opts.previewToken;
+    return this.request<CheckoutResult>(`/store/${workspaceId}/checkout`, {
+      method: "POST",
+      body: payload,
+      auth: false,
+      idempotent: true,
+      headers,
+    });
+  }
+
+  /** The methods the checkout offers (always at least cash on delivery). */
+  async getStorefrontPaymentMethods(workspaceId: string, previewToken?: string) {
+    return this.request<{ methods: StorefrontPaymentMethod[]; preview: boolean }>(
+      `/store/${workspaceId}/payment-methods`,
+      { auth: false, headers: previewToken ? { "X-Store-Preview": previewToken } : {} }
+    );
+  }
+
+  private shopperPaymentHeaders(paymentToken: string, previewToken?: string) {
+    const headers: Record<string, string> = { "X-Payment-Token": paymentToken };
+    if (previewToken) headers["X-Store-Preview"] = previewToken;
+    return headers;
+  }
+
+  /** An unpaid online order, for the shopper. `refresh` asks the gateway (throttled server-side). */
+  async getOrderPayment(
+    workspaceId: string,
+    orderId: string,
+    paymentToken: string,
+    opts: { refresh?: boolean; previewToken?: string } = {}
+  ) {
+    const { payment } = await this.request<{ payment: ShopperPaymentStatus }>(
+      `/store/${workspaceId}/orders/${orderId}/payment${opts.refresh ? "?refresh=1" : ""}`,
+      { auth: false, headers: this.shopperPaymentHeaders(paymentToken, opts.previewToken) }
+    );
+    return payment;
+  }
+
+  /** The shopper is back from the gateway: forward its query string, signed or not. */
+  async returnFromPayment(
+    workspaceId: string,
+    orderId: string,
+    paymentToken: string,
+    query: Record<string, string>,
+    previewToken?: string
+  ) {
+    const { payment } = await this.request<{ payment: ShopperPaymentStatus }>(
+      `/store/${workspaceId}/orders/${orderId}/payment/return`,
+      { method: "POST", body: { query }, auth: false, headers: this.shopperPaymentHeaders(paymentToken, previewToken) }
+    );
+    return payment;
+  }
+
+  async retryOrderPayment(
+    workspaceId: string,
+    orderId: string,
+    paymentToken: string,
+    body: { paymentMethod?: "card" | "wallet"; paymentProvider?: string; returnUrl?: string },
+    previewToken?: string
+  ) {
+    const { payment } = await this.request<{ payment: ShopperPaymentStatus }>(
+      `/store/${workspaceId}/orders/${orderId}/payment/retry`,
+      { method: "POST", body, auth: false, headers: this.shopperPaymentHeaders(paymentToken, previewToken) }
+    );
+    return payment;
+  }
+
+  async switchOrderToCod(workspaceId: string, orderId: string, paymentToken: string, previewToken?: string) {
+    const { payment } = await this.request<{ payment: ShopperPaymentStatus }>(
+      `/store/${workspaceId}/orders/${orderId}/payment/switch-to-cod`,
+      { method: "POST", body: {}, auth: false, headers: this.shopperPaymentHeaders(paymentToken, previewToken) }
+    );
+    return payment;
   }
 
   /**

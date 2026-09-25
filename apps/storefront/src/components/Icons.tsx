@@ -32,6 +32,20 @@ export const CashIcon = (p: IconProps) => (
   </Base>
 );
 
+export const CardIcon = (p: IconProps) => (
+  <Base {...p}>
+    <rect x="2.5" y="5" width="19" height="14" rx="2" />
+    <path d="M2.5 10h19M6.5 15h4" />
+  </Base>
+);
+
+export const WalletIcon = (p: IconProps) => (
+  <Base {...p}>
+    <rect x="6" y="2.5" width="12" height="19" rx="2.5" />
+    <path d="M10.5 18.5h3" />
+  </Base>
+);
+
 export const TruckIcon = (p: IconProps) => (
   <Base {...p}>
     <path d="M3 6.5h11v9H3zM14 9.5h4l3 3v3h-7z" />

@@ -12,6 +12,7 @@ import { OrderActions } from "./components/OrderActions";
 import { ConfirmationPanel } from "./components/ConfirmationPanel";
 import { ShipmentsSection } from "./components/ShipmentsSection";
 import { ReturnsSection } from "./components/ReturnsSection";
+import { PaymentsSection } from "./components/PaymentsSection";
 import { STAGE_TONE, useOrderLabels } from "./orderLabels";
 
 const STRINGS = {
@@ -81,6 +82,8 @@ export function OrderDetailPage() {
             <ConfirmationPanel order={data} onChanged={reload} />
 
             <OrderSummary order={data} />
+
+            <PaymentsSection order={data} onChanged={reload} />
 
             <ShipmentsSection order={data} onChanged={reload} />
 

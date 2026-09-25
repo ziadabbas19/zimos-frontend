@@ -20,6 +20,7 @@ import { humanize } from "@/lib/format";
 const LABELS = {
   en: {
     // pipeline stages (orders/orderStage.js)
+    stage_awaiting_payment: "Awaiting payment",
     stage_pending_confirmation: "New",
     stage_needs_follow_up: "Follow up",
     stage_ready_to_ship: "Ready to ship",
@@ -66,9 +67,16 @@ const LABELS = {
     risk_duplicate_order: "Possible duplicate order",
     risk_phone_daily_limit: "Too many orders today",
     risk_high_rejection_customer: "Often rejects orders",
+    risk_test_payment: "Paid in test mode",
+    risk_duplicate_payment: "Paid twice",
+    risk_paid_after_expiry: "Paid after it expired",
+    risk_paid_after_cancel: "Paid after it was cancelled",
+    risk_paid_after_cod_switch: "Paid online after switching to COD",
+    risk_payment_amount_mismatch: "Paid amount differs",
     flagged: "Flagged",
   },
   ar: {
+    stage_awaiting_payment: "في انتظار الدفع",
     stage_pending_confirmation: "جديد",
     stage_needs_follow_up: "للمتابعة",
     stage_ready_to_ship: "جاهز للشحن",
@@ -109,6 +117,12 @@ const LABELS = {
     risk_duplicate_order: "أوردر مكرر محتمل",
     risk_phone_daily_limit: "أوردرات كثيرة اليوم",
     risk_high_rejection_customer: "يرفض الأوردرات كثيرًا",
+    risk_test_payment: "مدفوع في وضع التجربة",
+    risk_duplicate_payment: "مدفوع مرتين",
+    risk_paid_after_expiry: "دُفع بعد انتهاء المهلة",
+    risk_paid_after_cancel: "دُفع بعد الإلغاء",
+    risk_paid_after_cod_switch: "دُفع إلكترونيًا بعد التحويل للدفع عند الاستلام",
+    risk_payment_amount_mismatch: "المبلغ المدفوع مختلف",
     flagged: "مشتبه به",
   },
 } satisfies Messages;
@@ -119,6 +133,7 @@ export type BadgeTone = "neutral" | "info" | "success" | "warning" | "danger";
 
 /** Tone per stage, for <StatusBadge tone>. Stage keys aren't in its own table. */
 export const STAGE_TONE: Record<OrderStage, BadgeTone> = {
+  awaiting_payment: "neutral",
   pending_confirmation: "warning",
   needs_follow_up: "warning",
   ready_to_ship: "info",

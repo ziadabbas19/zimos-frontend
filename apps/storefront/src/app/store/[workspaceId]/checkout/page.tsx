@@ -5,8 +5,9 @@ import { flushSync } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import { OrderBumpCard } from "@/components/checkout/OrderBumpCard";
 import { OrderFormFields, fieldId } from "@/components/checkout/OrderFormFields";
+import { PaymentMethodPicker } from "@/components/checkout/PaymentMethodPicker";
 import { ShippingFee } from "@/components/checkout/ShippingFee";
-import { ArrowIcon, CashIcon } from "@/components/Icons";
+import { ArrowIcon } from "@/components/Icons";
 import { StoreLink, useStoreBasePath } from "@/components/StoreRoute";
 import { btnPrimaryLg, btnSecondary, card, container, input } from "@/components/ui";
 import { createStorefrontApiClient } from "@/lib/apiClient";
@@ -22,6 +23,7 @@ import {
   type OrderFormValues,
 } from "@/lib/orderForm";
 import { afterOrder, orderErrorMessage, placeCodOrder, serverFieldErrors } from "@/lib/placeOrder";
+import { placeOnlineOrder, usePaymentMethods } from "@/lib/payments";
 import { variantLabel } from "@/lib/product";
 import { useStore } from "@/lib/StoreContext";
 import { useCatalog } from "@/lib/useCatalog";
@@ -50,6 +52,10 @@ export default function CheckoutPage() {
   const [bumpOn, setBumpOn] = useState(false);
   // True once the bump is a real cart line (a failed order leaves it there).
   const [bumpAdded, setBumpAdded] = useState(false);
+  const payment = usePaymentMethods(client, workspaceId);
+  const [methodId, setMethodId] = useState<string | null>(null);
+  const method = payment.methods.find((m) => m.id === methodId) ?? payment.methods[0];
+  const [redirecting, setRedirecting] = useState(false);
 
   const currency = cart?.currency ?? "EGP";
   const items = cart?.items ?? [];
@@ -108,6 +114,24 @@ export default function CheckoutPage() {
         ...toCheckoutPayload(values, fields, { discountCode: appliedCode, systemNotes }),
         ...(checkoutSessionId ? { checkoutSessionId } : {}),
       };
+      if (method.method !== "cod") {
+        const { next, external } = await placeOnlineOrder({
+          client,
+          workspaceId,
+          basePath,
+          payload,
+          method,
+          cartToken: cart.guestToken,
+        });
+        clearCart();
+        if (external) {
+          setRedirecting(true);
+          window.location.assign(next);
+        } else {
+          router.push(next);
+        }
+        return;
+      }
       const order = await placeCodOrder({ client, workspaceId, payload, cartToken: cart.guestToken });
       clearCart();
       router.push(afterOrder({ workspaceId, basePath, order, phone: payload.contact.phone }));
@@ -165,14 +189,12 @@ export default function CheckoutPage() {
             <h2 id="payment-title" className="text-lg font-semibold text-ink">
               {t.checkout.payment}
             </h2>
-            {/* Cash on delivery is the only method the checkout accepts — a fact, not a choice. */}
-            <div className="mt-4 flex min-h-14 items-center gap-3 rounded-xl border-2 border-primary bg-primary-soft px-4 py-3">
-              <CashIcon className="shrink-0 text-primary" />
-              <p>
-                <span className="block text-sm font-semibold text-ink">{t.checkout.cod}</span>
-                <span className="block text-xs text-ink-soft">{t.checkout.codHint}</span>
-              </p>
-            </div>
+            <PaymentMethodPicker
+              methods={payment.methods}
+              value={method.id}
+              onChange={setMethodId}
+              idPrefix={FORM_PREFIX}
+            />
           </section>
         </div>
 
@@ -276,7 +298,13 @@ export default function CheckoutPage() {
           </div>
 
           <button type="submit" disabled={submitting || items.length === 0} className={btnPrimaryLg}>
-            {submitting ? t.checkout.placing : t.checkout.place}
+            {redirecting
+              ? t.payment.redirecting
+              : submitting
+                ? t.checkout.placing
+                : method.method === "cod"
+                  ? t.checkout.place
+                  : t.payment.payNow}
           </button>
         </aside>
       </form>

@@ -75,6 +75,28 @@ export type ApiErrorCode =
   | "SHIPMENT_NOT_CARRIER_MANAGED"
   | "LABEL_NOT_AVAILABLE"
   | "CARRIER_TIER_UNMAPPED" // 422, details = { tierId } — the booked tier has no package mapping
+  // online payments
+  | "PAYMENTS_ONLINE_DISABLED" // 404 — shopper payment endpoints while online payments are off
+  | "GATEWAYS_NOT_CONFIGURED" // 503 — no GATEWAY_CREDENTIALS_KEY on the server
+  | "GATEWAY_AUTH_FAILED" // 422 — the gateway refused the keys
+  | "GATEWAY_KEYS_MODE_MISMATCH" // 422 — a test key with a live key
+  | "GATEWAY_KEYS_UNRECOGNISED" // 422
+  | "GATEWAY_REJECTED" // 422
+  | "GATEWAY_ERROR" // 502
+  | "GATEWAY_NOT_CONNECTED" // 409
+  | "GATEWAY_HAS_PENDING_PAYMENTS" // 409 — disconnect while an order waits on its payment
+  | "GATEWAY_CREDENTIALS_UNREADABLE" // 409
+  | "PAYMENT_METHOD_UNAVAILABLE" // 422
+  | "PAYMENT_CURRENCY_UNSUPPORTED" // 422
+  | "PAYMENT_RETRY_LIMIT" // 409
+  | "ORDER_ALREADY_PAID" // 409
+  | "ORDER_PAYMENT_EXPIRED" // 409
+  | "ORDER_IS_COD" // 409
+  | "ORDER_TEST_PAYMENT" // 409 — paid in test mode, cannot ship
+  | "FUNNEL_ORDER_NOT_PAID" // 409 — completed_checkout with an unpaid online order
+  | "REFUND_EXCEEDS_ELIGIBLE_AMOUNT" // 422
+  | "REFUND_EXCEEDS_PAYMENT" // 422 — one refund cannot draw on two payments
+  | "REFUND_PAYMENT_INVALID" // 422
   // weight tiers
   | "SHIPPING_TIERS_REQUIRED" // 422 — tier pricing needs at least one tier
   | "DEFAULT_ITEM_WEIGHT_REQUIRED" // 422 — tier pricing needs a default item weight

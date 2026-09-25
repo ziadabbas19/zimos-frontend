@@ -77,6 +77,18 @@ const STRINGS = {
     CARRIER_TIER_UNMAPPED: "This weight tier has no package type for the courier. Book it as another tier, or map it in the courier settings.",
     SHIPPING_TIERS_REQUIRED: "Add at least one weight tier before pricing shipping by weight.",
     DEFAULT_ITEM_WEIGHT_REQUIRED: "Set a default item weight first. It's required while shipping is priced by weight tier.",
+    GATEWAYS_NOT_CONFIGURED: "Online payments aren't available on this server yet. Please contact support.",
+    GATEWAY_AUTH_FAILED: "The payment gateway rejected these keys. Copy them again from its dashboard and reconnect.",
+    GATEWAY_KEYS_MODE_MISMATCH: "One key is a test key and the other a live key. Use both from the same mode.",
+    GATEWAY_KEYS_UNRECOGNISED: "These don't look like keys from this gateway. Check you copied the right ones.",
+    GATEWAY_NOT_CONNECTED: "This payment gateway isn't connected to your store anymore.",
+    GATEWAY_HAS_PENDING_PAYMENTS: "Some orders are still waiting on a payment through this gateway. Wait until they're paid or expire, then disconnect.",
+    GATEWAY_CREDENTIALS_UNREADABLE: "The saved gateway keys can't be read anymore. Connect the gateway again.",
+    PAYMENT_METHOD_UNAVAILABLE: "That payment method isn't available right now.",
+    REFUND_EXCEEDS_ELIGIBLE_AMOUNT: "That's more than can still be refunded on this order.",
+    REFUND_EXCEEDS_PAYMENT: "No single payment has that much left. Refund each payment separately.",
+    REFUND_PAYMENT_INVALID: "That payment can't be refunded through the gateway.",
+    ORDER_TEST_PAYMENT: "This order was paid in test mode, so it can't be shipped.",
     cancelFailedPermission:
       "The courier refused to cancel the delivery: the connected API key doesn't have Full Access. The order was not cancelled. Reconnect the courier with a Full Access key under Shipping, or cancel the delivery in the courier's dashboard first.",
     cancelFailedAuth:
@@ -138,6 +150,18 @@ const STRINGS = {
     CARRIER_TIER_UNMAPPED: "شريحة الوزن هذه ليس لها نوع طرد عند شركة الشحن. احجزها كشريحة أخرى، أو اربطها من إعدادات الشركة.",
     SHIPPING_TIERS_REQUIRED: "أضف شريحة وزن واحدة على الأقل قبل تسعير الشحن بالوزن.",
     DEFAULT_ITEM_WEIGHT_REQUIRED: "حدد الوزن الافتراضي للمنتج أولًا. هو مطلوب طالما الشحن يُسعَّر حسب شريحة الوزن.",
+    GATEWAYS_NOT_CONFIGURED: "الدفع الإلكتروني غير متاح على هذا الخادم بعد. تواصل مع الدعم.",
+    GATEWAY_AUTH_FAILED: "رفضت بوابة الدفع هذه المفاتيح. انسخها مرة أخرى من لوحة تحكمها وأعد الربط.",
+    GATEWAY_KEYS_MODE_MISMATCH: "أحد المفتاحين للتجربة والآخر للتشغيل. استخدم المفتاحين من نفس النوع.",
+    GATEWAY_KEYS_UNRECOGNISED: "هذه لا تبدو مفاتيح هذه البوابة. تأكد أنك نسخت المفاتيح الصحيحة.",
+    GATEWAY_NOT_CONNECTED: "بوابة الدفع هذه لم تعد مربوطة بمتجرك.",
+    GATEWAY_HAS_PENDING_PAYMENTS: "توجد أوردرات ما زالت تنتظر الدفع عبر هذه البوابة. انتظر حتى تُدفع أو تنتهي مهلتها، ثم ألغِ الربط.",
+    GATEWAY_CREDENTIALS_UNREADABLE: "تعذّرت قراءة مفاتيح البوابة المحفوظة. أعد ربط البوابة.",
+    PAYMENT_METHOD_UNAVAILABLE: "طريقة الدفع هذه غير متاحة الآن.",
+    REFUND_EXCEEDS_ELIGIBLE_AMOUNT: "هذا أكثر من المبلغ المتبقي القابل للاسترداد في هذا الأوردر.",
+    REFUND_EXCEEDS_PAYMENT: "لا توجد دفعة واحدة متبقٍ فيها هذا المبلغ. استرد كل دفعة على حدة.",
+    REFUND_PAYMENT_INVALID: "لا يمكن استرداد هذه الدفعة عبر البوابة.",
+    ORDER_TEST_PAYMENT: "هذا الأوردر دُفع في وضع التجربة، لذلك لا يمكن شحنه.",
     cancelFailedPermission:
       "رفضت شركة الشحن إلغاء الشحنة لأن مفتاح API المربوط ليس بصلاحية Full Access. لم يتم إلغاء الأوردر. أعد ربط الشركة بمفتاح Full Access من صفحة الشحن، أو ألغِ الشحنة من لوحة تحكم الشركة أولًا.",
     cancelFailedAuth:
@@ -153,7 +177,7 @@ type CodeKey = Exclude<
 const OWN_KEYS: ReadonlySet<string> = new Set(["network", "generic", "cancelFailedPermission", "cancelFailedAuth", "courierReply"]);
 
 /** Codes whose server message is shown as-is, never replaced. */
-const VERBATIM_CODES: ReadonlySet<string> = new Set<ApiErrorCode>(["CARRIER_ERROR"]);
+const VERBATIM_CODES: ReadonlySet<string> = new Set<ApiErrorCode>(["CARRIER_ERROR", "GATEWAY_ERROR", "GATEWAY_REJECTED"]);
 
 export type ErrorOverrides = Partial<Record<ApiErrorCode, string>>;
 

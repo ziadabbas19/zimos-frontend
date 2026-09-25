@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   ClipboardCheck,
+  CreditCard,
   Globe,
   LayoutDashboard,
   Package,
@@ -29,6 +30,7 @@ export type NavKey =
   | "customers"
   | "discounts"
   | "shipping"
+  | "payments"
   | "website"
   | "funnels"
   | "settings";
@@ -75,6 +77,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: "abandonedCarts", to: "/abandoned-carts", icon: ShoppingCart },
       { key: "fraud", to: "/fraud", icon: ShieldAlert },
       { key: "shipping", to: "/shipping", icon: Truck },
+      { key: "payments", to: "/payments", icon: CreditCard },
       { key: "returns", to: "/returns", icon: Undo2 },
     ],
   },
@@ -137,6 +140,7 @@ export const NAV_LABELS = {
     customers: "Customers",
     discounts: "Discounts",
     shipping: "Shipping & Tax",
+    payments: "Payments",
     website: "Website",
     funnels: "Funnels",
     settings: "Settings",
@@ -153,6 +157,7 @@ export const NAV_LABELS = {
     customers: "العملاء",
     discounts: "الخصومات",
     shipping: "الشحن والضرائب",
+    payments: "المدفوعات",
     website: "الموقع",
     funnels: "مسارات البيع",
     settings: "الإعدادات",

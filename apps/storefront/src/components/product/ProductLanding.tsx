@@ -19,6 +19,8 @@ import {
   type OrderFormValues,
 } from "@/lib/orderForm";
 import { afterOrder, orderErrorMessage, placeCodOrder, serverFieldErrors, type OrderLine } from "@/lib/placeOrder";
+import { placeOnlineOrder, usePaymentMethods } from "@/lib/payments";
+import { PaymentMethodPicker } from "@/components/checkout/PaymentMethodPicker";
 import { useCheckoutAutosave } from "@/lib/useCheckoutAutosave";
 import { useOrderFormFields } from "@/lib/useOrderFormFields";
 import {
@@ -114,6 +116,10 @@ export function ProductLanding({
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [bumpOn, setBumpOn] = useState(false);
+  const payment = usePaymentMethods(client, workspaceId);
+  const [methodId, setMethodId] = useState<string | null>(null);
+  const method = payment.methods.find((m) => m.id === methodId) ?? payment.methods[0];
+  const [redirecting, setRedirecting] = useState(false);
 
   // The hook keys on the lines' content, so a fresh array each render is fine.
   const autosaveLines: OrderLine[] = mainLine ? [mainLine] : [];
@@ -155,6 +161,23 @@ export function ProductLanding({
       ...(checkoutSessionId ? { checkoutSessionId } : {}),
     };
     try {
+      if (method.method !== "cod") {
+        const { next, external } = await placeOnlineOrder({
+          client,
+          workspaceId,
+          basePath,
+          payload,
+          method,
+          lines: bumpLine ? [mainLine, bumpLine] : undefined,
+        });
+        if (external) {
+          setRedirecting(true);
+          window.location.assign(next);
+        } else {
+          router.push(next);
+        }
+        return;
+      }
       const order = await placeCodOrder({
         client,
         workspaceId,
@@ -415,6 +438,15 @@ export function ProductLanding({
 
           {bump && <OrderBumpCard bump={bump} checked={bumpOn} onChange={setBumpOn} idPrefix={FORM_PREFIX} />}
 
+          {payment.methods.length > 1 && (
+            <PaymentMethodPicker
+              methods={payment.methods}
+              value={method.id}
+              onChange={setMethodId}
+              idPrefix={FORM_PREFIX}
+            />
+          )}
+
           <div role="alert" aria-live="assertive" className="empty:hidden">
             {formError && (
               <p className="rounded-xl bg-danger-soft px-4 py-3 text-sm font-medium text-danger">{formError}</p>
@@ -422,12 +454,18 @@ export function ProductLanding({
           </div>
 
           <button type="submit" disabled={submitting || !available} className={btnPrimaryLg}>
-            {submitting ? t.form.submitting : `${t.form.submit} — ${money(total)}`}
+            {redirecting
+              ? t.payment.redirecting
+              : submitting
+                ? t.form.submitting
+                : `${method.method === "cod" ? t.form.submit : t.payment.payNow} — ${money(total)}`}
           </button>
-          <p className="flex items-center justify-center gap-1.5 text-center text-xs text-ink-soft">
-            <CashIcon size={16} />
-            {t.checkout.codHint}
-          </p>
+          {method.method === "cod" && (
+            <p className="flex items-center justify-center gap-1.5 text-center text-xs text-ink-soft">
+              <CashIcon size={16} />
+              {t.checkout.codHint}
+            </p>
+          )}
         </form>
       </section>
 

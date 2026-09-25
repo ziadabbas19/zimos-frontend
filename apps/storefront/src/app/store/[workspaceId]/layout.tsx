@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { HideInFunnel } from "@/components/HideInFunnel";
+import { PaymentsPreviewBanner } from "@/components/PaymentsPreviewBanner";
 import { StoreFooter } from "@/components/StoreFooter";
 import { StoreHeader } from "@/components/StoreHeader";
 import { resolveCheckoutSettings } from "@store-builder/api-client";
@@ -102,6 +103,7 @@ export default async function StoreLayout({
           style={brandStyle(store.themeSettings)}
         >
           <DocumentLocale locale={locale} />
+          <PaymentsPreviewBanner workspaceId={workspaceId} />
           <HideInFunnel>
             <StoreHeader store={store} locale={locale} />
           </HideInFunnel>

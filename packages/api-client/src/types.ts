@@ -570,8 +570,16 @@ export interface CheckoutAddress {
 export interface CheckoutPayload {
   contact: CheckoutContact;
   shippingAddress?: CheckoutAddress;
-  /** Cash on delivery only: the storefront checkout refuses every other method (422). */
-  paymentMethod: "cod";
+  /**
+   * 'card' / 'wallet' only when the store offers them (getStorefrontPaymentMethods);
+   * otherwise 422 PAYMENT_METHOD_UNAVAILABLE, or VALIDATION_ERROR while online
+   * payments are switched off platform-wide.
+   */
+  paymentMethod: "cod" | "card" | "wallet";
+  /** Which gateway, when more than one offers the method. */
+  paymentProvider?: string;
+  /** Online methods: where the gateway sends the shopper back to. */
+  returnUrl?: string;
   discountCode?: string;
   funnelId?: string;
   websiteId?: string;
@@ -929,8 +937,13 @@ export type PaymentStatus =
   | "captured"
   | "failed"
   | "refunded"
-  | "partially_refunded";
+  | "partially_refunded"
+  /** Online attempt: the order's payment window closed first. */
+  | "expired"
+  /** Online attempt: replaced by a retry, or the shopper switched to COD. */
+  | "cancelled";
 
+/** One payment attempt (online) or payment record (COD / manual). */
 export interface Payment {
   id: string;
   orderId: string;
@@ -942,6 +955,36 @@ export interface Payment {
   providerReference: string | null;
   maskedDisplay: string | null;
   failureReason: string | null;
+  /** Gateway attempts only. */
+  method?: "card" | "wallet" | null;
+  mode?: GatewayMode | null;
+  providerOrderId?: string | null;
+  providerTransactionId?: string | null;
+  expiresAt?: string | null;
+  paidAt?: string | null;
+  lastInquiredAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type RefundStatus = "pending" | "processed" | "failed";
+
+export interface Refund {
+  id: string;
+  orderId: string;
+  workspaceId: string;
+  paymentId: string | null;
+  amount: string;
+  reason: string | null;
+  /** pending: sent to the gateway, the answer is not final yet. */
+  status: RefundStatus;
+  /** 'gateway': made in the gateway's own dashboard, reported by webhook. */
+  source: "merchant" | "gateway";
+  providerRefundReference: string | null;
+  failureReason: string | null;
+  processedAt: string | null;
+  creditNoteId: string | null;
+  processedByUserId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -1056,8 +1099,13 @@ export interface Order {
    * create/cancel/update responses.
    */
   stage?: OrderStage;
-  /** Present on detail (GET one) only. */
+  /** When the order became a sale (invoice, discount, customer count). null while an online order is unpaid. */
+  completedAt?: string | null;
+  /** Unpaid online order: when it stops holding stock. */
+  paymentExpiresAt?: string | null;
+  /** Present on detail (GET one) only, oldest first. */
   payments?: Payment[];
+  refunds?: Refund[];
   shipments?: Shipment[];
   /** Present on detail (GET one) only; null for an order that never had a task (prepaid). */
   confirmationTask?: OrderConfirmationTaskSummary | null;
@@ -1073,6 +1121,7 @@ export interface OrderListResponse {
  * never stored. Listed in the backend's order.
  */
 export const ORDER_STAGES = [
+  "awaiting_payment",
   "pending_confirmation",
   "needs_follow_up",
   "ready_to_ship",
@@ -2201,7 +2250,14 @@ export type RiskFlag =
   | "blacklisted_customer"
   | "duplicate_order"
   | "phone_daily_limit"
-  | "high_rejection_customer";
+  | "high_rejection_customer"
+  // online payments (payments/onlinePaymentService.js)
+  | "test_payment"
+  | "duplicate_payment"
+  | "paid_after_expiry"
+  | "paid_after_cancel"
+  | "paid_after_cod_switch"
+  | "payment_amount_mismatch";
 
 /** One row of GET /fraud/flagged-orders — a slim projection, not a full Order. */
 export interface FlaggedOrder {
@@ -2477,4 +2533,181 @@ export interface ShipmentSyncResult {
   /** Whether our shipment status moved. */
   changed: boolean;
   carrierStatus: CarrierShipmentStatus | null;
+}
+
+// ---------------------------------------------------------------------
+// Online payments (merchant's own gateway account; Paymob first)
+// ---------------------------------------------------------------------
+
+export type GatewayMode = "test" | "live";
+export type LocalizedText = { en: string; ar: string };
+
+export interface GatewayFieldDescriptor {
+  key: string;
+  label: LocalizedText;
+  /** Credentials: typed into a password field, never shown again. */
+  secret?: boolean;
+  placeholder?: string;
+  /** Settings: the payment method this field turns on. */
+  method?: "card" | "wallet";
+  type?: "integer";
+}
+
+export interface PaymentGatewayConnection {
+  /** "invalid" once the gateway refused the stored keys. */
+  status: "active" | "invalid";
+  /** From the keys: test-mode methods only show in the store preview. */
+  mode: GatewayMode;
+  settings: Record<string, unknown>;
+  /** The methods these settings can take. */
+  methods: Array<"card" | "wallet">;
+  /** Paste into each gateway integration (see webhookSetup). */
+  webhookUrl: string;
+  lastVerifiedAt: string | null;
+  /** The last signed callback received; null until the first one. */
+  lastWebhookAt: string | null;
+  connectedAt: string;
+  updatedAt: string;
+}
+
+export interface PaymentGatewayInfo {
+  code: string;
+  name: string;
+  methods: Array<"card" | "wallet">;
+  currencies: string[];
+  credentialFields: GatewayFieldDescriptor[];
+  settingFields: GatewayFieldDescriptor[];
+  setupSteps: { en: string[]; ar: string[] };
+  helpLinks: Array<{ label: LocalizedText; url: string }>;
+  webhookSetup: { field: string; perIntegration: boolean };
+  connection: PaymentGatewayConnection | null;
+}
+
+/**
+ * GET /payments/gateways. `configured: false`: the server has no
+ * GATEWAY_CREDENTIALS_KEY and every gateway call answers 503
+ * GATEWAYS_NOT_CONFIGURED. `onlineEnabled: false`: shoppers only see cash on
+ * delivery for now, whatever is connected here.
+ */
+export interface PaymentGatewayList {
+  configured: boolean;
+  onlineEnabled: boolean;
+  gateways: PaymentGatewayInfo[];
+}
+
+export interface ConnectPaymentGatewayPayload {
+  /** Required on first connect; omit to keep (and re-verify) the stored keys. */
+  credentials?: Record<string, string>;
+  settings?: Record<string, unknown>;
+}
+
+/** 'cod' or '<gateway>:<method>', e.g. 'paymob:card'. */
+export interface PaymentMethodEntry {
+  id: string;
+  provider: string | null;
+  method: "cod" | "card" | "wallet";
+  enabled: boolean;
+  /** false: its gateway is not connected (or cannot take it). Kept in the list, never offered. */
+  available: boolean;
+  mode: GatewayMode | null;
+}
+
+export interface PaymentMethodList {
+  onlineEnabled: boolean;
+  methods: PaymentMethodEntry[];
+}
+
+/** What a shopper is offered at checkout, in the merchant's order. */
+export interface StorefrontPaymentMethod {
+  id: string;
+  provider: string | null;
+  method: "cod" | "card" | "wallet";
+  mode: GatewayMode;
+}
+
+/** POST /store/:id/checkout with an online method. */
+export interface CheckoutResult {
+  order: Order;
+  payment?: {
+    id: string;
+    status: PaymentStatus;
+    provider: string;
+    method: "card" | "wallet";
+    mode: GatewayMode;
+    /** Send the shopper here. null when the gateway could not start the payment. */
+    redirectUrl: string | null;
+    failureReason: string | null;
+    expiresAt: string | null;
+  };
+  /** Shown once: the shopper's key to the payment status / retry / switch-to-COD endpoints. */
+  paymentToken?: string;
+}
+
+export type ShopperPaymentState = "awaiting_payment" | "paid" | "expired" | "cancelled" | "cod";
+
+export interface ShopperPaymentStatus {
+  orderId: string;
+  orderNumber: string;
+  status: ShopperPaymentState;
+  financialState: FinancialState;
+  paymentMethod: PaymentMethod;
+  totalAmount: number;
+  amountPaid: number;
+  currency: string;
+  expiresAt: string | null;
+  testMode: boolean;
+  attempt: {
+    id: string;
+    status: PaymentStatus;
+    provider: string;
+    method: "card" | "wallet" | null;
+    mode: GatewayMode | null;
+    redirectUrl: string | null;
+    failureReason: string | null;
+    createdAt: string;
+  } | null;
+  canRetry: boolean;
+  retriesLeft: number;
+  canSwitchToCod: boolean;
+  /** Online methods a retry may use. */
+  methods: StorefrontPaymentMethod[];
+}
+
+/** One gateway callback / redirect / inquiry answer recorded against the order. */
+export interface PaymentEventEntry {
+  id: string;
+  source: "webhook" | "redirect" | "inquiry";
+  kind: "payment" | "refund" | "void" | null;
+  providerCode: string;
+  providerTransactionId: string | null;
+  paymentId: string | null;
+  /** e.g. paid, failed, pending, duplicate, refund_processed, gateway_refund_recorded, error */
+  outcome: string | null;
+  error: string | null;
+  processedAt: string | null;
+  createdAt: string;
+}
+
+/** GET /orders/:id/payment-timeline (and POST .../payments/sync). Amounts are numbers, minor units. */
+export interface PaymentTimeline {
+  orderId: string;
+  currency: string;
+  totalAmount: number;
+  amountPaid: number;
+  amountRefunded: number;
+  pendingRefunds: number;
+  /** What a new refund may be, at most (the server enforces the same rule). */
+  refundable: number;
+  /** 'gateway': refunds go back through the gateway; 'manual': recorded only (COD / manual). */
+  refundVia: "gateway" | "manual";
+  /** Gateway payments that can still give money back. A refund draws on exactly one. */
+  perPayment: Array<{ paymentId: string; refundable: number }>;
+  /** Payment risk flags needing the merchant: duplicate_payment, paid_after_expiry, test_payment, ... */
+  alerts: string[];
+  paymentExpiresAt: string | null;
+  attempts: Payment[];
+  events: PaymentEventEntry[];
+  refunds: Refund[];
+  /** Sync only: true when the gateway could not be reached for an open attempt. */
+  unreachable?: boolean;
 }

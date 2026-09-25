@@ -28,6 +28,7 @@ import { CustomersPage } from "@/pages/customers/CustomersPage";
 import { CustomerDetailPage } from "@/pages/customers/CustomerDetailPage";
 import { DiscountsPage } from "@/pages/discounts/DiscountsPage";
 import { ShippingTaxPage } from "@/pages/shipping/ShippingTaxPage";
+import { PaymentsPage } from "@/pages/payments/PaymentsPage";
 import { WebsitePage } from "@/pages/website/WebsitePage";
 import { WebsiteEditorPage } from "@/pages/website/editor/WebsiteEditorPage";
 import { FunnelsPage } from "@/pages/funnels/FunnelsPage";
@@ -74,6 +75,7 @@ export default function App() {
                       <Route path="/customers/:customerId" element={<CustomerDetailPage />} />
                       <Route path="/discounts" element={<DiscountsPage />} />
                       <Route path="/shipping" element={<ShippingTaxPage />} />
+                      <Route path="/payments" element={<PaymentsPage />} />
                       <Route path="/website" element={<WebsitePage />} />
                       <Route path="/website/:websiteId/edit" element={<WebsiteEditorPage />} />
                       <Route path="/funnels" element={<FunnelsPage />} />
