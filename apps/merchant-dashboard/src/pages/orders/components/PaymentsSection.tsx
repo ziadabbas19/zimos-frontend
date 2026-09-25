@@ -46,6 +46,8 @@ const STRINGS = {
     refundProcessed: "Refund of {amount} done.",
     refundPending: "Refund of {amount} sent. The gateway hasn't confirmed it yet; it will update here.",
     refundFailed: "The gateway declined the refund: {reason}",
+    refundNoBalance:
+      "The gateway couldn't pay this refund: your available balance there is too low. Top it up (or wait for pending payments to become available), then refund again.",
     attempts: "Payment attempts",
     events: "Gateway updates",
     refunds: "Refunds",
@@ -104,6 +106,8 @@ const STRINGS = {
     refundProcessed: "تم استرداد {amount}.",
     refundPending: "تم إرسال استرداد {amount}. البوابة لم تؤكده بعد، وسيتحدث هنا.",
     refundFailed: "رفضت البوابة الاسترداد: {reason}",
+    refundNoBalance:
+      "البوابة لم تستطع دفع هذا الاسترداد: رصيدك المتاح عندها غير كافٍ. اشحن الرصيد (أو انتظر حتى تصبح المدفوعات المعلقة متاحة)، ثم استرد مرة أخرى.",
     attempts: "محاولات الدفع",
     events: "تحديثات البوابة",
     refunds: "الاستردادات",
@@ -137,6 +141,8 @@ const STRINGS = {
 } satisfies Messages;
 
 type Strings = (typeof STRINGS)["en"];
+
+const REFUND_NO_BALANCE = "REFUND_INSUFFICIENT_GATEWAY_BALANCE";
 
 const ATTEMPT_TONE: Record<string, "neutral" | "info" | "success" | "warning" | "danger"> = {
   initialized: "warning",
@@ -272,6 +278,7 @@ export function PaymentsSection({ order, onChanged }: { order: Order; onChanged:
             const amount = money(refund.amount);
             if (refund.status === "processed") toast.success(fmt(t.refundProcessed, { amount }));
             else if (refund.status === "pending") toast.success(fmt(t.refundPending, { amount }));
+            else if (refund.failureCode === REFUND_NO_BALANCE) setError(t.refundNoBalance);
             else setError(fmt(t.refundFailed, { reason: refund.failureReason ?? "" }));
             void timeline.refresh({ silent: true });
             onChanged();
@@ -345,7 +352,9 @@ function RefundList({ refunds, money, t }: { refunds: Refund[]; money: (n: numbe
               <span className="block text-xs text-ink-soft">
                 {formatDateTime(r.createdAt)} · {t[`source_${r.source}` as keyof Strings]}
                 {r.reason && ` · ${r.reason}`}
-                {r.failureReason && ` · ${r.failureReason}`}
+                {r.failureCode === REFUND_NO_BALANCE
+                  ? ` · ${t.refundNoBalance}`
+                  : r.failureReason && ` · ${r.failureReason}`}
               </span>
             </span>
             <StatusBadge value={r.status} tone={REFUND_TONE[r.status]} text={t[`refund_${r.status}` as keyof Strings]} />

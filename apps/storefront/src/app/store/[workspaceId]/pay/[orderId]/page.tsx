@@ -18,9 +18,15 @@ import { storeHref } from "@/lib/storeHref";
 const POLL_MS = 3000;
 const POLL_FOR_MS = 2 * 60 * 1000;
 
-/** Signed-callback fields the gateway puts on the redirect; their presence means "just came back". */
+/**
+ * Signed fields a gateway puts on the redirect (Paymob: hmac / id; Kashier:
+ * signature / paymentStatus); their presence means "just came back". The
+ * server works out which gateway signed them.
+ */
+const GATEWAY_REDIRECT_MARKERS = ["hmac", "id", "signature", "paymentStatus"];
+
 function gatewayQuery(search: URLSearchParams): Record<string, string> | null {
-  if (!search.has("hmac") && !search.has("id")) return null;
+  if (!GATEWAY_REDIRECT_MARKERS.some((key) => search.has(key))) return null;
   const out: Record<string, string> = {};
   search.forEach((value, key) => {
     out[key] = value;

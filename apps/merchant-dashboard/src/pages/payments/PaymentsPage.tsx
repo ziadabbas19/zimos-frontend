@@ -53,8 +53,11 @@ const STRINGS = {
     connectedSince: "Connected {date}",
     lastWebhook: "Last payment update received {date}",
     noWebhookYet: "No payment update received yet. Check that the webhook URL below is pasted into each integration.",
+    noWebhookYetAutomatic: "No payment update received yet. {name} is sent the webhook URL with every payment, so the first one arrives with the first payment.",
     webhookTitle: "Webhook URL",
     webhookHint: "Paste this into \"{field}\" of each {name} integration you entered below.",
+    webhookHintAutomatic:
+      "Nothing to paste for payments: {name} is given this URL with every payment. To also see refunds you make in {name}'s own dashboard, add it there under \"{field}\" (events: refund, partial_refund, void).",
     copyWebhook: "Copy webhook URL",
     setupTitle: "How to connect {name}",
     helpLinks: "Help",
@@ -67,6 +70,11 @@ const STRINGS = {
     checking: "Checking with {name}…",
     replaceKeys: "Replace keys",
     editIds: "Edit integration IDs",
+    accountMethods: "Methods on your {name} account",
+    recheck: "Check the account again",
+    rechecking: "Checking…",
+    recheckedToast: "{name} account checked.",
+    methodNames: "card|mobile wallet",
     saveIds: "Save",
     disconnect: "Disconnect",
     disconnectTitle: "Disconnect {name}?",
@@ -75,7 +83,8 @@ const STRINGS = {
     savedToast: "{name} settings saved.",
     disconnectedToast: "{name} disconnected.",
     methodListTitle: "Checkout methods",
-    methodListHint: "Choose which methods shoppers see and in what order. At least one must stay on.",
+    methodListHint:
+      "Choose which methods shoppers see and in what order. One gateway per method: turning one on turns the other gateway's same method off. At least one must stay on.",
     methodCod: "Cash on delivery",
     methodCard: "{name}: card",
     methodWallet: "{name}: mobile wallet",
@@ -109,8 +118,11 @@ const STRINGS = {
     connectedSince: "مربوطة منذ {date}",
     lastWebhook: "آخر تحديث دفع وصل {date}",
     noWebhookYet: "لم يصل أي تحديث دفع بعد. تأكد أن رابط الـ webhook بالأسفل ملصوق في كل تكامل.",
+    noWebhookYetAutomatic: "لم يصل أي تحديث دفع بعد. {name} يستلم رابط الـ webhook مع كل عملية دفع، فأول تحديث سيصل مع أول عملية دفع.",
     webhookTitle: "رابط الـ Webhook",
     webhookHint: "الصق هذا الرابط في خانة \"{field}\" لكل تكامل من تكاملات {name} التي أدخلتها بالأسفل.",
+    webhookHintAutomatic:
+      "لا حاجة للصق أي شيء للمدفوعات: {name} يستلم هذا الرابط مع كل عملية دفع. لو تريد أن تظهر هنا الاستردادات التي تعملها من لوحة {name} نفسها، أضفه هناك في \"{field}\" (الأحداث: refund و partial_refund و void).",
     copyWebhook: "نسخ رابط الـ webhook",
     setupTitle: "طريقة ربط {name}",
     helpLinks: "مساعدة",
@@ -123,6 +135,11 @@ const STRINGS = {
     checking: "جارٍ التحقق مع {name}…",
     replaceKeys: "تغيير المفاتيح",
     editIds: "تعديل أرقام التكامل",
+    accountMethods: "الطرق المتاحة في حساب {name}",
+    recheck: "إعادة فحص الحساب",
+    rechecking: "جارٍ الفحص…",
+    recheckedToast: "تم فحص حساب {name}.",
+    methodNames: "كارت|محفظة إلكترونية",
     saveIds: "حفظ",
     disconnect: "إلغاء الربط",
     disconnectTitle: "إلغاء ربط {name}؟",
@@ -131,7 +148,8 @@ const STRINGS = {
     savedToast: "تم حفظ إعدادات {name}.",
     disconnectedToast: "تم إلغاء ربط {name}.",
     methodListTitle: "طرق الدفع في صفحة الدفع",
-    methodListHint: "اختر الطرق التي يراها العملاء وترتيبها. لازم تفضل طريقة واحدة على الأقل مفعّلة.",
+    methodListHint:
+      "اختر الطرق التي يراها العملاء وترتيبها. بوابة واحدة لكل طريقة: تفعيل طريقة من بوابة يوقف نفس الطريقة من البوابة الأخرى. لازم تفضل طريقة واحدة على الأقل مفعّلة.",
     methodCod: "الدفع عند الاستلام",
     methodCard: "{name}: كارت",
     methodWallet: "{name}: محفظة إلكترونية",
@@ -235,6 +253,9 @@ function GatewayCard({
   const errorMessage = useErrorMessage();
   const name = gateway.name;
   const connection = gateway.connection;
+  // Kashier: the methods come from the account itself; only keys are typed in.
+  const fromAccount = gateway.methodsFromAccount;
+  const [cardName, walletName] = t.methodNames.split("|");
 
   const [mode, setMode] = useState<CardMode>("view");
   const [credentials, setCredentials] = useState<Record<string, string>>({});
@@ -282,7 +303,7 @@ function GatewayCard({
     try {
       await apiClient.connectPaymentGateway(workspaceId, gateway.code, {
         ...(mode === "connect" ? { credentials } : {}),
-        settings: settingsPayload(),
+        ...(fromAccount ? {} : { settings: settingsPayload() }),
       });
       setCredentials({});
       setMode("view");
@@ -290,6 +311,22 @@ function GatewayCard({
       onChanged();
     } catch (err) {
       fail(err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Re-verifies the stored keys and re-reads the account's methods. */
+  async function recheck() {
+    setBusy(true);
+    setError(null);
+    try {
+      await apiClient.connectPaymentGateway(workspaceId, gateway.code, {});
+      toast.success(fmt(t.recheckedToast, { name }));
+      onChanged();
+    } catch (err) {
+      fail(err);
+      onChanged();
     } finally {
       setBusy(false);
     }
@@ -386,23 +423,35 @@ function GatewayCard({
           <p className={cn("text-sm", connection.lastWebhookAt ? "text-ink-soft" : "text-warning")}>
             {connection.lastWebhookAt
               ? fmt(t.lastWebhook, { date: formatDateTime(connection.lastWebhookAt) })
-              : t.noWebhookYet}
+              : gateway.webhookSetup.automatic
+                ? fmt(t.noWebhookYetAutomatic, { name })
+                : t.noWebhookYet}
           </p>
           <WebhookUrl gateway={gateway} url={connection.webhookUrl} />
           <p className="text-sm text-ink-soft">
-            {gateway.settingFields
-              .filter((f) => connection.settings[f.key])
-              .map((f) => `${f.label[locale]}: ${String(connection.settings[f.key])}`)
-              .join(" · ")}
+            {fromAccount
+              ? `${fmt(t.accountMethods, { name })}: ${connection.methods
+                  .map((m) => (m === "card" ? cardName : walletName))
+                  .join(" · ")}`
+              : gateway.settingFields
+                  .filter((f) => connection.settings[f.key])
+                  .map((f) => `${f.label[locale]}: ${String(connection.settings[f.key])}`)
+                  .join(" · ")}
           </p>
         </div>
       )}
 
       {canManage && connection && mode === "view" && (
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button variant="outline" className="min-h-11" onClick={() => openForm("ids")}>
-            {t.editIds}
-          </Button>
+          {fromAccount ? (
+            <Button variant="outline" className="min-h-11" disabled={busy} onClick={recheck}>
+              {busy ? t.rechecking : t.recheck}
+            </Button>
+          ) : (
+            <Button variant="outline" className="min-h-11" onClick={() => openForm("ids")}>
+              {t.editIds}
+            </Button>
+          )}
           <Button
             variant={connection.status === "invalid" ? "primary" : "outline"}
             className="min-h-11"
@@ -449,22 +498,24 @@ function GatewayCard({
               ))}
             </fieldset>
           )}
-          <fieldset className="space-y-3">
-            <legend className="text-sm font-medium text-ink">{t.methodsTitle}</legend>
-            <p className="text-xs text-ink-soft">{t.methodsHint}</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {gateway.settingFields.map((field) => (
-                <TextInput
-                  key={field.key}
-                  label={field.label[locale]}
-                  inputMode="numeric"
-                  value={ids[field.key] ?? ""}
-                  onChange={(v) => setIds((c) => ({ ...c, [field.key]: v }))}
-                  disabled={busy}
-                />
-              ))}
-            </div>
-          </fieldset>
+          {!fromAccount && (
+            <fieldset className="space-y-3">
+              <legend className="text-sm font-medium text-ink">{t.methodsTitle}</legend>
+              <p className="text-xs text-ink-soft">{t.methodsHint}</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {gateway.settingFields.map((field) => (
+                  <TextInput
+                    key={field.key}
+                    label={field.label[locale]}
+                    inputMode="numeric"
+                    value={ids[field.key] ?? ""}
+                    onChange={(v) => setIds((c) => ({ ...c, [field.key]: v }))}
+                    disabled={busy}
+                  />
+                ))}
+              </div>
+            </fieldset>
+          )}
           <div className="flex flex-wrap justify-end gap-2">
             <Button
               type="button"
@@ -478,7 +529,7 @@ function GatewayCard({
             <Button
               type="submit"
               className="min-h-11"
-              disabled={busy || !anyId || !idsValid || (mode === "connect" && !credentialsComplete)}
+              disabled={busy || (!fromAccount && (!anyId || !idsValid)) || (mode === "connect" && !credentialsComplete)}
             >
               {busy ? fmt(t.checking, { name }) : mode === "connect" ? t.submitConnect : t.saveIds}
             </Button>
@@ -512,7 +563,12 @@ function WebhookUrl({ gateway, url }: { gateway: PaymentGatewayInfo; url: string
         </code>
         <CopyButton value={url} label={t.copyWebhook} />
       </div>
-      <p className="text-xs text-ink-soft">{fmt(t.webhookHint, { field: gateway.webhookSetup.field, name: gateway.name })}</p>
+      <p className="text-xs text-ink-soft">
+        {fmt(gateway.webhookSetup.automatic ? t.webhookHintAutomatic : t.webhookHint, {
+          field: gateway.webhookSetup.field,
+          name: gateway.name,
+        })}
+      </p>
     </div>
   );
 }
@@ -658,9 +714,20 @@ function MethodList({
                 className="size-4 accent-primary"
                 checked={m.enabled}
                 disabled={!canManage || busy}
-                onChange={(e) =>
-                  setDraft((list) => list.map((x) => (x.id === m.id ? { ...x, enabled: e.target.checked } : x)))
-                }
+                onChange={(e) => {
+                  const on = e.target.checked;
+                  // One gateway per method: switching this on switches off the
+                  // same method on any other gateway.
+                  setDraft((list) =>
+                    list.map((x) =>
+                      x.id === m.id
+                        ? { ...x, enabled: on }
+                        : on && m.method !== "cod" && x.method === m.method
+                          ? { ...x, enabled: false }
+                          : x
+                    )
+                  );
+                }}
               />
               <span className="text-sm font-medium text-ink">{labelOf(m)}</span>
               {m.mode === "test" && m.method !== "cod" && (

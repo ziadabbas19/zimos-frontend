@@ -982,6 +982,12 @@ export interface Refund {
   source: "merchant" | "gateway";
   providerRefundReference: string | null;
   failureReason: string | null;
+  /**
+   * A stable reason for a failed gateway refund, when there is one:
+   * REFUND_INSUFFICIENT_GATEWAY_BALANCE — the gateway pays refunds from the
+   * merchant's available balance there (Kashier) and it could not cover this.
+   */
+  failureCode: string | null;
   processedAt: string | null;
   creditNoteId: string | null;
   processedByUserId: string | null;
@@ -2536,7 +2542,7 @@ export interface ShipmentSyncResult {
 }
 
 // ---------------------------------------------------------------------
-// Online payments (merchant's own gateway account; Paymob first)
+// Online payments (merchant's own gateway account: Paymob, Kashier)
 // ---------------------------------------------------------------------
 
 export type GatewayMode = "test" | "live";
@@ -2556,7 +2562,7 @@ export interface GatewayFieldDescriptor {
 export interface PaymentGatewayConnection {
   /** "invalid" once the gateway refused the stored keys. */
   status: "active" | "invalid";
-  /** From the keys: test-mode methods only show in the store preview. */
+  /** From the keys (Kashier: which host accepts them): test-mode methods only show in the store preview. */
   mode: GatewayMode;
   settings: Record<string, unknown>;
   /** The methods these settings can take. */
@@ -2579,7 +2585,17 @@ export interface PaymentGatewayInfo {
   settingFields: GatewayFieldDescriptor[];
   setupSteps: { en: string[]; ar: string[] };
   helpLinks: Array<{ label: LocalizedText; url: string }>;
-  webhookSetup: { field: string; perIntegration: boolean };
+  /**
+   * Where the merchant pastes our webhook URL. `automatic`: the gateway is
+   * given the URL with every payment (Kashier), so pasting it is optional —
+   * it only adds refunds made in the gateway's own dashboard.
+   */
+  webhookSetup: { field: string; perIntegration: boolean; automatic?: boolean };
+  /**
+   * true: the gateway's methods come from its own account (Kashier) —
+   * settingFields is empty and the connect form is just the keys.
+   */
+  methodsFromAccount: boolean;
   connection: PaymentGatewayConnection | null;
 }
 
@@ -2601,7 +2617,11 @@ export interface ConnectPaymentGatewayPayload {
   settings?: Record<string, unknown>;
 }
 
-/** 'cod' or '<gateway>:<method>', e.g. 'paymob:card'. */
+/**
+ * 'cod' or '<gateway>:<method>', e.g. 'paymob:card'. At most one gateway per
+ * method may be enabled (PUT /payments/methods answers 422 otherwise); a
+ * gateway connected later is added switched off for a method already taken.
+ */
 export interface PaymentMethodEntry {
   id: string;
   provider: string | null;
