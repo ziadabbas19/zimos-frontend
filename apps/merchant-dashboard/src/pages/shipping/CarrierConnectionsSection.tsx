@@ -14,7 +14,7 @@ import {
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
-import { useErrorMessage } from "@/lib/errorMessages";
+import { useCarrierErrorMessage, useErrorMessage } from "@/lib/errorMessages";
 import { formatDateTime } from "@/lib/format";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { fmt, useCommon, useT, type Messages } from "@/i18n/LocaleContext";
@@ -24,7 +24,13 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Select } from "@/components/Select";
 import { useToast } from "@/components/Toast";
 import { CopyButton } from "@/components/CopyButton";
-import { SHIPPING_ROLES } from "./carriers";
+import { ProviderLogo } from "@/components/ProviderLogo";
+import {
+  ENVIRONMENT_FIELD,
+  SHIPPING_ROLES,
+  carrierEnvironment,
+  rememberCarrierEnvironment,
+} from "./carriers";
 import { BostaTierMapField } from "./BostaTierMapField";
 import { pruneTierMap, useWeightTiers } from "./weightTiers";
 
@@ -108,6 +114,15 @@ const STRINGS = {
     copyWebhook: "Copy address",
     manualCancelNote:
       "{name} can't cancel deliveries from here. To call one off, cancel it in your {name} dashboard first, then confirm it here when you cancel the order or the shipment.",
+    sandbox: "Sandbox",
+    sandboxNote:
+      "This connection uses the {name} sandbox. It only creates test shipments and nothing is delivered. Replace the key with a production {name} account to book real orders.",
+    environment: "Environment",
+    envProduction: "Production (real shipments)",
+    envSandbox: "Sandbox (test shipments only)",
+    environmentHint: "The sandbox only creates test shipments and never delivers them. Use Production for real orders.",
+    sandboxNotAllowed:
+      "The {name} sandbox only creates test shipments, so it's available to test stores only. A production {name} account is required: choose Production and enter your production {name} details.",
   },
   ar: {
     title: "شركات الشحن",
@@ -184,6 +199,15 @@ const STRINGS = {
     copyWebhook: "نسخ العنوان",
     manualCancelNote:
       "لا يمكن إلغاء شحنات {name} من هنا. لإلغاء شحنة، ألغِها من لوحة تحكم {name} أولًا، ثم أكّد ذلك هنا عند إلغاء الأوردر أو الشحنة.",
+    sandbox: "تجريبي (Sandbox)",
+    sandboxNote:
+      "هذا الربط يستخدم بيئة التجربة (Sandbox) الخاصة بـ {name}. هي تنشئ شحنات تجريبية فقط ولا يتم توصيل أي شيء. غيّر المفتاح إلى حساب إنتاج (Production) لدى {name} لحجز أوردرات حقيقية.",
+    environment: "البيئة",
+    envProduction: "الإنتاج Production (شحنات حقيقية)",
+    envSandbox: "التجربة Sandbox (شحنات تجريبية فقط)",
+    environmentHint: "بيئة التجربة تنشئ شحنات تجريبية فقط ولا توصّلها أبدًا. استخدم الإنتاج للأوردرات الحقيقية.",
+    sandboxNotAllowed:
+      "بيئة التجربة (Sandbox) لدى {name} تنشئ شحنات تجريبية فقط، لذلك هي متاحة لمتاجر الاختبار فقط. يلزم حساب إنتاج (Production) لدى {name}: اختر الإنتاج وأدخل بيانات حسابك الفعلي لدى {name}.",
   },
 } satisfies Messages;
 
@@ -323,8 +347,10 @@ function CarrierCard({
   const workspaceId = useWorkspaceId();
   const toast = useToast();
   const errorMessage = useErrorMessage();
+  const carrierError = useCarrierErrorMessage();
   const name = carrier.name;
   const connection = carrier.connection;
+  const environment = carrierEnvironment(workspaceId, carrier);
   const guide = GUIDES[carrier.code] ?? GENERIC_GUIDE;
 
   const credentialFields = carrier.credentialFields ?? [];
@@ -342,6 +368,7 @@ function CarrierCard({
   const [draft, setDraft] = useState<Settings>({});
   const [busy, setBusy] = useState<"verify" | "save" | "load" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [credentialErrors, setCredentialErrors] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
 
@@ -350,8 +377,12 @@ function CarrierCard({
   const currentTierMap = tierField ? (current[tierField.key] as TierMap | undefined) : undefined;
   const mappedTiers = Object.keys(pruneTierMap(currentTierMap, tiers.data) ?? {}).length;
 
+  // A field with options is a select, so it always has a value: the one
+  // chosen, else what this connection uses now, else the first option.
+  const defaultOption = (f: CarrierFieldDescriptor) =>
+    f.key === ENVIRONMENT_FIELD && environment && f.options?.includes(environment) ? environment : (f.options?.[0] ?? "");
   const typed: Record<string, string> = Object.fromEntries(
-    credentialFields.map((f) => [f.key, (credentials[f.key] ?? "").trim()])
+    credentialFields.map((f) => [f.key, (credentials[f.key] ?? (f.options?.length ? defaultOption(f) : "")).trim()])
   );
   const credentialsReady =
     credentialFields.length > 0 &&
@@ -373,12 +404,13 @@ function CarrierCard({
       onChanged();
       return;
     }
-    setError(errorMessage(err));
+    setError(carrierError(err, carrier));
   }
 
   function cancelEditing() {
     setMode("view");
     setCredentials({});
+    setCredentialErrors({});
     setNotice(null);
     setError(null);
   }
@@ -400,6 +432,7 @@ function CarrierCard({
     if (!credentialsReady) return;
     setBusy("verify");
     setError(null);
+    setCredentialErrors({});
     setNotice(null);
     const wasConnected = Boolean(connection);
     try {
@@ -419,6 +452,13 @@ function CarrierCard({
           throw err;
         }
       }
+      const connectedAt = result.carrier.connection?.connectedAt;
+      if (credentialFields.some((f) => f.key === ENVIRONMENT_FIELD) && connectedAt) {
+        rememberCarrierEnvironment(workspaceId, carrier.code, {
+          environment: typed[ENVIRONMENT_FIELD] === "sandbox" ? "sandbox" : "production",
+          connectedAt,
+        });
+      }
       setCredentials({});
       setFirstConnect(!wasConnected);
       toast.success(
@@ -428,6 +468,11 @@ function CarrierCard({
       if (hasSettings) openSettings(result);
       else setMode("view");
     } catch (err) {
+      // 422 on credentials.environment: a sandbox this store may not use.
+      if (apiFieldProblems(err).some((p) => p.field === `credentials.${ENVIRONMENT_FIELD}`)) {
+        setCredentialErrors({ [ENVIRONMENT_FIELD]: fmt(t.sandboxNotAllowed, { name }) });
+        return;
+      }
       fail(err);
     } finally {
       setBusy(null);
@@ -486,6 +531,7 @@ function CarrierCard({
       }
       throw new Error(errorMessage(err));
     }
+    rememberCarrierEnvironment(workspaceId, carrier.code, null);
     setDisconnecting(false);
     setMode("view");
     toast.success(fmt(t.disconnectedToast, { name }));
@@ -525,17 +571,21 @@ function CarrierCard({
   return (
     <div className="rounded-[0.5rem] border border-line p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-medium text-ink">{name}</h3>
-            {statusBadge}
+        <div className="flex min-w-0 items-center gap-3">
+          <ProviderLogo code={carrier.code} name={name} />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-base font-medium text-ink">{name}</h3>
+              {statusBadge}
+              {environment === "sandbox" && <StatusBadge value="sandbox" tone="warning" text={t.sandbox} />}
+            </div>
+            {connection && (
+              <p className="mt-1 text-xs text-ink-soft">
+                {fmt(t.connectedSince, { date: formatDateTime(connection.connectedAt) })}
+                {connection.lastVerifiedAt && <> · {fmt(t.lastVerified, { date: formatDateTime(connection.lastVerifiedAt) })}</>}
+              </p>
+            )}
           </div>
-          {connection && (
-            <p className="mt-1 text-xs text-ink-soft">
-              {fmt(t.connectedSince, { date: formatDateTime(connection.connectedAt) })}
-              {connection.lastVerifiedAt && <> · {fmt(t.lastVerified, { date: formatDateTime(connection.lastVerifiedAt) })}</>}
-            </p>
-          )}
         </div>
         {canManage && mode === "view" && !connection && (
           <Button className="min-h-11" onClick={() => setMode("key")}>
@@ -543,6 +593,12 @@ function CarrierCard({
           </Button>
         )}
       </div>
+
+      {environment === "sandbox" && mode === "view" && (
+        <div className="mt-3 rounded-[0.5rem] border border-accent/40 bg-accent-soft px-4 py-3 text-sm text-accent-dark">
+          {fmt(t.sandboxNote, { name })}
+        </div>
+      )}
 
       {connection?.status === "invalid" && mode === "view" && (
         <Alert variant="danger" className="mt-3">
@@ -592,6 +648,7 @@ function CarrierCard({
             disabled={busy !== null}
             onClick={() => {
               setError(null);
+              setCredentialErrors({});
               setMode("key");
             }}
           >
@@ -621,8 +678,17 @@ function CarrierCard({
           <CredentialFields
             name={name}
             fields={credentialFields}
-            values={credentials}
-            onChange={(key, value) => setCredentials((c) => ({ ...c, [key]: value }))}
+            values={{ ...typed, ...credentials }}
+            errors={credentialErrors}
+            onChange={(key, value) => {
+              setCredentials((c) => ({ ...c, [key]: value }));
+              setCredentialErrors((e) => {
+                if (!(key in e)) return e;
+                const rest = { ...e };
+                delete rest[key];
+                return rest;
+              });
+            }}
             hint={fmt(t[guide.keyHint], { name })}
             disabled={busy !== null}
           />
@@ -795,13 +861,15 @@ function FullAccessNotice({ name }: { name: string }) {
 
 /**
  * The courier's credential fields, as GET /carriers describes them. An
- * "apiKey" field gets our own "{name} API key" label; other fields show the
- * server's label. Secrets are masked and never prefilled.
+ * "apiKey" field gets our own "{name} API key" label, and "environment" our
+ * own label and options; other fields show the server's label. A field with
+ * options is a select. Secrets are masked and never prefilled.
  */
 function CredentialFields({
   name,
   fields,
   values,
+  errors,
   onChange,
   hint,
   disabled,
@@ -809,6 +877,7 @@ function CredentialFields({
   name: string;
   fields: CarrierFieldDescriptor[];
   values: Record<string, string>;
+  errors: Record<string, string>;
   onChange: (key: string, value: string) => void;
   hint: string;
   disabled: boolean;
@@ -816,14 +885,55 @@ function CredentialFields({
   const t = useT(STRINGS);
   const baseId = useId();
   const hintId = useId();
+  const label = (field: CarrierFieldDescriptor) =>
+    field.key === "apiKey" ? fmt(t.keyLabel, { name }) : field.key === ENVIRONMENT_FIELD ? t.environment : field.label;
+  const optionLabel = (field: CarrierFieldDescriptor, option: string) => {
+    if (field.key !== ENVIRONMENT_FIELD) return option;
+    return option === "production" ? t.envProduction : option === "sandbox" ? t.envSandbox : option;
+  };
   return (
     <div className="space-y-1.5">
       <div className="space-y-3">
         {fields.map((field, i) => {
           const id = `${baseId}-${i}`;
+          const error = errors[field.key];
+          if (field.options && field.options.length > 0) {
+            const isEnvironment = field.key === ENVIRONMENT_FIELD;
+            const describedBy = [isEnvironment && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(" ");
+            return (
+              <div key={field.key} className="space-y-1.5">
+                <Label htmlFor={id}>{label(field)}</Label>
+                <Select
+                  id={id}
+                  value={values[field.key] || field.options[0]}
+                  onChange={(e) => onChange(field.key, e.target.value)}
+                  disabled={disabled}
+                  aria-invalid={error ? true : undefined}
+                  aria-describedby={describedBy || undefined}
+                  className="h-11"
+                >
+                  {field.options.map((option) => (
+                    <option key={option} value={option}>
+                      {optionLabel(field, option)}
+                    </option>
+                  ))}
+                </Select>
+                {isEnvironment && (
+                  <p id={`${id}-hint`} className="text-xs text-ink-soft">
+                    {t.environmentHint}
+                  </p>
+                )}
+                {error && (
+                  <p id={`${id}-error`} role="alert" className="text-sm text-danger">
+                    {error}
+                  </p>
+                )}
+              </div>
+            );
+          }
           return (
             <div key={field.key} className="space-y-1.5">
-              <Label htmlFor={id}>{field.key === "apiKey" ? fmt(t.keyLabel, { name }) : field.label}</Label>
+              <Label htmlFor={id}>{label(field)}</Label>
               <Input
                 id={id}
                 type={field.secret ? "password" : "text"}

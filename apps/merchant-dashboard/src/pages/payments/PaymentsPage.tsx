@@ -19,6 +19,7 @@ import { DataState } from "@/components/DataState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CopyButton } from "@/components/CopyButton";
+import { ProviderLogo } from "@/components/ProviderLogo";
 import { useToast } from "@/components/Toast";
 
 /**
@@ -372,29 +373,32 @@ function GatewayCard({
   return (
     <div className="rounded-[var(--radius-card)] border border-line p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-medium text-ink">{name}</h3>
-            {!connection ? (
-              <StatusBadge value="not_connected" tone="neutral" text={t.notConnected} />
-            ) : connection.status === "invalid" ? (
-              <StatusBadge value="invalid" tone="danger" text={t.invalid} />
-            ) : (
-              <StatusBadge value="connected" tone="success" text={t.connected} />
-            )}
+        <div className="flex min-w-0 items-center gap-3">
+          <ProviderLogo code={gateway.code} name={name} />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-base font-medium text-ink">{name}</h3>
+              {!connection ? (
+                <StatusBadge value="not_connected" tone="neutral" text={t.notConnected} />
+              ) : connection.status === "invalid" ? (
+                <StatusBadge value="invalid" tone="danger" text={t.invalid} />
+              ) : (
+                <StatusBadge value="connected" tone="success" text={t.connected} />
+              )}
+              {connection && (
+                <StatusBadge
+                  value={connection.mode}
+                  tone={connection.mode === "live" ? "info" : "warning"}
+                  text={connection.mode === "live" ? t.modeLive : t.modeTest}
+                />
+              )}
+            </div>
             {connection && (
-              <StatusBadge
-                value={connection.mode}
-                tone={connection.mode === "live" ? "info" : "warning"}
-                text={connection.mode === "live" ? t.modeLive : t.modeTest}
-              />
+              <p className="mt-1 text-xs text-ink-soft">
+                {fmt(t.connectedSince, { date: formatDateTime(connection.connectedAt) })}
+              </p>
             )}
           </div>
-          {connection && (
-            <p className="mt-1 text-xs text-ink-soft">
-              {fmt(t.connectedSince, { date: formatDateTime(connection.connectedAt) })}
-            </p>
-          )}
         </div>
         {canManage && mode === "view" && !connection && (
           <Button className="min-h-11" onClick={() => openForm("connect")}>

@@ -65,7 +65,8 @@ export type ApiErrorCode =
   // couriers
   | "CARRIERS_NOT_CONFIGURED"
   | "CARRIER_AUTH_FAILED"
-  | "CARRIER_PERMISSION_DENIED"
+  | "CARRIER_PERMISSION_DENIED" // 422 — the carrier accepted the login but refused the call (API access not enabled / key scope)
+  | "CARRIER_SANDBOX_NOT_ALLOWED" // 409, details = { carrierCode } — booking with a stored sandbox connection outside the test stores
   | "CARRIER_ADDRESS_UNMATCHED"
   | "CARRIER_CURRENCY_UNSUPPORTED"
   | "CARRIER_COD_LIMIT"

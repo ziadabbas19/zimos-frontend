@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from "react";
+import { useId, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Alert, Button, Input, cn } from "@store-builder/ui";
 import {
@@ -18,13 +18,14 @@ import {
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
-import { useErrorMessage } from "@/lib/errorMessages";
+import { useCarrierErrorMessage, useErrorMessage } from "@/lib/errorMessages";
 import { formatDateTime, formatMoney } from "@/lib/format";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { fmt, useCommon, useT, type Messages } from "@/i18n/LocaleContext";
 import { useToast } from "@/components/Toast";
 import { StatusBadge } from "@/components/StatusBadge";
+import { ProviderLogo } from "@/components/ProviderLogo";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Field } from "@/components/Field";
 import { Select } from "@/components/Select";
@@ -421,6 +422,7 @@ function ShipmentRow({
   const workspaceId = useWorkspaceId();
   const toast = useToast();
   const errorMessage = useErrorMessage();
+  const carrierError = useCarrierErrorMessage();
   const manualCancelPrompt = useManualCancelPrompt();
   const [busy, setBusy] = useState<"status" | "sync" | "label" | "cancel" | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -432,8 +434,10 @@ function ShipmentRow({
   // that it was done in the courier's dashboard (the 409 dialog).
   const cancelByHand = booked && cancelsManually(carrier);
 
+  const courierRef = booked ? { code: shipment.carrierCode, name: carrierName } : null;
+
   function fail(err: unknown) {
-    if (!onForbidden(err)) toast.error(errorMessage(err));
+    if (!onForbidden(err)) toast.error(carrierError(err, courierRef));
   }
 
   async function updateStatus(status: ShipmentStatus) {
@@ -540,11 +544,16 @@ function ShipmentRow({
   return (
     <li className="rounded-[0.5rem] border border-line px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="min-w-0">
-          <bdi dir="ltr" className="font-medium text-ink">
-            {shipment.trackingCode}
-          </bdi>
-          <span className="ms-2 text-sm text-ink-soft">{fmt(t.via, { carrier: carrierName })}</span>
+        <div className="flex min-w-0 items-center gap-3">
+          {shipment.carrierCode !== "manual" && (
+            <ProviderLogo code={shipment.carrierCode} name={carrierName} size="sm" />
+          )}
+          <div className="min-w-0">
+            <bdi dir="ltr" className="font-medium text-ink">
+              {shipment.trackingCode}
+            </bdi>
+            <span className="ms-2 text-sm text-ink-soft">{fmt(t.via, { carrier: carrierName })}</span>
+          </div>
         </div>
         <StatusBadge value={shipment.status} text={labels.shipment(shipment.status)} />
       </div>
@@ -729,6 +738,7 @@ function CreateShipmentForm({
   const workspaceId = useWorkspaceId();
   const toast = useToast();
   const errorMessage = useErrorMessage();
+  const carrierError = useCarrierErrorMessage();
 
   const connected = carriers.filter((c) => c.connection);
   // Until the merchant picks, the default follows the carriers list, which
@@ -950,7 +960,8 @@ function CreateShipmentForm({
       if (!problems.some((p) => isShown(p.field))) setFormError(errorMessage(err));
       return;
     }
-    setFormError(errorMessage(err));
+    // `courier` is set only while booking through one.
+    setFormError(carrierError(err, courier));
   }
 
   const address = order.shippingAddressSnapshot;
@@ -961,6 +972,7 @@ function CreateShipmentForm({
       ? carriers.map((c) => ({
           value: c.code,
           label: c.name,
+          logo: <ProviderLogo code={c.code} name={c.name} size="sm" />,
           hint:
             c.connection || connected.length === 0
               ? fmt(c.supportsLabel === false ? t.methodCourierHintNoLabel : t.methodCourierHint, { carrier: c.name })
@@ -1172,7 +1184,7 @@ function MethodPicker({
   legend: string;
   value: Method | null;
   onChange: (m: Method) => void;
-  options: { value: Method; label: string; hint: string; disabled?: boolean }[];
+  options: { value: Method; label: string; hint: string; disabled?: boolean; logo?: ReactNode }[];
 }) {
   const name = useId();
   return (
@@ -1200,6 +1212,7 @@ function MethodPicker({
                 onChange={() => onChange(o.value)}
                 className="mt-0.5 size-4 shrink-0 accent-primary"
               />
+              {o.logo}
               <span className="min-w-0">
                 <span className={cn("block text-ink", checked && "font-medium")}>{o.label}</span>
                 <span className="block text-xs text-ink-soft">{o.hint}</span>

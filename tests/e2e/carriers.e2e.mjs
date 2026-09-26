@@ -1,6 +1,7 @@
 // Merchant dashboard: the generic carrier layer (courier connect cards,
 // courier picker, multi-level address picker, manual-cancel acknowledgement,
-// carrier error codes), driven in Chromium against a fully stubbed API.
+// carrier error codes), plus provider logos and the carrier sandbox errors
+// (providers.scenarios.mjs), driven in Chromium against a fully stubbed API.
 //
 //   npm run test:e2e                 all scenarios
 //   npm run test:e2e -- B,C          only these scenarios
@@ -32,6 +33,14 @@ import {
   settle,
   startDashboard,
 } from "./support/harness.mjs";
+import {
+  connectErrors,
+  orderCourierLogosAndErrors,
+  orderPaymentLogos,
+  paymentsPageLogos,
+  sandboxRemembered,
+  shippingLogosAndSandbox,
+} from "./providers.scenarios.mjs";
 
 // Toasts and alerts wrap tracking numbers in bidi isolates (U+2066 … U+2069).
 const LRI = String.fromCharCode(0x2066);
@@ -545,6 +554,13 @@ const SCENARIOS = {
   E: flagAndHistory,
   F: shippingPage,
   G: correction,
+  H: shippingLogosAndSandbox,
+  I: (browser, base) => connectErrors(browser, base, "en"),
+  I2: (browser, base) => connectErrors(browser, base, "ar"),
+  J: sandboxRemembered,
+  K: orderCourierLogosAndErrors,
+  L: paymentsPageLogos,
+  M: orderPaymentLogos,
 };
 
 const only = process.argv[2]?.split(",").filter(Boolean);

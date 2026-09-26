@@ -10,6 +10,8 @@ import { formatDateTime, formatMoney, majorToMinor, minorToMajorInput } from "@/
 import { fmt, useCommon, useT, type Messages } from "@/i18n/LocaleContext";
 import { useToast } from "@/components/Toast";
 import { StatusBadge } from "@/components/StatusBadge";
+import { ProviderLogo } from "@/components/ProviderLogo";
+import { providerName } from "@/lib/providers";
 import { Modal } from "@/components/Modal";
 import { MoneyInput } from "@/components/MoneyInput";
 import { Field } from "@/components/Field";
@@ -49,6 +51,7 @@ const STRINGS = {
     refundNoBalance:
       "The gateway couldn't pay this refund: your available balance there is too low. Top it up (or wait for pending payments to become available), then refund again.",
     attempts: "Payment attempts",
+    methodViaGateway: "{method} via {gateway}",
     events: "Gateway updates",
     refunds: "Refunds",
     source_merchant: "From the dashboard",
@@ -109,6 +112,7 @@ const STRINGS = {
     refundNoBalance:
       "البوابة لم تستطع دفع هذا الاسترداد: رصيدك المتاح عندها غير كافٍ. اشحن الرصيد (أو انتظر حتى تصبح المدفوعات المعلقة متاحة)، ثم استرد مرة أخرى.",
     attempts: "محاولات الدفع",
+    methodViaGateway: "{method} عبر {gateway}",
     events: "تحديثات البوابة",
     refunds: "الاستردادات",
     source_merchant: "من لوحة التحكم",
@@ -315,14 +319,21 @@ function AttemptList({
       <ul className="mt-2 divide-y divide-line rounded-[0.5rem] border border-line">
         {attempts.map((p) => (
           <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
-            <span className="min-w-0">
-              <span className="font-medium text-ink">
-                {p.method ? methodLabel(p.method) : p.providerCode} · {money(p.amount)}
-              </span>
-              <span className="block text-xs text-ink-soft">
-                {formatDateTime(p.createdAt)}
-                {p.maskedDisplay && ` · ${p.maskedDisplay}`}
-                {p.failureReason && p.status === "failed" && ` · ${p.failureReason}`}
+            <span className="flex min-w-0 items-center gap-3">
+              {/* A method means a gateway attempt; COD / manual records have none. */}
+              {p.method && <ProviderLogo code={p.providerCode} size="sm" />}
+              <span className="min-w-0">
+                <span className="font-medium text-ink">
+                  {p.method
+                    ? fmt(t.methodViaGateway, { method: methodLabel(p.method), gateway: providerName(p.providerCode) })
+                    : p.providerCode}{" "}
+                  · {money(p.amount)}
+                </span>
+                <span className="block text-xs text-ink-soft">
+                  {formatDateTime(p.createdAt)}
+                  {p.maskedDisplay && ` · ${p.maskedDisplay}`}
+                  {p.failureReason && p.status === "failed" && ` · ${p.failureReason}`}
+                </span>
               </span>
             </span>
             <span className="flex items-center gap-1">

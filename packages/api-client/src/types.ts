@@ -2463,6 +2463,13 @@ export interface CarrierConnection {
   connectedAt: string;
   updatedAt: string;
   webhookUrl: string;
+  /**
+   * Which of the courier's systems the stored credentials point at, for a
+   * courier with an `environment` credential field (J&T). NOT sent by the
+   * backend yet: credentials are write-only and describeConnection leaves it
+   * out, so the dashboard falls back to what it last connected with.
+   */
+  environment?: "production" | "sandbox";
 }
 
 /**

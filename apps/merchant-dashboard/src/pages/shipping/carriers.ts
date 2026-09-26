@@ -145,3 +145,46 @@ export function placeName(
   const first = locale === "ar" ? place.nameAr : place.name;
   return first || place.name || place.nameAr || "—";
 }
+
+export type CarrierEnvironment = "production" | "sandbox";
+
+/** The credential key that picks a courier's system (J&T: production or sandbox). */
+export const ENVIRONMENT_FIELD = "environment";
+
+const environmentKey = (workspaceId: string, code: string) => `zimos_carrier_env_${workspaceId}_${code}`;
+
+/**
+ * Records which system this browser last connected a courier with. GET
+ * /carriers doesn't say (credentials are write-only), so this is what the
+ * Sandbox badge falls back to. Tied to the connection's connectedAt: a
+ * disconnect and reconnect elsewhere makes it stale, and it is then ignored.
+ */
+export function rememberCarrierEnvironment(
+  workspaceId: string,
+  code: string,
+  value: { environment: CarrierEnvironment; connectedAt: string } | null
+) {
+  try {
+    if (value) localStorage.setItem(environmentKey(workspaceId, code), JSON.stringify(value));
+    else localStorage.removeItem(environmentKey(workspaceId, code));
+  } catch {
+    // Storage blocked: the badge just follows the server alone.
+  }
+}
+
+/** Which system a connected courier uses: the server's word when it sends one, else what this browser connected with. */
+export function carrierEnvironment(workspaceId: string, carrier: CarrierInfo): CarrierEnvironment | null {
+  const connection = carrier.connection;
+  if (!connection) return null;
+  if (connection.environment) return connection.environment;
+  try {
+    const raw = localStorage.getItem(environmentKey(workspaceId, carrier.code));
+    const saved = raw ? (JSON.parse(raw) as { environment?: unknown; connectedAt?: unknown }) : null;
+    if (saved && saved.connectedAt === connection.connectedAt && (saved.environment === "sandbox" || saved.environment === "production")) {
+      return saved.environment;
+    }
+  } catch {
+    // Unreadable or blocked storage: unknown.
+  }
+  return null;
+}

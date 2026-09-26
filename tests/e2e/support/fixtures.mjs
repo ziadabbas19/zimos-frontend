@@ -199,3 +199,112 @@ export function manualCancelRequired(...waybills) {
     })),
   });
 }
+
+// ---------------------------------------------------------------- providers
+//
+// Real carrier and gateway codes (Backend carriers/jtexpress.js, mylerz.js,
+// payments/gateways/paymob.js, kashier.js), so the dashboard's logo lookup is
+// exercised against the files in src/assets/providers. "fakegate" has no file.
+
+/** J&T: the only courier with an `environment` credential (production | sandbox). */
+export const JTEXPRESS = (connected, extra = {}) => ({
+  code: "jtexpress",
+  name: "J&T Express",
+  webhookSetup: "none",
+  supportsLabel: true,
+  credentialFields: [
+    { key: "apiAccount", label: "API account", secret: false },
+    { key: "privateKey", label: "Private key", secret: true },
+    { key: "customerCode", label: "Customer code", secret: false },
+    { key: "password", label: "Customer password", secret: true },
+    { key: "environment", label: "Environment", secret: false, options: ["production", "sandbox"] },
+  ],
+  settingFields: [],
+  capabilities: { cancel: "api", label: true, webhook: "none", polling: true, addressLevels: ["governorate", "city", "area"] },
+  connection: connected ? { ...connection("jtexpress"), ...extra } : null,
+});
+
+export const MYLERZ = (connected) => ({
+  code: "mylerz",
+  name: "Mylerz",
+  webhookSetup: "none",
+  supportsLabel: true,
+  credentialFields: [
+    { key: "username", label: "Username", secret: false },
+    { key: "password", label: "Password", secret: true },
+  ],
+  settingFields: [],
+  capabilities: { cancel: "api", label: true, webhook: "none", polling: true, addressLevels: ["city", "neighborhood"] },
+  connection: connected ? connection("mylerz") : null,
+});
+
+const gatewayConnection = (code, mode = "live") => ({
+  status: "active",
+  mode,
+  settings: {},
+  methods: ["card"],
+  webhookUrl: `https://api.example.test/api/v1/webhooks/payments/${code}/token`,
+  lastVerifiedAt: "2026-09-20T10:00:00Z",
+  lastWebhookAt: null,
+  connectedAt: "2026-09-01T10:00:00Z",
+  updatedAt: "2026-09-20T10:00:00Z",
+});
+
+const gateway = (code, name, connected) => ({
+  code,
+  name,
+  methods: ["card", "wallet"],
+  currencies: ["EGP"],
+  credentialFields: [{ key: "apiKey", label: { en: "API key", ar: "مفتاح API" }, secret: true }],
+  settingFields: [],
+  setupSteps: { en: [], ar: [] },
+  helpLinks: [],
+  webhookSetup: { field: "Webhook URL", perIntegration: false, automatic: true },
+  methodsFromAccount: true,
+  connection: connected ? gatewayConnection(code) : null,
+});
+
+export const PAYMOB = (connected) => gateway("paymob", "Paymob", connected);
+export const KASHIER = (connected) => gateway("kashier", "Kashier", connected);
+/** A gateway with no logo file: the initials badge. */
+export const FAKEGATE = (connected) => gateway("fakegate", "FakeGate", connected);
+
+/** One payment attempt / record (GET .../payment-timeline `attempts[]`). */
+export function payment(id, providerCode, extra = {}) {
+  return {
+    id,
+    orderId: ORDER,
+    workspaceId: WS,
+    providerCode,
+    status: "failed",
+    amount: "50000",
+    currency: "EGP",
+    providerReference: null,
+    maskedDisplay: null,
+    failureReason: null,
+    method: null,
+    mode: "live",
+    createdAt: "2026-09-25T10:00:00Z",
+    updatedAt: "2026-09-25T10:00:00Z",
+    ...extra,
+  };
+}
+
+export function paymentTimeline(attempts) {
+  return {
+    orderId: ORDER,
+    currency: "EGP",
+    totalAmount: 50000,
+    amountPaid: 0,
+    amountRefunded: 0,
+    pendingRefunds: 0,
+    refundable: 0,
+    refundVia: "gateway",
+    perPayment: [],
+    alerts: [],
+    paymentExpiresAt: null,
+    attempts,
+    events: [],
+    refunds: [],
+  };
+}

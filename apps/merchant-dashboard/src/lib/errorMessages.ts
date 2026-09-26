@@ -8,6 +8,7 @@ import {
 } from "@store-builder/api-client";
 import { fmt } from "@/i18n/LocaleContext";
 import { useT, type Messages } from "@/i18n/LocaleContext";
+import { providerName } from "@/lib/providers";
 
 /**
  * Translated copy for the backend's stable error codes.
@@ -65,7 +66,10 @@ const STRINGS = {
     PRODUCT_NOT_ARCHIVED: "Only an archived product can be restored.",
     CARRIERS_NOT_CONFIGURED: "Courier integrations aren't available on this server yet. Please contact support.",
     CARRIER_AUTH_FAILED: "The courier rejected the API key. Check it in the courier's dashboard and connect again.",
-    CARRIER_PERMISSION_DENIED: "The courier refused this action for the connected API key. Reconnect with a Full Access key.",
+    CARRIER_PERMISSION_DENIED:
+      "The courier accepted the login, but it hasn't enabled API access for this account. Your details are correct: ask the courier to enable API access for your account, then try again.",
+    CARRIER_SANDBOX_NOT_ALLOWED:
+      "This courier connection uses the courier's sandbox, which only creates test shipments, so nothing was booked. A production account is required: connect one under Shipping.",
     CARRIER_ADDRESS_UNMATCHED: "The order's address couldn't be matched to the courier's list. Choose the delivery area.",
     CARRIER_CURRENCY_UNSUPPORTED: "This courier only collects cash in EGP, and this order is in another currency.",
     CARRIER_COD_LIMIT: "The cash-on-delivery amount is above this courier's limit.",
@@ -100,6 +104,14 @@ const STRINGS = {
     cancelFailedAuth:
       "The courier rejected the saved API key, so the delivery wasn't cancelled and the order is unchanged. Reconnect the courier under Shipping.",
     courierReply: "Courier's reply: {message}",
+    carrierPermissionNamed:
+      "{name} accepted the login, but it hasn't enabled API access for this account. Your details are correct: ask {name} to enable API access for your account, then try again.",
+    carrierPermissionBosta:
+      "Bosta refused this action for the connected API key. Check the key's access level in Bosta's dashboard, or reconnect with a Full Access key.",
+    carrierSandboxNamed:
+      "This {name} connection uses the {name} sandbox, which only creates test shipments, so nothing was booked. A production {name} account is required: connect one under Shipping.",
+    cancelFailedApiAccess:
+      "{name} refused to cancel the delivery: it hasn't enabled API access for this account. The order was not cancelled. Ask {name} to enable API access, or cancel the delivery in {name}'s dashboard first.",
   },
   ar: {
     network: "تعذّر الوصول إلى الخادم. تحقق من اتصالك وحاول مرة أخرى.",
@@ -144,7 +156,10 @@ const STRINGS = {
     PRODUCT_NOT_ARCHIVED: "يمكن استعادة المنتج المؤرشف فقط.",
     CARRIERS_NOT_CONFIGURED: "ربط شركات الشحن غير متاح على هذا الخادم بعد. تواصل مع الدعم.",
     CARRIER_AUTH_FAILED: "رفضت شركة الشحن مفتاح API. تحقق منه في لوحة تحكم الشركة وأعد الربط.",
-    CARRIER_PERMISSION_DENIED: "رفضت شركة الشحن هذا الإجراء بالمفتاح المربوط. أعد الربط بمفتاح صلاحياته Full Access.",
+    CARRIER_PERMISSION_DENIED:
+      "قبلت شركة الشحن تسجيل الدخول، لكنها لم تفعّل الربط عبر API لهذا الحساب. بياناتك صحيحة: اطلب من شركة الشحن تفعيل الربط عبر API لحسابك، ثم حاول مرة أخرى.",
+    CARRIER_SANDBOX_NOT_ALLOWED:
+      "ربط شركة الشحن هذا يستخدم بيئة التجربة (Sandbox) الخاصة بها، وهي تنشئ شحنات تجريبية فقط، لذلك لم يُحجز شيء. يلزم حساب إنتاج (Production): اربطه من صفحة الشحن.",
     CARRIER_ADDRESS_UNMATCHED: "تعذّرت مطابقة عنوان الأوردر مع قائمة شركة الشحن. اختر منطقة التوصيل.",
     CARRIER_CURRENCY_UNSUPPORTED: "شركة الشحن هذه تحصّل بالجنيه المصري فقط، وهذا الأوردر بعملة أخرى.",
     CARRIER_COD_LIMIT: "مبلغ الدفع عند الاستلام أعلى من الحد المسموح لشركة الشحن هذه.",
@@ -179,14 +194,33 @@ const STRINGS = {
     cancelFailedAuth:
       "رفضت شركة الشحن مفتاح API المحفوظ، لذلك لم تُلغَ الشحنة ولم يتغير الأوردر. أعد ربط الشركة من صفحة الشحن.",
     courierReply: "رد شركة الشحن: {message}",
+    carrierPermissionNamed:
+      "قبلت {name} تسجيل الدخول، لكنها لم تفعّل الربط عبر API لهذا الحساب. بياناتك صحيحة: اطلب من {name} تفعيل الربط عبر API لحسابك، ثم حاول مرة أخرى.",
+    carrierPermissionBosta:
+      "رفضت بوسطة هذا الإجراء بمفتاح API المربوط. راجع صلاحية المفتاح في لوحة تحكم بوسطة، أو أعد الربط بمفتاح صلاحياته Full Access.",
+    carrierSandboxNamed:
+      "ربط {name} هذا يستخدم بيئة التجربة (Sandbox) الخاصة بـ {name}، وهي تنشئ شحنات تجريبية فقط، لذلك لم يُحجز شيء. يلزم حساب إنتاج (Production) لدى {name}: اربطه من صفحة الشحن.",
+    cancelFailedApiAccess:
+      "رفضت {name} إلغاء الشحنة لأنها لم تفعّل الربط عبر API لهذا الحساب. لم يتم إلغاء الأوردر. اطلب من {name} تفعيل الربط عبر API، أو ألغِ الشحنة من لوحة تحكم {name} أولًا.",
   },
 } satisfies Messages;
 
-type CodeKey = Exclude<
-  keyof typeof STRINGS.en,
-  "network" | "generic" | "cancelFailedPermission" | "cancelFailedAuth" | "courierReply"
->;
-const OWN_KEYS: ReadonlySet<string> = new Set(["network", "generic", "cancelFailedPermission", "cancelFailedAuth", "courierReply"]);
+const OWN_KEY_LIST = [
+  "network",
+  "generic",
+  "cancelFailedPermission",
+  "cancelFailedAuth",
+  "courierReply",
+  "carrierPermissionNamed",
+  "carrierPermissionBosta",
+  "carrierSandboxNamed",
+  "cancelFailedApiAccess",
+] as const;
+type CodeKey = Exclude<keyof typeof STRINGS.en, (typeof OWN_KEY_LIST)[number]>;
+const OWN_KEYS: ReadonlySet<string> = new Set(OWN_KEY_LIST);
+
+/** Bosta's CARRIER_PERMISSION_DENIED is its key's access level; every other courier's is API access on the account. */
+const KEY_SCOPE_CARRIERS: ReadonlySet<string> = new Set(["bosta"]);
 
 /** Codes whose server message is shown as-is, never replaced. */
 const VERBATIM_CODES: ReadonlySet<string> = new Set<ApiErrorCode>(["CARRIER_ERROR", "GATEWAY_ERROR", "GATEWAY_REJECTED"]);
@@ -220,8 +254,14 @@ export function useErrorMessage() {
           // Only order cancellation raises it. The courier-side cause decides
           // what the merchant can do next; the courier's own words come along
           // for anything we can't name.
-          const cause = apiErrorDetails<CarrierCancelFailedDetails>(err)?.carrierErrorCode;
-          if (cause === "CARRIER_PERMISSION_DENIED") return t.cancelFailedPermission;
+          const details = apiErrorDetails<CarrierCancelFailedDetails>(err);
+          const cause = details?.carrierErrorCode;
+          if (cause === "CARRIER_PERMISSION_DENIED") {
+            const carrierCode = details?.carrierCode;
+            return carrierCode && !KEY_SCOPE_CARRIERS.has(carrierCode)
+              ? fmt(t.cancelFailedApiAccess, { name: providerName(carrierCode) })
+              : t.cancelFailedPermission;
+          }
           if (cause === "CARRIER_AUTH_FAILED") return t.cancelFailedAuth;
           const reply = err instanceof ApiError ? err.message : "";
           return reply ? `${t.CARRIER_CANCEL_FAILED} ${fmt(t.courierReply, { message: reply })}` : t.CARRIER_CANCEL_FAILED;
@@ -237,5 +277,28 @@ export function useErrorMessage() {
       return t.generic;
     },
     [t]
+  );
+}
+
+/**
+ * `useErrorMessage` for a call made with a known courier: the permission and
+ * sandbox errors carry no courier name, so they are worded here with it.
+ */
+export function useCarrierErrorMessage() {
+  const t = useT(STRINGS);
+  const errorMessage = useErrorMessage();
+  return useCallback(
+    (err: unknown, carrier: { code: string; name: string } | null | undefined, overrides?: ErrorOverrides): string => {
+      if (!carrier) return errorMessage(err, overrides);
+      const name = carrier.name || providerName(carrier.code);
+      return errorMessage(err, {
+        CARRIER_PERMISSION_DENIED: KEY_SCOPE_CARRIERS.has(carrier.code)
+          ? t.carrierPermissionBosta
+          : fmt(t.carrierPermissionNamed, { name }),
+        CARRIER_SANDBOX_NOT_ALLOWED: fmt(t.carrierSandboxNamed, { name }),
+        ...overrides,
+      });
+    },
+    [t, errorMessage]
   );
 }
