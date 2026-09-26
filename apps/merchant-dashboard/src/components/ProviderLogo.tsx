@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { cn } from "@store-builder/ui";
-import { providerInitials, providerLogoUrl, providerName } from "@/lib/providers";
+import { providerInitials, providerLogo, providerName } from "@/lib/providers";
 
+/** One fixed box per size, 2:1, so wide wordmarks and square marks line up. */
 const SIZE_CLASS = {
-  sm: "h-7 w-10 rounded-[0.375rem] text-[0.625rem]",
-  md: "h-10 w-14 rounded-[0.5rem] text-xs",
+  sm: "h-7 w-14 text-[0.625rem]",
+  md: "h-9 w-18 text-xs",
 } as const;
 
 interface ProviderLogoProps {
@@ -16,17 +17,19 @@ interface ProviderLogoProps {
 }
 
 /**
- * The logo on a fixed white tile: logos are drawn for light backgrounds, so
- * the tile keeps them legible in the dark theme too, and one box size keeps
- * wide and square marks aligned. Without a file (or if it fails to load) a
- * neutral badge with the name's initials takes its place.
+ * The logo straight on the page background, centred and contained in a fixed
+ * box so no mark is cropped or stretched. A "<code>.dark.png" variant, when
+ * there is one, replaces it in the dark theme (switched in CSS, so the right
+ * one shows before any script runs). Without a file, or if it fails to load,
+ * a neutral badge with the name's initials fills the same box.
  */
 export function ProviderLogo({ code, name, size = "md", className }: ProviderLogoProps) {
   const label = name || providerName(code);
-  const url = providerLogoUrl(code);
-  const [broken, setBroken] = useState<string | null>(null);
+  const logo = providerLogo(code);
+  const [broken, setBroken] = useState<ReadonlySet<string>>(() => new Set());
+  const markBroken = (url: string) => setBroken((prev) => new Set(prev).add(url));
 
-  if (!url || broken === url) {
+  if (!logo || broken.has(logo.light)) {
     return (
       <span
         role="img"
@@ -34,7 +37,7 @@ export function ProviderLogo({ code, name, size = "md", className }: ProviderLog
         data-provider-logo={code}
         data-fallback=""
         className={cn(
-          "inline-flex shrink-0 select-none items-center justify-center border border-line bg-paper font-semibold text-ink-soft",
+          "inline-flex shrink-0 select-none items-center justify-center rounded-[0.5rem] border border-line bg-paper font-semibold text-ink-soft",
           SIZE_CLASS[size],
           className
         )}
@@ -46,24 +49,24 @@ export function ProviderLogo({ code, name, size = "md", className }: ProviderLog
     );
   }
 
+  const dark = logo.dark && !broken.has(logo.dark) ? logo.dark : undefined;
+  const image = (src: string, variant: "light" | "dark", visibility: string) => (
+    <img
+      src={src}
+      alt={label}
+      data-variant={variant}
+      loading="lazy"
+      decoding="async"
+      draggable={false}
+      onError={() => markBroken(src)}
+      className={cn("h-full w-full object-contain", visibility)}
+    />
+  );
+
   return (
-    <span
-      data-provider-logo={code}
-      className={cn(
-        "inline-flex shrink-0 items-center justify-center overflow-hidden border border-line bg-white p-0.5",
-        SIZE_CLASS[size],
-        className
-      )}
-    >
-      <img
-        src={url}
-        alt={label}
-        loading="lazy"
-        decoding="async"
-        draggable={false}
-        onError={() => setBroken(url)}
-        className="h-full w-full object-contain"
-      />
+    <span data-provider-logo={code} className={cn("inline-flex shrink-0 items-center justify-center", SIZE_CLASS[size], className)}>
+      {image(logo.light, "light", dark ? "dark:hidden" : "")}
+      {dark && image(dark, "dark", "hidden dark:block")}
     </span>
   );
 }

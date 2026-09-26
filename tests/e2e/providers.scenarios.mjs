@@ -33,39 +33,102 @@ const cardOf = (page, name) =>
     "xpath=ancestor::div[contains(concat(' ', @class, ' '), ' p-4 ') or contains(concat(' ', @class, ' '), ' p-5 ')][1]"
   );
 
-/** A real logo: an <img> with this alt that loaded, kept in proportion inside its tile. */
-async function checkLogo(scope, name, file, label) {
-  const img = scope.getByRole("img", { name, exact: true }).first();
+/** The fixed logo box per size variant (CSS px): every logo and fallback renders at exactly this size. */
+const BOX = { sm: "56x28", md: "72x36" };
+
+/**
+ * A real logo: the visible <img> with this alt (a hidden theme variant is not
+ * in the accessibility tree) loaded from `file`, contained in the whole box of
+ * the given size, with no tile behind it.
+ */
+async function checkLogo(scope, name, file, label, size = "md") {
+  const img = scope.getByRole("img", { name, exact: true });
+  const count = await img.count();
   const info = await img
-    .evaluate((el) => ({
-      tag: el.tagName,
-      src: el.getAttribute("src") || "",
-      loaded: el.complete && el.naturalWidth > 0,
-      fit: getComputedStyle(el).objectFit,
-      tileBg: getComputedStyle(el.parentElement).backgroundColor,
-    }))
+    .first()
+    .evaluate((el) => {
+      const box = el.parentElement;
+      const bs = getComputedStyle(box);
+      const ib = el.getBoundingClientRect();
+      const bb = box.getBoundingClientRect();
+      return {
+        tag: el.tagName,
+        src: el.getAttribute("src") || "",
+        variant: el.dataset.variant,
+        loaded: el.complete && el.naturalWidth > 0,
+        fit: getComputedStyle(el).objectFit,
+        filled: Math.round(ib.width) === Math.round(bb.width) && Math.round(ib.height) === Math.round(bb.height),
+        box: `${Math.round(bb.width)}x${Math.round(bb.height)}`,
+        tile: [bs.backgroundColor, getComputedStyle(el).backgroundColor, bs.borderTopWidth, bs.paddingTop],
+      };
+    })
     .catch(() => null);
-  check(info?.tag === "IMG", `${label}: <img alt="${name}">`);
+  check(count === 1 && info?.tag === "IMG", `${label}: one visible <img alt="${name}"> (${count})`);
   check(Boolean(info?.src.includes(file)), `${label}: served from ${file} (${info?.src})`);
   check(Boolean(info?.loaded), `${label}: image loaded`);
-  check(info?.fit === "contain", `${label}: aspect ratio kept (object-fit ${info?.fit})`);
+  check(info?.fit === "contain" && info.filled, `${label}: contained in the whole box (object-fit ${info?.fit})`);
+  check(info?.box === BOX[size], `${label}: ${size} box is ${BOX[size]} (${info?.box})`);
+  check(
+    info?.tile.join("|") === "rgba(0, 0, 0, 0)|rgba(0, 0, 0, 0)|0px|0px",
+    `${label}: no tile, the logo sits on the page (${info?.tile.join(" / ")})`
+  );
   return info;
 }
 
-/** The no-file fallback: a role="img" badge named `name`, showing `initials`, and no <img>. */
-async function checkFallback(scope, name, initials, label) {
+/** The no-file fallback: a role="img" badge named `name`, showing `initials`, no <img>, in the same box. */
+async function checkFallback(scope, name, initials, label, size = "md") {
   const badge = scope.getByRole("img", { name, exact: true }).first();
   const info = await badge
-    .evaluate((el) => ({ tag: el.tagName, text: el.textContent.trim(), fallback: el.hasAttribute("data-fallback") }))
+    .evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return {
+        tag: el.tagName,
+        text: el.textContent.trim(),
+        fallback: el.hasAttribute("data-fallback"),
+        imgs: el.querySelectorAll("img").length,
+        box: `${Math.round(r.width)}x${Math.round(r.height)}`,
+      };
+    })
     .catch(() => null);
-  check(info?.tag === "SPAN" && info.fallback, `${label}: initials badge, not an image`);
+  check(info?.tag === "SPAN" && info.fallback && info.imgs === 0, `${label}: initials badge, not an image`);
   check(info?.text === initials, `${label}: initials "${initials}" (got "${info?.text}")`);
+  check(info?.box === BOX[size], `${label}: badge fills the ${size} box ${BOX[size]} (${info?.box})`);
+}
+
+/** Every logo box on the page, as "WxH". */
+const allBoxes = (page) =>
+  page.locator("[data-provider-logo]").evaluateAll((els) =>
+    els.map((el) => {
+      const r = el.getBoundingClientRect();
+      return `${Math.round(r.width)}x${Math.round(r.height)}`;
+    })
+  );
+
+/**
+ * No provider ships a .dark.png yet, so the dark-variant check registers one
+ * in the page only: Vite serves src/lib/providers.ts as a module, and this
+ * appends a line to it making `standIn`'s file the dark variant of `code`.
+ * Nothing on disk changes. It needs the dev server (a production bundle has
+ * no such module), so it reports whether the patch applied.
+ */
+async function injectDarkVariant(page, code, standIn) {
+  let applied = false;
+  await page.route(/\/src\/lib\/providers\.ts(\?.*)?$/, async (route) => {
+    const res = await route.fetch();
+    let body = await res.text();
+    if (body.includes("const DARK")) {
+      body += `\nDARK.set(${JSON.stringify(code)}, LIGHT.get(${JSON.stringify(standIn)}));\n`;
+      applied = true;
+    }
+    await route.fulfill({ response: res, body });
+  });
+  return () => applied;
 }
 
 // ---------------------------------------------------------------- shipping page
 
 export async function shippingLogosAndSandbox(browser, base) {
-  console.log("\nH. Shipping page: courier logos, J&T file-name match, fallback, Sandbox badge from the server");
+  console.log("\nH. Shipping page: courier logos in one box size with no tile, fallback, Sandbox badge from the server");
   const session = await openPage(browser, base, {
     handler: (method, path) => {
       if (method === "GET" && path === carriersPath) {
@@ -81,14 +144,15 @@ export async function shippingLogosAndSandbox(browser, base) {
   await page.goto(`${base}/shipping`);
   await settle(page);
   await checkLogo(cardOf(page, "Bosta"), "Bosta", "bosta", "Bosta card");
-  await checkLogo(cardOf(page, "J&T Express"), "J&T Express", "JT-Express", "J&T card (JT-Express.png ↔ jtexpress)");
+  await checkLogo(cardOf(page, "J&T Express"), "J&T Express", "jtexpress", "J&T card");
   await checkLogo(cardOf(page, "Mylerz"), "Mylerz", "mylerz", "Mylerz card");
   await checkFallback(cardOf(page, "FakePoll"), "FakePoll", "FA", "FakePoll card (no file)");
 
-  const sizes = await page.locator("[data-provider-logo]").evaluateAll((els) =>
-    els.map((el) => `${Math.round(el.getBoundingClientRect().width)}x${Math.round(el.getBoundingClientRect().height)}`)
+  const sizes = await allBoxes(page);
+  check(
+    sizes.length === 4 && sizes.every((s) => s === BOX.md),
+    `wordmarks, square marks and the fallback share one ${BOX.md} box (${sizes.join(", ")})`
   );
-  check(sizes.length === 4 && new Set(sizes).size === 1, `every card logo tile is the same size (${sizes.join(", ")})`);
 
   const jt = cardOf(page, "J&T Express");
   check(await jt.getByText("Sandbox", { exact: true }).isVisible(), "J&T card shows the Sandbox badge");
@@ -288,16 +352,21 @@ export async function orderCourierLogosAndErrors(browser, base) {
 
   // Shipment rows
   const row = (tracking) => page.locator("li", { hasText: tracking });
-  await checkLogo(row("zg-my-1"), "Mylerz", "mylerz", "Mylerz shipment row");
-  await checkFallback(row("zg-fm-2"), "FakeManual", "FA", "FakeManual shipment row (no file)");
+  await checkLogo(row("zg-my-1"), "Mylerz", "mylerz", "Mylerz shipment row", "sm");
+  await checkFallback(row("zg-fm-2"), "FakeManual", "FA", "FakeManual shipment row (no file)", "sm");
   check((await row("zg-hand-3").locator("[data-provider-logo]").count()) === 0, "manual shipment row has no logo");
 
   // Courier picker
   const option = (name) => page.locator("label", { has: page.getByRole("radio", { name }) });
-  await checkLogo(option(/^Bosta/), "Bosta", "bosta", "picker: Bosta option");
-  await checkLogo(option(/^J&T Express/), "J&T Express", "JT-Express", "picker: J&T option");
-  await checkLogo(option(/^Mylerz/), "Mylerz", "mylerz", "picker: unconnected Mylerz option");
-  await checkFallback(option(/^FakePoll/), "FakePoll", "FA", "picker: FakePoll option (no file)");
+  await checkLogo(option(/^Bosta/), "Bosta", "bosta", "picker: Bosta option", "sm");
+  await checkLogo(option(/^J&T Express/), "J&T Express", "jtexpress", "picker: J&T option", "sm");
+  await checkLogo(option(/^Mylerz/), "Mylerz", "mylerz", "picker: unconnected Mylerz option", "sm");
+  await checkFallback(option(/^FakePoll/), "FakePoll", "FA", "picker: FakePoll option (no file)", "sm");
+  const smBoxes = await allBoxes(page);
+  check(
+    smBoxes.length > 0 && smBoxes.every((s) => s === BOX.sm),
+    `every order-page logo shares the ${BOX.sm} box (${smBoxes.join(", ")})`
+  );
   check((await option(/^Manual/).locator("[data-provider-logo]").count()) === 0, "picker: Manual option has no logo");
 
   await page.getByRole("radio", { name: /^J&T Express/ }).check();
@@ -354,9 +423,9 @@ export async function orderPaymentLogos(browser, base) {
   await page.goto(`${base}/orders/${ORDER}`);
   await settle(page);
   const attempt = (text) => page.locator("li", { hasText: text });
-  await checkLogo(attempt("Card via Paymob"), "Paymob", "paymob", "Paymob attempt");
-  await checkLogo(attempt("Wallet via Kashier"), "Kashier", "kashier", "Kashier attempt");
-  await checkFallback(attempt("Card via fakegate"), "fakegate", "FA", "unknown gateway attempt (no file)");
+  await checkLogo(attempt("Card via Paymob"), "Paymob", "paymob", "Paymob attempt", "sm");
+  await checkLogo(attempt("Wallet via Kashier"), "Kashier", "kashier", "Kashier attempt", "sm");
+  await checkFallback(attempt("Card via fakegate"), "fakegate", "FA", "unknown gateway attempt (no file)", "sm");
   check((await attempt(/^cod ·/).locator("[data-provider-logo]").count()) === 0, "COD record has no logo");
   await assertClean(session, "M");
   return session;
@@ -365,7 +434,7 @@ export async function orderPaymentLogos(browser, base) {
 // ---------------------------------------------------------------- payments page
 
 export async function paymentsPageLogos(browser, base) {
-  console.log("\nL. Payments page: gateway logos and fallback, in light and dark themes");
+  console.log("\nL. Payments page: gateway logos and fallback in light and dark; a .dark.png variant replaces the logo in dark only");
   const session = await openPage(browser, base, {
     handler: (method, path) => {
       if (path === `${paymentsPath}/gateways`) {
@@ -381,6 +450,8 @@ export async function paymentsPageLogos(browser, base) {
     },
   });
   const { page } = session;
+  // Paymob gets a dark variant (bosta.png's file stands in); Kashier has none.
+  const darkApplied = await injectDarkVariant(page, "paymob", "bosta");
   await page.goto(`${base}/payments`);
   for (const theme of ["light", "dark"]) {
     await page.evaluate((value) => localStorage.setItem("theme", value), theme);
@@ -388,10 +459,18 @@ export async function paymentsPageLogos(browser, base) {
     await settle(page);
     const isDark = await page.evaluate(() => document.documentElement.classList.contains("dark"));
     check(isDark === (theme === "dark"), `${theme} theme applied`);
-    const paymob = await checkLogo(cardOf(page, "Paymob"), "Paymob", "paymob", `${theme}: Paymob card`);
-    await checkLogo(cardOf(page, "Kashier"), "Kashier", "kashier", `${theme}: Kashier card`);
+    check(darkApplied(), `${theme}: dark variant registered for Paymob in this page`);
+    const dark = theme === "dark";
+    const paymob = await checkLogo(cardOf(page, "Paymob"), "Paymob", dark ? "bosta" : "paymob", `${theme}: Paymob card`);
+    check(paymob?.variant === theme, `${theme}: Paymob shows its ${theme} variant (${paymob?.variant})`);
+    const kashier = await checkLogo(cardOf(page, "Kashier"), "Kashier", "kashier", `${theme}: Kashier card`);
+    check(kashier?.variant === "light", `${theme}: Kashier has no .dark.png, so its normal file shows (${kashier?.variant})`);
     await checkFallback(cardOf(page, "FakeGate"), "FakeGate", "FA", `${theme}: FakeGate card (no file)`);
-    check(paymob?.tileBg === "rgb(255, 255, 255)", `${theme}: logo sits on a light tile (${paymob?.tileBg})`);
+    const other = await cardOf(page, "Paymob")
+      .locator(`[data-provider-logo] img[data-variant="${dark ? "light" : "dark"}"]`)
+      .evaluate((el) => getComputedStyle(el).display)
+      .catch(() => null);
+    check(other === "none", `${theme}: Paymob's other variant is not displayed (${other})`);
   }
   await assertClean(session, "L");
   return session;
