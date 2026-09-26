@@ -1,4 +1,5 @@
 import { ApiError } from "./client";
+import type { ManualCancelRequiredDetails, ManualCancelShipment } from "./types";
 
 /**
  * The backend's stable error codes that the apps give their own copy to.
@@ -75,6 +76,9 @@ export type ApiErrorCode =
   | "SHIPMENT_NOT_CARRIER_MANAGED"
   | "LABEL_NOT_AVAILABLE"
   | "CARRIER_TIER_UNMAPPED" // 422, details = { tierId } — the booked tier has no package mapping
+  | "CARRIER_MANUAL_CANCEL_REQUIRED" // 409, details = ManualCancelRequiredDetails — repeat with acknowledgeManualCancel
+  | "CARRIER_CONNECT_CONFLICT" // 409 — two first-time connects raced; the other one was stored
+  | "CARRIER_BOOKING_NOT_SAVED" // 502, details = CarrierBookingNotSavedDetails — cancel it in the courier's dashboard
   // online payments
   | "PAYMENTS_ONLINE_DISABLED" // 404 — shopper payment endpoints while online payments are off
   | "GATEWAYS_NOT_CONFIGURED" // 503 — no GATEWAY_CREDENTIALS_KEY on the server
@@ -176,4 +180,14 @@ export function productInFunnelIds(err: unknown): string[] {
   const first = Array.isArray(details) ? (details[0] as { funnelIds?: unknown } | undefined) : undefined;
   const ids = first?.funnelIds;
   return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : [];
+}
+
+/**
+ * The bookings a 409 CARRIER_MANUAL_CANCEL_REQUIRED names — the ones the
+ * merchant must cancel in the courier's own dashboard. [] for any other error.
+ */
+export function manualCancelShipments(err: unknown): ManualCancelShipment[] {
+  if (!isApiErrorCode(err, "CARRIER_MANUAL_CANCEL_REQUIRED")) return [];
+  const shipments = apiErrorDetails<ManualCancelRequiredDetails>(err)?.shipments;
+  return Array.isArray(shipments) ? shipments : [];
 }

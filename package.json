@@ -15,11 +15,11 @@
     "build:admin": "npm run build -w apps/platform-admin",
     "build:storefront": "npm run build -w apps/storefront",
     "build:marketing": "npm run build -w apps/marketing",
-    "build:all": "npm run build:dashboard && npm run build:admin && npm run build:storefront && npm run build:marketing"
+    "build:all": "npm run build:dashboard && npm run build:admin && npm run build:storefront && npm run build:marketing",
+    "test:e2e": "node tests/e2e/carriers.e2e.mjs"
   },
   "devDependencies": {
-    "concurrently": "^10.0.5"
+    "concurrently": "^10.0.5",
+    "playwright": "1.63.0"
   }
 }
-
-

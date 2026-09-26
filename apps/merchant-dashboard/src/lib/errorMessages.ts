@@ -66,7 +66,7 @@ const STRINGS = {
     CARRIERS_NOT_CONFIGURED: "Courier integrations aren't available on this server yet. Please contact support.",
     CARRIER_AUTH_FAILED: "The courier rejected the API key. Check it in the courier's dashboard and connect again.",
     CARRIER_PERMISSION_DENIED: "The courier refused this action for the connected API key. Reconnect with a Full Access key.",
-    CARRIER_ADDRESS_UNMATCHED: "The order's address couldn't be matched to the courier's list. Choose the city and district.",
+    CARRIER_ADDRESS_UNMATCHED: "The order's address couldn't be matched to the courier's list. Choose the delivery area.",
     CARRIER_CURRENCY_UNSUPPORTED: "This courier only collects cash in EGP, and this order is in another currency.",
     CARRIER_COD_LIMIT: "The cash-on-delivery amount is above this courier's limit.",
     CARRIER_NOT_CONNECTED: "This courier isn't connected to your store anymore.",
@@ -75,6 +75,12 @@ const STRINGS = {
     SHIPMENT_NOT_CARRIER_MANAGED: "This shipment wasn't booked through a connected courier.",
     LABEL_NOT_AVAILABLE: "This courier doesn't provide printable labels.",
     CARRIER_TIER_UNMAPPED: "This weight tier has no package type for the courier. Book it as another tier, or map it in the courier settings.",
+    CARRIER_MANUAL_CANCEL_REQUIRED:
+      "This courier can't cancel deliveries from here. Cancel the delivery in the courier's dashboard first, then confirm it here.",
+    CARRIER_CONNECT_CONFLICT:
+      "This courier was connected from another tab or by a teammate at the same moment, so this save didn't go through. Reload to see the connection, then save again if you need to.",
+    CARRIER_BOOKING_NOT_SAVED:
+      "The courier created the delivery, but it couldn't be saved here. Cancel it in the courier's dashboard, then book the order again.",
     SHIPPING_TIERS_REQUIRED: "Add at least one weight tier before pricing shipping by weight.",
     DEFAULT_ITEM_WEIGHT_REQUIRED: "Set a default item weight first. It's required while shipping is priced by weight tier.",
     GATEWAYS_NOT_CONFIGURED: "Online payments aren't available on this server yet. Please contact support.",
@@ -139,7 +145,7 @@ const STRINGS = {
     CARRIERS_NOT_CONFIGURED: "ربط شركات الشحن غير متاح على هذا الخادم بعد. تواصل مع الدعم.",
     CARRIER_AUTH_FAILED: "رفضت شركة الشحن مفتاح API. تحقق منه في لوحة تحكم الشركة وأعد الربط.",
     CARRIER_PERMISSION_DENIED: "رفضت شركة الشحن هذا الإجراء بالمفتاح المربوط. أعد الربط بمفتاح صلاحياته Full Access.",
-    CARRIER_ADDRESS_UNMATCHED: "تعذّرت مطابقة عنوان الأوردر مع قائمة شركة الشحن. اختر المدينة والمنطقة.",
+    CARRIER_ADDRESS_UNMATCHED: "تعذّرت مطابقة عنوان الأوردر مع قائمة شركة الشحن. اختر منطقة التوصيل.",
     CARRIER_CURRENCY_UNSUPPORTED: "شركة الشحن هذه تحصّل بالجنيه المصري فقط، وهذا الأوردر بعملة أخرى.",
     CARRIER_COD_LIMIT: "مبلغ الدفع عند الاستلام أعلى من الحد المسموح لشركة الشحن هذه.",
     CARRIER_NOT_CONNECTED: "شركة الشحن هذه لم تعد مربوطة بمتجرك.",
@@ -148,6 +154,12 @@ const STRINGS = {
     SHIPMENT_NOT_CARRIER_MANAGED: "هذه الشحنة لم تُحجز عبر شركة شحن مربوطة.",
     LABEL_NOT_AVAILABLE: "شركة الشحن هذه لا توفر ملصقات قابلة للطباعة.",
     CARRIER_TIER_UNMAPPED: "شريحة الوزن هذه ليس لها نوع طرد عند شركة الشحن. احجزها كشريحة أخرى، أو اربطها من إعدادات الشركة.",
+    CARRIER_MANUAL_CANCEL_REQUIRED:
+      "لا يمكن إلغاء شحنات هذه الشركة من هنا. ألغِ الشحنة من لوحة تحكم شركة الشحن أولًا، ثم أكّد ذلك هنا.",
+    CARRIER_CONNECT_CONFLICT:
+      "تم ربط شركة الشحن هذه من تبويب آخر أو بواسطة زميل في نفس اللحظة، لذلك لم يُحفظ هذا الطلب. أعد التحميل لرؤية الربط، ثم احفظ مرة أخرى إذا احتجت.",
+    CARRIER_BOOKING_NOT_SAVED:
+      "أنشأت شركة الشحن الشحنة، لكن تعذّر حفظها هنا. ألغِها من لوحة تحكم شركة الشحن، ثم احجز الأوردر مرة أخرى.",
     SHIPPING_TIERS_REQUIRED: "أضف شريحة وزن واحدة على الأقل قبل تسعير الشحن بالوزن.",
     DEFAULT_ITEM_WEIGHT_REQUIRED: "حدد الوزن الافتراضي للمنتج أولًا. هو مطلوب طالما الشحن يُسعَّر حسب شريحة الوزن.",
     GATEWAYS_NOT_CONFIGURED: "الدفع الإلكتروني غير متاح على هذا الخادم بعد. تواصل مع الدعم.",

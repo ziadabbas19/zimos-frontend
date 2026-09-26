@@ -1021,9 +1021,31 @@ export interface Shipment {
   carrierResponse: ShipmentCarrierResponse | null;
   shippedAt: string | null;
   deliveredAt: string | null;
+  /**
+   * The merchant's courier account a booking went through. Null for manual
+   * shipments and once that account is disconnected.
+   */
+  carrierAccountId?: string | null;
+  /**
+   * How a courier-booked shipment was cancelled: "api" (the courier's cancel
+   * call), "manual_ack" (the courier has no cancel API; the merchant
+   * cancelled it in the courier's dashboard and said so). Null otherwise.
+   */
+  cancelMode?: ShipmentCancelMode | null;
+  /** manual_ack only: the user id that made the statement, and when. */
+  cancelAcknowledgedBy?: string | null;
+  cancelAcknowledgedAt?: string | null;
+  /** When the status job next reads it from the courier; null: never. */
+  nextPollAt?: string | null;
+  /** The last successful scheduled read from the courier. */
+  lastPolledAt?: string | null;
+  /** Consecutive failed scheduled reads. */
+  pollFailures?: number;
   createdAt: string;
   updatedAt: string;
 }
+
+export type ShipmentCancelMode = "api" | "manual_ack";
 
 /** The courier's own view of a shipment, as the backend stores it. */
 export interface ShipmentCarrierResponse {
@@ -1031,7 +1053,12 @@ export interface ShipmentCarrierResponse {
   carrierShipmentId?: string;
   trackingNumber?: string | null;
   labelUrl?: string | null;
-  address?: { cityId: string; districtId: string; zoneId: string | null };
+  /**
+   * The drop-off address as the courier's ids: city/district couriers keep
+   * `{ cityId, districtId, zoneId }`, any other courier `{ path }`, one id
+   * per address level, top first.
+   */
+  address?: { cityId: string; districtId: string; zoneId: string | null } | { path: string[] };
   /** The last state the courier reported (sync / webhook). */
   lastCarrierStatus?: CarrierShipmentStatus | null;
   [key: string]: unknown;
@@ -1216,18 +1243,41 @@ export interface CreateShipmentPayload {
   trackingUrl?: string;
   /**
    * Courier bookings only: the courier's ids for the drop-off address, sent
-   * after a 422 CARRIER_ADDRESS_UNMATCHED.
+   * after a 422 CARRIER_ADDRESS_UNMATCHED (or when the merchant picks it).
    */
-  carrierAddress?: { cityId: string; districtId: string };
+  carrierAddress?: CarrierAddressInput;
   notes?: string;
   /** Courier bookings only: book as this weight tier instead of the order's. */
   tierId?: string;
 }
 
+/**
+ * The drop-off address in the courier's own ids. `{ cityId, districtId }`
+ * for a city/district courier; `{ path }` — one id per address level, top
+ * first, exactly `addressLevels.length` of them — for any courier.
+ */
+export type CarrierAddressInput = { cityId: string; districtId: string } | { path: string[] };
+
 export interface UpdateShipmentPayload {
   status?: ShipmentStatus;
   waybillNumber?: string;
   trackingUrl?: string;
+  /**
+   * With status "cancelled" on a booking whose courier has no cancel API:
+   * the merchant cancelled it in the courier's dashboard. Without it that
+   * PATCH is refused with 409 CARRIER_MANUAL_CANCEL_REQUIRED.
+   */
+  acknowledgeManualCancel?: boolean;
+}
+
+/** Options shared by the requests that may cancel a courier booking. */
+export interface ManualCancelAcknowledgement {
+  /**
+   * The merchant cancelled the order's booking(s) in the courier's own
+   * dashboard (couriers without a cancel API). Send only after a 409
+   * CARRIER_MANUAL_CANCEL_REQUIRED and the merchant's explicit confirmation.
+   */
+  acknowledgeManualCancel?: boolean;
 }
 
 export interface CreateReturnPayload {
@@ -1392,6 +1442,11 @@ export interface CorrectConfirmationOutcomePayload {
   /** Why the outcome changed; also the rejection reason when correcting to rejected. */
   reason: string;
   notes?: string;
+  /**
+   * Correcting to rejected cancels the order's courier booking; for a courier
+   * without a cancel API the merchant confirms they cancelled it there.
+   */
+  acknowledgeManualCancel?: boolean;
 }
 
 // ---------------------------------------------------------------------
@@ -2263,7 +2318,10 @@ export type RiskFlag =
   | "paid_after_expiry"
   | "paid_after_cancel"
   | "paid_after_cod_switch"
-  | "payment_amount_mismatch";
+  | "payment_amount_mismatch"
+  // couriers (shipping/carrierShipmentService.js): a booking the merchant
+  // said they cancelled in the courier's dashboard still shows as moving there
+  | "carrier_cancel_unconfirmed";
 
 /** One row of GET /fraud/flagged-orders — a slim projection, not a full Order. */
 export interface FlaggedOrder {
@@ -2407,13 +2465,56 @@ export interface CarrierConnection {
   webhookUrl: string;
 }
 
+/**
+ * How the courier's status webhook is set up: sent with every booking
+ * ("per_shipment", nothing to paste), pasted once into the courier's
+ * dashboard ("account"), or not offered ("none").
+ */
+export type CarrierWebhookSetup = "per_shipment" | "account" | "none";
+
+/**
+ * What a courier adapter can do (Backend carriers/adapterContract.js). The
+ * backend fills in defaults, so every field is present on GET /carriers —
+ * except `bulkStatus`, which the adapter declares but the list does not
+ * send (it only affects the server's status job).
+ */
+export interface CarrierCapabilities {
+  /** "api": cancelled through the courier. "manual": the merchant cancels it in the courier's dashboard. */
+  cancel: "api" | "manual";
+  /** Printable AWB via GET .../shipments/:id/label. */
+  label: boolean;
+  webhook: CarrierWebhookSetup;
+  /** The server's status job reads open shipments on a schedule. */
+  polling: boolean;
+  bulkStatus?: boolean;
+  /**
+   * The courier's address levels, top first (1–3 of them). Exactly
+   * ["city", "district"] keeps the city/district API; anything else is a
+   * tree picked level by level and booked with `carrierAddress.path`.
+   */
+  addressLevels: string[];
+}
+
+/**
+ * The two-level city/district model the original carrier API is built on
+ * (Backend adapterContract.isCityDistrict). Such a courier keeps the
+ * `{ cityId, districtId }` payload and the city/district unmatched body.
+ */
+export function isCityDistrictLevels(levels: readonly string[] | undefined): boolean {
+  // A server older than the generic layer sends no levels: that was Bosta's model.
+  if (!levels) return true;
+  return levels.length === 2 && levels[0] === "city" && levels[1] === "district";
+}
+
 export interface CarrierInfo {
   code: string;
   name: string;
-  webhookSetup: "per_shipment" | "account";
+  webhookSetup: CarrierWebhookSetup;
   supportsLabel: boolean;
   credentialFields: CarrierFieldDescriptor[];
   settingFields: CarrierFieldDescriptor[];
+  /** Absent only on a server older than the generic carrier layer. */
+  capabilities?: CarrierCapabilities;
   /** null when this workspace hasn't connected it. */
   connection: CarrierConnection | null;
 }
@@ -2471,7 +2572,8 @@ export interface CarrierPickupLocation {
 
 export interface ConnectCarrierResult {
   carrier: CarrierInfo;
-  webhook: { url: string; setup: "per_shipment" | "account"; manualSetupRequired: boolean };
+  /** `manualSetupRequired`: paste `url` into the courier's dashboard (setup "account"). */
+  webhook: { url: string; setup: CarrierWebhookSetup; manualSetupRequired: boolean };
   /** Bosta: the account's pickup locations — only obtainable from this call. */
   verification: { pickupLocations?: CarrierPickupLocation[] } & Record<string, unknown>;
 }
@@ -2494,7 +2596,38 @@ export interface CarrierCity {
   districts: CarrierDistrict[];
 }
 
-/** One option in `details.candidates` of a 422 CARRIER_ADDRESS_UNMATCHED. */
+/**
+ * One node of a courier's address tree (couriers whose levels are not
+ * city/district). Depth = `addressLevels.length`; leaves are bookable.
+ */
+export interface CarrierAreaNode {
+  id: string;
+  name: string | null;
+  nameAr: string | null;
+  /** false: the courier doesn't deliver there. Absent means it does. */
+  dropOffAvailable?: boolean;
+  aliases?: string[];
+  meta?: Record<string, unknown>;
+  children?: CarrierAreaNode[];
+}
+
+/**
+ * GET /carriers/:code/cities for a courier whose levels are not
+ * city/district: the whole tree, each node with its `children`.
+ */
+export interface CarrierAddressTree {
+  levels: string[];
+  nodes: CarrierAreaNode[];
+}
+
+/** A node as the address errors name it. */
+export interface CarrierPlaceRef {
+  id: string;
+  name: string | null;
+  nameAr: string | null;
+}
+
+/** One option in `details.candidates` of a 422 CARRIER_ADDRESS_UNMATCHED (city/district couriers). */
 export interface CarrierAddressCandidate {
   cityId: string;
   cityName: string | null;
@@ -2509,14 +2642,83 @@ export interface CarrierAddressCandidate {
   suggested: boolean;
 }
 
-/** `details` of 422 CARRIER_ADDRESS_UNMATCHED. */
+/**
+ * `details` of 422 CARRIER_ADDRESS_UNMATCHED from a city/district courier
+ * (Bosta) — the original body, unchanged.
+ */
 export interface CarrierAddressUnmatchedDetails {
   carrierCode: string;
   level: "city" | "district";
   orderAddress: { province: string | null; city: string | null };
   /** Set at level "district": the city that did match. */
-  matchedCity: { id: string; name: string | null; nameAr: string | null } | null;
+  matchedCity: CarrierPlaceRef | null;
   candidates: CarrierAddressCandidate[];
+}
+
+/** One option in `details.candidates` of a 422 CARRIER_ADDRESS_UNMATCHED (level-tree couriers). */
+export interface CarrierAreaCandidate extends CarrierPlaceRef {
+  /** Root first, ending with this node. */
+  path: CarrierPlaceRef[];
+  /** No levels below it. */
+  leaf: boolean;
+  /** Sorted first; the matcher's best guesses. */
+  suggested: boolean;
+}
+
+/**
+ * `details` of 422 CARRIER_ADDRESS_UNMATCHED from a courier whose levels
+ * are not city/district. The candidates are nodes of level `levelIndex`;
+ * `matchedPath` is what already matched above it. Resend with
+ * `carrierAddress.path`, one id per level.
+ */
+export interface CarrierAreaUnmatchedDetails {
+  carrierCode: string;
+  level: string;
+  levelIndex: number;
+  levels: string[];
+  orderAddress: { province: string | null; city: string | null };
+  /** The top-level node that matched, or null. */
+  matchedCity: CarrierPlaceRef | null;
+  matchedPath: CarrierPlaceRef[];
+  candidates: CarrierAreaCandidate[];
+}
+
+/** Either body of a 422 CARRIER_ADDRESS_UNMATCHED; `levels` tells them apart. */
+export type AnyCarrierAddressUnmatchedDetails = CarrierAddressUnmatchedDetails | CarrierAreaUnmatchedDetails;
+
+export function isAreaUnmatchedDetails(
+  details: AnyCarrierAddressUnmatchedDetails
+): details is CarrierAreaUnmatchedDetails {
+  return Array.isArray((details as CarrierAreaUnmatchedDetails).levels);
+}
+
+/** One shipment in `details.shipments` of a 409 CARRIER_MANUAL_CANCEL_REQUIRED. */
+export interface ManualCancelShipment {
+  shipmentId: string;
+  carrierCode: string;
+  carrierName: string;
+  waybillNumber: string | null;
+}
+
+/**
+ * `details` of 409 CARRIER_MANUAL_CANCEL_REQUIRED (order cancel, correction
+ * to rejected, PATCH shipment to cancelled). Nothing was changed; repeat the
+ * same request with `acknowledgeManualCancel: true` once the merchant has
+ * cancelled these in the courier's dashboard.
+ */
+export interface ManualCancelRequiredDetails {
+  shipments: ManualCancelShipment[];
+}
+
+/**
+ * `details` of 502 CARRIER_BOOKING_NOT_SAVED: the courier created the
+ * booking but we could not record it, and the courier has no cancel API —
+ * the merchant must cancel `trackingNumber` in the courier's dashboard.
+ */
+export interface CarrierBookingNotSavedDetails {
+  carrierCode: string;
+  trackingNumber: string;
+  manualCancelRequired: boolean;
 }
 
 /** `details` of 409 CARRIER_CANCEL_FAILED. */

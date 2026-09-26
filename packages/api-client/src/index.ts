@@ -13,6 +13,8 @@ export {
   MAX_WEIGHT_GRAMS,
   resolveCheckoutSettings,
   resolveFraudRules,
+  isCityDistrictLevels,
+  isAreaUnmatchedDetails,
 } from "./types";
 export { formatMoney, formatMoneyRange, parseMoney } from "./money";
 export {
@@ -22,6 +24,7 @@ export {
   apiFieldProblems,
   isApiErrorCode,
   isInvalidCursorError,
+  manualCancelShipments,
   productInFunnelIds,
 } from "./errors";
 export type { ApiErrorCode, ApiFieldProblem, ConfirmationLockDetails } from "./errors";

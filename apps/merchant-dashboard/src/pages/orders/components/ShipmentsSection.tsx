@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent, type ReactNode } from "react";
+import { useId, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Alert, Button, Input, cn } from "@store-builder/ui";
 import {
@@ -6,7 +6,10 @@ import {
   apiErrorDetails,
   apiFieldProblems,
   isApiErrorCode,
-  type CarrierAddressUnmatchedDetails,
+  isAreaUnmatchedDetails,
+  type AnyCarrierAddressUnmatchedDetails,
+  type CarrierAddressInput,
+  type CarrierBookingNotSavedDetails,
   type CarrierInfo,
   type Order,
   type Shipment,
@@ -17,25 +20,32 @@ import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
 import { useErrorMessage } from "@/lib/errorMessages";
 import { formatDateTime, formatMoney } from "@/lib/format";
+import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { fmt, useCommon, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
+import { fmt, useCommon, useT, type Messages } from "@/i18n/LocaleContext";
 import { useToast } from "@/components/Toast";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Field } from "@/components/Field";
 import { Select } from "@/components/Select";
 import {
-  BOSTA,
-  BOSTA_MAX_COD_MINOR,
+  COURIER_BOOKING_LIMITS,
   FINISHED_SHIPMENT_STATUSES,
   SHIPPING_ROLES,
+  TEAM_ROLES,
+  TERMINAL_SHIPMENT_STATUSES,
+  cancelsManually,
+  carrierLevels,
   codAmountFor,
   isCarrierBooked,
-  isReservedCourierName,
-  placeName,
+  isPathComplete,
+  reservedCourierFor,
+  usesCityDistrict,
 } from "@/pages/shipping/carriers";
+import { useManualCancelPrompt } from "@/pages/shipping/useManualCancelPrompt";
 import { useOrderLabels } from "../orderLabels";
 import { BookingWeightField } from "./BookingWeightField";
+import { CityDistrictPicker, LevelAddressPicker, type PickerSource } from "./CarrierAddressPicker";
 
 const STATUSES: ShipmentStatus[] = [
   "created",
@@ -48,6 +58,9 @@ const STATUSES: ShipmentStatus[] = [
   "cancelled",
 ];
 
+/** The order flag set when a manually cancelled booking still moves at the courier. */
+const FLAG_CANCEL_UNCONFIRMED = "carrier_cancel_unconfirmed";
+
 const STRINGS = {
   en: {
     title: "Shipments",
@@ -59,6 +72,7 @@ const STRINGS = {
     shipped: "Shipped {date}",
     delivered: "Delivered {date}",
     courierState: "{carrier} status: {state}",
+    lastChecked: "Last checked with {carrier} {date}",
     setStatus: "Status",
     statusUpdated: "Shipment marked “{status}”.",
     sync: "Sync status",
@@ -71,12 +85,23 @@ const STRINGS = {
       "Failed isn't final: the courier may try the delivery again. If it's really over, mark it cancelled so you can book a new shipment.",
     carrierCreatedNote:
       "To call off this delivery, cancel the order: {carrier} is cancelled first. If you cancel it in {carrier}'s dashboard instead, press Sync. It will show as Failed, and you can mark it cancelled here.",
+    manualCarrierCreatedNote:
+      "{carrier} can't cancel deliveries from here. To call this one off, cancel it in your {carrier} dashboard, then press Cancel shipment (or cancel the order) and confirm.",
     markCancelled: "Mark as cancelled",
     markCancelledTitle: "Mark this {carrier} delivery cancelled?",
     markCancelledBody:
       "This only changes it here. {carrier} is not contacted. Check in {carrier}'s dashboard that the parcel isn't still on its way, or a new booking could put two parcels on the road.",
     markCancelledConfirm: "Mark cancelled",
+    cancelShipment: "Cancel shipment",
+    cancellingShipment: "Cancelling…",
     cancelledToast: "Shipment marked cancelled. You can book a new one.",
+    manualAck: "Cancelled in {carrier}'s dashboard. Confirmed by {who}, {date}.",
+    ackYou: "you",
+    ackTeammate: "a team member",
+    unconfirmedTitle: "{carrier} still shows a cancelled delivery as moving",
+    unconfirmedBody:
+      "You cancelled {numbers} in {carrier}'s dashboard, but {carrier} still reports the parcel as picked up, on its way or delivered. Open your {carrier} dashboard and check it: if the parcel is still moving, cancel it there again or contact {carrier}.",
+    theCourier: "The courier",
     orderCancelled: "This order is cancelled, so it can't be shipped.",
     activeBlocks:
       "This order already has an active shipment ({status}). You can book a new one once it's cancelled or returned.",
@@ -87,8 +112,14 @@ const STRINGS = {
     methodManual: "Manual",
     methodManualHint: "You book it yourself and type the tracking number in.",
     methodCourierHint: "Booked in your {carrier} account, with label and status updates.",
+    methodCourierHintNoLabel: "Booked in your {carrier} account, with status updates.",
+    methodNotConnectedHint: "Not connected. Connect it under Shipping to book from here.",
+    courierGeneric: "Courier",
+    courierGenericHint: "Booked through a connected courier account.",
+    chooseMethod: "Choose how this order is shipped.",
     courierNotConnected: "Connect {carrier} under Shipping to book from here.",
     courierUnavailable: "Courier booking isn't available on your store yet.",
+    or: " or ",
     goToShipping: "Open Shipping settings",
     carrierName: "Courier name",
     carrierNamePlaceholder: "e.g. Aramex",
@@ -105,7 +136,7 @@ const STRINGS = {
     noCod: "Nothing to collect: this order is prepaid.",
     codOverLimit:
       "{carrier} collects at most {limit} cash on delivery, and this order's amount is {amount}. It can't be booked with {carrier}; ship it manually instead.",
-    currencyBlocked: "{carrier} only collects cash in EGP, and this order is in {currency}.",
+    currencyBlocked: "{carrier} only collects cash in {limitCurrency}, and this order is in {currency}.",
     notConfirmed: "Confirm this cash-on-delivery order before booking a courier.",
     notConfirmedManual: "Confirm this cash-on-delivery order before shipping it.",
     notPaidManual: "This prepaid order must be paid before shipping it.",
@@ -113,19 +144,8 @@ const STRINGS = {
     noAddress: "This order has no shipping address.",
     deliverTo: "Deliver to",
     chooseAddress: "Choose city and district myself",
+    chooseArea: "Choose the delivery area myself",
     useOrderAddress: "Match the order's address automatically",
-    unmatchedCity: "{carrier} doesn't have a city matching “{value}”. Choose the city, then the district.",
-    unmatchedDistrict: "Matched {city}, but not the area “{value}”. Choose the district.",
-    city: "City / governorate",
-    district: "District / area",
-    chooseCity: "Choose a city",
-    chooseDistrict: "Choose a district",
-    chooseCityFirst: "Choose a city first",
-    loadingPlaces: "Loading…",
-    suggested: "Best matches",
-    allDistricts: "All districts",
-    allCities: "All cities",
-    placesFailed: "Couldn't load {carrier}'s list.",
     notes: "Note for the courier",
     notesHint: "Optional, up to 500 characters.",
     book: "Book with {carrier}",
@@ -134,6 +154,9 @@ const STRINGS = {
     uncertainHint: "Reload this page to book again, after you've checked.",
     timeoutNote:
       "If an earlier booking attempt timed out, check your {carrier} dashboard first: the delivery may already exist there.",
+    notSavedTitle: "Cancel {number} in your {carrier} dashboard",
+    notSaved:
+      "{carrier} created delivery {number}, but it couldn't be saved here, and {carrier} can't cancel it from here. Cancel it in your {carrier} dashboard first, then book this order again.",
   },
   ar: {
     title: "الشحنات",
@@ -145,6 +168,7 @@ const STRINGS = {
     shipped: "تم الشحن {date}",
     delivered: "تم التسليم {date}",
     courierState: "حالة {carrier}: {state}",
+    lastChecked: "آخر مراجعة مع {carrier} {date}",
     setStatus: "الحالة",
     statusUpdated: "تم تغيير حالة الشحنة إلى «{status}».",
     sync: "مزامنة الحالة",
@@ -157,12 +181,23 @@ const STRINGS = {
       "الفشل ليس نهائيًا: قد تعيد شركة الشحن محاولة التوصيل. إذا انتهت الشحنة فعلًا، علّمها كملغاة لتتمكن من حجز شحنة جديدة.",
     carrierCreatedNote:
       "لإلغاء هذه الشحنة، ألغِ الأوردر: سيتم إلغاؤها لدى {carrier} أولًا. وإذا ألغيتها من لوحة تحكم {carrier} بدلًا من ذلك، اضغط مزامنة. ستظهر كفاشلة، ويمكنك بعدها تعليمها كملغاة هنا.",
+    manualCarrierCreatedNote:
+      "لا يمكن إلغاء شحنات {carrier} من هنا. لإلغاء هذه الشحنة، ألغِها من لوحة تحكم {carrier}، ثم اضغط إلغاء الشحنة (أو ألغِ الأوردر) وأكّد ذلك.",
     markCancelled: "تعليم كملغاة",
     markCancelledTitle: "تعليم شحنة {carrier} هذه كملغاة؟",
     markCancelledBody:
       "هذا يغيّرها هنا فقط، ولن يتم التواصل مع {carrier}. تأكد من لوحة تحكم {carrier} أن الطرد لم يعد في الطريق، وإلا فقد يؤدي الحجز الجديد إلى طردين في الطريق.",
     markCancelledConfirm: "تعليم كملغاة",
+    cancelShipment: "إلغاء الشحنة",
+    cancellingShipment: "جارٍ الإلغاء…",
     cancelledToast: "تم تعليم الشحنة كملغاة. يمكنك حجز شحنة جديدة.",
+    manualAck: "أُلغيت من لوحة تحكم {carrier}. أكّد ذلك {who}، {date}.",
+    ackYou: "أنت",
+    ackTeammate: "أحد أعضاء الفريق",
+    unconfirmedTitle: "{carrier} ما زالت تُظهر شحنة ملغاة كأنها تتحرك",
+    unconfirmedBody:
+      "ألغيت {numbers} من لوحة تحكم {carrier}، لكن {carrier} ما زالت تُظهر الطرد كمُستلَم أو في الطريق أو تم تسليمه. افتح لوحة تحكم {carrier} وراجعه: إذا كان الطرد ما زال يتحرك، ألغِه هناك مرة أخرى أو تواصل مع {carrier}.",
+    theCourier: "شركة الشحن",
     orderCancelled: "هذا الأوردر ملغي، لذلك لا يمكن شحنه.",
     activeBlocks: "لهذا الأوردر شحنة نشطة بالفعل ({status}). يمكنك حجز شحنة جديدة بعد إلغائها أو إرجاعها.",
     viewOnly: "يمكن لمالك المتجر أو مدير مساحة العمل أو مسؤول الأوردرات فقط إدارة الشحنات.",
@@ -172,8 +207,14 @@ const STRINGS = {
     methodManual: "يدوي",
     methodManualHint: "تحجزها بنفسك وتكتب رقم التتبع.",
     methodCourierHint: "تُحجز في حسابك على {carrier}، مع البوليصة وتحديثات الحالة.",
+    methodCourierHintNoLabel: "تُحجز في حسابك على {carrier}، مع تحديثات الحالة.",
+    methodNotConnectedHint: "غير مربوطة. اربطها من صفحة الشحن لتحجز من هنا.",
+    courierGeneric: "شركة شحن",
+    courierGenericHint: "تُحجز عبر حساب شركة شحن مربوط.",
+    chooseMethod: "اختر طريقة شحن هذا الأوردر.",
     courierNotConnected: "اربط {carrier} من صفحة الشحن لتحجز من هنا.",
     courierUnavailable: "الحجز مع شركات الشحن غير متاح لمتجرك بعد.",
+    or: " أو ",
     goToShipping: "فتح إعدادات الشحن",
     carrierName: "اسم شركة الشحن",
     carrierNamePlaceholder: "مثلًا: أرامكس",
@@ -190,6 +231,7 @@ const STRINGS = {
     noCod: "لا يوجد مبلغ للتحصيل: هذا الأوردر مدفوع مسبقًا.",
     codOverLimit:
       "أقصى مبلغ تحصّله {carrier} عند الاستلام هو {limit}، ومبلغ هذا الأوردر {amount}. لا يمكن حجزه مع {carrier}؛ اشحنه يدويًا.",
+    // Only Bosta declares a currency limit today (EGP), so this names it.
     currencyBlocked: "{carrier} تحصّل بالجنيه المصري فقط، وهذا الأوردر بعملة {currency}.",
     notConfirmed: "أكّد أوردر الدفع عند الاستلام قبل حجز شركة الشحن.",
     notConfirmedManual: "أكّد أوردر الدفع عند الاستلام قبل شحنه.",
@@ -198,19 +240,8 @@ const STRINGS = {
     noAddress: "لا يوجد عنوان شحن لهذا الأوردر.",
     deliverTo: "التوصيل إلى",
     chooseAddress: "اختيار المدينة والمنطقة بنفسي",
+    chooseArea: "اختيار منطقة التوصيل بنفسي",
     useOrderAddress: "مطابقة عنوان الأوردر تلقائيًا",
-    unmatchedCity: "لا توجد لدى {carrier} مدينة تطابق «{value}». اختر المدينة ثم المنطقة.",
-    unmatchedDistrict: "تمت مطابقة {city}، لكن ليس المنطقة «{value}». اختر المنطقة.",
-    city: "المدينة / المحافظة",
-    district: "المنطقة / الحي",
-    chooseCity: "اختر مدينة",
-    chooseDistrict: "اختر منطقة",
-    chooseCityFirst: "اختر مدينة أولًا",
-    loadingPlaces: "جارٍ التحميل…",
-    suggested: "الأقرب للعنوان",
-    allDistricts: "كل المناطق",
-    allCities: "كل المدن",
-    placesFailed: "تعذّر تحميل قائمة {carrier}.",
     notes: "ملاحظة للمندوب",
     notesHint: "اختياري، حتى 500 حرف.",
     book: "احجز مع {carrier}",
@@ -218,6 +249,9 @@ const STRINGS = {
     bookedToast: "تم الحجز مع {carrier}. رقم التتبع {number}.",
     uncertainHint: "بعد أن تتأكد، أعد تحميل الصفحة لتحجز مرة أخرى.",
     timeoutNote: "إذا انتهت مهلة محاولة حجز سابقة، راجع لوحة تحكم {carrier} أولًا: قد تكون الشحنة موجودة هناك بالفعل.",
+    notSavedTitle: "ألغِ {number} من لوحة تحكم {carrier}",
+    notSaved:
+      "أنشأت {carrier} الشحنة {number}، لكن تعذّر حفظها هنا، ولا يمكن إلغاؤها لدى {carrier} من هنا. ألغِها من لوحة تحكم {carrier} أولًا، ثم احجز هذا الأوردر مرة أخرى.",
   },
 } satisfies Messages;
 
@@ -235,22 +269,42 @@ export function ShipmentsSection({ order, onChanged }: Props) {
   const workspaceId = useWorkspaceId();
   const toast = useToast();
   const errorMessage = useErrorMessage();
+  const { user } = useAuth();
   const { currentWorkspace } = useWorkspace();
-  const roleAllows = SHIPPING_ROLES.has(currentWorkspace?.role ?? "");
+  const role = currentWorkspace?.role ?? "";
+  const roleAllows = SHIPPING_ROLES.has(role);
   const [forbidden, setForbidden] = useState(false);
   const canManage = roleAllows && !forbidden;
 
-  // Which couriers this store connected. Needed only to book or label; a
-  // failure here just leaves the manual option.
+  // The couriers this store may use, connected or not. Needed to book,
+  // label and name them; a failure here just leaves the manual option.
   const carriers = useAsync(
     () => (roleAllows ? apiClient.listCarriers(workspaceId) : Promise.resolve(null)),
     [workspaceId, roleAllows]
   );
   const carrierList = carriers.data?.configured ? carriers.data.carriers : [];
-  const carrierByCode = new Map(carrierList.map((c) => [c.code, c]));
+  const carrierByCode = new Map<string, CarrierInfo>(carrierList.map((c) => [c.code, c]));
 
   const shipments = order.shipments ?? [];
   const active = shipments.find((s) => !FINISHED_SHIPMENT_STATUSES.has(s.status));
+
+  // Who acknowledged a manual cancel: only a user id is stored. Names come
+  // from the team list, which needs users.manage; anyone else sees "a team
+  // member" for colleagues.
+  const needNames =
+    TEAM_ROLES.has(role) && shipments.some((s) => s.cancelAcknowledgedBy && s.cancelAcknowledgedBy !== user?.id);
+  const members = useAsync(
+    () => (needNames ? apiClient.listWorkspaceMembers(workspaceId).catch(() => null) : Promise.resolve(null)),
+    [workspaceId, needNames]
+  );
+  function acknowledgedBy(userId: string | null | undefined): string {
+    if (userId && userId === user?.id) return t.ackYou;
+    const member = userId ? members.data?.find((m) => m.user?.id === userId) : undefined;
+    return member?.user?.fullName || t.ackTeammate;
+  }
+
+  const unconfirmed = (order.riskFlags ?? []).includes(FLAG_CANCEL_UNCONFIRMED);
+  const acknowledgedCancels = shipments.filter((s) => s.cancelMode === "manual_ack");
 
   /** A 403 turns the section read-only, with the reason as a toast. */
   function handleForbidden(err: unknown): boolean {
@@ -266,6 +320,10 @@ export function ShipmentsSection({ order, onChanged }: Props) {
     <section className="rounded-[var(--radius-card)] border border-line p-5">
       <h2 className="mb-3 font-display text-lg font-medium text-ink">{t.title}</h2>
 
+      {unconfirmed && (
+        <UnconfirmedCancelAlert shipments={acknowledgedCancels} carrierByCode={carrierByCode} />
+      )}
+
       {shipments.length === 0 ? (
         <p className="rounded-[0.5rem] border border-dashed border-line px-4 py-6 text-center text-sm text-ink-soft">
           {t.empty}
@@ -279,6 +337,7 @@ export function ShipmentsSection({ order, onChanged }: Props) {
               shipment={s}
               carrier={carrierByCode.get(s.carrierCode)}
               canManage={canManage}
+              acknowledgedBy={acknowledgedBy}
               onForbidden={handleForbidden}
               onChanged={onChanged}
             />
@@ -301,7 +360,7 @@ export function ShipmentsSection({ order, onChanged }: Props) {
           <CreateShipmentForm
             order={order}
             carriersConfigured={Boolean(carriers.data?.configured)}
-            courier={carrierByCode.get(BOSTA)}
+            carriers={carrierList}
             onForbidden={handleForbidden}
             onCourierStale={() => carriers.refresh({ silent: true })}
             onCreated={onChanged}
@@ -309,6 +368,29 @@ export function ShipmentsSection({ order, onChanged }: Props) {
         )}
       </div>
     </section>
+  );
+}
+
+/**
+ * The order's carrier_cancel_unconfirmed flag, explained: a booking the
+ * merchant said they cancelled in the courier's dashboard still moves there.
+ */
+function UnconfirmedCancelAlert({
+  shipments,
+  carrierByCode,
+}: {
+  shipments: Shipment[];
+  carrierByCode: Map<string, CarrierInfo>;
+}) {
+  const t = useT(STRINGS);
+  const names = [...new Set(shipments.map((s) => carrierByCode.get(s.carrierCode)?.name ?? s.carrierCode))];
+  const carrier = names.length > 0 ? names.join(t.or) : t.theCourier;
+  const numbers = shipments.map((s) => isolate(s.waybillNumber ?? s.trackingCode)).join(", ") || "—";
+  return (
+    <Alert variant="danger" className="mb-3">
+      <p className="font-medium">{fmt(t.unconfirmedTitle, { carrier })}</p>
+      <p className="mt-1">{fmt(t.unconfirmedBody, { carrier, numbers })}</p>
+    </Alert>
   );
 }
 
@@ -321,6 +403,7 @@ function ShipmentRow({
   shipment,
   carrier,
   canManage,
+  acknowledgedBy,
   onForbidden,
   onChanged,
 }: {
@@ -328,6 +411,7 @@ function ShipmentRow({
   shipment: Shipment;
   carrier: CarrierInfo | undefined;
   canManage: boolean;
+  acknowledgedBy: (userId: string | null | undefined) => string;
   onForbidden: (err: unknown) => boolean;
   onChanged: () => void;
 }) {
@@ -337,12 +421,16 @@ function ShipmentRow({
   const workspaceId = useWorkspaceId();
   const toast = useToast();
   const errorMessage = useErrorMessage();
-  const [busy, setBusy] = useState<"status" | "sync" | "label" | null>(null);
+  const manualCancelPrompt = useManualCancelPrompt();
+  const [busy, setBusy] = useState<"status" | "sync" | "label" | "cancel" | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
 
   const booked = isCarrierBooked(shipment);
   const carrierName = shipment.carrierCode === "manual" ? t.manual : (carrier?.name ?? shipment.carrierCode);
   const courierState = shipment.carrierResponse?.lastCarrierStatus?.value;
+  // The courier has no cancel API: cancelling needs the merchant's word
+  // that it was done in the courier's dashboard (the 409 dialog).
+  const cancelByHand = booked && cancelsManually(carrier);
 
   function fail(err: unknown) {
     if (!onForbidden(err)) toast.error(errorMessage(err));
@@ -416,6 +504,39 @@ function ShipmentRow({
     onChanged();
   }
 
+  /**
+   * A courier without a cancel API: ask as-is first (the server decides
+   * whether an acknowledgement is needed), then repeat with it once the
+   * merchant confirms in the dialog.
+   */
+  async function cancelAtCourierDashboard() {
+    const cancelled = () => {
+      toast.success(t.cancelledToast);
+      onChanged();
+    };
+    setBusy("cancel");
+    try {
+      await apiClient.updateShipment(workspaceId, orderId, shipment.id, { status: "cancelled" });
+      cancelled();
+    } catch (err) {
+      const offered = manualCancelPrompt.offer(err, async () => {
+        try {
+          await apiClient.updateShipment(workspaceId, orderId, shipment.id, {
+            status: "cancelled",
+            acknowledgeManualCancel: true,
+          });
+        } catch (retryErr) {
+          if (onForbidden(retryErr)) return;
+          throw new Error(errorMessage(retryErr));
+        }
+        cancelled();
+      });
+      if (!offered) fail(err);
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <li className="rounded-[0.5rem] border border-line px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -445,7 +566,20 @@ function ShipmentRow({
             <bdi dir="ltr">{courierState}</bdi>
           </span>
         )}
+        {booked && shipment.lastPolledAt && (
+          <span>{fmt(t.lastChecked, { carrier: carrierName, date: formatDateTime(shipment.lastPolledAt) })}</span>
+        )}
       </div>
+
+      {shipment.cancelMode === "manual_ack" && (
+        <p className="mt-2 text-xs text-ink-soft">
+          {fmt(t.manualAck, {
+            carrier: carrierName,
+            who: acknowledgedBy(shipment.cancelAcknowledgedBy),
+            date: shipment.cancelAcknowledgedAt ? formatDateTime(shipment.cancelAcknowledgedAt) : "—",
+          })}
+        </p>
+      )}
 
       {shipment.status === "failed" && (
         <p className="mt-2 rounded-[0.5rem] border border-accent/40 bg-accent-soft px-3 py-2 text-xs text-accent-dark">
@@ -453,7 +587,9 @@ function ShipmentRow({
         </p>
       )}
       {booked && shipment.status === "created" && canManage && (
-        <p className="mt-2 text-xs text-ink-soft">{fmt(t.carrierCreatedNote, { carrier: carrierName })}</p>
+        <p className="mt-2 text-xs text-ink-soft">
+          {fmt(cancelByHand ? t.manualCarrierCreatedNote : t.carrierCreatedNote, { carrier: carrierName })}
+        </p>
       )}
 
       <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -478,16 +614,27 @@ function ShipmentRow({
                 {busy === "label" ? t.labelLoading : t.label}
               </Button>
             )}
-            {shipment.status === "failed" && (
-              <Button
-                variant="ghost"
-                className="min-h-11 text-danger hover:bg-danger-soft"
-                disabled={busy !== null}
-                onClick={() => setConfirmCancel(true)}
-              >
-                {t.markCancelled}
-              </Button>
-            )}
+            {cancelByHand
+              ? !TERMINAL_SHIPMENT_STATUSES.has(shipment.status) && (
+                  <Button
+                    variant="ghost"
+                    className="min-h-11 text-danger hover:bg-danger-soft"
+                    disabled={busy !== null}
+                    onClick={cancelAtCourierDashboard}
+                  >
+                    {busy === "cancel" ? t.cancellingShipment : t.cancelShipment}
+                  </Button>
+                )
+              : shipment.status === "failed" && (
+                  <Button
+                    variant="ghost"
+                    className="min-h-11 text-danger hover:bg-danger-soft"
+                    disabled={busy !== null}
+                    onClick={() => setConfirmCancel(true)}
+                  >
+                    {t.markCancelled}
+                  </Button>
+                )}
           </>
         )}
 
@@ -513,6 +660,7 @@ function ShipmentRow({
         onCancel={() => setConfirmCancel(false)}
         onConfirm={markCancelled}
       />
+      {manualCancelPrompt.dialog}
     </li>
   );
 }
@@ -557,31 +705,22 @@ function ManualStatusSelect({
 // New shipment
 // ---------------------------------------------------------------------
 
-type Method = "manual" | "courier";
-
-interface PlaceOption {
-  id: string;
-  name: string | null;
-  nameAr: string | null;
-  suggested?: boolean;
-}
-
-/** What the address picker is working from. */
-type PickerSource =
-  | { kind: "free" }
-  | { kind: "unmatched"; details: CarrierAddressUnmatchedDetails };
+/** "manual", or the code of the courier to book with. */
+type Method = string;
+const MANUAL: Method = "manual";
 
 function CreateShipmentForm({
   order,
   carriersConfigured,
-  courier,
+  carriers,
   onForbidden,
   onCourierStale,
   onCreated,
 }: {
   order: Order;
   carriersConfigured: boolean;
-  courier: CarrierInfo | undefined;
+  /** Every courier the server offers this store, connected or not. */
+  carriers: CarrierInfo[];
   onForbidden: (err: unknown) => boolean;
   onCourierStale: () => void;
   onCreated: () => void;
@@ -591,12 +730,18 @@ function CreateShipmentForm({
   const toast = useToast();
   const errorMessage = useErrorMessage();
 
-  const courierName = courier?.name ?? "Bosta";
-  const courierConnected = Boolean(courier?.connection);
+  const connected = carriers.filter((c) => c.connection);
   // Until the merchant picks, the default follows the carriers list, which
-  // arrives after the first render: the courier once it's known connected.
+  // arrives after the first render: the one connected courier once it's
+  // known (booking stays one step), manual when there is none, and no
+  // default when there are several to choose from.
   const [pickedMethod, setPickedMethod] = useState<Method | null>(null);
-  const method: Method = pickedMethod ?? (courierConnected ? "courier" : "manual");
+  const picked = pickedMethod === MANUAL || connected.some((c) => c.code === pickedMethod) ? pickedMethod : null;
+  const method: Method | null =
+    picked ?? (connected.length === 1 ? connected[0].code : connected.length === 0 ? MANUAL : null);
+  const courier = method && method !== MANUAL ? connected.find((c) => c.code === method) : undefined;
+  const courierName = courier?.name ?? t.courierGeneric;
+  const cityDistrict = courier ? usesCityDistrict(courier) : true;
 
   // Manual
   const [carrierName, setCarrierName] = useState("");
@@ -608,28 +753,38 @@ function CreateShipmentForm({
   const [picker, setPicker] = useState<PickerSource | null>(null);
   const [cityId, setCityId] = useState("");
   const [districtId, setDistrictId] = useState("");
+  // Any other courier: one id per address level, top first.
+  const [areaPath, setAreaPath] = useState<string[]>([]);
   // "" books with the order's own weight tier.
   const [tierId, setTierId] = useState("");
   const [tierUnmapped, setTierUnmapped] = useState(false);
   // A create that got no answer may still exist at the courier. No retry
   // from this screen until the merchant has checked and reloaded.
   const [uncertain, setUncertain] = useState(false);
+  // The courier booked it but we couldn't record it (no cancel API).
+  const [notSaved, setNotSaved] = useState<{ carrier: string; number: string } | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const cod = codAmountFor(order);
+  const limits = courier ? COURIER_BOOKING_LIMITS[courier.code] : undefined;
+  const codCurrency = limits?.currency ?? order.currency;
   const blockers: string[] = [];
-  if (order.currency !== "EGP") blockers.push(fmt(t.currencyBlocked, { carrier: courierName, currency: order.currency }));
-  else if (cod > BOSTA_MAX_COD_MINOR)
+  if (limits && order.currency !== limits.currency) {
+    blockers.push(
+      fmt(t.currencyBlocked, { carrier: courierName, limitCurrency: limits.currency, currency: order.currency })
+    );
+  } else if (limits && cod > limits.maxCodMinor) {
     blockers.push(
       fmt(t.codOverLimit, {
         carrier: courierName,
-        limit: formatMoney(BOSTA_MAX_COD_MINOR, "EGP"),
-        amount: formatMoney(cod, "EGP"),
+        limit: formatMoney(limits.maxCodMinor, limits.currency),
+        amount: formatMoney(cod, limits.currency),
       })
     );
+  }
   if (order.paymentMethod === "cod" && order.confirmationState !== "confirmed") blockers.push(t.notConfirmed);
   if (order.paymentMethod !== "cod" && order.financialState !== "paid") blockers.push(t.notPaid);
   if (!order.shippingAddressSnapshot) blockers.push(t.noAddress);
@@ -640,22 +795,43 @@ function CreateShipmentForm({
   if (order.paymentMethod === "cod" && order.confirmationState !== "confirmed") manualBlockers.push(t.notConfirmedManual);
   if (order.paymentMethod !== "cod" && order.financialState !== "paid") manualBlockers.push(t.notPaidManual);
 
-  const pickerIncomplete = picker !== null && (!cityId || !districtId);
+  const levels = courier ? carrierLevels(courier) : [];
+  const pickerIncomplete =
+    picker !== null && (cityDistrict ? !cityId || !districtId : !isPathComplete(areaPath, levels));
+
+  function resetPicker() {
+    setPicker(null);
+    setCityId("");
+    setDistrictId("");
+    setAreaPath([]);
+  }
 
   function chooseMethod(next: Method) {
+    if (next !== method) {
+      // Another courier's address ids and tiers mean nothing to this one.
+      resetPicker();
+      setTierId("");
+      setTierUnmapped(false);
+    }
     setPickedMethod(next);
     setFormError(null);
     setFieldErrors({});
+  }
+
+  function reservedNameMessage(name: string, connectedNow: boolean) {
+    return fmt(connectedNow ? t.useCourierOption : t.connectCourierFirst, { carrier: name });
   }
 
   async function submitManual(e: FormEvent) {
     e.preventDefault();
     if (manualBlockers.length > 0) return;
     const name = carrierName.trim();
-    // The server refuses a courier's name (any spelling, en/ar) as a manual
-    // courier: it would pass for a booking that never happened.
-    if (isReservedCourierName(name)) {
-      setFieldErrors({ carrierCode: reservedNameMessage(courierConnected) });
+    // The server refuses a courier's name (any spelling) as a manual courier
+    // when the store connected it (Bosta: always): it would pass for a
+    // booking that never happened.
+    const reserved = reservedCourierFor(name, carriers);
+    if (reserved) {
+      setFieldErrors({ carrierCode: reservedNameMessage(reserved.name, reserved.connected) });
       return;
     }
     setSubmitting(true);
@@ -663,7 +839,7 @@ function CreateShipmentForm({
     setFieldErrors({});
     try {
       await apiClient.createShipment(workspaceId, order.id, {
-        carrierCode: name || "manual",
+        carrierCode: name || MANUAL,
         waybillNumber: waybillNumber.trim() || undefined,
         trackingUrl: trackingUrl.trim() || undefined,
       });
@@ -679,6 +855,12 @@ function CreateShipmentForm({
     }
   }
 
+  function chosenAddress(): CarrierAddressInput | undefined {
+    if (!picker) return undefined;
+    if (cityDistrict) return cityId && districtId ? { cityId, districtId } : undefined;
+    return isPathComplete(areaPath, levels) ? { path: areaPath } : undefined;
+  }
+
   async function submitCourier(e: FormEvent) {
     e.preventDefault();
     if (!courier || uncertain || blockers.length > 0 || pickerIncomplete) return;
@@ -688,7 +870,7 @@ function CreateShipmentForm({
     try {
       const shipment = await apiClient.createShipment(workspaceId, order.id, {
         carrierCode: courier.code,
-        carrierAddress: picker && cityId && districtId ? { cityId, districtId } : undefined,
+        carrierAddress: chosenAddress(),
         notes: notes.trim() || undefined,
         tierId: tierId || undefined,
       });
@@ -696,23 +878,33 @@ function CreateShipmentForm({
         fmt(t.bookedToast, { carrier: courierName, number: isolate(shipment.waybillNumber ?? shipment.trackingCode) })
       );
       setNotes("");
-      setPicker(null);
-      setCityId("");
-      setDistrictId("");
+      resetPicker();
       setTierId("");
       setTierUnmapped(false);
+      setNotSaved(null);
       onCreated();
     } catch (err) {
       setTierUnmapped(isApiErrorCode(err, "CARRIER_TIER_UNMAPPED"));
       if (isApiErrorCode(err, "CARRIER_ADDRESS_UNMATCHED")) {
-        const details = apiErrorDetails<CarrierAddressUnmatchedDetails>(err);
+        const details = apiErrorDetails<AnyCarrierAddressUnmatchedDetails>(err);
         if (details) {
+          if (isAreaUnmatchedDetails(details)) {
+            // Keep what matched; the merchant picks from the unmatched level down.
+            setPicker({ kind: "unmatchedArea", details });
+            setAreaPath(details.matchedPath.slice(0, details.levelIndex).map((node) => node.id));
+            return;
+          }
           setPicker({ kind: "unmatched", details });
           // At district level the city is settled; at city level start over.
           setCityId(details.level === "district" && details.matchedCity ? details.matchedCity.id : "");
           setDistrictId("");
           return;
         }
+      }
+      if (isApiErrorCode(err, "CARRIER_BOOKING_NOT_SAVED")) {
+        const details = apiErrorDetails<CarrierBookingNotSavedDetails>(err);
+        setNotSaved({ carrier: courierName, number: details?.trackingNumber ?? "—" });
+        return;
       }
       if (isApiErrorCode(err, "CARRIER_ERROR") && err.status === 502) {
         // Shown exactly as the server says it ("check your Bosta dashboard").
@@ -725,10 +917,6 @@ function CreateShipmentForm({
     }
   }
 
-  function reservedNameMessage(connected: boolean) {
-    return fmt(connected ? t.useCourierOption : t.connectCourierFirst, { carrier: courierName });
-  }
-
   function handleError(err: unknown) {
     if (onForbidden(err)) return;
     if (isApiErrorCode(err, "SHIPMENT_ALREADY_EXISTS")) {
@@ -739,11 +927,16 @@ function CreateShipmentForm({
       return;
     }
     if (isApiErrorCode(err, "CARRIER_NAME_RESERVED")) {
-      // details: [{ field: "carrierCode", connected, ... }]; the server's
-      // sentence is English-only, so use ours.
+      // details: [{ field: "carrierCode", carrierCode, connected }]; the
+      // server's sentence is English-only, so use ours.
       const details = apiErrorDetails<unknown>(err);
-      const connected = Array.isArray(details) ? (details[0] as { connected?: boolean } | undefined)?.connected : undefined;
-      setFieldErrors({ carrierCode: reservedNameMessage(connected ?? courierConnected) });
+      const first = Array.isArray(details)
+        ? (details[0] as { carrierCode?: string; connected?: boolean } | undefined)
+        : undefined;
+      const known = first?.carrierCode ? carriers.find((c) => c.code === first.carrierCode) : undefined;
+      const fallback = reservedCourierFor(carrierName.trim(), carriers);
+      const name = known?.name ?? fallback?.name ?? first?.carrierCode ?? carrierName.trim();
+      setFieldErrors({ carrierCode: reservedNameMessage(name, first?.connected ?? Boolean(known?.connection)) });
       return;
     }
     const problems = apiFieldProblems(err);
@@ -752,14 +945,29 @@ function CreateShipmentForm({
       for (const p of problems) fields[p.field] = p.message;
       setFieldErrors(fields);
       // Fields this form doesn't show still need saying somewhere.
-      const shown = ["carrierCode", "waybillNumber", "trackingUrl", "notes", "carrierAddress.cityId", "carrierAddress.districtId"];
-      if (!problems.some((p) => shown.includes(p.field))) setFormError(errorMessage(err));
+      const shown = ["carrierCode", "waybillNumber", "trackingUrl", "notes"];
+      const isShown = (field: string) => shown.includes(field) || (picker !== null && field.startsWith("carrierAddress."));
+      if (!problems.some((p) => isShown(p.field))) setFormError(errorMessage(err));
       return;
     }
     setFormError(errorMessage(err));
   }
 
   const address = order.shippingAddressSnapshot;
+
+  // One option per courier the store may use; connected ones are bookable.
+  const courierOptions =
+    carriers.length > 0
+      ? carriers.map((c) => ({
+          value: c.code,
+          label: c.name,
+          hint:
+            c.connection || connected.length === 0
+              ? fmt(c.supportsLabel === false ? t.methodCourierHintNoLabel : t.methodCourierHint, { carrier: c.name })
+              : t.methodNotConnectedHint,
+          disabled: !c.connection,
+        }))
+      : [{ value: "__courier", label: t.courierGeneric, hint: t.courierGenericHint, disabled: true }];
 
   return (
     <div className="space-y-4">
@@ -769,15 +977,14 @@ function CreateShipmentForm({
         legend={t.method}
         value={method}
         onChange={chooseMethod}
-        options={[
-          { value: "courier", label: courierName, hint: fmt(t.methodCourierHint, { carrier: courierName }), disabled: !courierConnected },
-          { value: "manual", label: t.methodManual, hint: t.methodManualHint },
-        ]}
+        options={[...courierOptions, { value: MANUAL, label: t.methodManual, hint: t.methodManualHint }]}
       />
-      {!courierConnected && (
+      {connected.length === 0 && (
         <p className="text-xs text-ink-soft">
-          {carriersConfigured ? fmt(t.courierNotConnected, { carrier: courierName }) : t.courierUnavailable}{" "}
-          {carriersConfigured && (
+          {carriersConfigured && carriers.length > 0
+            ? fmt(t.courierNotConnected, { carrier: carriers.map((c) => c.name).join(t.or) })
+            : t.courierUnavailable}{" "}
+          {carriersConfigured && carriers.length > 0 && (
             <Link to="/shipping" className="inline-flex min-h-11 items-center font-medium text-primary hover:underline">
               {t.goToShipping}
             </Link>
@@ -792,7 +999,9 @@ function CreateShipmentForm({
         </Alert>
       )}
 
-      {method === "manual" ? (
+      {method === null ? (
+        <p className="text-sm text-ink-soft">{t.chooseMethod}</p>
+      ) : method === MANUAL ? (
         <form onSubmit={submitManual} className="space-y-3">
           {manualBlockers.length > 0 && (
             <div className="space-y-1 rounded-[0.5rem] border border-accent/40 bg-accent-soft px-4 py-3 text-sm text-accent-dark">
@@ -837,10 +1046,17 @@ function CreateShipmentForm({
         </form>
       ) : (
         <form onSubmit={submitCourier} className="space-y-4">
+          {notSaved && (
+            <Alert variant="danger">
+              <p className="font-medium">{fmt(t.notSavedTitle, { carrier: notSaved.carrier, number: isolate(notSaved.number) })}</p>
+              <p className="mt-1">{fmt(t.notSaved, { carrier: notSaved.carrier, number: isolate(notSaved.number) })}</p>
+            </Alert>
+          )}
+
           <div className="grid gap-3 rounded-[0.5rem] border border-line p-3 text-sm sm:grid-cols-2">
             <div>
               <p className="text-xs text-ink-soft">{t.codToCollect}</p>
-              <p className="font-medium text-ink">{cod > 0 ? formatMoney(cod, "EGP") : t.noCod}</p>
+              <p className="font-medium text-ink">{cod > 0 ? formatMoney(cod, codCurrency) : t.noCod}</p>
             </div>
             <div>
               <p className="text-xs text-ink-soft">{t.deliverTo}</p>
@@ -870,8 +1086,8 @@ function CreateShipmentForm({
             </div>
           )}
 
-          {picker && courier ? (
-            <AddressPicker
+          {picker && courier && picker.kind !== "unmatchedArea" && cityDistrict && (
+            <CityDistrictPicker
               courier={courier}
               source={picker}
               cityId={cityId}
@@ -885,19 +1101,30 @@ function CreateShipmentForm({
               districtError={fieldErrors["carrierAddress.districtId"]}
               disabled={submitting}
             />
-          ) : null}
+          )}
+          {picker && courier && picker.kind !== "unmatched" && !cityDistrict && (
+            <LevelAddressPicker
+              courier={courier}
+              levels={levels}
+              source={picker}
+              path={areaPath}
+              onChange={setAreaPath}
+              errors={fieldErrors}
+              disabled={submitting}
+            />
+          )}
           {(!picker || picker.kind === "free") && blockers.length === 0 && (
             <Button
               type="button"
               variant="ghost"
               className="min-h-11 px-2 text-primary"
               onClick={() => {
-                setPicker(picker ? null : { kind: "free" });
-                setCityId("");
-                setDistrictId("");
+                const next = picker ? null : ({ kind: "free" } as const);
+                resetPicker();
+                setPicker(next);
               }}
             >
-              {picker ? t.useOrderAddress : t.chooseAddress}
+              {picker ? t.useOrderAddress : cityDistrict ? t.chooseAddress : t.chooseArea}
             </Button>
           )}
 
@@ -943,7 +1170,7 @@ function MethodPicker({
   options,
 }: {
   legend: string;
-  value: Method;
+  value: Method | null;
   onChange: (m: Method) => void;
   options: { value: Method; label: string; hint: string; disabled?: boolean }[];
 }) {
@@ -982,163 +1209,6 @@ function MethodPicker({
         })}
       </div>
     </fieldset>
-  );
-}
-
-/**
- * City → district picker over the courier's own list. From scratch it lists
- * every city; after a 422 CARRIER_ADDRESS_UNMATCHED it starts from the
- * server's candidates — cities at level "city", the matched city's districts
- * (best matches first) at level "district". Districts of a chosen city come
- * from GET .../cities?cityId=.
- */
-function AddressPicker({
-  courier,
-  source,
-  cityId,
-  districtId,
-  onCityChange,
-  onDistrictChange,
-  cityError,
-  districtError,
-  disabled,
-}: {
-  courier: CarrierInfo;
-  source: PickerSource;
-  cityId: string;
-  districtId: string;
-  onCityChange: (id: string) => void;
-  onDistrictChange: (id: string) => void;
-  cityError?: string;
-  districtError?: string;
-  disabled: boolean;
-}) {
-  const t = useT(STRINGS);
-  const { locale } = useLocale();
-  const workspaceId = useWorkspaceId();
-  const details = source.kind === "unmatched" ? source.details : null;
-  const districtLevel = details?.level === "district";
-
-  // Cities: the candidates at city level, the whole list from scratch, and
-  // at district level just the city that matched.
-  const allCities = useAsync<PlaceOption[] | null>(
-    () =>
-      source.kind === "free"
-        ? apiClient.listCarrierCities(workspaceId, courier.code).then((cities) => cities.filter((c) => c.dropOffAvailable !== false))
-        : Promise.resolve(null),
-    [workspaceId, courier.code, source.kind]
-  );
-  const cityOptions: PlaceOption[] = details
-    ? districtLevel && details.matchedCity
-      ? [details.matchedCity]
-      : details.candidates.map((c) => ({ id: c.cityId, name: c.cityName, nameAr: c.cityNameAr, suggested: c.suggested }))
-    : (allCities.data ?? []);
-
-  // Districts: the server's candidates when it already narrowed them down,
-  // otherwise the chosen city's list.
-  const fetchDistricts = Boolean(cityId) && !districtLevel;
-  const cityDistricts = useAsync<PlaceOption[] | null>(
-    () =>
-      fetchDistricts
-        ? apiClient
-            .listCarrierCities(workspaceId, courier.code, cityId)
-            .then((cities) => (cities[0]?.districts ?? []).filter((d) => d.dropOffAvailable !== false))
-        : Promise.resolve(null),
-    [workspaceId, courier.code, cityId, fetchDistricts]
-  );
-  const districtOptions: PlaceOption[] = districtLevel
-    ? details!.candidates
-        .filter((c) => c.districtId)
-        .map((c) => ({ id: c.districtId as string, name: c.districtName, nameAr: c.districtNameAr, suggested: c.suggested }))
-    : (cityDistricts.data ?? []);
-
-  const orderValue =
-    (details?.level === "city" ? details.orderAddress.province || details.orderAddress.city : details?.orderAddress.city) ?? "—";
-
-  return (
-    <div className="space-y-3 rounded-[0.5rem] border border-line p-3">
-      {details && (
-        <p className="text-sm text-ink">
-          {details.level === "city"
-            ? fmt(t.unmatchedCity, { carrier: courier.name, value: orderValue })
-            : fmt(t.unmatchedDistrict, { city: placeName(details.matchedCity, locale), value: orderValue })}
-        </p>
-      )}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <PlaceSelect
-          label={t.city}
-          placeholder={allCities.loading ? t.loadingPlaces : t.chooseCity}
-          options={cityOptions}
-          value={cityId}
-          onChange={onCityChange}
-          disabled={disabled || districtLevel}
-          error={cityError ?? (allCities.error ? fmt(t.placesFailed, { carrier: courier.name }) : undefined)}
-          suggestedLabel={t.suggested}
-          restLabel={t.allCities}
-        />
-        <PlaceSelect
-          label={t.district}
-          placeholder={!cityId ? t.chooseCityFirst : cityDistricts.loading ? t.loadingPlaces : t.chooseDistrict}
-          options={cityId ? districtOptions : []}
-          value={districtId}
-          onChange={onDistrictChange}
-          disabled={disabled || !cityId || cityDistricts.loading}
-          error={districtError ?? (cityDistricts.error ? fmt(t.placesFailed, { carrier: courier.name }) : undefined)}
-          suggestedLabel={t.suggested}
-          restLabel={t.allDistricts}
-        />
-      </div>
-    </div>
-  );
-}
-
-function PlaceSelect({
-  label,
-  placeholder,
-  options,
-  value,
-  onChange,
-  disabled,
-  error,
-  suggestedLabel,
-  restLabel,
-}: {
-  label: string;
-  placeholder: string;
-  options: PlaceOption[];
-  value: string;
-  onChange: (id: string) => void;
-  disabled: boolean;
-  error?: string;
-  suggestedLabel: string;
-  restLabel: string;
-}) {
-  const { locale } = useLocale();
-  const suggested = options.filter((o) => o.suggested);
-  const rest = options.filter((o) => !o.suggested);
-  const render = (o: PlaceOption): ReactNode => (
-    <option key={o.id} value={o.id}>
-      {placeName(o, locale)}
-    </option>
-  );
-  const byName = (a: PlaceOption, b: PlaceOption) =>
-    placeName(a, locale).localeCompare(placeName(b, locale), locale === "ar" ? "ar" : "en");
-  return (
-    <Field label={label} error={error} required>
-      {({ id, ...aria }) => (
-        <Select id={id} {...aria} value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} className="h-11">
-          <option value="">{placeholder}</option>
-          {suggested.length > 0 ? (
-            <>
-              <optgroup label={suggestedLabel}>{suggested.map(render)}</optgroup>
-              {rest.length > 0 && <optgroup label={restLabel}>{[...rest].sort(byName).map(render)}</optgroup>}
-            </>
-          ) : (
-            [...rest].sort(byName).map(render)
-          )}
-        </Select>
-      )}
-    </Field>
   );
 }
 

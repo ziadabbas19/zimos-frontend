@@ -23,6 +23,8 @@ import type {
   BlockPhonePayload,
   BlockPhoneResult,
   CaptureCheckoutSessionPayload,
+  CarrierAddressTree,
+  CarrierAreaNode,
   CarrierCity,
   CarrierList,
   CheckoutResult,
@@ -51,6 +53,7 @@ import type {
   ConfirmationQueueTab,
   ConfirmationTask,
   CorrectConfirmationOutcomePayload,
+  ManualCancelAcknowledgement,
   CreateCollectionPayload,
   CreateDiscountPayload,
   CreateOfferPayload,
@@ -284,6 +287,18 @@ interface RequestOptions {
   redirect?: RequestRedirect;
 }
 
+/** How long a courier's address tree is reused before it is fetched again. */
+const ADDRESS_TREE_TTL_MS = 10 * 60 * 1000;
+
+function findAreaNode(nodes: CarrierAreaNode[], id: string): CarrierAreaNode | null {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    const below = node.children ? findAreaNode(node.children, id) : null;
+    if (below) return below;
+  }
+  return null;
+}
+
 function randomKey(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
@@ -297,6 +312,7 @@ export class ApiClient {
   private onSessionExpired?: () => void;
   private defaultHeaders: Record<string, string>;
   private refreshPromise: Promise<boolean> | null = null;
+  private addressTrees = new Map<string, { at: number; value: Promise<CarrierAddressTree> }>();
 
   constructor(options: ApiClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
@@ -1216,10 +1232,22 @@ export class ApiClient {
     return order;
   }
 
-  async cancelOrder(workspaceId: string, orderId: string, reason: string) {
+  /**
+   * Cancels the order and its uncollected courier bookings. 409
+   * CARRIER_MANUAL_CANCEL_REQUIRED (details.shipments) when a booking's
+   * courier has no cancel API: nothing changed; repeat with
+   * `acknowledgeManualCancel: true` once the merchant cancelled it there.
+   */
+  async cancelOrder(
+    workspaceId: string,
+    orderId: string,
+    reason: string,
+    options: ManualCancelAcknowledgement = {}
+  ) {
+    const body = options.acknowledgeManualCancel ? { reason, acknowledgeManualCancel: true } : { reason };
     const { order } = await this.request<{ order: Order }>(
       `${this.ordersBase(workspaceId)}/${orderId}/cancel`,
-      { method: "POST", body: { reason } }
+      { method: "POST", body }
     );
     return order;
   }
@@ -1239,6 +1267,12 @@ export class ApiClient {
     return shipments;
   }
 
+  /**
+   * Manual shipment, or a booking with a connected courier. Courier-specific
+   * failures: 422 CARRIER_ADDRESS_UNMATCHED (pick the address, resend with
+   * `carrierAddress`), 502 CARRIER_BOOKING_NOT_SAVED (the courier has the
+   * booking but it wasn't recorded — cancel it in the courier's dashboard).
+   */
   async createShipment(workspaceId: string, orderId: string, payload: CreateShipmentPayload) {
     const { shipment } = await this.request<{ shipment: Shipment }>(
       `${this.ordersBase(workspaceId)}/${orderId}/shipments`,
@@ -1247,6 +1281,10 @@ export class ApiClient {
     return shipment;
   }
 
+  /**
+   * Status `cancelled` on a booking whose courier has no cancel API needs
+   * `acknowledgeManualCancel` (409 CARRIER_MANUAL_CANCEL_REQUIRED without it).
+   */
   async updateShipment(
     workspaceId: string,
     orderId: string,
@@ -1782,12 +1820,56 @@ export class ApiClient {
   /**
    * The courier's city → district list (cached ~1h server-side). Pass
    * `cityId` for just that city — 404 NOT_FOUND if it isn't in the list.
+   * City/district couriers only; see `listCarrierAddressTree` for the rest.
    */
   async listCarrierCities(workspaceId: string, code: string, cityId?: string) {
     const body = await this.request<unknown>(
       `${this.carriersBase(workspaceId)}/${code}/cities${buildQuery({ cityId })}`
     );
     return unwrapList<CarrierCity>(body, "cities");
+  }
+
+  /**
+   * A courier's whole address tree, for couriers whose levels are not
+   * city/district: GET /carriers/:code/cities answers `{ levels, cities }`
+   * with each node's `children`. The server has no per-parent endpoint, so
+   * the tree is fetched once and kept here briefly (the server caches it
+   * ~1h); `listCarrierAreas` walks it.
+   */
+  async listCarrierAddressTree(workspaceId: string, code: string): Promise<CarrierAddressTree> {
+    const key = `${workspaceId}:${code}`;
+    const hit = this.addressTrees.get(key);
+    if (hit && Date.now() - hit.at < ADDRESS_TREE_TTL_MS) return hit.value;
+    const pending = this.request<{ levels?: string[]; cities?: CarrierAreaNode[] }>(
+      `${this.carriersBase(workspaceId)}/${code}/cities`
+    ).then((body) => {
+      const nodes = unwrapList<CarrierAreaNode>(body, "cities");
+      return { levels: Array.isArray(body.levels) ? body.levels : [], nodes };
+    });
+    this.addressTrees.set(key, { at: Date.now(), value: pending });
+    // A failure is not remembered: the next call asks again.
+    pending.catch(() => {
+      if (this.addressTrees.get(key)?.value === pending) this.addressTrees.delete(key);
+    });
+    return pending;
+  }
+
+  /**
+   * One level of a courier's address tree: the top level without
+   * `parentId`, else the children of that node (by id, at any depth).
+   * [] for a leaf; 404-style ApiError NOT_FOUND for an id not in the tree.
+   */
+  async listCarrierAreas(workspaceId: string, code: string, parentId?: string): Promise<CarrierAreaNode[]> {
+    const { nodes } = await this.listCarrierAddressTree(workspaceId, code);
+    if (!parentId) return nodes;
+    const parent = findAreaNode(nodes, parentId);
+    if (!parent) throw new ApiError("Area not found in the courier's list", 404, "NOT_FOUND");
+    return parent.children ?? [];
+  }
+
+  /** Forgets the cached address trees (after a reconnect, or for tests). */
+  clearCarrierAddressTrees() {
+    this.addressTrees.clear();
   }
 
   /** Attempts, gateway events, refunds and what can still be refunded (orders.view). */

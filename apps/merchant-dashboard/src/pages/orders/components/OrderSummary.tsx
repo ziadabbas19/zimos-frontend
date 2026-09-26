@@ -28,6 +28,8 @@ const STRINGS = {
     payment: "Payment",
     internalNotes: "Internal notes",
     riskFlags: "Risk flags",
+    cancelUnconfirmedHint:
+      "A delivery cancelled in the courier's dashboard still shows as moving there. Check the courier's dashboard; details under Shipments.",
     listSep: ", ",
   },
   ar: {
@@ -53,6 +55,8 @@ const STRINGS = {
     payment: "الدفع",
     internalNotes: "ملاحظات داخلية",
     riskFlags: "علامات الاشتباه",
+    cancelUnconfirmedHint:
+      "شحنة أُلغيت من لوحة تحكم شركة الشحن ما زالت تظهر كأنها تتحرك هناك. راجع لوحة تحكم الشركة؛ التفاصيل في قسم الشحنات.",
     listSep: "، ",
   },
 } satisfies Messages;
@@ -190,7 +194,12 @@ export function OrderSummary({ order }: { order: Order }) {
               <h3 className="mb-1 font-medium text-danger">{t.riskFlags}</h3>
               <ul className="list-inside list-disc text-ink-soft">
                 {order.riskFlags.map((flag) => (
-                  <li key={flag}>{labels.riskFlag(flag)}</li>
+                  <li key={flag}>
+                    {labels.riskFlag(flag)}
+                    {flag === "carrier_cancel_unconfirmed" && (
+                      <span className="block ps-5 text-xs">{t.cancelUnconfirmedHint}</span>
+                    )}
+                  </li>
                 ))}
               </ul>
             </div>

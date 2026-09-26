@@ -73,6 +73,7 @@ const LABELS = {
     risk_paid_after_cancel: "Paid after it was cancelled",
     risk_paid_after_cod_switch: "Paid online after switching to COD",
     risk_payment_amount_mismatch: "Paid amount differs",
+    risk_carrier_cancel_unconfirmed: "Courier still shows a cancelled parcel moving",
     flagged: "Flagged",
   },
   ar: {
@@ -123,6 +124,7 @@ const LABELS = {
     risk_paid_after_cancel: "دُفع بعد الإلغاء",
     risk_paid_after_cod_switch: "دُفع إلكترونيًا بعد التحويل للدفع عند الاستلام",
     risk_payment_amount_mismatch: "المبلغ المدفوع مختلف",
+    risk_carrier_cancel_unconfirmed: "شركة الشحن ما زالت تُظهر طردًا ملغى يتحرك",
     flagged: "مشتبه به",
   },
 } satisfies Messages;

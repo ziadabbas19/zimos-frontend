@@ -4,7 +4,9 @@ import {
   ApiError,
   BOSTA_PACKAGE_TYPES,
   apiFieldProblems,
-  type BostaSettings,
+  isApiErrorCode,
+  type BostaTierPackage,
+  type CarrierFieldDescriptor,
   type CarrierInfo,
   type CarrierPickupLocation,
   type ConnectCarrierPayload,
@@ -21,7 +23,8 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Select } from "@/components/Select";
 import { useToast } from "@/components/Toast";
-import { BOSTA, SHIPPING_ROLES } from "./carriers";
+import { CopyButton } from "@/components/CopyButton";
+import { SHIPPING_ROLES } from "./carriers";
 import { BostaTierMapField } from "./BostaTierMapField";
 import { pruneTierMap, useWeightTiers } from "./weightTiers";
 
@@ -67,6 +70,7 @@ const STRINGS = {
     replaceKey: "Replace API key",
     disconnect: "Disconnect",
     connectedToast: "{name} is connected. Choose where parcels are collected from.",
+    connectedToastPlain: "{name} is connected.",
     savedToast: "{name} settings saved.",
     keyReplacedToast: "New {name} key saved.",
     locationReset:
@@ -89,6 +93,21 @@ const STRINGS = {
     document: "Document",
     lightBulky: "Light bulky",
     heavyBulky: "Heavy bulky",
+    // any courier (fields come from the server)
+    keyHintGeneric: "Find it in {name}'s dashboard. We store it encrypted and never show it again.",
+    settingsTitleGeneric: "Settings",
+    editSettingsGeneric: "Edit settings",
+    summaryValue: "{label}: {value}",
+    notSet: "not set",
+    connectConflict:
+      "{name} was connected from another tab or by a teammate at the same moment, so this save didn't go through. The card now shows that connection. Check it, then save again if you need to.",
+    webhookAccount:
+      "For automatic status updates, paste this address into the webhook settings of your {name} dashboard:",
+    webhookPolling: "We check {name} for status updates regularly. You can also press Sync on a shipment at any time.",
+    webhookNone: "{name} doesn't send status updates. Press Sync on a shipment to pull its latest status.",
+    copyWebhook: "Copy address",
+    manualCancelNote:
+      "{name} can't cancel deliveries from here. To call one off, cancel it in your {name} dashboard first, then confirm it here when you cancel the order or the shipment.",
   },
   ar: {
     title: "شركات الشحن",
@@ -130,6 +149,7 @@ const STRINGS = {
     replaceKey: "تغيير مفتاح API",
     disconnect: "إلغاء الربط",
     connectedToast: "تم ربط {name}. اختر مكان استلام الطرود.",
+    connectedToastPlain: "تم ربط {name}.",
     savedToast: "تم حفظ إعدادات {name}.",
     keyReplacedToast: "تم حفظ مفتاح {name} الجديد.",
     locationReset:
@@ -151,6 +171,19 @@ const STRINGS = {
     document: "مستند",
     lightBulky: "حجم كبير خفيف",
     heavyBulky: "حجم كبير ثقيل",
+    keyHintGeneric: "تجده في لوحة تحكم {name}. نحفظه مشفّرًا ولا نعرضه مرة أخرى.",
+    settingsTitleGeneric: "الإعدادات",
+    editSettingsGeneric: "تعديل الإعدادات",
+    summaryValue: "{label}: {value}",
+    notSet: "غير محدد",
+    connectConflict:
+      "تم ربط {name} من تبويب آخر أو بواسطة زميل في نفس اللحظة، لذلك لم يُحفظ هذا الطلب. البطاقة تعرض الآن ذلك الربط. راجعه، ثم احفظ مرة أخرى إذا احتجت.",
+    webhookAccount: "لتصلك تحديثات الحالة تلقائيًا، الصق هذا العنوان في إعدادات الـ webhook في لوحة تحكم {name}:",
+    webhookPolling: "نراجع حالة الشحنات مع {name} بانتظام. ويمكنك أيضًا الضغط على مزامنة في أي شحنة.",
+    webhookNone: "{name} لا ترسل تحديثات الحالة. اضغط مزامنة في الشحنة لجلب آخر حالة لها.",
+    copyWebhook: "نسخ العنوان",
+    manualCancelNote:
+      "لا يمكن إلغاء شحنات {name} من هنا. لإلغاء شحنة، ألغِها من لوحة تحكم {name} أولًا، ثم أكّد ذلك هنا عند إلغاء الأوردر أو الشحنة.",
   },
 } satisfies Messages;
 
@@ -163,7 +196,61 @@ const PACKAGE_LABEL: Record<(typeof BOSTA_PACKAGE_TYPES)[number], keyof Strings>
   "Heavy Bulky": "heavyBulky",
 };
 
-/** Courier connections on the Shipping page. Only Bosta has an adapter today. */
+/** Setting keys we have our own en/ar label for; any other field shows the server's label. */
+const SETTING_LABEL: Record<string, keyof Strings> = {
+  packageType: "packageType",
+  awbType: "labelSize",
+  awbLang: "labelLanguage",
+};
+
+/**
+ * Courier-specific guidance the server doesn't describe: copy, and a
+ * pre-check on the key's length. The form itself always comes from the
+ * courier's credentialFields / settingFields on GET /carriers.
+ */
+interface CarrierGuide {
+  keyHint: keyof Strings;
+  /** The Read/Write-can't-cancel notice next to the key field. */
+  fullAccessNotice: boolean;
+  /** Shortest secret the Check button accepts. */
+  minSecretLength: number;
+  settingsTitle: keyof Strings;
+  editSettings: keyof Strings;
+  /** "Pickup: … · Package: … · Label: A4, Arabic" instead of one entry per field. */
+  pickupPackageLabelSummary: boolean;
+}
+
+const GENERIC_GUIDE: CarrierGuide = {
+  keyHint: "keyHintGeneric",
+  fullAccessNotice: false,
+  minSecretLength: 1,
+  settingsTitle: "settingsTitleGeneric",
+  editSettings: "editSettingsGeneric",
+  pickupPackageLabelSummary: false,
+};
+
+const GUIDES: Record<string, CarrierGuide> = {
+  bosta: {
+    keyHint: "keyHint",
+    fullAccessNotice: true,
+    minSecretLength: 10,
+    settingsTitle: "settingsStepTitle",
+    editSettings: "editSettings",
+    pickupPackageLabelSummary: true,
+  },
+};
+
+/**
+ * A setting that holds a pickup location id. Its choices are the
+ * verification's pickupLocations, which only a verifying PUT returns.
+ */
+const isPickupField = (f: CarrierFieldDescriptor) => !f.options && f.kind !== "tier_map" && /locationid$/i.test(f.key);
+const isTierMapField = (f: CarrierFieldDescriptor) => f.kind === "tier_map";
+
+type Settings = Record<string, unknown>;
+type TierMap = Record<string, BostaTierPackage>;
+
+/** Courier connections on the Shipping page, one card per courier the server offers this store. */
 export function CarrierConnectionsSection() {
   const t = useT(STRINGS);
   const workspaceId = useWorkspaceId();
@@ -190,8 +277,9 @@ export function CarrierConnectionsSection() {
           <Alert>{t.viewOnly}</Alert>
         ) : (
           <DataState loading={carriers.loading} error={carriers.error} onRetry={() => carriers.refresh()}>
-            {list && !list.configured ? (
-              // The platform has no credentials key: neutral, not an error.
+            {list && (!list.configured || list.carriers.length === 0) ? (
+              // The platform has no credentials key (or offers this store no
+              // courier): neutral, not an error.
               <div className="rounded-[0.5rem] border border-dashed border-line px-4 py-5">
                 <p className="text-sm font-medium text-ink">{t.notAvailableTitle}</p>
                 <p className="mt-1 text-sm text-ink-soft">{t.notAvailable}</p>
@@ -237,21 +325,37 @@ function CarrierCard({
   const errorMessage = useErrorMessage();
   const name = carrier.name;
   const connection = carrier.connection;
-  const isBosta = carrier.code === BOSTA;
+  const guide = GUIDES[carrier.code] ?? GENERIC_GUIDE;
+
+  const credentialFields = carrier.credentialFields ?? [];
+  const settingFields = carrier.settingFields ?? [];
+  const pickupField = settingFields.find(isPickupField);
+  const tierField = settingFields.find(isTierMapField);
+  const plainFields = settingFields.filter((f) => f !== pickupField && f !== tierField);
+  const hasSettings = settingFields.length > 0;
+  const webhookSetup = carrier.capabilities?.webhook ?? carrier.webhookSetup;
 
   const [mode, setMode] = useState<Mode>("view");
   const [firstConnect, setFirstConnect] = useState(false);
-  const [apiKey, setApiKey] = useState("");
+  const [credentials, setCredentials] = useState<Record<string, string>>({});
   const [locations, setLocations] = useState<CarrierPickupLocation[] | null>(null);
-  const [draft, setDraft] = useState<BostaSettings>({});
+  const [draft, setDraft] = useState<Settings>({});
   const [busy, setBusy] = useState<"verify" | "save" | "load" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
 
-  const current = (connection?.settings ?? {}) as BostaSettings;
+  const current: Settings = connection?.settings ?? {};
   const tiers = useWeightTiers();
-  const mappedTiers = Object.keys(pruneTierMap(current.tierMap, tiers.data) ?? {}).length;
+  const currentTierMap = tierField ? (current[tierField.key] as TierMap | undefined) : undefined;
+  const mappedTiers = Object.keys(pruneTierMap(currentTierMap, tiers.data) ?? {}).length;
+
+  const typed: Record<string, string> = Object.fromEntries(
+    credentialFields.map((f) => [f.key, (credentials[f.key] ?? "").trim()])
+  );
+  const credentialsReady =
+    credentialFields.length > 0 &&
+    credentialFields.every((f) => typed[f.key].length >= (f.secret ? guide.minSecretLength : 1));
 
   function fail(err: unknown) {
     if (err instanceof ApiError && err.status === 403) {
@@ -260,24 +364,40 @@ function CarrierCard({
       setMode("view");
       return;
     }
+    if (isApiErrorCode(err, "CARRIER_CONNECT_CONFLICT")) {
+      // Another request's first connect won; nothing of ours was stored.
+      // Show that connection so the merchant can check it before saving again.
+      setError(fmt(t.connectConflict, { name }));
+      setCredentials({});
+      setMode("view");
+      onChanged();
+      return;
+    }
     setError(errorMessage(err));
+  }
+
+  function cancelEditing() {
+    setMode("view");
+    setCredentials({});
+    setNotice(null);
+    setError(null);
   }
 
   async function put(payload: ConnectCarrierPayload) {
     return apiClient.connectCarrier(workspaceId, carrier.code, payload);
   }
 
-  function openSettings(result: Awaited<ReturnType<typeof put>>) {
-    const next = (result.carrier.connection?.settings ?? {}) as BostaSettings;
-    setLocations(result.verification.pickupLocations ?? []);
+  /** `result` is a verifying PUT's answer; null opens the stored settings as they are. */
+  function openSettings(result: Awaited<ReturnType<typeof put>> | null) {
+    const next: Settings = result ? (result.carrier.connection?.settings ?? {}) : current;
+    setLocations(result && pickupField ? (result.verification.pickupLocations ?? []) : null);
     setDraft(next);
     setMode("settings");
   }
 
   async function submitKey(e: FormEvent) {
     e.preventDefault();
-    const key = apiKey.trim();
-    if (!key) return;
+    if (!credentialsReady) return;
     setBusy("verify");
     setError(null);
     setNotice(null);
@@ -287,22 +407,26 @@ function CarrierCard({
       try {
         // Credentials only: the stored settings are kept and re-checked
         // against the new key's account.
-        result = await put({ credentials: { apiKey: key } });
+        result = await put({ credentials: typed });
       } catch (err) {
-        // The saved pickup location belongs to another Bosta account. Keep
-        // the rest and fall back to the account default; step 2 asks again.
-        if (wasConnected && apiFieldProblems(err).some((p) => p.field === "settings.businessLocationId")) {
-          result = await put({ credentials: { apiKey: key }, settings: { ...current, businessLocationId: null } });
+        // The saved pickup location belongs to another account. Keep the
+        // rest and fall back to the account default; step 2 asks again.
+        const pickupKey = pickupField?.key;
+        if (wasConnected && pickupKey && apiFieldProblems(err).some((p) => p.field === `settings.${pickupKey}`)) {
+          result = await put({ credentials: typed, settings: { ...current, [pickupKey]: null } });
           setNotice(t.locationReset);
         } else {
           throw err;
         }
       }
-      setApiKey("");
+      setCredentials({});
       setFirstConnect(!wasConnected);
-      toast.success(fmt(wasConnected ? t.keyReplacedToast : t.connectedToast, { name }));
+      toast.success(
+        fmt(wasConnected ? t.keyReplacedToast : pickupField ? t.connectedToast : t.connectedToastPlain, { name })
+      );
       onChanged();
-      openSettings(result);
+      if (hasSettings) openSettings(result);
+      else setMode("view");
     } catch (err) {
       fail(err);
     } finally {
@@ -310,14 +434,18 @@ function CarrierCard({
     }
   }
 
-  /** Pickup locations only come back from a verifying PUT, so editing re-checks the stored key. */
+  /** Pickup locations only come back from a verifying PUT, so editing those re-checks the stored key. */
   async function startEditSettings() {
-    setBusy("load");
     setError(null);
     setNotice(null);
+    setFirstConnect(false);
+    if (!pickupField) {
+      openSettings(null);
+      return;
+    }
+    setBusy("load");
     try {
       openSettings(await put({ settings: { ...current } }));
-      setFirstConnect(false);
     } catch (err) {
       fail(err);
     } finally {
@@ -329,14 +457,13 @@ function CarrierCard({
     e.preventDefault();
     setBusy("save");
     setError(null);
+    const settings: Settings = { ...draft };
+    if (pickupField) settings[pickupField.key] = draft[pickupField.key] || null;
+    if (tierField) settings[tierField.key] = pruneTierMap(draft[tierField.key] as TierMap | undefined, tiers.data) ?? {};
+    // An emptied free-text setting is left out rather than sent as "".
+    for (const f of plainFields) if (!f.options && settings[f.key] === "") delete settings[f.key];
     try {
-      await put({
-        settings: {
-          ...draft,
-          businessLocationId: draft.businessLocationId || null,
-          tierMap: pruneTierMap(draft.tierMap, tiers.data) ?? {},
-        },
-      });
+      await put({ settings });
       toast.success(fmt(t.savedToast, { name }));
       setMode("view");
       setNotice(null);
@@ -365,6 +492,19 @@ function CarrierCard({
     onChanged();
   }
 
+  function settingLabel(field: CarrierFieldDescriptor): string {
+    const own = SETTING_LABEL[field.key];
+    return own ? t[own] : field.label;
+  }
+
+  function optionLabel(field: CarrierFieldDescriptor, option: string): string {
+    if (field.key === "packageType" && option in PACKAGE_LABEL) {
+      return t[PACKAGE_LABEL[option as keyof typeof PACKAGE_LABEL]];
+    }
+    if (field.key === "awbLang" && (option === "ar" || option === "en")) return option === "en" ? t.langEn : t.langAr;
+    return option;
+  }
+
   const statusBadge = !connection ? (
     <StatusBadge value="not_connected" tone="neutral" text={t.notConnected} />
   ) : connection.status === "invalid" ? (
@@ -375,10 +515,11 @@ function CarrierCard({
 
   // Location names only come back from a verifying PUT; before one, all we
   // know is that a location was chosen.
-  const pickupSummary = !current.businessLocationId
+  const currentPickup = pickupField ? current[pickupField.key] : null;
+  const pickupSummary = !currentPickup
     ? fmt(t.accountDefault, { name })
     : locations
-      ? (locations.find((l) => l.id === current.businessLocationId)?.name ?? t.unknownLocation)
+      ? (locations.find((l) => l.id === currentPickup)?.name ?? t.unknownLocation)
       : t.chosenLocation;
 
   return (
@@ -409,37 +550,40 @@ function CarrierCard({
         </Alert>
       )}
 
-      {connection && mode === "view" && isBosta && (
+      {connection && mode === "view" && (
         <div className="mt-3 space-y-2 text-sm text-ink-soft">
-          <p>
-            {fmt(t.summaryPickup, { value: pickupSummary })}
-            {current.packageType && (
-              <> · {fmt(t.summaryPackage, { value: t[PACKAGE_LABEL[current.packageType]] })}</>
-            )}
-            {(current.awbType || current.awbLang) && (
-              <>
-                {" · "}
-                {fmt(t.summaryLabel, {
-                  size: current.awbType ?? "A4",
-                  lang: current.awbLang === "en" ? t.langEn : t.langAr,
-                })}
-              </>
-            )}
-          </p>
-          {mappedTiers > 0 && tiers.data && (
+          {guide.pickupPackageLabelSummary ? (
+            <PickupPackageLabelSummary settings={current} pickup={pickupSummary} />
+          ) : (
+            <GenericSummary
+              entries={[
+                ...(pickupField ? [fmt(t.summaryValue, { label: t.pickupLocation, value: pickupSummary })] : []),
+                ...plainFields
+                  .filter((f) => !f.secret && current[f.key] != null && current[f.key] !== "")
+                  .map((f) =>
+                    fmt(t.summaryValue, { label: settingLabel(f), value: optionLabel(f, String(current[f.key])) })
+                  ),
+              ]}
+            />
+          )}
+          {tierField && mappedTiers > 0 && tiers.data && (
             <p>{fmt(t.summaryTiers, { mapped: mappedTiers, total: tiers.data.length })}</p>
           )}
-          <p className="text-xs">
-            {/^https:\/\//i.test(connection.webhookUrl) ? t.webhookAuto : t.webhookManual}
-          </p>
+          <WebhookNote
+            setup={webhookSetup}
+            polling={Boolean(carrier.capabilities?.polling)}
+            name={name}
+            url={connection.webhookUrl}
+          />
+          {carrier.capabilities?.cancel === "manual" && <p className="text-xs">{fmt(t.manualCancelNote, { name })}</p>}
         </div>
       )}
 
       {canManage && connection && mode === "view" && (
         <div className="mt-4 flex flex-wrap gap-2">
-          {isBosta && (
+          {hasSettings && (
             <Button variant="outline" className="min-h-11" disabled={busy !== null} onClick={startEditSettings}>
-              {busy === "load" ? t.loadingLocations : t.editSettings}
+              {busy === "load" ? t.loadingLocations : t[guide.editSettings]}
             </Button>
           )}
           <Button
@@ -472,89 +616,76 @@ function CarrierCard({
 
       {canManage && mode === "key" && (
         <form onSubmit={submitKey} className="mt-4 space-y-4 border-t border-line pt-4">
-          <StepHeading step={connection ? null : 1} title={t.keyStepTitle} />
-          <FullAccessNotice name={name} />
-          <KeyField name={name} value={apiKey} onChange={setApiKey} disabled={busy !== null} />
+          <StepHeading step={connection || !hasSettings ? null : 1} title={t.keyStepTitle} />
+          {guide.fullAccessNotice && <FullAccessNotice name={name} />}
+          <CredentialFields
+            name={name}
+            fields={credentialFields}
+            values={credentials}
+            onChange={(key, value) => setCredentials((c) => ({ ...c, [key]: value }))}
+            hint={fmt(t[guide.keyHint], { name })}
+            disabled={busy !== null}
+          />
           <div className="flex flex-wrap justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="min-h-11"
-              disabled={busy !== null}
-              onClick={() => {
-                setMode("view");
-                setApiKey("");
-                setError(null);
-              }}
-            >
+            <Button type="button" variant="outline" className="min-h-11" disabled={busy !== null} onClick={cancelEditing}>
               {common.cancel}
             </Button>
-            <Button type="submit" className="min-h-11" disabled={busy !== null || apiKey.trim().length < 10}>
+            <Button type="submit" className="min-h-11" disabled={busy !== null || !credentialsReady}>
               {busy === "verify" ? fmt(t.verifying, { name }) : t.verify}
             </Button>
           </div>
         </form>
       )}
 
-      {canManage && mode === "settings" && isBosta && locations && (
+      {canManage && mode === "settings" && (!pickupField || locations) && (
         <form onSubmit={saveSettings} className="mt-4 space-y-4 border-t border-line pt-4">
-          <StepHeading step={firstConnect ? 2 : null} title={t.settingsStepTitle} />
+          <StepHeading step={firstConnect ? 2 : null} title={t[guide.settingsTitle]} />
           {notice && <Alert>{notice}</Alert>}
-          <PickupLocationField
-            name={name}
-            locations={locations}
-            value={draft.businessLocationId ?? ""}
-            onChange={(id) => setDraft((d) => ({ ...d, businessLocationId: id || null }))}
-            disabled={busy !== null}
-          />
-          <div className="grid gap-4 sm:grid-cols-3">
-            <SelectField
-              label={t.packageType}
-              value={draft.packageType ?? "Parcel"}
-              onChange={(v) => setDraft((d) => ({ ...d, packageType: v as BostaSettings["packageType"] }))}
-              options={BOSTA_PACKAGE_TYPES.map((p) => ({ value: p, label: t[PACKAGE_LABEL[p]] }))}
+          {pickupField && locations && (
+            <PickupLocationField
+              name={name}
+              locations={locations}
+              value={String(draft[pickupField.key] ?? "")}
+              onChange={(id) => setDraft((d) => ({ ...d, [pickupField.key]: id || null }))}
               disabled={busy !== null}
             />
-            <SelectField
-              label={t.labelSize}
-              value={draft.awbType ?? "A4"}
-              onChange={(v) => setDraft((d) => ({ ...d, awbType: v as "A4" | "A6" }))}
-              options={[
-                { value: "A4", label: "A4" },
-                { value: "A6", label: "A6" },
-              ]}
+          )}
+          {plainFields.length > 0 && (
+            <div className="grid gap-4 sm:grid-cols-3">
+              {plainFields.map((f) =>
+                f.options && f.options.length > 0 ? (
+                  <SelectField
+                    key={f.key}
+                    label={settingLabel(f)}
+                    value={String(draft[f.key] ?? f.options[0])}
+                    onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v }))}
+                    options={f.options.map((o) => ({ value: o, label: optionLabel(f, o) }))}
+                    disabled={busy !== null}
+                  />
+                ) : (
+                  <TextSettingField
+                    key={f.key}
+                    label={settingLabel(f)}
+                    value={String(draft[f.key] ?? "")}
+                    secret={Boolean(f.secret)}
+                    onChange={(v) => setDraft((d) => ({ ...d, [f.key]: v }))}
+                    disabled={busy !== null}
+                  />
+                )
+              )}
+            </div>
+          )}
+          {tierField && (
+            <BostaTierMapField
+              tiers={tiers.data}
+              loading={tiers.loading}
+              value={pruneTierMap(draft[tierField.key] as TierMap | undefined, tiers.data)}
+              onChange={(tierMap) => setDraft((d) => ({ ...d, [tierField.key]: tierMap }))}
               disabled={busy !== null}
             />
-            <SelectField
-              label={t.labelLanguage}
-              value={draft.awbLang ?? "ar"}
-              onChange={(v) => setDraft((d) => ({ ...d, awbLang: v as "ar" | "en" }))}
-              options={[
-                { value: "ar", label: t.langAr },
-                { value: "en", label: t.langEn },
-              ]}
-              disabled={busy !== null}
-            />
-          </div>
-          <BostaTierMapField
-            tiers={tiers.data}
-            loading={tiers.loading}
-            value={pruneTierMap(draft.tierMap, tiers.data)}
-            onChange={(tierMap) => setDraft((d) => ({ ...d, tierMap }))}
-            disabled={busy !== null}
-          />
+          )}
           <div className="flex flex-wrap justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="min-h-11"
-              disabled={busy !== null}
-              onClick={() => {
-                setMode("view");
-                setNotice(null);
-                setError(null);
-              }}
-            >
+            <Button type="button" variant="outline" className="min-h-11" disabled={busy !== null} onClick={cancelEditing}>
               {common.cancel}
             </Button>
             <Button type="submit" className="min-h-11" disabled={busy !== null}>
@@ -579,6 +710,68 @@ function CarrierCard({
   );
 }
 
+/** Bosta's one-line summary: pickup, package type and label format. */
+function PickupPackageLabelSummary({ settings, pickup }: { settings: Settings; pickup: string }) {
+  const t = useT(STRINGS);
+  const packageType = settings.packageType as (typeof BOSTA_PACKAGE_TYPES)[number] | undefined;
+  const awbType = settings.awbType as string | undefined;
+  const awbLang = settings.awbLang as string | undefined;
+  return (
+    <p>
+      {fmt(t.summaryPickup, { value: pickup })}
+      {packageType && PACKAGE_LABEL[packageType] && (
+        <> · {fmt(t.summaryPackage, { value: t[PACKAGE_LABEL[packageType]] })}</>
+      )}
+      {(awbType || awbLang) && (
+        <>
+          {" · "}
+          {fmt(t.summaryLabel, {
+            size: awbType ?? "A4",
+            lang: awbLang === "en" ? t.langEn : t.langAr,
+          })}
+        </>
+      )}
+    </p>
+  );
+}
+
+function GenericSummary({ entries }: { entries: string[] }) {
+  if (entries.length === 0) return null;
+  return <p dir="auto">{entries.join(" · ")}</p>;
+}
+
+/** How status updates reach us, from the courier's webhook capability. */
+function WebhookNote({
+  setup,
+  polling,
+  name,
+  url,
+}: {
+  setup: CarrierInfo["webhookSetup"];
+  polling: boolean;
+  name: string;
+  url: string;
+}) {
+  const t = useT(STRINGS);
+  const publicUrl = /^https:\/\//i.test(url);
+  if (setup === "per_shipment") return <p className="text-xs">{publicUrl ? t.webhookAuto : t.webhookManual}</p>;
+  if (setup === "account") {
+    if (!publicUrl) return <p className="text-xs">{t.webhookManual}</p>;
+    return (
+      <div className="space-y-1 text-xs">
+        <p>{fmt(t.webhookAccount, { name })}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <code dir="ltr" className="min-w-0 break-all rounded bg-paper px-2 py-1 text-ink">
+            {url}
+          </code>
+          <CopyButton value={url} label={t.copyWebhook} />
+        </div>
+      </div>
+    );
+  }
+  return <p className="text-xs">{fmt(polling ? t.webhookPolling : t.webhookNone, { name })}</p>;
+}
+
 function StepHeading({ step, title }: { step: number | null; title: string }) {
   const t = useT(STRINGS);
   return (
@@ -600,37 +793,55 @@ function FullAccessNotice({ name }: { name: string }) {
   );
 }
 
-function KeyField({
+/**
+ * The courier's credential fields, as GET /carriers describes them. An
+ * "apiKey" field gets our own "{name} API key" label; other fields show the
+ * server's label. Secrets are masked and never prefilled.
+ */
+function CredentialFields({
   name,
-  value,
+  fields,
+  values,
   onChange,
+  hint,
   disabled,
 }: {
   name: string;
-  value: string;
-  onChange: (v: string) => void;
+  fields: CarrierFieldDescriptor[];
+  values: Record<string, string>;
+  onChange: (key: string, value: string) => void;
+  hint: string;
   disabled: boolean;
 }) {
   const t = useT(STRINGS);
-  const id = useId();
+  const baseId = useId();
   const hintId = useId();
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>{fmt(t.keyLabel, { name })}</Label>
-      <Input
-        id={id}
-        type="password"
-        dir="ltr"
-        autoComplete="off"
-        spellCheck={false}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
-        aria-describedby={hintId}
-        className="h-11"
-      />
+      <div className="space-y-3">
+        {fields.map((field, i) => {
+          const id = `${baseId}-${i}`;
+          return (
+            <div key={field.key} className="space-y-1.5">
+              <Label htmlFor={id}>{field.key === "apiKey" ? fmt(t.keyLabel, { name }) : field.label}</Label>
+              <Input
+                id={id}
+                type={field.secret ? "password" : "text"}
+                dir="ltr"
+                autoComplete="off"
+                spellCheck={false}
+                value={values[field.key] ?? ""}
+                onChange={(e) => onChange(field.key, e.target.value)}
+                disabled={disabled}
+                aria-describedby={hintId}
+                className="h-11"
+              />
+            </div>
+          );
+        })}
+      </div>
       <p id={hintId} className="text-xs text-ink-soft">
-        {fmt(t.keyHint, { name })}
+        {hint}
       </p>
     </div>
   );
@@ -724,6 +935,36 @@ function SelectField({
           </option>
         ))}
       </Select>
+    </div>
+  );
+}
+
+function TextSettingField({
+  label,
+  value,
+  secret,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  secret: boolean;
+  onChange: (v: string) => void;
+  disabled: boolean;
+}) {
+  const id = useId();
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <Input
+        id={id}
+        type={secret ? "password" : "text"}
+        dir="auto"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        className="h-11"
+      />
     </div>
   );
 }

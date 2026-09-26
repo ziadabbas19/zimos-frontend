@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Alert, Button } from "@store-builder/ui";
-import { isApiErrorCode, type Order, type UpdateOrderPayload } from "@store-builder/api-client";
+import { ApiError, isApiErrorCode, type Order, type UpdateOrderPayload } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { getFieldErrors } from "@/lib/errors";
@@ -12,6 +12,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { TextField, Field } from "@/components/Field";
 import { Textarea } from "@/components/Textarea";
 import { isCarrierBooked } from "@/pages/shipping/carriers";
+import { useManualCancelPrompt } from "@/pages/shipping/useManualCancelPrompt";
 
 const SHIPPED_STATES = ["fulfilled", "partially_fulfilled", "returned"];
 
@@ -98,6 +99,7 @@ export function OrderActions({ order, onChanged }: Props) {
   const [reason, setReason] = useState("");
   const [editing, setEditing] = useState(false);
   const [waybillBusy, setWaybillBusy] = useState(false);
+  const manualCancelPrompt = useManualCancelPrompt();
 
   const isCancelled = Boolean(order.cancelledAt);
   const isShipped = SHIPPED_STATES.includes(order.fulfillmentState);
@@ -109,25 +111,47 @@ export function OrderActions({ order, onChanged }: Props) {
     (s) => isCarrierBooked(s) && (s.status === "created" || s.status === "failed"),
   );
 
-  async function confirmCancel() {
-    if (reason.trim().length === 0) throw new Error(t.reasonRequired);
+  /** Throws a translated Error (ConfirmDialog and the manual-cancel dialog show it as-is). */
+  async function cancel(cancelReason: string, acknowledgeManualCancel: boolean) {
     try {
-      await apiClient.cancelOrder(workspaceId, order.id, reason.trim());
+      await apiClient.cancelOrder(workspaceId, order.id, cancelReason, { acknowledgeManualCancel });
     } catch (err) {
-      // ConfirmDialog shows a thrown Error's message as-is; hand it the
-      // translated one.
       if (isApiErrorCode(err, "CARRIER_CANCEL_FAILED")) {
         // The whole cancellation rolled back. Refresh anyway: a rejected key
         // is marked invalid on the courier account even so.
         onChanged();
         throw new Error(`${t.notCancelled} ${errorMessage(err)}`);
       }
-      throw new Error(errorMessage(err));
+      throw err;
     }
     toast.success(t.cancelledToast);
     setCancelling(false);
     setReason("");
     onChanged();
+  }
+
+  async function confirmCancel() {
+    const cancelReason = reason.trim();
+    if (cancelReason.length === 0) throw new Error(t.reasonRequired);
+    try {
+      await cancel(cancelReason, false);
+    } catch (err) {
+      // A courier without a cancel API: nothing changed yet. The merchant
+      // cancels the booking in the courier's dashboard, confirms, and the
+      // same cancellation is sent again with the acknowledgement.
+      const offered = manualCancelPrompt.offer(err, async () => {
+        try {
+          await cancel(cancelReason, true);
+        } catch (retryErr) {
+          throw retryErr instanceof ApiError ? new Error(errorMessage(retryErr)) : retryErr;
+        }
+      });
+      if (offered) {
+        setCancelling(false);
+        return;
+      }
+      throw err instanceof ApiError ? new Error(errorMessage(err)) : err;
+    }
   }
 
   async function downloadWaybill() {
@@ -196,6 +220,8 @@ export function OrderActions({ order, onChanged }: Props) {
         />
         {courierToCancel && <p className="mt-3 text-sm text-ink-soft">{t.courierCancelNote}</p>}
       </ConfirmDialog>
+
+      {manualCancelPrompt.dialog}
 
       <Modal
         open={editing}
