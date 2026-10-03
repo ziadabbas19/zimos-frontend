@@ -22,17 +22,19 @@ const STRINGS = {
 /**
  * The date-range control above the analytics and funnel screens: the presets
  * in a native select (the dashboard's own control — it also keeps the menu
- * library out of every page that shows this), next to the always-on
- * comparison chip.
+ * library out of every page that shows this), next to the comparison chip —
+ * left out (`compare={false}`) on a screen that does not compare periods.
  */
 export function RangeSwitch({
   value,
   onChange,
   className,
+  compare = true,
 }: {
   value: AnalyticsRange;
   onChange: (value: AnalyticsRange) => void;
   className?: string;
+  compare?: boolean;
 }) {
   const t = useT(STRINGS);
   const common = useCommon();
@@ -64,9 +66,11 @@ export function RangeSwitch({
           ))}
         </Select>
       </div>
-      <span className="inline-flex h-9 items-center rounded-[0.5rem] border border-line bg-paper-raised px-3 text-sm font-medium text-ink-soft">
-        {t.compare}
-      </span>
+      {compare && (
+        <span className="inline-flex h-9 items-center rounded-[0.5rem] border border-line bg-paper-raised px-3 text-sm font-medium text-ink-soft">
+          {t.compare}
+        </span>
+      )}
     </div>
   );
 }

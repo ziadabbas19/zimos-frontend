@@ -127,7 +127,7 @@ export function UtmReportPage() {
 
   return (
     <div className="min-w-0 max-w-7xl">
-      <PageHeader title={t.title} description={t.description} actions={<RangeSwitch value={range} onChange={setRange} />} />
+      <PageHeader title={t.title} description={t.description} actions={<RangeSwitch value={range} onChange={setRange} compare={false} />} />
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <FilterTabs

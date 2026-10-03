@@ -74,6 +74,8 @@ describe("UtmReportPage", () => {
     expect(within(rows[3]).getByText("Direct (no tag)")).toBeInTheDocument();
     expect(screen.getByText(/Not tracked: orders the store saw no purchase for/)).toBeInTheDocument();
     expect(paramsOf(0).get("groupBy")).toBe("source");
+    // This report does not compare periods, so the range control says nothing about one.
+    expect(screen.queryByText("Compare: previous period")).not.toBeInTheDocument();
   });
 
   it("drills a source down to its campaigns, and lifts the filter again", async () => {

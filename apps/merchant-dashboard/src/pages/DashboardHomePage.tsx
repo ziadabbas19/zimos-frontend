@@ -35,6 +35,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { RangeSwitch } from "@/components/RangeSwitch";
 import { ComparisonLineChart } from "@/components/charts";
 import { EmptyState } from "@/components/EmptyState";
+import { useOrderLabels } from "@/pages/orders/orderLabels";
 import { fmt, useCommon, useT, type Messages } from "@/i18n/LocaleContext";
 
 const STRINGS = {
@@ -339,6 +340,7 @@ function Overview({
   funnels: Awaited<ReturnType<typeof apiClient.getFunnelAnalytics>> | null;
 }) {
   const t = useT(STRINGS);
+  const labels = useOrderLabels();
   const { metrics, currency } = overview;
   const money = (v: number | null) => <bdi dir="ltr">{formatMoney(v ?? 0, currency)}</bdi>;
   const moneyText = (v: number | null) => formatMoney(v ?? 0, currency);
@@ -493,7 +495,7 @@ function Overview({
                         {order.funnelId ? t.channelFunnel : t.channelStore} · {formatDateTime(order.createdAt)}
                       </p>
                     </div>
-                    <StatusBadge value={order.confirmationState} />
+                    <StatusBadge value={order.confirmationState} text={labels.confirmation(order.confirmationState)} />
                     <span className="tabular-nums text-sm font-medium text-ink">
                       <bdi dir="ltr">{formatMoney(order.totalAmount, currency)}</bdi>
                     </span>
