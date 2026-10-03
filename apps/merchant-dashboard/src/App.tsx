@@ -58,6 +58,7 @@ const WebAnalyticsPage = lazy(() =>
   import("@/pages/analytics/WebAnalyticsPage").then((m) => ({ default: m.WebAnalyticsPage }))
 );
 const RealtimePage = lazy(() => import("@/pages/analytics/RealtimePage").then((m) => ({ default: m.RealtimePage })));
+const UtmReportPage = lazy(() => import("@/pages/analytics/UtmReportPage").then((m) => ({ default: m.UtmReportPage })));
 const FunnelAnalyticsPage = lazy(() =>
   import("@/pages/analytics/FunnelAnalyticsPage").then((m) => ({ default: m.FunnelAnalyticsPage }))
 );
@@ -110,6 +111,7 @@ export default function App() {
                       <Route path="/analytics" element={<LazyRoute><AnalyticsPage /></LazyRoute>} />
                       <Route path="/analytics/web" element={<LazyRoute><WebAnalyticsPage /></LazyRoute>} />
                       <Route path="/analytics/realtime" element={<LazyRoute><RealtimePage /></LazyRoute>} />
+                      <Route path="/analytics/utm" element={<LazyRoute><UtmReportPage /></LazyRoute>} />
                       <Route
                         path="/analytics/funnels/:funnelId"
                         element={<LazyRoute><FunnelAnalyticsPage /></LazyRoute>}

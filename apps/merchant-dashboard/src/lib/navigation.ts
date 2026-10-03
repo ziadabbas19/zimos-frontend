@@ -16,6 +16,7 @@ import {
   ShoppingCart,
   Star,
   Tag,
+  Target,
   Truck,
   Undo2,
   Users,
@@ -48,6 +49,7 @@ export type NavKey =
   | "analytics"
   | "webAnalytics"
   | "realtime"
+  | "utmReport"
   | "subscription"
   | "settings"
   | "support";
@@ -128,6 +130,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: "analytics", to: "/analytics", icon: BarChart3, hiddenForRoles: NO_ANALYTICS_ROLES },
       { key: "webAnalytics", to: "/analytics/web", icon: LineChart, hiddenForRoles: NO_ANALYTICS_ROLES },
       { key: "realtime", to: "/analytics/realtime", icon: Activity, hiddenForRoles: NO_ANALYTICS_ROLES },
+      { key: "utmReport", to: "/analytics/utm", icon: Target, hiddenForRoles: NO_ANALYTICS_ROLES },
     ],
   },
   {
@@ -187,6 +190,7 @@ export const NAV_LABELS = {
     analytics: "Analytics",
     webAnalytics: "Web analytics",
     realtime: "Realtime",
+    utmReport: "Sales by source",
     subscription: "Subscription",
     settings: "Settings",
     support: "Contact support",
@@ -209,6 +213,7 @@ export const NAV_LABELS = {
     analytics: "التحليلات",
     webAnalytics: "زيارات الموقع",
     realtime: "مباشر الآن",
+    utmReport: "المبيعات حسب المصدر",
     subscription: "الاشتراك",
     settings: "الإعدادات",
     support: "تواصل مع الدعم",
