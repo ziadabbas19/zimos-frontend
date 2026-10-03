@@ -36,3 +36,6 @@ export type { ApiErrorCode, ApiFieldProblem, ConfirmationLockDetails } from "./e
 // Funnels live in their own endpoint module (functions over the shared client).
 export * from "./endpoints/funnels";
 export * from "./endpoints/funnelRuntime";
+// The dashboard home and sales by UTM; the orders CSV export.
+export * from "./endpoints/reports";
+export * from "./endpoints/orderExport";
