@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Search, X } from "lucide-react";
+import { Download, Search, X } from "lucide-react";
 import { Alert, Button, Input, cn } from "@store-builder/ui";
 import {
   ORDER_SORTS,
@@ -26,8 +26,11 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { LoadMore } from "@/components/LoadMore";
 import { Select } from "@/components/Select";
 import { useNow } from "@/pages/confirmation/confirmationRoles";
+import { useWorkspace } from "@/context/WorkspaceContext";
+import { canExportOrders } from "@/lib/orderExportAccess";
 import { STAGE_TONE, useOrderLabels } from "./orderLabels";
 import { OrderTimelineLines } from "./components/OrderTimelineLines";
+import { OrderExportDialog } from "./components/OrderExportDialog";
 
 const STRINGS = {
   en: {
@@ -63,6 +66,7 @@ const STRINGS = {
     emptyFiltered: "No orders match this search and dates.",
     loadMoreFailed: "Couldn't load more orders.",
     phoneLabel: "Phone",
+    exportCsv: "Export CSV",
   },
   ar: {
     title: "الأوردرات",
@@ -97,6 +101,7 @@ const STRINGS = {
     emptyFiltered: "لا توجد أوردرات تطابق هذا البحث والتواريخ.",
     loadMoreFailed: "تعذّر تحميل المزيد من الأوردرات.",
     phoneLabel: "الهاتف",
+    exportCsv: "تصدير CSV",
   },
 } satisfies Messages;
 
@@ -169,7 +174,9 @@ function useOrderFilters() {
 
 export function OrdersListPage() {
   const workspaceId = useWorkspaceId();
+  const { currentWorkspace } = useWorkspace();
   const t = useT(STRINGS);
+  const [exporting, setExporting] = useState(false);
   const labels = useOrderLabels();
   const errorMessage = useErrorMessage();
   const filters = useOrderFilters();
@@ -199,7 +206,23 @@ export function OrdersListPage() {
 
   return (
     <div className="max-w-6xl">
-      <PageHeader title={t.title} description={t.description} />
+      <PageHeader
+        title={t.title}
+        description={t.description}
+        actions={
+          canExportOrders(currentWorkspace?.role) ? (
+            <Button variant="outline" className="min-h-11" onClick={() => setExporting(true)}>
+              <Download className="size-4" aria-hidden />
+              {t.exportCsv}
+            </Button>
+          ) : undefined
+        }
+      />
+      <OrderExportDialog
+        open={exporting}
+        onClose={() => setExporting(false)}
+        filters={{ stage: stage ?? undefined, sort, ...query }}
+      />
 
       <SearchAndDates filters={filters} />
 
