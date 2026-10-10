@@ -15,10 +15,23 @@ interface Toast {
   message: string;
   /** Set on an undo toast: what takes the change back. */
   onUndo?: () => void | Promise<void>;
+  /** One thing to do next, named ("See your store"). */
+  action?: ToastAction;
+}
+
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
+export interface ToastOptions {
+  action?: ToastAction;
+  /** How long it stays, in milliseconds. Left out: 4 s, 7 s for an error. */
+  duration?: number;
 }
 
 interface ToastContextValue {
-  notify: (kind: ToastKind, message: string) => void;
+  notify: (kind: ToastKind, message: string, options?: ToastOptions) => void;
   success: (message: string) => void;
   error: (message: string) => void;
   /**
@@ -42,10 +55,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const notify = useCallback(
-    (kind: ToastKind, message: string) => {
+    (kind: ToastKind, message: string, options?: ToastOptions) => {
       const id = nextId++;
-      setToasts((prev) => [...prev, { id, kind, message }]);
-      window.setTimeout(() => dismiss(id), kind === "error" ? 7000 : 4000);
+      setToasts((prev) => [...prev, { id, kind, message, action: options?.action }]);
+      window.setTimeout(() => dismiss(id), options?.duration ?? (kind === "error" ? 7000 : 4000));
     },
     [dismiss]
   );
@@ -96,6 +109,27 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 className="min-h-9 shrink-0 cursor-pointer rounded-full px-3 font-semibold underline underline-offset-4 hover:bg-success/10"
               >
                 {t.undo}
+              </button>
+            </div>
+          ) : toast.action ? (
+            <div
+              key={toast.id}
+              role={toast.kind === "error" ? "alert" : "status"}
+              className={cn(
+                "pointer-events-auto flex w-full max-w-md items-center justify-between gap-3 rounded-[0.5rem] border px-4 py-2 text-start text-sm shadow-lg",
+                toast.kind === "success" ? "border-success/30 bg-success-soft text-success" : "border-danger/30 bg-danger-soft text-danger"
+              )}
+            >
+              <span className="min-w-0">{toast.message}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  dismiss(toast.id);
+                  toast.action?.onClick();
+                }}
+                className="min-h-9 shrink-0 cursor-pointer rounded-full px-3 font-semibold underline underline-offset-4 hover:bg-ink/5"
+              >
+                {toast.action.label}
               </button>
             </div>
           ) : (

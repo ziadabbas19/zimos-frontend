@@ -1,4 +1,4 @@
-import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { IconPushLeft, IconPushRight } from "@/components/icons";
 import { Button, cn } from "@store-builder/ui";
 
 /**
@@ -63,7 +63,7 @@ export function PaneRail({
   onExpand: () => void;
   className?: string;
 }) {
-  const OpenIcon = side === "start" ? PanelLeftOpen : PanelRightOpen;
+  const OpenIcon = side === "start" ? IconPushRight : IconPushLeft;
   return (
     <div className={cn("w-12 shrink-0 flex-col items-center border-line bg-paper-raised py-2", side === "start" ? "border-e" : "border-s", className)}>
       <Button type="button" size="icon" variant="ghost" aria-label={expandLabel} title={expandLabel} onClick={onExpand}>
@@ -83,7 +83,7 @@ export function PaneCollapseToggle({
   collapseLabel: string;
   onCollapse: () => void;
 }) {
-  const CloseIcon = side === "start" ? PanelLeftClose : PanelRightClose;
+  const CloseIcon = side === "start" ? IconPushLeft : IconPushRight;
   return (
     <div className="flex items-center justify-end border-b border-line px-1.5 py-1">
       <Button type="button" size="icon" variant="ghost" aria-label={collapseLabel} title={collapseLabel} onClick={onCollapse}>
