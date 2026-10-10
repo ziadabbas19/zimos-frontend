@@ -1,8 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import { BarChart3, Copy, Eye, Layers, Link2, MoreHorizontal, MousePointerClick, Pause, Pencil, Play, Plus, Share2, ShoppingBag, Trash2, Wallet } from "lucide-react";
-import { FunnelShareDialog, FunnelWizard } from "./FunnelWizard";
-import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, Input, Label, Spinner, cn } from "@store-builder/ui";
+import { Button, Input, Label, cn } from "@store-builder/ui";
 import {
   funnelsDelete,
   funnelsList,
@@ -17,20 +14,40 @@ import {
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
-import { formatDate, formatMoney, formatPercentValue } from "@/lib/format";
+import { formatMoney, formatPercentValue } from "@/lib/format";
 import { percentToRatio, rangeWindows, type AnalyticsRange } from "@/lib/analytics";
 import { canViewAnalytics } from "@/lib/analyticsAccess";
+import { useViewNavigate } from "@/lib/viewTransition";
 import { useWorkspace } from "@/context/WorkspaceContext";
+import {
+  IconChart,
+  IconClick,
+  IconCopy,
+  IconDelete,
+  IconExternal,
+  IconEye,
+  IconFunnels,
+  IconLaunch,
+  IconLink,
+  IconOrders,
+  IconPause,
+  IconPlay,
+  IconPlus,
+  IconSearch,
+  IconShare,
+  IconWallet,
+} from "@/components/icons";
 import { RangeSwitch } from "@/components/RangeSwitch";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
-import { StatusBadge } from "@/components/StatusBadge";
-import { KpiCard } from "@/components/KpiCard";
 import { Modal } from "@/components/Modal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import type { ContextMenuItem } from "@/components/ContextMenu";
 import { EmptyState } from "@/components/EmptyState";
+import { ChipRow, ListSkeleton, ListToolbar, type ChipItem } from "@/components/list";
 import { useToast } from "@/components/Toast";
-import { fmt, useCommon, useLocale, useT, type Locale, type Messages } from "@/i18n/LocaleContext";
+import { useIsCompact, useIsPhone } from "@/pages/returns/rowkit/useScreen";
+import { fmt, getIntlLocale, useCommon, useLocale, useT, type Locale, type Messages } from "@/i18n/LocaleContext";
 import {
   STARTER_TEMPLATE_IDS,
   createFunnelFromStarter,
@@ -43,111 +60,10 @@ import {
 import { STARTER_TEMPLATE_TEXT } from "./FunnelEditorPage.strings";
 import { StepChain } from "./StepChain";
 import { funnelPreviewUrl, useStoreBaseUrl } from "./FunnelPublicLink";
-
-const STRINGS = {
-  en: {
-    title: "Funnels",
-    description: "Single-product sales flows with order bumps, upsells and downsells.",
-    createFunnel: "Create funnel",
-    kpiVisits: "Sessions",
-    kpiVisitsHint: "All funnels, in the period",
-    kpiOrders: "Orders",
-    kpiOrdersHint: "Placed inside funnels",
-    kpiRevenue: "Revenue",
-    kpiRevenueHint: "Including upsells",
-    kpiConversion: "Conversion",
-    kpiConversionHint: "Checkouts ÷ sessions",
-    statsUnavailable: "Stats couldn't be loaded",
-    statsNoAccess: "Your role can't see analytics",
-    viewAnalytics: "Analytics",
-    emptyTitle: "No funnels yet",
-    emptyDescription: "Create a funnel to sell a single product with a focused landing page and one-click offers.",
-    colFunnel: "Funnel",
-    colSteps: "Steps",
-    colVisits: "Visits",
-    colOrders: "Orders",
-    colConversion: "Conv.",
-    colRevenue: "Revenue",
-    colUpdated: "Updated",
-    pause: "Pause",
-    resume: "Resume",
-    publish: "Publish",
-    duplicate: "Duplicate",
-    share: "Share",
-    moreActions: "More actions",
-    duplicating: "Duplicating…",
-    copyShareLink: "Copy share link",
-    toastLive: "\"{name}\" is live.",
-    toastPaused: "\"{name}\" paused.",
-    toastResumed: "\"{name}\" resumed.",
-    toastPublishBlocked: "\"{name}\" can't be published yet ({n} problems). Open the editor to fix them.",
-    toastDuplicatedAs: "Duplicated as \"{name}\".",
-    toastDuplicatePartial: "The copy was created but not every step or edge could be copied: {message}",
-    toastCopied: "Copied {url}",
-    toastCopyFailed: "Couldn't copy to clipboard.",
-    toastDeleted: "\"{name}\" deleted.",
-    copySuffix: "{name} (copy)",
-    modalDescription: "Pick a name and a starting point. You can change everything in the editor.",
-    deleteTitleNamed: "Delete \"{name}\"?",
-    deleteTitle: "Delete funnel?",
-    deleteDescription: "The funnel, its steps and its share link stop working immediately. Orders already placed are kept.",
-    deleteConfirm: "Delete funnel",
-    statusDraft: "Draft",
-    statusPublished: "Published",
-    statusPaused: "Paused",
-  },
-  ar: {
-    title: "مسارات البيع",
-    description: "مسارات بيع لمنتج واحد مع عروض إضافية عند الدفع وعروض بعد الشراء وعروض بديلة.",
-    createFunnel: "إنشاء مسار بيع",
-    kpiVisits: "الجلسات",
-    kpiVisitsHint: "كل المسارات، خلال الفترة",
-    kpiOrders: "الطلبات",
-    kpiOrdersHint: "الطلبات المُنشأة داخل المسارات",
-    kpiRevenue: "الإيرادات",
-    kpiRevenueHint: "شاملة العروض الإضافية",
-    kpiConversion: "معدل التحويل",
-    kpiConversionHint: "عمليات الدفع ÷ الجلسات",
-    statsUnavailable: "تعذّر تحميل الإحصاءات",
-    statsNoAccess: "دورك لا يتيح عرض التحليلات",
-    viewAnalytics: "التحليلات",
-    emptyTitle: "لا توجد مسارات بيع بعد",
-    emptyDescription: "أنشئ مسار بيع لبيع منتج واحد بصفحة هبوط مركّزة وعروض بنقرة واحدة.",
-    colFunnel: "مسار البيع",
-    colSteps: "الخطوات",
-    colVisits: "الزيارات",
-    colOrders: "الطلبات",
-    colConversion: "التحويل",
-    colRevenue: "الإيرادات",
-    colUpdated: "آخر تحديث",
-    pause: "إيقاف مؤقت",
-    resume: "استئناف",
-    publish: "نشر",
-    duplicate: "نسخ المسار",
-    share: "مشاركة",
-    moreActions: "إجراءات أخرى",
-    duplicating: "جارٍ النسخ…",
-    copyShareLink: "نسخ رابط المشاركة",
-    toastLive: "«{name}» منشور الآن.",
-    toastPaused: "تم إيقاف «{name}» مؤقتًا.",
-    toastResumed: "تم استئناف «{name}».",
-    toastPublishBlocked: "لا يمكن نشر «{name}» بعد ({n} مشكلات). افتح المحرر لإصلاحها.",
-    toastDuplicatedAs: "تم النسخ باسم «{name}».",
-    toastDuplicatePartial: "تم إنشاء النسخة لكن تعذّر نسخ بعض الخطوات أو الروابط: {message}",
-    toastCopied: "تم نسخ {url}",
-    toastCopyFailed: "تعذّر النسخ إلى الحافظة.",
-    toastDeleted: "تم حذف «{name}».",
-    copySuffix: "{name} (نسخة)",
-    modalDescription: "اختر اسمًا ونقطة بداية. يمكنك تغيير كل شيء من المحرر.",
-    deleteTitleNamed: "حذف «{name}»؟",
-    deleteTitle: "حذف مسار البيع؟",
-    deleteDescription: "سيتوقف مسار البيع وخطواته ورابط المشاركة عن العمل فورًا. الطلبات السابقة تبقى محفوظة.",
-    deleteConfirm: "حذف مسار البيع",
-    statusDraft: "مسودة",
-    statusPublished: "منشور",
-    statusPaused: "متوقف مؤقتًا",
-  },
-} satisfies Messages;
+import { FunnelShareDialog, FunnelWizard } from "./FunnelWizard";
+import { FunnelDesk, FunnelRow } from "./list/FunnelRow";
+import { FunnelStats, type FunnelStat } from "./list/FunnelStats";
+import { FUNNEL_LIST_STRINGS } from "./list/funnelListStrings";
 
 const FORM_STRINGS = {
   en: {
@@ -172,11 +88,8 @@ const FORM_STRINGS = {
   },
 } satisfies Messages;
 
-const STATUS_TONE: Record<FunnelStatus, "neutral" | "success" | "warning"> = {
-  draft: "neutral",
-  published: "success",
-  paused: "warning",
-};
+type StatusFilter = "all" | FunnelStatus;
+const STATUS_ORDER: FunnelStatus[] = ["published", "draft", "paused"];
 
 interface StartTemplate {
   id: StarterTemplateId;
@@ -199,14 +112,26 @@ function partialIdOf(err: unknown): string | null {
   return typeof id === "string" ? id : null;
 }
 
+/**
+ * /funnels on the list pattern: the header with "New funnel", four compact
+ * stat cards, one toolbar (search by name), the statuses as chips with their
+ * counts, then the funnels: a card each on a phone, a sheet of rows on a wide
+ * screen. A row opens the editor; "…", a right-click or a long press holds
+ * the rest.
+ *
+ * Nothing here changes what is saved or who may do it: the same calls as the
+ * table this replaced, and the link of a funnel is still the store's own
+ * (FunnelPublicLink). Search and the status chips narrow the list in the
+ * browser: the endpoint returns every funnel at once.
+ */
 export function FunnelsPage() {
   const workspaceId = useWorkspaceId();
-  const navigate = useNavigate();
+  const navigate = useViewNavigate();
   const toast = useToast();
-  const t = useT(STRINGS);
-  const c = useCommon();
-  const { intlLocale } = useLocale();
+  const t = useT(FUNNEL_LIST_STRINGS);
   const describeError = useFunnelErrorMessage();
+  const compact = useIsCompact();
+  const phone = useIsPhone();
   const list = useAsync(() => funnelsList(apiClient, workspaceId), [workspaceId]);
   const storeBase = useStoreBaseUrl();
 
@@ -214,9 +139,19 @@ export function FunnelsPage() {
   const [deleting, setDeleting] = useState<FunnelDto | null>(null);
   const [sharing, setSharing] = useState<FunnelDto | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<StatusFilter>("all");
 
-  const funnels = list.data ?? [];
+  const funnels = useMemo(() => list.data ?? [], [list.data]);
   const reload = () => list.refresh({ silent: true });
+
+  const shown = useMemo(() => {
+    const q = query.trim().toLocaleLowerCase();
+    return funnels.filter(
+      (f) => (status === "all" || f.status === status) && (!q || f.name.toLocaleLowerCase().includes(q) || (f.subdomain ?? "").toLocaleLowerCase().includes(q))
+    );
+  }, [funnels, query, status]);
+  const filtered = query.trim() !== "" || status !== "all";
 
   // The list endpoint has no step count; fetch each funnel's steps (read-only, parallel).
   const idsKey = funnels.map((f) => f.id).join(",");
@@ -227,7 +162,7 @@ export function FunnelsPage() {
     return new Map(entries);
   }, [workspaceId, idsKey]);
 
-  // Funnel stats need analytics.view; a role without it gets dashes, not a 403.
+  // Funnel stats need analytics.view; a role without it gets dashes and one sentence, not a 403.
   const { currentWorkspace } = useWorkspace();
   const analyticsAllowed = canViewAnalytics(currentWorkspace?.role);
   const [range, setRange] = useState<AnalyticsRange>("30d");
@@ -238,35 +173,41 @@ export function FunnelsPage() {
   );
   const statsById = new Map((stats.data?.funnels ?? []).map((row) => [row.id, row]));
   const currency = stats.data?.currency ?? "EGP";
-
-  const numberFmt = new Intl.NumberFormat(intlLocale);
-
-  const statusLabel: Record<FunnelStatus, string> = {
-    draft: t.statusDraft,
-    published: t.statusPublished,
-    paused: t.statusPaused,
-  };
-
-  /** Shown while the stats load, when they failed or aren't allowed: never a made-up number. */
-  const noStatReason = !analyticsAllowed ? t.statsNoAccess : stats.error ? t.statsUnavailable : undefined;
-  const noStat = (
-    <span title={noStatReason} aria-label={noStatReason}>
-      —
-    </span>
-  );
-  const stat = (value: number | null | undefined, render: (v: number) => string) =>
-    value === null || value === undefined ? noStat : <bdi dir="ltr">{render(value)}</bdi>;
   const totals = stats.data?.totals;
+  const digits = new Intl.NumberFormat(getIntlLocale());
+  const figure = (value: number | null | undefined, render: (v: number) => string) =>
+    value === null || value === undefined ? null : <bdi dir="ltr">{render(value)}</bdi>;
+  const statCards: FunnelStat[] = [
+    { id: "visits", label: t.kpiVisits, icon: IconEye, value: figure(totals?.sessions, digits.format) },
+    { id: "orders", label: t.kpiOrders, icon: IconOrders, value: figure(totals?.orders, digits.format) },
+    { id: "revenue", label: t.kpiRevenue, icon: IconWallet, value: figure(totals?.revenue, (v) => formatMoney(v, currency)), hint: t.kpiRevenueHint },
+    {
+      id: "conversion",
+      label: t.kpiConversion,
+      icon: IconClick,
+      value: figure(totals?.conversionRate, (v) => formatPercentValue(percentToRatio(v))),
+      hint: t.kpiConversionHint,
+    },
+  ];
+  /** Shown when the stats failed or aren't allowed: never a made-up number. */
+  const noStatReason = !analyticsAllowed ? t.statsNoAccess : stats.error ? t.statsUnavailable : undefined;
 
   async function changeStatus(f: FunnelDto) {
     setBusyId(f.id);
     try {
       if (f.status === "published") {
         await funnelsPause(apiClient, workspaceId, f.id);
-        toast.success(fmt(t.toastPaused, { name: f.name }));
+        // Pausing is undone by resuming: the same permission, the same call the menu makes.
+        toast.undo(fmt(t.toastPaused, { name: f.name }), async () => {
+          await funnelsResume(apiClient, workspaceId, f.id);
+          await reload();
+        });
       } else if (f.status === "paused") {
         await funnelsResume(apiClient, workspaceId, f.id);
-        toast.success(fmt(t.toastResumed, { name: f.name }));
+        toast.undo(fmt(t.toastResumed, { name: f.name }), async () => {
+          await funnelsPause(apiClient, workspaceId, f.id);
+          await reload();
+        });
       } else {
         await funnelsPublish(apiClient, workspaceId, f.id);
         toast.success(fmt(t.toastLive, { name: f.name }));
@@ -303,7 +244,7 @@ export function FunnelsPage() {
   async function copyLink(url: string) {
     try {
       await navigator.clipboard.writeText(url);
-      toast.success(fmt(t.toastCopied, { url }));
+      toast.success(t.toastCopied);
     } catch {
       toast.error(t.toastCopyFailed);
     }
@@ -321,166 +262,134 @@ export function FunnelsPage() {
     await reload();
   }
 
+  /** The row's menu: the same list for "…", a right-click and a long press. */
+  function menuFor(f: FunnelDto): ContextMenuItem[] {
+    const busy = busyId === f.id;
+    // The store's own link (its connected domain, else the store address): null until there is one to open.
+    const url = funnelPreviewUrl(storeBase, f);
+    const items: ContextMenuItem[] = [];
+    if (url) {
+      items.push({ id: "preview", label: t.preview, icon: IconExternal, onSelect: () => void window.open(url, "_blank", "noopener,noreferrer") });
+      items.push({ id: "copy-link", label: t.copyLink, icon: IconLink, onSelect: () => void copyLink(url) });
+    }
+    if (analyticsAllowed) items.push({ id: "report", label: t.report, icon: IconChart, onSelect: () => navigate(`/analytics/funnels/${f.id}`) });
+    items.push({
+      id: "status",
+      label: f.status === "published" ? t.pause : f.status === "paused" ? t.resume : t.publish,
+      icon: f.status === "published" ? IconPause : f.status === "paused" ? IconPlay : IconLaunch,
+      disabled: busy,
+      onSelect: () => void changeStatus(f),
+    });
+    items.push({ id: "duplicate", label: t.duplicate, icon: IconCopy, disabled: busyId !== null, onSelect: () => void duplicate(f) });
+    items.push({ id: "share", label: t.shareCode, icon: IconShare, onSelect: () => setSharing(f) });
+    items.push({ id: "delete", label: t.delete, icon: IconDelete, destructive: true, separatorBefore: true, onSelect: () => setDeleting(f) });
+    return items;
+  }
+
+  const newFunnel = (
+    <Button className="min-h-11 rounded-full px-5" onClick={() => setCreating(true)}>
+      <IconPlus className="size-4" aria-hidden />
+      {t.newFunnel}
+    </Button>
+  );
+
+  const count = (s: FunnelStatus) => funnels.filter((f) => f.status === s).length;
+  const statusLabels: Record<FunnelStatus, string> = { draft: t.statusDraft, published: t.statusPublished, paused: t.statusPaused };
+  const chips: ChipItem<StatusFilter>[] = [
+    { value: "all", label: t.all, count: funnels.length },
+    ...STATUS_ORDER.map((s) => ({ value: s, label: statusLabels[s], count: count(s), tone: s === "paused" ? ("attention" as const) : ("default" as const) })),
+  ];
+
+  const lines = shown.map((f) => (
+    <FunnelRow
+      key={f.id}
+      t={t}
+      funnel={f}
+      compact={compact}
+      stepCount={stepCounts.data?.get(f.id)}
+      stats={statsById.get(f.id)}
+      showStats={analyticsAllowed}
+      currency={currency}
+      menu={menuFor(f)}
+      busy={busyId === f.id}
+    />
+  ));
+
+  const firstLoad = list.loading && !list.data;
+  const nothingYet = !firstLoad && !list.error && funnels.length === 0;
+
   return (
     <div className="max-w-6xl">
       <PageHeader
         title={t.title}
-        description={t.description}
-        actions={
-          <>
-            {analyticsAllowed && <RangeSwitch value={range} onChange={setRange} />}
-            <Button onClick={() => setCreating(true)}>
-              <Plus className="size-4" aria-hidden /> {t.createFunnel}
-            </Button>
-          </>
-        }
+        // A phone keeps the first screen for the funnels: the sentence is for wider screens.
+        description={phone ? undefined : t.description}
+        actions={analyticsAllowed && !nothingYet ? <RangeSwitch value={range} onChange={setRange} /> : undefined}
+        primaryAction={newFunnel}
       />
 
-      <DataState loading={list.loading} error={list.error} onRetry={() => list.refresh()}>
-        <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <KpiCard
-            label={t.kpiVisits}
-            value={stat(totals?.sessions, numberFmt.format)}
-            icon={<Eye />}
-            hint={noStatReason ?? t.kpiVisitsHint}
-          />
-          <KpiCard
-            label={t.kpiOrders}
-            value={stat(totals?.orders, numberFmt.format)}
-            icon={<ShoppingBag />}
-            hint={noStatReason ?? t.kpiOrdersHint}
-          />
-          <KpiCard
-            label={t.kpiRevenue}
-            value={stat(totals?.revenue, (v) => formatMoney(v, currency))}
-            icon={<Wallet />}
-            hint={noStatReason ?? t.kpiRevenueHint}
-          />
-          <KpiCard
-            label={t.kpiConversion}
-            value={stat(totals?.conversionRate, (v) => formatPercentValue(percentToRatio(v)))}
-            icon={<MousePointerClick />}
-            hint={noStatReason ?? t.kpiConversionHint}
-          />
-        </div>
-
-        {funnels.length === 0 ? (
+      <DataState
+        loading={firstLoad}
+        error={list.data ? null : list.error}
+        onRetry={() => void list.refresh()}
+        skeleton={
+          <div className="flex flex-col gap-3">
+            <FunnelStats stats={statCards} label={t.stats} loading />
+            <ListSkeleton variant={compact ? "card" : "table"} rows={5} />
+          </div>
+        }
+      >
+        {nothingYet ? (
           <EmptyState
-            icon={<Layers />}
+            icon={<IconFunnels aria-hidden />}
             title={t.emptyTitle}
             description={t.emptyDescription}
-            action={<Button onClick={() => setCreating(true)}>{t.createFunnel}</Button>}
+            action={
+              <Button className="min-h-11 rounded-full px-5" onClick={() => setCreating(true)}>
+                <IconPlus className="size-4" aria-hidden />
+                {t.emptyAction}
+              </Button>
+            }
           />
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-line bg-paper-raised">
-            <table className="w-full min-w-[960px] text-sm">
-              <thead>
-                <tr className="border-b border-line bg-paper text-start text-xs uppercase tracking-wide text-ink-soft">
-                  <th className="px-4 py-3 text-start font-medium">{t.colFunnel}</th>
-                  <th className="px-4 py-3 text-start font-medium">{c.status}</th>
-                  <th className="px-4 py-3 text-start font-medium">{t.colSteps}</th>
-                  <th className="px-4 py-3 text-end font-medium">{t.colVisits}</th>
-                  <th className="px-4 py-3 text-end font-medium">{t.colOrders}</th>
-                  <th className="px-4 py-3 text-end font-medium">{t.colConversion}</th>
-                  <th className="px-4 py-3 text-end font-medium">{t.colRevenue}</th>
-                  <th className="px-4 py-3 text-start font-medium">{t.colUpdated}</th>
-                  <th className="px-4 py-3 font-medium">
-                    <span className="sr-only">{c.actions}</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {funnels.map((f) => {
-                  const busy = busyId === f.id;
-                  const url = funnelPreviewUrl(storeBase, f);
-                  const count = stepCounts.data?.get(f.id);
-                  const row = statsById.get(f.id);
-                  return (
-                    <tr
-                      key={f.id}
-                      onClick={() => navigate(`/funnels/${f.id}`)}
-                      className="cursor-pointer border-b border-line last:border-0 hover:bg-paper"
-                    >
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-ink" dir="auto">
-                          {f.name}
-                        </p>
-                        {f.subdomain && (
-                          <p className="text-xs text-ink-soft" dir="ltr">
-                            <bdi>{f.subdomain}</bdi>
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge value={f.status} text={statusLabel[f.status]} tone={STATUS_TONE[f.status]} />
-                      </td>
-                      <td className="px-4 py-3 tabular-nums text-ink-soft">
-                        <bdi dir="ltr">{count === undefined ? "—" : numberFmt.format(count)}</bdi>
-                      </td>
-                      <td className="px-4 py-3 text-end tabular-nums text-ink-soft">{stat(row?.sessions, numberFmt.format)}</td>
-                      <td className="px-4 py-3 text-end tabular-nums text-ink-soft">{stat(row?.orders, numberFmt.format)}</td>
-                      <td className="px-4 py-3 text-end tabular-nums text-ink-soft">
-                        {stat(row ? row.conversionRate : undefined, (v) => formatPercentValue(percentToRatio(v)))}
-                      </td>
-                      <td className="px-4 py-3 text-end tabular-nums text-ink-soft">
-                        {stat(row?.revenue, (v) => formatMoney(v, currency))}
-                      </td>
-                      <td className="px-4 py-3 text-ink-soft">{formatDate(f.updatedAt)}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-end" onClick={(e) => e.stopPropagation()}>
-                        {/* One clear action, and the rest behind a menu with their names. */}
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Button size="sm" variant="outline" onClick={() => navigate(`/funnels/${f.id}`)}>
-                            <Pencil className="size-4" aria-hidden />
-                            {c.edit}
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger render={<Button size="icon-sm" variant="ghost" aria-label={t.moreActions} title={t.moreActions} />}>
-                              {busy ? <Spinner className="size-4" /> : <MoreHorizontal className="size-4" aria-hidden />}
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="min-w-52">
-                              {analyticsAllowed && (
-                                <DropdownMenuItem onClick={() => navigate(`/analytics/funnels/${f.id}`)}>
-                                  <BarChart3 className="size-4" aria-hidden />
-                                  {t.viewAnalytics}
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem disabled={busy} onClick={() => void changeStatus(f)}>
-                                {f.status === "published" ? <Pause className="size-4" aria-hidden /> : <Play className="size-4" aria-hidden />}
-                                {f.status === "published" ? t.pause : f.status === "paused" ? t.resume : t.publish}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem disabled={busyId !== null} onClick={() => void duplicate(f)}>
-                                <Copy className="size-4" aria-hidden />
-                                {t.duplicate}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => setSharing(f)}>
-                                <Share2 className="size-4" aria-hidden />
-                                {t.share}
-                              </DropdownMenuItem>
-                              {url && (
-                                <DropdownMenuItem onClick={() => void copyLink(url)}>
-                                  <Link2 className="size-4" aria-hidden />
-                                  {t.copyShareLink}
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem variant="destructive" onClick={() => setDeleting(f)}>
-                                <Trash2 className="size-4" aria-hidden />
-                                {c.delete}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="flex min-w-0 flex-col gap-3">
+            <FunnelStats stats={statCards} label={t.stats} loading={analyticsAllowed && stats.loading && !stats.data} reason={noStatReason} />
+
+            <ListToolbar search={{ value: query, onChange: setQuery, placeholder: t.searchPlaceholder, label: t.search }} />
+            <ChipRow items={chips} value={status} onChange={setStatus} label={t.statuses} />
+
+            {shown.length === 0 ? (
+              <EmptyState
+                icon={<IconSearch aria-hidden />}
+                title={t.noMatchTitle}
+                description={filtered ? t.noMatchBody : undefined}
+                action={
+                  <Button
+                    variant="outline"
+                    className="min-h-11 rounded-full px-5"
+                    onClick={() => {
+                      setQuery("");
+                      setStatus("all");
+                    }}
+                  >
+                    {t.showAll}
+                  </Button>
+                }
+              />
+            ) : compact ? (
+              <ul aria-label={t.list} className="flex flex-col gap-2.5">
+                {lines}
+              </ul>
+            ) : (
+              <FunnelDesk t={t} showStats={analyticsAllowed}>
+                {lines}
+              </FunnelDesk>
+            )}
           </div>
         )}
       </DataState>
 
-      <Modal open={creating} onClose={() => setCreating(false)} title={t.createFunnel} description={t.modalDescription}>
+      <Modal open={creating} onClose={() => setCreating(false)} title={t.modalTitle} description={t.modalDescription}>
         {creating && <FunnelWizard onCancel={() => setCreating(false)} onCreated={(id) => navigate(`/funnels/${id}`)} />}
       </Modal>
 
@@ -488,7 +397,7 @@ export function FunnelsPage() {
 
       <ConfirmDialog
         open={deleting !== null}
-        title={deleting ? fmt(t.deleteTitleNamed, { name: deleting.name }) : t.deleteTitle}
+        title={deleting ? fmt(t.deleteTitle, { name: deleting.name }) : ""}
         description={t.deleteDescription}
         confirmLabel={t.deleteConfirm}
         destructive
