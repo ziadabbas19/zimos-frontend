@@ -103,11 +103,15 @@ export const LIST_STRINGS = {
     addStep: "Add step",
     reorder: "Reorder {name}",
     deleteNamed: "Delete {name}",
+    duplicateNamed: "Duplicate {name}",
+    copyName: "{name} (copy)",
   },
   ar: {
     addStep: "إضافة خطوة",
     reorder: "إعادة ترتيب {name}",
     deleteNamed: "حذف {name}",
+    duplicateNamed: "نسخ {name}",
+    copyName: "{name} (نسخة)",
   },
 } satisfies Messages;
 

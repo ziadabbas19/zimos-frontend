@@ -16,6 +16,7 @@ import { STEP_DEFAULT_NAMES, STEP_TYPE_LABELS, VALIDATION_STRINGS } from "./Funn
 import { tempId, uniqueStepKey, type StarterPlan, type UiEdge, type UiEdgeCondition, type UiFunnel, type UiStep, type UiStepType } from "./funnelAdapter";
 import { pageElementCount, stepPageTree } from "./funnelPages";
 import { flowSteps, isGenericStep } from "./genericPageRules";
+import { duplicateSection } from "@/pages/website/editor/canvasTools";
 
 // ---------------------------------------------------------------- layout --
 
@@ -181,6 +182,38 @@ export function addStepAfter(f: UiFunnel, fromKey: string, type: UiStepType, loc
   const index = f.steps.findIndex((s) => s.key === fromKey);
   const steps = [...f.steps.slice(0, index + 1), step, ...f.steps.slice(index + 1)];
   return { funnel: { ...f, steps, edges: [...f.edges, edge(from.key, step.key, nextCondition(from, f.edges))] }, key: step.key };
+}
+
+/**
+ * A copy of a step, placed after it. The copy carries the same type, offer,
+ * order bump and search settings, and the same page with a new id on every
+ * section and element (two steps must not share ids: a path can follow one
+ * button of one page). It is not yet saved (`id: null`), and a running split
+ * test stays with the original.
+ *
+ * On the path, the copy arrives the way "add step after" brings a new one:
+ * connected from the original by the condition that step's next path carries.
+ * A generic page (a custom step no path touches) stays off the path, and its
+ * copy takes an address of its own.
+ */
+export function duplicateStep(f: UiFunnel, key: string, name: string, takenKeys: Iterable<string>): { funnel: UiFunnel; key: string } | null {
+  const source = f.steps.find((s) => s.key === key);
+  if (!source) return null;
+  const generic = isGenericStep(source, f.edges);
+  const copy: UiStep = {
+    ...source,
+    id: null,
+    key: uniqueStepKey(generic ? source.key : source.type.replace(/_/g, "-"), takenKeys),
+    name,
+    experimentId: null,
+    seo: JSON.parse(JSON.stringify(source.seo ?? {})) as Record<string, unknown>,
+    tree: { ...source.tree, sections: source.tree.sections.map(duplicateSection) },
+    ...freeSpot(f.steps, source.x + GAP_X, source.y),
+  };
+  const index = f.steps.findIndex((s) => s.key === key);
+  const steps = [...f.steps.slice(0, index + 1), copy, ...f.steps.slice(index + 1)];
+  const edges = generic ? f.edges : [...f.edges, edge(source.key, copy.key, nextCondition(source, f.edges))];
+  return { funnel: { ...f, steps, edges }, key: copy.key };
 }
 
 /**
