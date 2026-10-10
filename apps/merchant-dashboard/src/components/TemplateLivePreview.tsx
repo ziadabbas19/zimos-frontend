@@ -66,6 +66,11 @@ type Outcome = "ready" | "failed";
  * The theme gallery uses the same frame for a page it builds itself: `page`
  * replaces the template's home tree, and `theme` / `colorMode` render it in
  * an unsaved store theme and in light or dark (a new value re-renders).
+ *
+ * A card is a 4:3 window onto the desktop layout unless told otherwise:
+ * `aspect="3/4"` makes it a portrait box (the templates grid, the site's
+ * thumbnail) and `cardLayout="mobile"` lays the page out at a phone's width
+ * inside it, so what shows is the top of the store as a shopper's phone has it.
  */
 export function TemplateLivePreview({
   workspaceId,
@@ -77,6 +82,8 @@ export function TemplateLivePreview({
   fallback,
   variant = "card",
   device = "desktop",
+  aspect = "4/3",
+  cardLayout = "desktop",
   className,
 }: {
   workspaceId: string;
@@ -92,6 +99,10 @@ export function TemplateLivePreview({
   fallback: ReactNode;
   variant?: "card" | "full";
   device?: "desktop" | "mobile";
+  /** The card's box (card variant only): landscape as before, or portrait. */
+  aspect?: "4/3" | "3/4";
+  /** The viewport a card lays the page out at (card variant only). The full variant follows `device`. */
+  cardLayout?: "desktop" | "mobile";
   className?: string;
 }) {
   const card = variant === "card";
@@ -198,14 +209,19 @@ export function TemplateLivePreview({
     } catch {
       // Cross-origin: the storefront has answered.
     }
-    setOutcome((o) => o ?? "ready");
+    // The load event comes before the store has painted its first section (it streams in), and a card would
+    // flash white: the poster stays a moment longer, then the render fades in over it.
     releaseRef.current?.();
+    window.setTimeout(() => setOutcome((o) => o ?? "ready"), card ? 900 : 0);
   }
 
   // Lay the page out at a real viewport width, then scale it into the box.
-  const layoutWidth = !card && device === "mobile" ? MOBILE_WIDTH : DESKTOP_WIDTH;
-  const scale = width > 0 ? Math.min(1, width / layoutWidth) : 0.25;
-  const layoutHeight = card ? (DESKTOP_WIDTH * 3) / 4 : height > 0 ? height / scale : 800;
+  const layoutWidth = (card ? cardLayout : device) === "mobile" ? MOBILE_WIDTH : DESKTOP_WIDTH;
+  // A card always fills its box (it may be wider than a phone's layout); the large preview never grows past life size.
+  const fit = width > 0 ? width / layoutWidth : 0.25;
+  const scale = card && cardLayout === "mobile" ? fit : Math.min(1, fit);
+  const portrait = aspect === "3/4";
+  const layoutHeight = card ? (portrait ? (layoutWidth * 4) / 3 : (layoutWidth * 3) / 4) : height > 0 ? height / scale : 800;
   const showFrame = slot && phase !== "failed";
 
   return (
@@ -213,12 +229,12 @@ export function TemplateLivePreview({
       ref={rootRef}
       className={cn(
         "relative w-full overflow-hidden bg-paper",
-        card ? "aspect-[4/3]" : "h-full",
+        card ? (portrait ? "aspect-[3/4]" : "aspect-[4/3]") : "h-full",
         className
       )}
     >
       {phase !== "ready" && (
-        <div className={cn("absolute inset-0", phase !== "failed" && "motion-safe:animate-pulse")}>
+        <div className={cn("absolute inset-0", !card && phase !== "failed" && "motion-safe:animate-pulse")}>
           {fallback}
         </div>
       )}

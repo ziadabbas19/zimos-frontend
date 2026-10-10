@@ -78,6 +78,7 @@ export {
   Eye as IconEye,
   EyeOff as IconEyeOff,
   TextCursorInput as IconField,
+  FilePlus as IconFileAdd,
   FileQuestionMark as IconFileUnknown,
   FileUp as IconFileUp,
   Film as IconFilm,
@@ -175,6 +176,8 @@ export {
   LoaderCircle as IconSpinner,
   Star as IconStar,
   Store as IconStore,
+  Store as IconStoreSettings,
+  Paintbrush as IconStyle,
   CircleCheck as IconSuccess,
   Sun as IconSun,
   Table as IconTable,
@@ -201,5 +204,6 @@ export {
   Wallet as IconWallet,
   TriangleAlert as IconWarning,
   AudioWaveform as IconWaves,
+  Globe as IconWebsite,
   MessageCircle as IconWhatsApp,
 } from "lucide-react";
