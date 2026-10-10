@@ -59,7 +59,7 @@ export type ThemeUi = typeof EN;
 
 const AR: ThemeUi = {
   presets: "أنماط جاهزة",
-  presetsHint: "ضغطة واحدة تضبط القالب والألوان والخط والزوايا معًا، ويمكنك تغيير أي شيء بعدها.",
+  presetsHint: "ضغطة واحدة تضبط الثيم والألوان والخط والحواف معًا، ويمكنك تغيير أي شيء بعدها.",
   presetUse: (name) => `استخدام نمط ${name}`,
   presetApplied: (name) => `طُبّق نمط ${name}.`,
   presetUndo: "تراجع",
@@ -76,15 +76,15 @@ const AR: ThemeUi = {
   fontPair: "الخطوط",
   fontPairHint: "خط العناوين وخط النصوص في متجرك كله.",
   fontOverTheme: "خط المتجر",
-  fontThemeOwn: "خط القالب",
+  fontThemeOwn: "خط الثيم",
   fontPairName: (heading, body) => `${heading} + ${body}`,
   fontsMore: "خطوط أخرى",
   fontsLess: "خطوط أقل",
 
-  cornersFromTheme: (theme) => `الزوايا وشكل الأزرار يأتيان مع قالب ${theme}.`,
+  cornersFromTheme: (theme) => `الحواف وشكل الأزرار يأتيان مع ثيم ${theme}.`,
   themeBlockHint: "يحدد شكل الأزرار والبطاقات والمسافات وأعلى الصفحة.",
   themePaid: "مدفوع",
-  themePaidNote: "القوالب المدفوعة غير متاحة للشراء بعد، وستتاح قريبًا.",
+  themePaidNote: "الثيمات المدفوعة غير متاحة للشراء بعد، وستتاح قريبًا.",
   shellTitle: "ثابت في كل الصفحات",
 
   linkTargetTitle: "إلى أين يؤدي هذا الرابط؟",
