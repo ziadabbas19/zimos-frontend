@@ -114,8 +114,11 @@ type Accept = "image" | "video";
 export interface MediaPickerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** The chosen file. `id` is its library id, missing for an old product photo that never got one. */
-  onPick: (file: { url: string; id?: string }) => void;
+  /**
+   * The chosen file. `id` is its library id, missing for an old product photo that never got one.
+   * A video also says its `size` in bytes, so whoever asked can tell a heavy one.
+   */
+  onPick: (file: { url: string; id?: string; size?: number }) => void;
   accept?: Accept;
   title?: string;
 }
@@ -127,6 +130,8 @@ interface Tile {
   id?: string;
   mimeType: string;
   label: string;
+  /** Bytes, where the library knows them. */
+  size?: number;
 }
 
 const isKind = (mimeType: string, accept: Accept) => mimeType.startsWith(accept === "video" ? "video/" : "image/");
@@ -300,7 +305,10 @@ function PickerBody({ accept, onPick, onDone }: { accept: Accept; onPick: MediaP
   function choose(tile: Tile) {
     if (pickedKey) return;
     setPickedKey(tile.key);
-    onPick(tile.id ? { url: tile.url, id: tile.id } : { url: tile.url });
+    const file: { url: string; id?: string; size?: number } = tile.id ? { url: tile.url, id: tile.id } : { url: tile.url };
+    // A picture is handed back as it always was; only a video carries its size.
+    if (accept === "video" && typeof tile.size === "number") file.size = tile.size;
+    onPick(file);
     // Long enough to see the check; at once for anyone who asked for less motion.
     const still = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     closing.current = window.setTimeout(onDone, still ? 0 : 240);
@@ -348,7 +356,7 @@ function PickerBody({ accept, onPick, onDone }: { accept: Accept; onPick: MediaP
     setQuery("");
     if (uploaded.length === 1 && failed.length === 0) {
       const only = uploaded[0];
-      choose({ key: `m:${only.id}`, url: only.url, id: only.id, mimeType: only.mimeType, label: "" });
+      choose({ key: `m:${only.id}`, url: only.url, id: only.id, mimeType: only.mimeType, label: "", size: only.size });
     } else {
       setNote(fmt(t.uploadedMany, { n: uploaded.length }));
     }
@@ -371,6 +379,7 @@ function PickerBody({ accept, onPick, onDone }: { accept: Accept; onPick: MediaP
     id: asset.id,
     mimeType: asset.mimeType,
     label: fmt(accept === "video" ? t.pickVideo : t.pickImage, { when: formatDateTime(asset.createdAt) }),
+    size: asset.size,
   }));
   const productTiles: Tile[] = (search.products ?? []).flatMap((product) =>
     (product.media ?? [])
@@ -381,6 +390,7 @@ function PickerBody({ accept, onPick, onDone }: { accept: Accept; onPick: MediaP
         id: media.id,
         mimeType: media.mimeType,
         label: fmt(t.pickProduct, { name: product.name }),
+        size: media.size,
       }))
   );
 

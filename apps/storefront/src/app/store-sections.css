@@ -421,6 +421,30 @@ section[data-zt-section]:has(.zs),
   .zs-hero__wave { height: 36px; }
 }
 
+/* A slide's background video (HeroVideo.tsx): over the picture, which stays
+   underneath as its poster, and under the veil. See-through until it plays.
+   Never on a phone-wide screen or for less motion: the script leaves the
+   element out there, and this rule holds even before the script runs. */
+.zs-hero__video {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.zs-hero__video video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+.zs-hero__video video[data-showing] {
+  opacity: 1;
+}
+@media (max-width: 749px), (prefers-reduced-motion: reduce) {
+  .zs-hero__video { display: none; }
+}
+
 /* The veil between a slide's picture and its text (heroLook.ts): light under
    dark text, dark under light text. Drawn only for a slide that asks for one. */
 .zs-hero__overlay {

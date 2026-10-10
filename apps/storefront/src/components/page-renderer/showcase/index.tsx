@@ -105,6 +105,8 @@ function HeroSliderElement({ props, locale, editable }: ElementProps) {
       side: look.desktop.side,
       vertical: look.desktop.vertical,
       ...heroLookMarkup(look),
+      // A background video over the picture, which stays as its poster; read only while the switch is on.
+      video: HERO_MEDIA_ENABLED ? safeUrl(str(slide, "video")) : null,
       contentWidth: num(slide, "contentWidth", 620, 200, 900),
       text: pick(str(slide, "text"), ["dark", "light"] as const, "dark"),
     });

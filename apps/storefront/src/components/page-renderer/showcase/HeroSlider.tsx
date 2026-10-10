@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Poin
 import { StoreLink } from "@/components/StoreRoute";
 import { swipeStep } from "@/lib/swipe";
 import type { HeroSide, HeroVertical } from "./heroLook";
+import { HeroVideo } from "./HeroVideo";
 
 export interface HeroSlide {
   key: string;
@@ -22,6 +23,8 @@ export interface HeroSlide {
   phoneVertical?: HeroVertical;
   /** The veil between the picture and the text, as an opacity for each device; null or absent draws none. */
   overlay?: { desktop: number; phone: number } | null;
+  /** A background video over the picture, which stays as its poster (HeroVideo.tsx); null or absent draws none. */
+  video?: string | null;
   contentWidth: number;
   text: "dark" | "light";
 }
@@ -148,6 +151,7 @@ export function HeroSlider({
                   draggable={false}
                 />
               </picture>
+              {slide.video ? <HeroVideo src={slide.video} active={on} /> : null}
               {slide.overlay ? (
                 <span
                   className="zs-hero__overlay"

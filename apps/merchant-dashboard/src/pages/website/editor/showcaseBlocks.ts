@@ -85,6 +85,27 @@ const SLIDE_HEIGHTS = [
 const SAME_AS_COMPUTER = { label: "Same as on a computer", labelAr: "كما على الكمبيوتر" };
 
 /**
+ * A slide's background video, behind the same switch. The slide's own picture
+ * stays and is the video's poster (the storefront's showcase/HeroVideo.tsx),
+ * so no second picture is asked for. `videoBytes` is the file's size, kept
+ * only so the editor can go on warning about a heavy one.
+ */
+const HERO_MEDIA_VIDEO_FIELDS: ItemSubField[] = HERO_MEDIA_ENABLED
+  ? [
+      {
+        key: "video",
+        label: "Background video",
+        labelAr: "فيديو الخلفية",
+        kind: "video",
+        sizeKey: "videoBytes",
+        posterKey: "image",
+        hint: "Plays without sound over the picture on a computer. A phone, a slow connection and anyone who asks for less motion get the picture.",
+        hintAr: "يعمل بلا صوت فوق الصورة على الكمبيوتر. على الموبايل وعلى الاتصال البطيء ولمن يطلب تقليل الحركة تظهر الصورة.",
+      },
+    ]
+  : [];
+
+/**
  * A slide's settings behind the HERO_MEDIA switch (lib/features): the text's
  * place on a phone and the veil over the picture. They are plain props of the
  * slide (the storefront reads them in showcase/heroLook.ts), so the server
@@ -139,6 +160,7 @@ export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
           { key: "mobileImage", label: "Picture on a phone", labelAr: "الصورة على الموبايل", kind: "image" },
           { key: "imageEn", label: "Picture (English store)", labelAr: "الصورة (النسخة الإنجليزية)", kind: "image" },
           { key: "mobileImageEn", label: "Phone picture (English store)", labelAr: "صورة الموبايل (النسخة الإنجليزية)", kind: "image" },
+          ...HERO_MEDIA_VIDEO_FIELDS,
           { key: "alt", label: "Describes the picture", labelAr: "وصف الصورة", kind: "text" },
           { key: "eyebrow", label: "Small line above the heading", labelAr: "سطر صغير فوق العنوان", kind: "text" },
           { key: "heading", label: "Heading", labelAr: "العنوان", kind: "text" },
