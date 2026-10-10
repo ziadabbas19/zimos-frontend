@@ -3391,6 +3391,8 @@ export function setElementProp(
   value: unknown
 ): PageSection {
   const props: Record<string, unknown> = { ...(element.props ?? {}), [key]: value };
+  // `undefined` takes the prop out of the element ("—" in a list of choices) rather than keeping an empty key.
+  if (value === undefined) delete props[key];
   // A picture is sized either by a named size or by a width in percent (what
   // dragging its corner in the preview sets) — never both, so choosing one
   // clears the other, and an emptied width is removed rather than kept as "".

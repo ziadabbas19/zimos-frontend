@@ -6,6 +6,8 @@ import { Textarea } from "@/components/Textarea";
 import { ImageField } from "./ImageField";
 import { useEditorLocale } from "./editorLocale";
 import { ProductPickerField } from "./ProductPickerField";
+import { VideoField } from "./VideoField";
+import { ChoiceField, NumberField } from "./inspector/controls";
 import { BilingualField, LinkTargetNote, isLinkKey, pairByLanguage, type LanguageSlot } from "./inspector/fields";
 import { inspectorNumber, inspectorUi } from "./inspector/strings";
 
@@ -34,7 +36,25 @@ export type ItemSubField =
       labelAr: string;
       kind: "select";
       options: Array<{ value: string; label: string; labelAr: string }>;
-    };
+    }
+  // A whole number inside a range. Emptied, the key is dropped and the store's own value applies.
+  | { key: string; label: string; labelAr: string; kind: "number"; min: number; max: number; step?: number; startAt?: number; hint?: string; hintAr?: string }
+  // One of a few values. With `fallback` it is always one of them: the fallback shows (and is what the store draws)
+  // while nothing is stored. With `unset` a first choice stores nothing at all — "same as…" — and picking it drops the key.
+  | {
+      key: string;
+      label: string;
+      labelAr: string;
+      kind: "choice";
+      options: Array<{ value: string; label: string; labelAr: string }>;
+      fallback?: string;
+      unset?: { label: string; labelAr: string };
+      hint?: string;
+      hintAr?: string;
+    }
+  // A background video from the media library (VideoField.tsx). Its size in bytes is kept under `sizeKey`;
+  // `posterKey` names the entry's picture that stands in for the video.
+  | { key: string; label: string; labelAr: string; kind: "video"; sizeKey: string; posterKey: string; hint?: string; hintAr?: string };
 
 type Item = Record<string, unknown>;
 
@@ -85,7 +105,20 @@ export function ItemListField({
   const paired = pairByLanguage(fields, PAIRABLE);
   const pictureKey = fields.find((f) => f.kind === "image")?.key;
 
-  const patch = (i: number, key: string, v: unknown) => onChange(items.map((item, j) => (j === i ? { ...item, [key]: v } : item)));
+  // `undefined` takes a key out of the entry instead of storing an empty value.
+  const patchMany = (i: number, changes: Record<string, unknown>) =>
+    onChange(
+      items.map((item, j) => {
+        if (j !== i) return item;
+        const next = { ...item };
+        for (const [key, v] of Object.entries(changes)) {
+          if (v === undefined) delete next[key];
+          else next[key] = v;
+        }
+        return next;
+      })
+    );
+  const patch = (i: number, key: string, v: unknown) => patchMany(i, { [key]: v });
   const move = (i: number, delta: -1 | 1) => {
     const j = i + delta;
     if (j < 0 || j >= items.length) return;
@@ -108,11 +141,64 @@ export function ItemListField({
     if (field.kind === "image") {
       return <ImageField key={field.key} label={name} labelHidden={hidden} value={str(item[field.key])} onChange={(url) => patch(i, field.key, url)} />;
     }
+    if (field.kind === "video") {
+      const size = item[field.sizeKey];
+      return (
+        <VideoField
+          key={field.key}
+          label={name}
+          hint={ar ? field.hintAr : field.hint}
+          value={str(item[field.key])}
+          bytes={typeof size === "number" && Number.isFinite(size) ? size : null}
+          posterMissing={!filled(item[field.posterKey])}
+          // The address and the size travel together: a new video never keeps the old one's size.
+          onChange={(next) => patchMany(i, { [field.key]: next?.url, [field.sizeKey]: next?.bytes ?? undefined })}
+        />
+      );
+    }
+    if (field.kind === "number") {
+      const stored = item[field.key];
+      return (
+        <NumberField
+          key={field.key}
+          label={name}
+          hint={ar ? field.hintAr : field.hint}
+          min={field.min}
+          max={field.max}
+          step={field.step}
+          startAt={field.startAt}
+          placeholder={field.startAt === undefined ? undefined : String(field.startAt)}
+          // Only a whole number inside the range is ever stored: the server refuses anything else.
+          strict
+          integer
+          value={typeof stored === "number" && Number.isFinite(stored) ? stored : ""}
+          onChange={(v) => patch(i, field.key, v === "" ? undefined : v)}
+        />
+      );
+    }
+    if (field.kind === "choice") {
+      const stored = str(item[field.key]);
+      const known = field.options.some((option) => option.value === stored);
+      const options = field.options.map((option) => ({ value: option.value, label: ar ? option.labelAr : option.label }));
+      // "" is the choice that stores nothing; it is never written, the key is dropped instead.
+      if (field.unset) options.unshift({ value: "", label: ar ? field.unset.labelAr : field.unset.label });
+      return (
+        <ChoiceField
+          key={field.key}
+          label={name}
+          hint={ar ? field.hintAr : field.hint}
+          value={known ? stored : field.unset ? "" : (field.fallback ?? field.options[0]?.value ?? "")}
+          options={options}
+          onChange={(v) => patch(i, field.key, v === "" ? undefined : v)}
+        />
+      );
+    }
     if (field.kind === "select") {
       return (
         <div key={field.key} className="space-y-1.5">
           <Label htmlFor={id}>{name}</Label>
-          <Select id={id} value={str(item[field.key])} onChange={(e) => patch(i, field.key, e.target.value)}>
+          {/* "—" is "not set": the key is dropped, never stored as "" (the server refuses "" where it checks the value against a list). */}
+          <Select id={id} value={str(item[field.key])} onChange={(e) => patch(i, field.key, e.target.value === "" ? undefined : e.target.value)}>
             <option value="">—</option>
             {field.options.map((option) => (
               <option key={option.value} value={option.value}>

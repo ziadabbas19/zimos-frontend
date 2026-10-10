@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { cn } from "@store-builder/ui";
-import { IconCaretUpDown, IconCheck, IconPlus, IconStore } from "@/components/icons";
+import { IconCaretUpDown, IconCheck, IconPlus } from "@/components/icons";
 import { Popover } from "@/components/Popover";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { useCommon, useT, type Messages } from "@/i18n/LocaleContext";
@@ -13,7 +13,6 @@ const STRINGS = {
     switchStore: "Switch store",
     myStores: "My stores",
     currentStore: "(open now)",
-    allStores: "All my stores",
     newStore: "New store",
   },
   ar: {
@@ -21,7 +20,6 @@ const STRINGS = {
     switchStore: "تبديل المتجر",
     myStores: "متاجري",
     currentStore: "(مفتوح الآن)",
-    allStores: "كل متاجري",
     newStore: "متجر جديد",
   },
 } satisfies Messages;
@@ -48,7 +46,7 @@ interface StoreSwitcherProps {
 /**
  * The store being worked on, as one compact row: its tile (the first letter on
  * the brand colour), its name and a caret. Behind it: the merchant's stores
- * with a tick on the one that is open, then every store and a new one.
+ * with a tick on the one that is open, then a new one.
  *
  * The list is a Popover: drawn in the overlay root, outside the side menu's
  * glass (and, on a phone, over the menu sheet), so nothing traps or clips it.
@@ -132,12 +130,6 @@ export function StoreSwitcher({ onNavigate, size = "md", className }: StoreSwitc
               <div className="mx-1.5 my-1 border-t border-line" />
             </>
           )}
-          <button type="button" onClick={() => go("/stores")} className={ITEM}>
-            <span aria-hidden className="flex size-6 shrink-0 items-center justify-center">
-              <IconStore className="size-[18px] text-ink-soft" />
-            </span>
-            {t.allStores}
-          </button>
           <button type="button" onClick={() => go("/workspaces")} className={ITEM}>
             <span aria-hidden className="flex size-6 shrink-0 items-center justify-center">
               <IconPlus className="size-[18px] text-ink-soft" />
