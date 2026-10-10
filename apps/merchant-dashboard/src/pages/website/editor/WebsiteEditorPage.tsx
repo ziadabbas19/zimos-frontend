@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Layers, Palette, Redo2, Rocket, Save, SlidersHorizontal, Undo2, X } from "lucide-react";
+import { ArrowLeft, History, Layers, Palette, Redo2, Rocket, Save, SlidersHorizontal, Undo2, X } from "lucide-react";
 import { Alert, Button, Spinner, cn } from "@store-builder/ui";
 import type {
   CreateWebsitePagePayload,
@@ -16,7 +16,7 @@ import { useAsync } from "@/lib/useAsync";
 import { useSaveThemeSettings } from "@/lib/themeSettingsSave";
 import { ApiError, getErrorMessage, getFieldErrors } from "@/lib/errors";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { useLocale } from "@/i18n/LocaleContext";
+import { fmt, useLocale, useT } from "@/i18n/LocaleContext";
 import { DataState } from "@/components/DataState";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -24,6 +24,13 @@ import { useToast } from "@/components/Toast";
 import { StorefrontPreview } from "@/components/StorefrontPreview";
 import { CollapsiblePane } from "@/components/CollapsiblePane";
 import { useSessionBool } from "@/lib/useSessionState";
+import { MediaPicker } from "@/components/MediaPicker";
+import { InspectorEnvProvider, type InspectorEnv } from "./inspector/env";
+import { PublishSheet } from "./shell/PublishSheet";
+import { VersionHistorySheet } from "./shell/VersionHistorySheet";
+import { SHELL_STRINGS } from "./shell/shellStrings";
+import { useAutosave } from "./shell/useAutosave";
+import { useLeaveGuard } from "./shell/useEditorGuards";
 import { BlockLibrary } from "./BlockLibrary";
 import { LayerList } from "./LayerList";
 import { SectionInspector } from "./SectionInspector";
@@ -79,11 +86,17 @@ import type { ColorMode } from "./storeThemes";
  *    (colours, font, corners, logo), or the announcement bar, header or
  *    footer (ShellPanels.tsx) when one of those is picked.
  *
- * Edits are held locally, with undo/redo, until Save. `draftData` is the only
- * page field written back. The rest of the tree — `version`, any
- * `globalStyles` — is carried through verbatim: dropping keys this editor
- * can't edit would silently destroy template data. The store look is saved to
- * the workspace (see storeLook.ts) by the same Save.
+ * Edits are held locally, with undo/redo, and the open page's draft saves by
+ * itself shortly after the last change (shell/useAutosave.ts); the toolbar
+ * says where that stands. `draftData` is the only page field written back.
+ * The rest of the tree — `version`, any `globalStyles` — is carried through
+ * verbatim: dropping keys this editor can't edit would silently destroy
+ * template data. The store look goes live the moment it is saved, so it is
+ * the one thing that waits for Save (see storeLook.ts).
+ *
+ * Publish opens a sheet that says what will change (shell/PublishSheet.tsx),
+ * and every publish stays in "Published versions", where any of them can be
+ * put live again (shell/VersionHistorySheet.tsx).
  */
 
 /**
@@ -171,6 +184,7 @@ function WebsiteEditor() {
   const toast = useToast();
   const locale = useEditorLocale();
   const ui = editorUi(locale);
+  const t = useT(SHELL_STRINGS);
 
   const site = useAsync(
     () => apiClient.getWebsite(workspaceId, websiteId),
@@ -208,6 +222,27 @@ function WebsiteEditor() {
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [publishProblems, setPublishProblems] = useState<PublishProblem[]>([]);
+  /** The publish sheet, and whether the draft's last changes are still on their way while it opens. */
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  /** Why the "leave?" question is being asked: a page save that failed, or a look that is not saved. */
+  const [leaveReason, setLeaveReason] = useState<"page" | "look">("look");
+
+  // One media library sheet for every picture field of the inspector.
+  const [imageOpen, setImageOpen] = useState(false);
+  const imageRequest = useRef<((url: string) => void) | null>(null);
+  const inspectorEnv = useMemo<InspectorEnv>(
+    () => ({
+      compact: false,
+      pairImages: false,
+      requestImage: (apply) => {
+        imageRequest.current = apply;
+        setImageOpen(true);
+      },
+    }),
+    []
+  );
 
   // Page-level dialogs.
   const [showNewPage, setShowNewPage] = useState(false);
@@ -289,9 +324,26 @@ function WebsiteEditor() {
     history.reset({ sections: nextSections, look: nextLook });
   }
 
-  const pageDirty = JSON.stringify(sections) !== baseline || JSON.stringify(treeMeta) !== metaBaseline;
+  const sectionsJson = useMemo(() => JSON.stringify(sections), [sections]);
+  const metaJson = useMemo(() => JSON.stringify(treeMeta), [treeMeta]);
+  const pageDirty = sectionsJson !== baseline || metaJson !== metaBaseline;
   const lookDirty = !sameLook(look, lookBaseline);
   const dirty = pageDirty || lookDirty;
+
+  // What a save needs, as it is NOW: a save that starts from a timer or a
+  // shortcut must send the newest tree, not the one of the render that armed it.
+  const live = useRef({ page, sections, treeMeta, sectionsJson, metaJson });
+  // The baselines are also written the moment a save answers (savePage), so the
+  // very next "is there anything left to save?" is right without waiting for a render.
+  const baselineRef = useRef(baseline);
+  const metaBaselineRef = useRef(metaBaseline);
+  useEffect(() => {
+    live.current = { page, sections, treeMeta, sectionsJson, metaJson };
+    baselineRef.current = baseline;
+    metaBaselineRef.current = metaBaseline;
+  });
+  const isPageDirty = () =>
+    live.current.sectionsJson !== baselineRef.current || live.current.metaJson !== metaBaselineRef.current;
   /** Only the Store look tab's own fields — the dot on that tab. */
   const appearanceDirty = !sameAppearance(look, lookBaseline);
   /** The announcement bar, header or footer have unsaved changes the preview should show. */
@@ -299,33 +351,6 @@ function WebsiteEditor() {
   /** How much of the API's themeSettings allowance a save would use (1 = full). */
   const settingsUsage = themeSettingsSize(currentWorkspace?.themeSettings, look) / THEME_SETTINGS_MAX_CHARS;
 
-  // Browsers only honour this on a real user gesture, but it's the standard
-  // guard against losing an unsaved tree to a refresh or a closed tab.
-  useEffect(() => {
-    if (!dirty) return;
-    const onBeforeUnload = (e: BeforeUnloadEvent) => e.preventDefault();
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [dirty]);
-
-  // …and the in-app equivalent. The app uses a plain BrowserRouter (no route
-  // blockers), so a click on any link that would leave this screen is caught
-  // before React Router sees it and turned into a confirm.
-  useEffect(() => {
-    if (!dirty) return;
-    function onClick(event: MouseEvent) {
-      if (event.defaultPrevented || event.button !== 0) return;
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      const link = (event.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
-      if (!link || (link.target && link.target !== "_self") || link.hasAttribute("download")) return;
-      const url = new URL(link.href, window.location.href);
-      if (url.origin !== window.location.origin || url.pathname === window.location.pathname) return;
-      event.preventDefault();
-      setPendingLeave(`${url.pathname}${url.search}${url.hash}`);
-    }
-    document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
-  }, [dirty]);
 
   const selected = sections.find((s) => s.id === selectedId) ?? null;
 
@@ -432,17 +457,32 @@ function WebsiteEditor() {
   }
 
   /**
-   * Switching pages throws away whatever is in the canvas, so an unsaved tree
-   * has to be confirmed away first. (An unsaved store look is workspace-wide
-   * and survives the switch.)
+   * Switches the open page. The incoming page's tree replaces the canvas (the
+   * seed above is keyed on the page id), so whatever of this page is still
+   * waiting is stored first; only a save that failed has to be confirmed away.
+   * (An unsaved store look is workspace-wide and survives the switch.)
    */
   function requestPageSwitch(pageId: string) {
     if (pageId === selectedPageId) return;
-    if (pageDirty) {
-      setPendingSwitchId(pageId);
+    if (!pageDirty) {
+      setSelectedPageId(pageId);
       return;
     }
-    setSelectedPageId(pageId);
+    void flush().then((stored) => {
+      if (stored) setSelectedPageId(pageId);
+      else setPendingSwitchId(pageId);
+    });
+  }
+
+  /** A link out of the editor was pressed with something not stored yet. */
+  async function leaveEditor(to: string) {
+    const stored = await flush();
+    if (stored && !lookDirty) {
+      navigate(to);
+      return;
+    }
+    setLeaveReason(stored ? "look" : "page");
+    setPendingLeave(to);
   }
 
   async function createPage(payload: CreateWebsitePagePayload) {
@@ -475,27 +515,41 @@ function WebsiteEditor() {
     toast.success(ui.pageDeleted(target.title));
   }
 
+  /**
+   * The PATCH that stores the open page's draft: `{ draftData }`. Called by the
+   * autosave below, never directly; resolves to whether it was stored and
+   * never throws. A failure is said in the toolbar and above the canvas, not
+   * in a toast: this runs by itself, every pause.
+   */
   async function savePage(): Promise<boolean> {
-    if (!page) return true;
-    const tree: PageTree = { ...treeMeta, sections };
+    const now = live.current;
+    const target = now.page;
+    if (!target) return true;
+    const sentMeta = now.treeMeta;
+    const tree: PageTree = { ...sentMeta, sections: now.sections };
     try {
-      const updated = await apiClient.updateWebsitePage(workspaceId, websiteId, page.id, {
+      const updated = await apiClient.updateWebsitePage(workspaceId, websiteId, target.id, {
         draftData: tree,
       });
+      site.setData((prev) =>
+        prev ? { ...prev, pages: prev.pages.map((p) => (p.id === updated.id ? updated : p)) } : prev!
+      );
+      // Another page is open by now: its state is not this save's to touch.
+      if (live.current.page?.id !== target.id) return true;
       // Re-baseline off what the server stored, not off what we sent.
       const { sections: saved, ...savedMeta } = normalizeTree(updated.draftData);
-      setBaseline(JSON.stringify(saved));
-      setTreeMeta(savedMeta);
-      setMetaBaseline(JSON.stringify(savedMeta));
-      const detail = site.data;
-      if (detail) {
-        site.setData({
-          ...detail,
-          pages: detail.pages.map((p) => (p.id === updated.id ? updated : p)),
-        });
-      }
+      const savedJson = JSON.stringify(saved);
+      const savedMetaJson = JSON.stringify(savedMeta);
+      baselineRef.current = savedJson;
+      metaBaselineRef.current = savedMetaJson;
+      setBaseline(savedJson);
+      setMetaBaseline(savedMetaJson);
+      // Named styles or the page product changed while the save was away: keep the newer ones, they save next.
+      if (live.current.treeMeta === sentMeta) setTreeMeta(savedMeta);
+      setSaveError(null);
       return true;
     } catch (err) {
+      if (live.current.page?.id !== target.id) return true;
       // A malformed tree comes back as a 422 whose details name the node path
       // (e.g. "data.sections[1].rows"); surface that instead of a bare message.
       const fields = getFieldErrors(err);
@@ -503,10 +557,24 @@ function WebsiteEditor() {
         .filter(([key]) => key.includes("["))
         .map(([key, message]) => `${key}: ${message}`)[0];
       setSaveError(detail ?? getErrorMessage(err));
-      toast.error(ui.saveFailed);
       return false;
     }
   }
+
+  // The draft saves by itself, a moment after the last change.
+  const autosave = useAutosave({
+    signature: `${sectionsJson}|${metaJson}`,
+    dirty: pageDirty,
+    isDirty: isPageDirty,
+    save: savePage,
+    scope: seededPageId,
+  });
+  const flush = autosave.flush;
+
+  // Closing the tab asks the browser's own "leave?"; leaving for another screen
+  // of the app first stores what it can (the draft), and asks only about what
+  // is left: a save that failed, or a look that is not saved (leaveEditor above).
+  useLeaveGuard(dirty, (to) => void leaveEditor(to));
 
   async function saveLook(): Promise<boolean> {
     // The API refuses a themeSettings blob over ~5KB with a bare 422; say why
@@ -527,6 +595,11 @@ function WebsiteEditor() {
     }
   }
 
+  /**
+   * Save, pressed: the draft goes out now instead of after the pause, and the
+   * store look (which nothing saves by itself, because saving it puts it live)
+   * is saved with it.
+   */
   async function save() {
     if (!dirty || saving) return;
     setSaving(true);
@@ -534,7 +607,8 @@ function WebsiteEditor() {
     const savingPage = pageDirty;
     const savingLook = lookDirty;
     try {
-      const pageOk = savingPage ? await savePage() : true;
+      const pageOk = await flush();
+      if (!pageOk) toast.error(ui.saveFailed);
       const lookOk = savingLook ? await saveLook() : true;
       if (pageOk && lookOk) {
         toast.success(savingPage && savingLook ? ui.savedBoth : savingLook ? ui.lookSaved : ui.pageSaved);
@@ -570,23 +644,49 @@ function WebsiteEditor() {
   const website = site.data?.website;
 
   /**
-   * Publishes the whole site. The server snapshots `draftData` as it is stored,
-   * so this deliberately refuses to run while the canvas is dirty — publishing
-   * unsaved edits would silently ship the *previous* content.
+   * Publish, pressed: the sheet opens instead of publishing at once. While it
+   * opens, whatever of the draft is still waiting is stored, so its list of
+   * what will change is true.
    */
-  async function publish() {
-    if (!website || dirty) return;
+  function startPublish() {
+    setPublishError(null);
+    setPublishProblems([]);
+    setPublishOpen(true);
+    setChecking(true);
+    void flush().finally(() => setChecking(false));
+  }
+
+  /**
+   * Publishes the whole site. The server snapshots `draftData` as it is
+   * stored, so whatever is still waiting to save goes out first — publishing
+   * with unsaved edits would ship the previous content.
+   */
+  async function publishNow() {
+    if (!website || publishing) return;
     setPublishing(true);
     setPublishError(null);
     setPublishProblems([]);
     try {
-      const { website: published, revision } = await apiClient.publishWebsite(
-        workspaceId,
-        websiteId
+      const stored = await flush();
+      if (!stored) {
+        setPublishError(t.publishSaveFailed);
+        return;
+      }
+      const { website: published, revision } = await apiClient.publishWebsite(workspaceId, websiteId);
+      // The server copies every draft into its live mirror; do the same here so
+      // "what changed since the last publish" is right without a reload.
+      site.setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              website: published,
+              publishedRevision: revision,
+              pages: prev.pages.map((p) => ({ ...p, publishedData: p.draftData, isLive: true })),
+            }
+          : prev!
       );
-      const detail = site.data;
-      if (detail) site.setData({ ...detail, website: published, publishedRevision: revision });
-      toast.success(ui.published(revision.revisionNumber));
+      setPublishOpen(false);
+      toast.success(fmt(t.publishedToast, { n: revision.revisionNumber }));
     } catch (err) {
       // A 422 is the pre-publish check: it reports every problem at once, keyed
       // by page rather than by form field, so getFieldErrors can't flatten it.
@@ -601,6 +701,21 @@ function WebsiteEditor() {
       setPublishing(false);
     }
   }
+
+  // What the toolbar says about the draft. A look that is not saved outranks
+  // "saved": it is the one thing still waiting for the merchant.
+  const saveState = autosave.state;
+  const saveWords =
+    saveState === "saving"
+      ? t.saveSaving
+      : saveState === "failed"
+        ? t.saveFailed
+        : lookDirty
+          ? ui.unsavedChanges
+          : saveState === "saved"
+            ? t.saveSaved
+            : t.saveIdle;
+  const saveTone = saveState === "failed" ? "failed" : saveState === "saving" || lookDirty ? "pending" : "saved";
 
   const labels = Object.fromEntries(sections.map((s) => [s.id, sectionLabel(s, locale)]));
 
@@ -717,25 +832,28 @@ function WebsiteEditor() {
             }}
           />
         ) : selected ? (
-          <SectionInspector
-            section={selected}
-            onChange={updateSection}
-            namedStyles={namedStylesOf(treeMeta.globalStyles)}
-            onNamedStylesChange={(named) =>
-              // Saved with the page tree; the element that triggered it changes too, which marks the page unsaved.
-              setTreeMeta((prev) => ({ ...prev, globalStyles: { ...(prev.globalStyles ?? {}), named } }))
-            }
-            onDelete={() => setPendingDelete(selected)}
-            onDuplicate={() => {
-              const copy = duplicateSection(selected);
-              setSections((prev) => insertSection(prev, copy, prev.findIndex((s) => s.id === selected.id) + 1));
-              selectSection(copy.id, { scroll: true });
-            }}
-            onClose={() => {
-              setSelectedId(null);
-              setEndOpen(false);
-            }}
-          />
+          // The section's picture fields offer "choose from the library" through this.
+          <InspectorEnvProvider value={inspectorEnv}>
+            <SectionInspector
+              section={selected}
+              onChange={updateSection}
+              namedStyles={namedStylesOf(treeMeta.globalStyles)}
+              onNamedStylesChange={(named) =>
+                // Saved with the page tree; the element that triggered it changes too, which marks the page unsaved.
+                setTreeMeta((prev) => ({ ...prev, globalStyles: { ...(prev.globalStyles ?? {}), named } }))
+              }
+              onDelete={() => setPendingDelete(selected)}
+              onDuplicate={() => {
+                const copy = duplicateSection(selected);
+                setSections((prev) => insertSection(prev, copy, prev.findIndex((s) => s.id === selected.id) + 1));
+                selectSection(copy.id, { scroll: true });
+              }}
+              onClose={() => {
+                setSelectedId(null);
+                setEndOpen(false);
+              }}
+            />
+          </InspectorEnvProvider>
         ) : (
           <p className="px-4 py-6 text-sm text-ink-soft">{ui.pickSection}</p>
         )}
@@ -855,14 +973,21 @@ function WebsiteEditor() {
             </Button>
             <span
               role="status"
-              title={dirty ? ui.unsavedChanges : ui.allSaved}
+              data-save-state={saveState}
+              title={saveWords}
               className={cn(
                 "flex items-center gap-1.5 whitespace-nowrap text-xs",
-                dirty ? "font-medium text-accent-dark" : "text-ink-soft"
+                saveTone === "failed" ? "font-medium text-danger" : saveTone === "pending" ? "font-medium text-accent-dark" : "text-ink-soft"
               )}
             >
-              <span className={cn("size-2 rounded-full", dirty ? "bg-accent" : "bg-success")} aria-hidden />
-              <span className="sr-only lg:not-sr-only">{dirty ? ui.unsavedChanges : ui.allSaved}</span>
+              <span
+                className={cn(
+                  "size-2 rounded-full",
+                  saveTone === "failed" ? "bg-danger" : saveTone === "pending" ? "bg-accent" : "bg-success"
+                )}
+                aria-hidden
+              />
+              <span className="sr-only lg:not-sr-only">{saveWords}</span>
             </span>
             <span className="flex items-center">
               <Button
@@ -888,6 +1013,17 @@ function WebsiteEditor() {
                 <Redo2 className="size-4 rtl:-scale-x-100" aria-hidden />
               </Button>
             </span>
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="ghost"
+              aria-label={t.menuHistory}
+              title={t.menuHistory}
+              disabled={!website}
+              onClick={() => setHistoryOpen(true)}
+            >
+              <History className="size-4" aria-hidden />
+            </Button>
             <Button type="button" size="sm" onClick={() => void save()} disabled={!dirty || saving} title="Ctrl+S">
               {saving ? <Spinner className="size-4" /> : <Save className="size-4" aria-hidden />}
               {saving ? ui.saving : ui.save}
@@ -896,9 +1032,9 @@ function WebsiteEditor() {
               type="button"
               size="sm"
               variant="outline"
-              onClick={() => void publish()}
-              disabled={!website || dirty || publishing}
-              title={dirty ? ui.publishSaveFirst : ui.publishHint}
+              onClick={startPublish}
+              disabled={!website || publishing}
+              title={ui.publishHint}
             >
               {publishing ? (
                 <Spinner className="size-4" />
@@ -912,23 +1048,21 @@ function WebsiteEditor() {
 
         {!tabsInline && pageTabs}
 
-        {(saveError || publishError || publishProblems.length > 0) && (
+        {(saveError || saveState === "failed") && (
           <div className="space-y-2 px-3 pb-2">
-            {saveError && <Alert variant="danger">{saveError}</Alert>}
-            {publishError && <Alert variant="danger">{publishError}</Alert>}
-            {publishProblems.length > 0 && (
-              <Alert variant="danger">
-                <p className="font-medium">{ui.cantPublish}</p>
-                <ul className="mt-1 list-disc space-y-0.5 ps-5">
-                  {publishProblems.map((problem, i) => (
-                    <li key={`${problem.pageId ?? problem.field}-${i}`}>
-                      {problem.path && <span className="font-medium">{problem.path}: </span>}
-                      {problem.message}
-                    </li>
-                  ))}
-                </ul>
-              </Alert>
-            )}
+            <Alert variant="danger">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  {saveState === "failed" && <p className="font-medium">{t.saveErrorTitle}</p>}
+                  {saveError && <p>{saveError}</p>}
+                </div>
+                {saveState === "failed" && (
+                  <Button type="button" size="sm" variant="outline" onClick={() => void flush()}>
+                    {t.retry}
+                  </Button>
+                )}
+              </div>
+            </Alert>
           </div>
         )}
       </div>
@@ -1090,7 +1224,7 @@ function WebsiteEditor() {
       <ConfirmDialog
         open={pendingSwitchId !== null}
         title={ui.leaveTitle}
-        description={ui.switchBody}
+        description={t.switchBody}
         confirmLabel={ui.switchConfirm}
         destructive
         onCancel={() => setPendingSwitchId(null)}
@@ -1103,7 +1237,7 @@ function WebsiteEditor() {
       <ConfirmDialog
         open={pendingLeave !== null}
         title={ui.leaveTitle}
-        description={ui.leaveBody}
+        description={leaveReason === "page" ? t.leavePageBody : t.leaveLookBody}
         confirmLabel={ui.leaveConfirm}
         destructive
         onCancel={() => setPendingLeave(null)}
@@ -1112,6 +1246,51 @@ function WebsiteEditor() {
           setPendingLeave(null);
           if (to) navigate(to);
         }}
+      />
+
+      <MediaPicker
+        open={imageOpen}
+        onOpenChange={(open) => {
+          if (!open) setImageOpen(false);
+        }}
+        onPick={(file) => {
+          const apply = imageRequest.current;
+          imageRequest.current = null;
+          setImageOpen(false);
+          apply?.(file.url);
+        }}
+        accept="image"
+        title={t.pickImage}
+      />
+
+      <PublishSheet
+        open={publishOpen}
+        onOpenChange={setPublishOpen}
+        workspaceId={workspaceId}
+        website={website ?? null}
+        pages={pages}
+        checking={checking}
+        publishing={publishing}
+        error={publishError}
+        problems={publishProblems}
+        lookDirty={lookDirty}
+        savingLook={saving}
+        onSaveLook={() => void save()}
+        onPublish={() => void publishNow()}
+        onOpenPage={(pageId) => {
+          setPublishOpen(false);
+          requestPageSwitch(pageId);
+        }}
+      />
+
+      <VersionHistorySheet
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        workspaceId={workspaceId}
+        websiteId={websiteId}
+        liveRevisionId={website?.publishedRevisionId ?? null}
+        // What is live changed on the server; the drafts being edited did not.
+        onRestored={() => site.refresh({ silent: true })}
       />
     </div>
   );
