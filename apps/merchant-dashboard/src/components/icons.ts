@@ -155,6 +155,7 @@ export {
   Plus as IconPlus,
   Power as IconPower,
   Box as IconProduct,
+  Package as IconProductAdd,
   Package as IconProducts,
   ArrowLeftToLine as IconPushLeft,
   ArrowRightToLine as IconPushRight,

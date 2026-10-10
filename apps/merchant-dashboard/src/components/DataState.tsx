@@ -69,6 +69,59 @@ export function SkeletonBar({ className }: { className?: string }) {
   return <div className={cn("relative h-3 animate-pulse overflow-hidden rounded-full bg-paper-sunken motion-reduce:animate-none", className)} />;
 }
 
+const STATE_INK = {
+  danger: "text-danger",
+  attention: "text-accent-dark",
+  neutral: "text-ink-soft",
+} as const;
+
+interface StateMessageProps {
+  /** A 40px icon; its colour follows `tone`. */
+  icon: ReactNode;
+  /** What happened, in a few words. */
+  title: string;
+  /** Why, or what to do about it. */
+  description?: string;
+  /** The one way out (a 44px pill). Leave it out when there is none. */
+  action?: ReactNode;
+  tone?: keyof typeof STATE_INK;
+  role?: "alert" | "status";
+  className?: string;
+}
+
+/**
+ * The pane a data region becomes when it has something to say instead of
+ * content: nothing here yet, could not load. The icon, what happened, the
+ * reason in words, the way out.
+ */
+export function StateMessage({ icon, title, description, action, tone = "neutral", role, className }: StateMessageProps) {
+  return (
+    <div
+      role={role}
+      data-slot="data-state"
+      className={cn(
+        "flex flex-col items-center rounded-[var(--radius-card)] bg-paper-raised px-6 py-10 text-center shadow-[var(--shadow-card)] ring-1 ring-line",
+        className
+      )}
+    >
+      <span
+        data-slot="state-icon"
+        data-tone={tone}
+        className={cn("relative isolate mb-4 flex size-10 shrink-0 items-center justify-center [&_svg]:size-10", STATE_INK[tone])}
+      >
+        {icon}
+      </span>
+      <p className="text-base font-semibold text-ink">{title}</p>
+      {description && (
+        <p data-slot="state-description" className="mt-1.5 max-w-md text-sm leading-6 text-ink-soft">
+          {description}
+        </p>
+      )}
+      {action && <div className="mt-5 [&_a]:min-h-11 [&_button]:min-h-11">{action}</div>}
+    </div>
+  );
+}
+
 /**
  * Standard loading / error / empty wrapper for a data region. Uses the shared
  * Spinner + Alert; permission (403) errors get their own copy.

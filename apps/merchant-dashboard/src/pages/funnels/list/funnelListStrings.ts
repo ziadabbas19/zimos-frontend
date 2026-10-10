@@ -81,8 +81,6 @@ export const FUNNEL_LIST_STRINGS = {
     noMatchBody: "Try another name or another status.",
     showAll: "Show all",
     // The create dialog
-    modalTitle: "Create funnel",
-    modalDescription: "Pick a name and a starting point. You can change everything in the editor.",
   },
   ar: {
     title: "مسارات البيع",
@@ -157,8 +155,6 @@ export const FUNNEL_LIST_STRINGS = {
     noMatchTitle: "لا يوجد مسار بيع مطابق",
     noMatchBody: "جرّب اسمًا آخر أو حالة أخرى.",
     showAll: "عرض الكل",
-    modalTitle: "إنشاء مسار بيع",
-    modalDescription: "اختر اسمًا ونقطة بداية. يمكنك تغيير كل شيء من المحرر.",
   },
 } satisfies Messages;
 

@@ -1,11 +1,11 @@
-import { Sparkles } from "lucide-react";
-import { cn } from "@store-builder/ui";
+import { IconSparkle } from "@/components/icons";
 import { aiApply, type AiDialect, type AiPageInput } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { runAiJob, useAiDialects } from "@/lib/aiRun";
 import { useT, type Messages } from "@/i18n/LocaleContext";
 import { Field, TextField } from "@/components/Field";
 import { Select } from "@/components/Select";
+import { ChoiceCard } from "./wizard/ChoiceCard";
 
 /**
  * The funnel wizard's "AI template" (SPEC §9.1: the first cards are Blank,
@@ -30,8 +30,8 @@ const STRINGS = {
   ar: {
     card: "قالب بالذكاء الاصطناعي",
     cardHint: "الذكاء الاصطناعي يكتب صفحة البيع من بيانات منتجك، ثم يضيف صفحتي الدفع والشكر.",
-    audience: "لمين المنتج؟",
-    audiencePlaceholder: "مثلًا: أمهات الأطفال الصغار، شباب بيلعبوا رياضة",
+    audience: "لمن المنتج؟",
+    audiencePlaceholder: "مثلًا: أمهات الأطفال الصغار، شباب يمارسون الرياضة",
     style: "شكل الصفحة",
     style_classic: "كلاسيكي: مقدمة ومميزات وضمان وأسئلة",
     style_problem_solution: "المشكلة ← الحل",
@@ -48,27 +48,26 @@ export function useAiFunnelText() {
   return useT(STRINGS);
 }
 
-/** The fixed card at the start of the template grid. */
+/** The fixed card at the start of the template grid: the AI writes the sales page. One of the gallery's radio choices. */
 export function AiTemplateCard({ active, onSelect }: { active: boolean; onSelect: () => void }) {
   const t = useT(STRINGS);
   return (
-    <label
-      className={cn(
-        "cursor-pointer rounded-2xl border p-3 transition-colors",
-        active ? "border-primary bg-primary-soft ring-1 ring-primary/30" : "border-line hover:border-primary/50"
-      )}
-    >
-      <input type="radio" name="funnel-template" className="sr-only" checked={active} onChange={onSelect} />
-      <p className={cn("flex items-center gap-1.5 text-sm font-semibold", active ? "text-primary-dark" : "text-ink")}>
-        <Sparkles className="size-4" aria-hidden />
-        {t.card}
-      </p>
-      <p className="mt-0.5 text-xs text-ink-soft">{t.cardHint}</p>
-    </label>
+    <ChoiceCard
+      name="funnel-template"
+      checked={active}
+      onSelect={onSelect}
+      leading={
+        <span className="zimos-ai-glyph flex size-11 items-center justify-center rounded-[0.875rem] bg-primary-soft text-primary">
+          <IconSparkle className="size-6" aria-hidden />
+        </span>
+      }
+      title={t.card}
+      hint={t.cardHint}
+    />
   );
 }
 
-/** Step 2's extra questions when the AI writes the page. */
+/** The extra questions when the AI writes the page: who it is for, the page's shape, the language. */
 export function AiFunnelFields({ value, onChange }: { value: AiFunnelSettings; onChange: (next: AiFunnelSettings) => void }) {
   const t = useT(STRINGS);
   const dialects = useAiDialects();
