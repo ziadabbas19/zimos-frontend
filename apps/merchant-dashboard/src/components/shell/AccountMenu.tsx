@@ -6,6 +6,7 @@ import { SignOutConfirmDialog } from "@/components/SignOutButton";
 import { useAuth } from "@/context/AuthContext";
 import { useT, type Messages } from "@/i18n/LocaleContext";
 import { useViewNavigate } from "@/lib/viewTransition";
+import { useGuardedLeave } from "@/lib/useUnsavedGuard";
 
 const STRINGS = {
   en: {
@@ -45,6 +46,7 @@ function Avatar({ letter, className }: { letter: string; className: string }) {
 export function AccountMenu() {
   const { user } = useAuth();
   const navigate = useViewNavigate();
+  const leave = useGuardedLeave();
   const t = useT(STRINGS);
   // Sign out asks first (SignOutConfirmDialog), centred over the page; focus
   // returns to this trigger when the dialog closes.
@@ -82,7 +84,7 @@ export function AccountMenu() {
             </div>
           </div>
           <DropdownMenuSeparator className="mx-1.5" />
-          <DropdownMenuItem onClick={() => navigate("/settings")} className={ITEM}>
+          <DropdownMenuItem onClick={() => leave(() => navigate("/settings"))} className={ITEM}>
             <IconSettings className="size-[18px] text-ink-soft" aria-hidden />
             {t.settings}
           </DropdownMenuItem>

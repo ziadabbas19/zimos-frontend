@@ -1,0 +1,220 @@
+/* Lost orders — pages/abandoned (the list, its Quick Look and its sheets).
+   Part of the liquid-glass layer (../liquid-glass.css): everything here is under the
+   same switch, so with data-glass="off" none of it applies and the component stands
+   on its own solid Tailwind classes. Fills, blur and rims come from the --lg-* variables.
+
+   Nothing here is blurred: every piece lies in the page flow or inside a sheet that is
+   already frosted. The selectors are the page's own hooks (data-slot, zimos-lost-*) and
+   never lean on `.glass-app main`: the same chips and pills are drawn in Quick Look,
+   which is portalled outside it.
+
+   Text. Each recovery chip is its tone mixed over the lit control pane (about 95% solid),
+   with the deeper text shade on it. Worked out from the token values against every pool
+   of the backdrop, under a row card, a quiet row card and the table sheet, for the four
+   brand colours (sums, not readings from rendered pixels — change a mix only with that
+   check): light 5.1:1 or better for every chip; dark 4.7:1 or better (the brand chip is the
+   lowest, 4.78). A quiet row keeps its words on a thinner pane at 6.0:1 (light)
+   and 6.9:1 (dark) for the secondary ink, 5.1:1 and 8.0:1 for the amber reason. */
+:root:not([data-glass="off"]) {
+  /* Table rows are translucent, and low on a dark page the warm pool of the wallpaper shows through
+     them: secondary words in a row take one step more light there, so they hold 4.5:1 (measured 4.28). */
+  &.dark [data-slot="lost-row"] {
+    --color-ink-soft: color-mix(in srgb, var(--lg-ink-soft) 62%, var(--color-ink));
+  }
+
+  /* The four recovery chips: waiting on the merchant, contacted, won back, gave up. */
+  --rec-waiting: color-mix(in srgb, var(--color-accent) 26%, var(--lg-control-lit));
+  --rec-contacted: color-mix(in srgb, var(--color-primary) 14%, var(--lg-control-lit));
+  --rec-recovered: color-mix(in srgb, var(--color-success) 16%, var(--lg-control-lit));
+  --rec-lost: color-mix(in srgb, var(--color-ink) 8%, var(--lg-control-lit));
+  --rec-chip-light: rgb(255 255 255 / 0.6);
+  /* A row that is no longer waiting for the merchant: the same pane, thinner, with no drop shadow. */
+  --rec-quiet: color-mix(in srgb, var(--lg-fill) 70%, transparent);
+  --rec-quiet-rim: inset 0 1px 0 0 rgb(255 255 255 / 0.55);
+  /* A well inside a sheet: the template's text, the basket of the convert dialog. */
+  --rec-well: color-mix(in srgb, var(--color-ink) 5%, transparent);
+  --rec-icon-light: rgb(255 255 255 / 0.75);
+
+  &.dark {
+    --rec-contacted: color-mix(in srgb, var(--color-primary) 15%, var(--lg-control-lit));
+    --rec-recovered: color-mix(in srgb, var(--color-success) 20%, var(--lg-control-lit));
+    --rec-lost: color-mix(in srgb, var(--color-ink) 10%, var(--lg-control-lit));
+    --rec-chip-light: rgb(255 255 255 / 0.08);
+    --rec-quiet-rim: inset 0 1px 0 0 rgb(255 255 255 / 0.07);
+    --rec-well: rgb(255 255 255 / 0.06);
+    --rec-icon-light: rgb(255 255 255 / 0.14);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * The recovery chip (LostOrderParts.tsx wraps the shared StatusBadge
+   * and names the status on the wrapper). On glass the soft token fills
+   * give way to a tint of the colour itself — in the dark theme the soft
+   * tokens are nearly black and would read as holes in the pane — with
+   * a lit top edge and a hairline of the same colour.
+   * ---------------------------------------------------------------- */
+  [data-slot="recovery-chip"] > span {
+    background-color: var(--rec-fill, var(--rec-lost));
+    color: var(--rec-ink, var(--lg-ink-soft));
+    box-shadow:
+      inset 0 1px 0 0 var(--rec-chip-light),
+      inset 0 0 0 1px color-mix(in srgb, currentColor 16%, transparent);
+  }
+  [data-slot="recovery-chip"][data-recovery="not_contacted"] {
+    --rec-fill: var(--rec-waiting);
+    --rec-ink: var(--color-accent-dark);
+  }
+  [data-slot="recovery-chip"][data-recovery="contacted"] {
+    --rec-fill: var(--rec-contacted);
+    --rec-ink: var(--lg-text-primary);
+  }
+  [data-slot="recovery-chip"][data-recovery="recovered"] {
+    --rec-fill: var(--rec-recovered);
+    --rec-ink: var(--lg-text-success);
+  }
+  [data-slot="recovery-chip"][data-recovery="lost"] {
+    --rec-fill: var(--rec-lost);
+    --rec-ink: var(--lg-ink-soft);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Quiet rows: contacted, won back, given up or already an order.
+   * On a phone the card steps back — a thinner pane, the rim line and
+   * the hairline only, no drop shadow — so the rows still waiting are
+   * the ones that stand out. A ticked card keeps the kit's brand wash.
+   * In the table the row's name and amount are simply written in the
+   * secondary ink (the component does that); the sheet stays one sheet.
+   * ---------------------------------------------------------------- */
+  .zimos-row-card.zimos-lost-quiet:not([data-selected]) {
+    background-color: var(--rec-quiet);
+    box-shadow: var(--rec-quiet-rim), 0 0 0 1px var(--lg-edge);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Quiet pills: «اظهر الرقم», the link to the order a checkout
+   * became, «انسخ اللينك». Small panes like a chip of the list kit —
+   * translucent, lit along the rim, a hairline outside. No blur.
+   * ---------------------------------------------------------------- */
+  .zimos-lost-pill {
+    background-color: var(--lg-control);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge);
+    color: var(--color-ink);
+  }
+  @media (hover: hover) {
+    .zimos-lost-pill:hover {
+      background-color: var(--lg-control-lit);
+    }
+  }
+  .zimos-lost-pill:active {
+    background-color: var(--lg-control-lit);
+  }
+
+  /* «امسح» in the foot of Quick Look: written in the danger colour, lit in it under the pointer. */
+  .zimos-lost-danger {
+    color: var(--lg-text-danger);
+  }
+  .zimos-lost-danger:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--color-danger) 12%, transparent);
+    color: var(--lg-text-danger);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Two strips that lie on the page pane itself: the hint under the
+   * tabs while «حدّد» is on, and the line that says a refresh or a
+   * "load more" failed. Small panes, so their words never sit straight
+   * on the backdrop.
+   * ---------------------------------------------------------------- */
+  .zimos-lost-hint {
+    background-color: var(--lg-control);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge);
+  }
+  [data-slot="lost-notice"] {
+    background-color: color-mix(in srgb, var(--color-danger) 10%, var(--lg-control-lit));
+    box-shadow:
+      var(--lg-rim-line),
+      0 0 0 1px color-mix(in srgb, var(--color-danger) 22%, transparent);
+  }
+  [data-slot="lost-notice"] > span > svg {
+    color: var(--lg-text-danger);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * The KPI strip: three stat cards in ONE row. On a phone the row
+   * scrolls sideways and each card snaps into place (the layout and the
+   * snap are the component's own classes, so they hold with this layer
+   * off). Here: the edges of the row fade where a card runs off the
+   * screen — the fade lies in the page gutter, so a card at rest is
+   * never dimmed — the row glides on a flick, and the icon chips take
+   * the colour of what they count (amber for what was lost, green for
+   * what came back; the rate keeps the brand chip of glass/stats.css).
+   * ---------------------------------------------------------------- */
+  @media (max-width: 39.99rem) {
+    [data-slot="lost-kpis"] {
+      -webkit-mask-image: linear-gradient(to right, transparent, #000 0.875rem, #000 calc(100% - 0.875rem), transparent);
+      mask-image: linear-gradient(to right, transparent, #000 0.875rem, #000 calc(100% - 0.875rem), transparent);
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    [data-slot="lost-kpis"] {
+      scroll-behavior: smooth;
+    }
+  }
+  [data-slot="lost-kpis"] [data-stat="lost"] [data-slot="kpi-icon"] {
+    background-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+    color: var(--color-accent-dark);
+    box-shadow:
+      inset 0 1px 0 0 var(--rec-icon-light),
+      inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 18%, transparent);
+  }
+  [data-slot="lost-kpis"] [data-stat="recovered"] [data-slot="kpi-icon"] {
+    background-color: color-mix(in srgb, var(--color-success) 14%, transparent);
+    color: var(--lg-text-success);
+    box-shadow:
+      inset 0 1px 0 0 var(--rec-icon-light),
+      inset 0 0 0 1px color-mix(in srgb, var(--color-success) 14%, transparent);
+  }
+  /* Written again for the dark theme, where glass/stats.css re-tints every icon chip with the brand. */
+  &.dark [data-slot="lost-kpis"] [data-stat="lost"] [data-slot="kpi-icon"] {
+    background-color: color-mix(in srgb, var(--color-accent) 22%, transparent);
+    box-shadow:
+      inset 0 1px 0 0 var(--rec-icon-light),
+      inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 20%, transparent);
+  }
+  &.dark [data-slot="lost-kpis"] [data-stat="recovered"] [data-slot="kpi-icon"] {
+    background-color: color-mix(in srgb, var(--color-success) 22%, transparent);
+    box-shadow:
+      inset 0 1px 0 0 var(--rec-icon-light),
+      inset 0 0 0 1px color-mix(in srgb, var(--color-success) 20%, transparent);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Inside the sheets (Quick Look, the convert dialog, the question
+   * before the first WhatsApp): the hairlines between blocks take the
+   * pane's colour, and the wells — the address tile, the basket of the
+   * convert dialog, the template's text — are a faint tint of the pane,
+   * not an opaque block.
+   * ---------------------------------------------------------------- */
+  [data-slot="lost-peek-rule"] {
+    background-color: var(--lg-hairline);
+  }
+  [data-slot="lost-peek-tile"],
+  [data-slot="lost-convert-items"],
+  [data-slot="lost-template"] {
+    background-color: var(--rec-well);
+    box-shadow: inset 0 0 0 1px var(--lg-hairline);
+  }
+
+  /* If forced colours are on while this layer still is: the chips are words with a system outline. */
+  @media (forced-colors: active) {
+    [data-slot="recovery-chip"] > span {
+      background-color: Canvas;
+      color: CanvasText;
+      box-shadow: none;
+      outline: 1px solid CanvasText;
+    }
+    [data-slot="lost-kpis"] {
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+  }
+}

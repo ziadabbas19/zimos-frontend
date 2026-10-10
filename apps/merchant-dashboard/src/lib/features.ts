@@ -101,3 +101,12 @@ export const AD_PIXELS_ENABLED = import.meta.env.VITE_AD_PIXELS_ENABLED === "tru
 
 /** Store reports, scheduled reports, and customer segments (RFM). */
 export const STORE_REPORTS_ENABLED = import.meta.env.VITE_STORE_REPORTS_ENABLED === "true";
+
+/**
+ * The lost orders page's "When a checkout counts as lost" tool: the minutes of
+ * silence after which a checkout is listed as lost, saved on the store
+ * (`settings.fraud_rules.abandoned_after_minutes`, which the API already
+ * takes from a role with workspace.manage). Off: the tool is not offered and
+ * the store keeps the value it has (15 minutes unless it was set).
+ */
+export const LOST_ORDER_TIMING_ENABLED = import.meta.env.VITE_LOST_ORDER_TIMING_ENABLED === "true";

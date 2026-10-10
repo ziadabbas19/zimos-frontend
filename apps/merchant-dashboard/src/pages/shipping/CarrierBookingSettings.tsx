@@ -10,6 +10,7 @@ import {
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useErrorMessage } from "@/lib/errorMessages";
+import { useReportDirty } from "@/lib/useUnsavedGuard";
 import { fmt, useT } from "@/i18n/LocaleContext";
 import { Field } from "@/components/Field";
 import { Select } from "@/components/Select";
@@ -80,6 +81,7 @@ export function CarrierBookingSettings({
   useEffect(() => setDraft(carrierBookingOf(connection)), [connection]);
 
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
+  useReportDirty(dirty);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
