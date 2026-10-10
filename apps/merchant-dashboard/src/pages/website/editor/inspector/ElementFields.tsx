@@ -522,7 +522,9 @@ export function ElementField({
                 const v = e.target.value;
                 // "level" on a heading is an int in the seeded trees; keep it one.
                 const numeric = spec.options.every((o) => /^\d+$/.test(o.value));
-                onChange(spec.key, numeric ? Number(v) : v);
+                // "—" on a list of words is "not set": the prop is taken out (setElementProp), never stored
+                // as "" — the server refuses "" where it checks the value against a list.
+                onChange(spec.key, numeric ? Number(v) : v === "" ? undefined : v);
               }}
             >
               <option value="">—</option>

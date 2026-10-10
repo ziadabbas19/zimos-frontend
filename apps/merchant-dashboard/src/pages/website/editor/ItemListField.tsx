@@ -197,7 +197,8 @@ export function ItemListField({
       return (
         <div key={field.key} className="space-y-1.5">
           <Label htmlFor={id}>{name}</Label>
-          <Select id={id} value={str(item[field.key])} onChange={(e) => patch(i, field.key, e.target.value)}>
+          {/* "—" is "not set": the key is dropped, never stored as "" (the server refuses "" where it checks the value against a list). */}
+          <Select id={id} value={str(item[field.key])} onChange={(e) => patch(i, field.key, e.target.value === "" ? undefined : e.target.value)}>
             <option value="">—</option>
             {field.options.map((option) => (
               <option key={option.value} value={option.value}>
