@@ -1,7 +1,18 @@
 import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@store-builder/ui";
 import { labelOn, mixHex } from "@/lib/contrast";
-import { THEME_SPECS, type ColorMode, type ThemeChoice } from "./storeThemes";
+import type { RadiusKey } from "./storeLook";
+import { ORIGINAL_LOOK, THEME_SPECS, type ColorMode, type ThemeChoice } from "./storeThemes";
+
+/**
+ * The original look's corners are the merchant's (storeLook.ts `RadiusKey`),
+ * not the spec's: drawn small, in the sketch's own `em`.
+ */
+const ORIGINAL_CORNERS: Record<RadiusKey, { buttonRadius: string; cardRadius: string; imageRadius: string }> = {
+  sharp: { buttonRadius: "0.08em", cardRadius: "0.1em", imageRadius: "0.1em" },
+  soft: { buttonRadius: "0.3em", cardRadius: "0.45em", imageRadius: "0.45em" },
+  round: { buttonRadius: "0.75em", cardRadius: "0.95em", imageRadius: "0.95em" },
+};
 
 /**
  * A theme's thumbnail: a small storefront — header, hero, three product cards —
@@ -13,6 +24,11 @@ import { THEME_SPECS, type ColorMode, type ThemeChoice } from "./storeThemes";
  * Every size is in `em` off a root sized in container units, so one drawing
  * fills a narrow radio card in the Store look panel or a wide gallery card
  * alike. Decorative: the card around it names the theme.
+ *
+ * `corners`, `secondary` and `headingFont` draw what the merchant (or a ready
+ * style) chose on top of the spec — the first two on the original look only,
+ * where they are the merchant's; a theme owns its own. All three are optional:
+ * without them the drawing is the theme as it comes.
  */
 export function ThemeSketch({
   theme,
@@ -20,6 +36,9 @@ export function ThemeSketch({
   accent,
   title,
   className,
+  corners,
+  secondary,
+  headingFont,
 }: {
   theme: ThemeChoice;
   mode: ColorMode;
@@ -28,12 +47,20 @@ export function ThemeSketch({
   /** The specimen: the store's name, set in the theme's heading face. */
   title: string;
   className?: string;
+  /** Original look only: the corners chosen there, over the spec's own. */
+  corners?: RadiusKey;
+  /** Original look only: the second colour chosen there, drawn as the small tag on a product card. */
+  secondary?: string | null;
+  /** A `font-family` for the specimen, over the theme's heading face. */
+  headingFont?: string;
 }) {
   const spec = THEME_SPECS[theme];
   const p = spec.palette[mode];
   const a = accent ?? p.accent;
-  const s = spec.sketch;
+  const original = theme === ORIGINAL_LOOK;
+  const s = original && corners ? { ...spec.sketch, ...ORIGINAL_CORNERS[corners] } : spec.sketch;
   const dark = mode === "dark";
+  const second = (original ? secondary : null) ?? p.secondary;
 
   const bar = (width: string, color = p.inkSoft, extra: CSSProperties = {}): ReactNode => (
     <span
@@ -90,8 +117,8 @@ export function ThemeSketch({
     <span
       className="block max-w-full truncate"
       style={{
-        fontFamily: spec.fonts.display,
-        fontWeight: s.hero === "poster" ? 900 : spec.fonts.displayWeight,
+        fontFamily: headingFont ?? spec.fonts.display,
+        fontWeight: s.hero === "poster" ? 900 : headingFont ? 700 : spec.fonts.displayWeight,
         fontSize: size,
         lineHeight: 1.15,
         letterSpacing: s.hero === "poster" ? "-0.03em" : s.hero === "quiet" ? "-0.02em" : undefined,
@@ -137,7 +164,7 @@ export function ThemeSketch({
             style={{ background: p.raised, borderBlock: `1px solid ${p.line}` }}
           >
             {heading(p.ink, "1.8em", "center")}
-            <span aria-hidden style={{ width: "2.2em", height: "0.18em", borderRadius: "999px", background: p.secondary }} />
+            <span aria-hidden style={{ width: "2.2em", height: "0.18em", borderRadius: "999px", background: second }} />
             {button()}
           </div>
         );
@@ -232,7 +259,24 @@ export function ThemeSketch({
         >
           {[0, 1, 2].map((i) => (
             <div key={i} className="flex flex-col overflow-hidden" style={cardStyle}>
-              <span aria-hidden style={{ display: "block", height: "2.3em", background: mixHex(p.line, a, i === 1 ? 0.18 : 0.06) }} />
+              <span
+                aria-hidden
+                style={{ display: "block", position: "relative", height: "2.3em", background: mixHex(p.line, a, i === 1 ? 0.18 : 0.06) }}
+              >
+                {original && i === 0 && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "0.3em",
+                      insetInlineStart: "0.3em",
+                      width: "1.5em",
+                      height: "0.55em",
+                      borderRadius: s.buttonRadius,
+                      background: second,
+                    }}
+                  />
+                )}
+              </span>
               <span className="flex flex-col gap-[0.3em] p-[0.45em]">
                 {bar("80%", p.ink, { opacity: 0.6, height: "0.34em" })}
                 {bar("45%", a, { opacity: 0.9, height: "0.34em" })}

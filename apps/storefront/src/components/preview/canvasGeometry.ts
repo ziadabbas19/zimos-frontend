@@ -187,3 +187,58 @@ export function dividerGeometry(rowId: string, index: number) {
     rtl,
   };
 }
+
+// --- what the canvas selects, patches and ghosts ---------------------------------------
+
+/** On an element's marker: the prop that holds its one picture (PageRenderer, editable mode only). */
+export const IMAGE_FIELD_ATTR = "data-zimos-image-field";
+/**
+ * On an element's marker: the widths at which shoppers don't see it
+ * ("desktop tablet mobile", any of them) — or, after a patch, "" for "shown
+ * again". On a section's marker: present when the section is hidden.
+ */
+export const HIDDEN_ATTR = "data-zimos-hidden";
+/** The box an element's own style rules target (PageRenderer's StyledElement). */
+export const STYLE_BOX_ATTR = "data-zs";
+
+export function styleBox(marker: HTMLElement): HTMLElement | null {
+  return marker.querySelector<HTMLElement>(`:scope > [${STYLE_BOX_ATTR}]`);
+}
+
+/** The node that shows an element's text: its first box, past its style wrapper. */
+export function inlineTextNode(marker: HTMLElement): HTMLElement | null {
+  let node = marker.firstElementChild as HTMLElement | null;
+  if (node?.hasAttribute(STYLE_BOX_ATTR)) node = node.firstElementChild as HTMLElement | null;
+  return node;
+}
+
+/** The prop a replaced picture goes into, when the renderer named one for this element. */
+export function imageFieldOf(marker: HTMLElement): string | null {
+  const field = marker.getAttribute(IMAGE_FIELD_ATTR);
+  return field && /^[A-Za-z][A-Za-z0-9_]{0,59}$/.test(field) ? field : null;
+}
+
+/** The storefront's own breakpoints for per-device element styles (page-renderer/elementStyle.ts). */
+export type ViewDevice = "desktop" | "tablet" | "mobile";
+
+export function viewDevice(): ViewDevice {
+  const width = window.innerWidth;
+  return width <= 639 ? "mobile" : width <= 1023 ? "tablet" : "desktop";
+}
+
+/** Whether shoppers at this width don't see the node (an element's marker, or a section's). */
+export function isHiddenNow(node: Element): boolean {
+  const value = node.getAttribute(HIDDEN_ATTR);
+  if (value === null) return false;
+  if (node.hasAttribute(SECTION_ATTR)) return true;
+  return value.split(" ").includes(viewDevice());
+}
+
+/** A section is hidden when it says so itself, or when every element in it is. */
+export function sectionHidden(sectionId: string): boolean {
+  const section = sectionNode(sectionId);
+  if (!section) return false;
+  if (section.hasAttribute(HIDDEN_ATTR)) return true;
+  const elements = Array.from(section.querySelectorAll(`[${EL_ATTR}]`));
+  return elements.length > 0 && elements.every(isHiddenNow);
+}

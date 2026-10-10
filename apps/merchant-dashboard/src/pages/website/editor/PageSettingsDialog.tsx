@@ -1,21 +1,19 @@
-import { useState } from "react";
-import { Settings2 } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { IconSliders } from "@/components/icons";
 import { Button, Input, Label } from "@store-builder/ui";
 import { useErrorMessage } from "@/lib/errorMessages";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
+import { FilterTabs } from "@/components/FilterTabs";
 import { Modal } from "@/components/Modal";
 import { Textarea } from "@/components/Textarea";
 import { useToast } from "@/components/Toast";
-
-/** Whether the dialog is for a website page or a funnel step (its SEO hints differ). */
-type PageScriptKind = "page" | "step";
 
 const STRINGS = {
   en: {
     title: "Page settings — {name}",
     tabs: "Page settings sections",
+    details: "Details",
     seo: "SEO",
-    scripts: "Scripts",
     seoTitle: "Title in search results",
     seoDescription: "Description",
     image: "Sharing image (link)",
@@ -24,17 +22,6 @@ const STRINGS = {
     count: "{n} / {max}",
     saveSeo: "Save SEO",
     seoSaved: "SEO saved.",
-    head: "Code in <head>",
-    headHint: "Tracking tools, site verification tags.",
-    body: "Code before </body>",
-    bodyHint: "Chat widgets, scripts that need the page loaded.",
-    active: "Run this code",
-    rules: "Runs only on your store's own domain — never in previews or on payment pages. It goes live as soon as you save, not with Publish.",
-    saveScripts: "Save scripts",
-    scriptsSaved: "Scripts saved.",
-    needsSave: "Save the funnel first, then add this step's scripts.",
-    noPermission: "Only the owner or someone who can publish the store can see and change page scripts.",
-    loading: "Loading…",
     close: "Close",
     open: "Page settings",
     hintPage: "Search engines see this once you publish the website.",
@@ -43,8 +30,8 @@ const STRINGS = {
   ar: {
     title: "إعدادات الصفحة — {name}",
     tabs: "أقسام إعدادات الصفحة",
+    details: "التفاصيل",
     seo: "SEO",
-    scripts: "السكربتات",
     seoTitle: "العنوان في نتائج البحث",
     seoDescription: "الوصف",
     image: "صورة المشاركة (رابط)",
@@ -53,17 +40,6 @@ const STRINGS = {
     count: "{n} / {max}",
     saveSeo: "حفظ SEO",
     seoSaved: "تم حفظ SEO.",
-    head: "كود في <head>",
-    headHint: "أدوات التتبع وأكواد توثيق الموقع.",
-    body: "كود قبل </body>",
-    bodyHint: "أدوات الشات والسكربتات اللي محتاجة الصفحة تكون اتحمّلت.",
-    active: "شغّل الكود ده",
-    rules: "بيشتغل على دومين متجرك بس — مش في المعاينة ولا في صفحات الدفع. بيبقى شغال أول ما تحفظ، مش مع النشر.",
-    saveScripts: "حفظ السكربتات",
-    scriptsSaved: "تم حفظ السكربتات.",
-    needsSave: "احفظ الفانل الأول، وبعدين ضيف سكربتات الخطوة دي.",
-    noPermission: "المالك أو اللي يقدر ينشر المتجر بس يقدر يشوف ويعدّل سكربتات الصفحة.",
-    loading: "جارٍ التحميل…",
     close: "إغلاق",
     open: "إعدادات الصفحة",
     hintPage: "محركات البحث هتشوف ده بعد ما تنشر الموقع.",
@@ -71,6 +47,11 @@ const STRINGS = {
   },
 } satisfies Messages;
 
+/** Whether the dialog is for a website page or a funnel step (its SEO hints differ). */
+type PageScriptKind = "page" | "step";
+
+export type PageSettingsTab = "details" | "seo";
+type Tab = PageSettingsTab;
 
 /** The builder toolbar's "Page settings" button and its dialog. */
 export function PageSettingsButton({
@@ -79,6 +60,7 @@ export function PageSettingsButton({
   onSaveSeo,
   scripts,
   compact = false,
+  details,
 }: {
   name: string;
   seo: Record<string, unknown>;
@@ -86,6 +68,8 @@ export function PageSettingsButton({
   scripts: { kind: PageScriptKind; id: string | null };
   /** Icon only (the website editor's toolbar). */
   compact?: boolean;
+  /** The Details tab (the page's title and address), shown first when given. */
+  details?: ReactNode;
 }) {
   const t = useT(STRINGS);
   const [open, setOpen] = useState(false);
@@ -99,7 +83,7 @@ export function PageSettingsButton({
         title={t.open}
         onClick={() => setOpen(true)}
       >
-        <Settings2 className="size-4" aria-hidden />
+        <IconSliders className="size-4" aria-hidden />
         {!compact && t.open}
       </Button>
       {open && (
@@ -110,6 +94,7 @@ export function PageSettingsButton({
           seoHint={scripts.kind === "page" ? t.hintPage : t.hintStep}
           onSaveSeo={onSaveSeo}
           scripts={scripts}
+          details={details}
           onClose={() => setOpen(false)}
         />
       )}
@@ -119,7 +104,8 @@ export function PageSettingsButton({
 const str = (v: unknown) => (typeof v === "string" ? v : "");
 
 /**
- * A page's settings in the builder (SPEC §9.3): the SEO tab (title,
+ * A page's settings in the builder: the Details tab when the
+ * page passes one (a funnel step's title and address), the SEO tab (title,
  * description, sharing image, and for website pages "hide from search
  * engines") and the Scripts tab (code in <head> and before </body>, kept
  * outside the page tree under the store's custom-code rules).
@@ -134,22 +120,40 @@ export function PageSettingsDialog({
   showNoindex,
   seoHint,
   onSaveSeo,
+  scripts,
+  details,
+  initialTab,
   onClose,
 }: {
   name: string;
   seo: Record<string, unknown>;
-  showNoindex: boolean;
-  /** Where the SEO goes: "live with your next Publish" / "saved with the funnel". */
-  seoHint: string;
+  details?: ReactNode;
+  /** Left out: shown for a website page, not for a funnel step. */
+  showNoindex?: boolean;
+  /** Where the SEO goes: "live with your next Publish" / "saved with the funnel". Left out: the sentence for this kind of page. */
+  seoHint?: string;
   onSaveSeo: (seo: Record<string, unknown>) => Promise<void> | void;
   scripts: { kind: PageScriptKind; id: string | null };
+  /** The tab it opens on. Left out: Details when there is one, else SEO. */
+  initialTab?: PageSettingsTab;
   onClose: () => void;
 }) {
   const t = useT(STRINGS);
+  const isPage = scripts.kind === "page";
+  const [tab, setTab] = useState<Tab>(initialTab && (initialTab !== "details" || details) ? initialTab : details ? "details" : "seo");
+  const tabs = [
+    ...(details ? [{ value: "details" as const, label: t.details }] : []),
+    { value: "seo" as const, label: t.seo },
+  ];
   return (
     <Modal open onClose={onClose} title={fmt(t.title, { name })} footer={<Button variant="outline" onClick={onClose}>{t.close}</Button>}>
       <div className="space-y-4">
-        <SeoForm seo={seo} showNoindex={showNoindex} hint={seoHint} onSave={onSaveSeo} />
+        {tabs.length > 1 && <FilterTabs label={t.tabs} value={tab} onChange={setTab} tabs={tabs} />}
+        {tab === "details" ? (
+          details
+        ) : (
+          <SeoForm seo={seo} showNoindex={showNoindex ?? isPage} hint={seoHint ?? (isPage ? t.hintPage : t.hintStep)} onSave={onSaveSeo} />
+        )}
       </div>
     </Modal>
   );
@@ -212,4 +216,3 @@ function SeoForm({ seo, showNoindex, hint, onSave }: { seo: Record<string, unkno
     </div>
   );
 }
-

@@ -49,6 +49,8 @@ if (!window.matchMedia) {
 if (!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = () => undefined;
 // jsdom has the function but only logs "not implemented": a page that scrolls to the top is not an error.
 window.scrollTo = () => undefined;
+// jsdom has no scrollTo on an element at all: a panel that scrolls itself back to its top is not an error either.
+if (!Element.prototype.scrollTo) Element.prototype.scrollTo = () => undefined;
 if (!Element.prototype.setPointerCapture) Element.prototype.setPointerCapture = () => undefined;
 if (!Element.prototype.releasePointerCapture) Element.prototype.releasePointerCapture = () => undefined;
 

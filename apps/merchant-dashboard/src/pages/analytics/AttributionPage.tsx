@@ -316,6 +316,7 @@ export function AttributionPage() {
               }
             >
               <DataTable
+                phoneCards={false}
                 columns={columns}
                 rows={data.rows}
                 rowKey={(r) => r.key || "__none"}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { ArrowDownIcon, ArrowUpIcon, CopySimpleIcon, EyeIcon, EyeSlashIcon, PlusIcon, TrashIcon } from "./canvasIcons";
 import {
   BRAND_VAR_NAMES,
   brandVars,
@@ -15,6 +16,9 @@ import { useSetShellOverride } from "@/lib/StoreShellContext";
 import { useIsClient } from "@/lib/useIsClient";
 import { readShellOverride, type ShellOverride } from "@/lib/storeShell";
 import { CanvasHandles, SectionGrip } from "./CanvasHandles";
+import { BLUE, LAYER, RING_INSIDE, useCanvasChrome } from "./canvasChrome";
+import { EL_ATTR, TYPE_ATTR, elementNode, elementRect, imageFieldOf, isRtl, sectionHidden } from "./canvasGeometry";
+import { applyPatch, readPatch } from "./canvasPatch";
 import { useCanvasDrag } from "./useCanvasDrag";
 import { useCanvasText } from "./useCanvasText";
 
@@ -25,15 +29,19 @@ import { useCanvasText } from "./useCanvasText";
  *
  * It talks to exactly one window: the dashboard that framed it, at the origin
  * the dashboard posted with the tree. Its counterpart is
- * merchant-dashboard/src/pages/website/editor/previewBridge.ts; the two sides
- * share no code, so the message shapes are spelled out in both.
+ * merchant-dashboard/src/lib/previewBridge.ts; the two sides share no code,
+ * so the message shapes are spelled out in both.
  *
  * Frame → editor
  *   { type: "zimos:preview-ready", sectionIds }        after every (re)load
  *   { type: "zimos:select-section", sectionId }        a section was clicked
+ *   { type: "zimos:select-element", sectionId, elementId, elementType }
+ *                                                       an element of the selected section was clicked
  *   { type: "zimos:select-shell", part }                the header, footer or announcement bar was clicked
  *   { type: "zimos:insert-section", index }             "add a section here"
- *   { type: "zimos:move-section", sectionId, direction } the outline's own up/down buttons
+ *   { type: "zimos:move-section", sectionId, direction } the section grip's arrow keys
+ *   { type: "zimos:section-action", sectionId, action }  the selected section's floating bar
+ *   { type: "zimos:pick-image", sectionId, elementId, field } "replace this picture"
  *   { type: "zimos:section-rects", sections }            every section's box, while a drag is on
  *   { type: "zimos:canvas-drag", phase, … }               dragging / resizing on the page (useCanvasDrag.ts)
  *   { type: "zimos:canvas-step", step }                   one arrow-key press on a canvas handle
@@ -43,12 +51,20 @@ import { useCanvasText } from "./useCanvasText";
  * `zimos:preview-ready` also carries `colorMode`, the mode the page opened in.
  *
  * Editor → frame
- *   { type: "zimos:editor-state", selectedId, labels, strings, theme,
- *     selectedShell, shellLabels, shell, colorMode }
+ *   { type: "zimos:editor-state", selectedId, selectedElementId, labels, strings,
+ *     theme, selectedShell, shellLabels, shell, colorMode, can, elementLabels }
  *   { type: "zimos:scroll-to-section", sectionId }
  *   { type: "zimos:scroll-to-shell", part }
  *   { type: "zimos:drag-state", active, hoverIndex }     a library block is being dragged over us
  *   { type: "zimos:canvas-feedback", feedback, done, committed }  what a canvas drag should draw
+ *   { type: "zimos:patch", ops }                         small edits applied to this page's DOM (canvasPatch.ts)
+ *
+ * Edit where you look. A click on a section selects it; a click on an element
+ * inside the section that is already selected selects the element (when the
+ * editor listens for it — `can.selectElement`). The selected section carries
+ * a floating bar (move up, move down, duplicate, hide / show, delete) and a
+ * "+" on each edge; the selected element an outline and a tag with its name;
+ * a selected picture a "replace" button, and a click on it does the same.
  *
  * Sections and elements also drag, and sections, column widths and pictures
  * resize, right on the page (CanvasHandles.tsx, useCanvasDrag.ts): this frame
@@ -56,13 +72,17 @@ import { useCanvasText } from "./useCanvasText";
  *
  * The store's header, footer and announcement bar are not part of the page
  * tree — the store layout draws them — but they carry `data-zimos-shell`, so
- * they outline and select the same way sections do (without the move and
+ * they outline and select the same way sections do (without the bar and the
  * insert buttons: they are fixed). `shell` is the editor's unsaved
  * header/footer settings, handed to the layout's StoreShellProvider so the
  * real header and footer re-render with them in place, no reload needed.
  *
- * Everything it draws (outlines, name labels, the + buttons) is a fixed layer
- * above the page, so the page's own markup and layout are left untouched.
+ * Everything it draws is a fixed layer above the page in one fixed look
+ * (canvasChrome.ts), so the page's own markup and layout are left untouched
+ * and the handles read on any store colour.
+ *
+ * Touch: a tap is a click, so it selects; a double-tap edits text; nothing
+ * here listens to touch moves, so one finger still scrolls the page.
  *
  * Dragging a block from the library onto the canvas is native HTML5 DnD that
  * starts in the (same-origin) dashboard window and is dropped on this
@@ -89,8 +109,45 @@ function shellEl(part: ShellPart): HTMLElement | null {
 const INDEX_ATTR = "data-zimos-index";
 const OVERLAY_ATTR = "data-zimos-overlay";
 const SERVER_THEME_ID = "zimos-preview-theme";
-/** The editor's own blue, so outlines stay visible whatever the store's colours. */
-const EDITOR_BLUE = "#2563eb";
+
+/** What the bar on a selected section can ask the editor for. */
+const SECTION_ACTIONS = ["up", "down", "duplicate", "hide", "delete"] as const;
+type SectionAction = (typeof SECTION_ACTIONS)[number];
+
+/**
+ * What the editor listens for. An editor that doesn't say (`can` missing from
+ * its state — the funnel builder, an older dashboard) gets exactly the canvas
+ * it always had: sections select, and the bar holds the grip and the two move
+ * buttons, which post `zimos:move-section`.
+ */
+interface Abilities {
+  selectElement: boolean;
+  pickImage: boolean;
+  /** Null: the editor did not say — the two move buttons, the old message. */
+  sectionActions: SectionAction[] | null;
+}
+
+const LEGACY_ABILITIES: Abilities = { selectElement: false, pickImage: false, sectionActions: null };
+
+function readAbilities(raw: unknown): Abilities {
+  if (!raw || typeof raw !== "object") return LEGACY_ABILITIES;
+  const can = raw as Record<string, unknown>;
+  return {
+    selectElement: can.selectElement === true,
+    pickImage: can.pickImage === true,
+    sectionActions: Array.isArray(can.sectionActions)
+      ? SECTION_ACTIONS.filter((action) => (can.sectionActions as unknown[]).includes(action))
+      : [],
+  };
+}
+
+function sameAbilities(a: Abilities, b: Abilities): boolean {
+  return (
+    a.selectElement === b.selectElement &&
+    a.pickImage === b.pickImage &&
+    (a.sectionActions === null ? b.sectionActions === null : b.sectionActions !== null && a.sectionActions.join() === b.sectionActions.join())
+  );
+}
 
 interface Strings {
   addAbove: string;
@@ -103,6 +160,13 @@ interface Strings {
   resizeColumns: string;
   resizeImage: string;
   editText: string;
+  addSection: string;
+  duplicate: string;
+  hide: string;
+  show: string;
+  remove: string;
+  replaceImage: string;
+  hidden: string;
 }
 
 const DEFAULT_STRINGS: Strings = {
@@ -116,7 +180,20 @@ const DEFAULT_STRINGS: Strings = {
   resizeColumns: "Drag to change the column widths",
   resizeImage: "Drag to resize the picture",
   editText: "Double-click to edit the text",
+  addSection: "Add a section",
+  duplicate: "Duplicate",
+  hide: "Hide",
+  show: "Show",
+  remove: "Delete",
+  replaceImage: "Replace picture",
+  hidden: "Hidden",
 };
+
+/** "product_card" → "Product card", for an element type the editor sent no name for. */
+function typeName(type: string): string {
+  const words = type.replace(/_/g, " ").trim();
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : "";
+}
 
 function sectionEl(id: string): HTMLElement | null {
   return document.querySelector<HTMLElement>(`[${SECTION_ATTR}="${CSS.escape(id)}"]`);
@@ -264,6 +341,17 @@ function measureAll(): Box[] {
   });
 }
 
+/** Brings an element the editor just picked into view — only when it is not already there. */
+function revealElement(elementId: string) {
+  const marker = elementNode(elementId);
+  const rect = marker ? elementRect(marker) : null;
+  if (!rect) return;
+  const header = document.querySelector("header")?.getBoundingClientRect().height ?? 0;
+  if (rect.top >= header + 48 && rect.top + rect.height <= window.innerHeight - 16) return;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.scrollTo({ top: rect.top + window.scrollY - header - 64, behavior: reduce ? "auto" : "smooth" });
+}
+
 export function PreviewBridge({
   parentOrigin,
   editable,
@@ -280,13 +368,16 @@ export function PreviewBridge({
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [hoveredShell, setHoveredShell] = useState<ShellPart | null>(null);
   const [selectedShell, setSelectedShell] = useState<ShellPart | null>(null);
   const [shellLabels, setShellLabels] = useState<Partial<Record<ShellPart, string>>>({});
   const [shell, setShell] = useState<ShellOverride | null>(initialShell);
   const setShellOverride = useSetShellOverride();
   const [labels, setLabels] = useState<Record<string, string>>({});
+  const [elementLabels, setElementLabels] = useState<Record<string, string>>({});
   const [strings, setStrings] = useState<Strings>(DEFAULT_STRINGS);
+  const [abilities, setAbilities] = useState<Abilities>(LEGACY_ABILITIES);
   // A block from the library is being dragged over the canvas, and — once the
   // dashboard has measured our sections and done the math — which gap it's
   // nearest to right now. Both come from the editor (zimos:drag-state); this
@@ -301,6 +392,12 @@ export function PreviewBridge({
   const [tick, setTick] = useState(0);
   const frame = useRef(0);
 
+  // What the click handler needs to know right now, without re-subscribing:
+  // written where the selection changes (a click here, a message from the editor).
+  const selectedRef = useRef<string | null>(null);
+  const selectedElementRef = useRef<string | null>(null);
+  const abilitiesRef = useRef<Abilities>(LEGACY_ABILITIES);
+
   const post = useCallback(
     (message: Record<string, unknown>) => {
       if (window.parent === window) return;
@@ -308,6 +405,9 @@ export function PreviewBridge({
     },
     [parentOrigin]
   );
+
+  // The overlay's fixed look, and the ghost of whatever shoppers don't see (canvasChrome.ts).
+  useCanvasChrome(editable, strings.hidden);
 
   // X-ray outlines and double-click text editing (useCanvasText.ts).
   useCanvasText({ editable, xray, inlineText, hint: strings.editText, post });
@@ -396,7 +496,23 @@ export function PreviewBridge({
       if (!data || typeof data !== "object") return;
 
       if (data.type === "zimos:editor-state") {
-        setSelected(typeof data.selectedId === "string" ? data.selectedId : null);
+        const nextSelected = typeof data.selectedId === "string" ? data.selectedId : null;
+        selectedRef.current = nextSelected;
+        setSelected(nextSelected);
+        const nextAbilities = readAbilities(data.can);
+        abilitiesRef.current = nextAbilities;
+        setAbilities((prev) => (sameAbilities(prev, nextAbilities) ? prev : nextAbilities));
+        // The element picked in the editor. One this frame picked itself is
+        // already on screen; one picked from the editor's side is scrolled to.
+        const nextElement =
+          nextAbilities.selectElement && typeof data.selectedElementId === "string" && data.selectedElementId.length <= 200
+            ? data.selectedElementId
+            : null;
+        if (nextElement !== selectedElementRef.current) {
+          selectedElementRef.current = nextElement;
+          setSelectedElement(nextElement);
+          if (nextElement) revealElement(nextElement);
+        }
         setSelectedShell(isShellPart(data.selectedShell) ? data.selectedShell : null);
         if (data.shellLabels && typeof data.shellLabels === "object") {
           const next: Partial<Record<ShellPart, string>> = {};
@@ -414,6 +530,13 @@ export function PreviewBridge({
           }
           setLabels(next);
         }
+        if (data.elementLabels && typeof data.elementLabels === "object") {
+          const next: Record<string, string> = {};
+          for (const [type, label] of Object.entries(data.elementLabels as Record<string, unknown>).slice(0, 200)) {
+            if (typeof label === "string" && /^[a-z][a-z0-9_]{0,59}$/.test(type)) next[type] = label.slice(0, 60);
+          }
+          setElementLabels(next);
+        }
         if (data.strings && typeof data.strings === "object") {
           const s = data.strings as Record<string, unknown>;
           const next = { ...DEFAULT_STRINGS };
@@ -430,6 +553,10 @@ export function PreviewBridge({
         if ("theme" in data) applyTheme(readPreviewTheme(data.theme));
         const mode = readColorMode(data.colorMode);
         if (mode && mode !== pageColorMode()) setColorMode(mode);
+      } else if (data.type === "zimos:patch") {
+        // Small edits, applied to the page as it stands (canvasPatch.ts); the
+        // outlines measure again, since a text or a padding moves things.
+        if (applyPatch(readPatch(data.ops))) setTick((n) => n + 1);
       } else if (data.type === "zimos:scroll-to-section" && typeof data.sectionId === "string") {
         const el = sectionEl(data.sectionId);
         if (!el) return;
@@ -487,19 +614,56 @@ export function PreviewBridge({
         return;
       }
       if (target.closest("a[href]")) event.preventDefault();
+      // A text being typed in place: the click only moves the caret.
+      if (target.closest("[contenteditable]")) return;
       // The header, footer and announcement bar: the innermost one wins, so a
       // click on the announcement bar (inside the header) picks the bar.
       const part = target.closest<HTMLElement>(`[${SHELL_ATTR}]`)?.getAttribute(SHELL_ATTR);
       if (isShellPart(part)) {
+        selectedRef.current = null;
+        selectedElementRef.current = null;
         setSelectedShell(part);
         setSelected(null);
+        setSelectedElement(null);
         post({ type: "zimos:select-shell", part });
         return;
       }
       const section = target.closest<HTMLElement>(`[${SECTION_ATTR}]`);
       if (!section) return;
       const id = section.getAttribute(SECTION_ATTR) ?? "";
+      const can = abilitiesRef.current;
+
+      // One click picks the element under the pointer, whichever section it is in (its section comes with it):
+      // the merchant edits what they pressed, without first selecting the section around it.
+      const marker = can.selectElement ? target.closest<HTMLElement>(`[${EL_ATTR}]`) : null;
+      const elementId = marker?.getAttribute(EL_ATTR) ?? "";
+      if (marker && elementId) {
+        // The picture of the element that is already picked: replace it.
+        if (can.pickImage && elementId === selectedElementRef.current && target.closest("img, picture")) {
+          const field = imageFieldOf(marker);
+          if (field) {
+            post({ type: "zimos:pick-image", sectionId: id, elementId, field });
+            return;
+          }
+        }
+        selectedRef.current = id;
+        setSelected(id);
+        setSelectedShell(null);
+        selectedElementRef.current = elementId;
+        setSelectedElement(elementId);
+        post({
+          type: "zimos:select-element",
+          sectionId: id,
+          elementId,
+          elementType: marker.getAttribute(TYPE_ATTR) ?? "",
+        });
+        return;
+      }
+
+      selectedRef.current = id;
+      selectedElementRef.current = null;
       setSelected(id);
+      setSelectedElement(null);
       setSelectedShell(null);
       post({ type: "zimos:select-section", sectionId: id });
     }
@@ -546,6 +710,19 @@ export function PreviewBridge({
   const hoveredShellBox = hoveredShell !== selectedShell ? measureShell(hoveredShell) : null;
   if (hoveredShellBox) shellBoxes.push({ box: hoveredShellBox, active: false });
   if (selectedShellBox) shellBoxes.push({ box: selectedShellBox, active: true });
+  // An element is only "selected" inside the selected section.
+  const pickedElement = selected && abilities.selectElement ? selectedElement : null;
+
+  // The bar's buttons: what the editor listens for, or — when it did not say —
+  // the two move buttons it always had.
+  const actions: readonly SectionAction[] = abilities.sectionActions ?? ["up", "down"];
+  const act = (sectionId: string, action: SectionAction) => {
+    if (abilities.sectionActions === null) {
+      if (action === "up" || action === "down") post({ type: "zimos:move-section", sectionId, direction: action });
+      return;
+    }
+    post({ type: "zimos:section-action", sectionId, action });
+  };
 
   return (
     <div data-zimos-overlay="">
@@ -554,15 +731,30 @@ export function PreviewBridge({
           key={`${box.id}-${active ? "selected" : "hover"}`}
           box={box}
           active={active}
+          quiet={active && pickedElement !== null}
           total={total}
           label={labels[box.id] ?? ""}
           strings={strings}
+          actions={actions}
+          hidden={active ? sectionHidden(box.id) : false}
           onInsert={(index) => post({ type: "zimos:insert-section", index })}
-          onMove={(direction) => post({ type: "zimos:move-section", sectionId: box.id, direction })}
+          onAction={(action) => act(box.id, action)}
           grip={active ? <SectionGrip drag={drag} sectionId={box.id} label={strings.dragSection} /> : null}
         />
       ))}
-      <CanvasHandles sectionId={selected} drag={drag} strings={strings} focusKey={`zimos-preview-focus:${token}`} />
+      <CanvasHandles
+        sectionId={selected}
+        drag={drag}
+        strings={strings}
+        focusKey={`zimos-preview-focus:${token}`}
+        selectedElementId={pickedElement}
+        elementName={(type) => elementLabels[type] ?? typeName(type)}
+        onPickImage={
+          abilities.pickImage && selected
+            ? (elementId, field) => post({ type: "zimos:pick-image", sectionId: selected, elementId, field })
+            : undefined
+        }
+      />
       {/* A section being dragged on the page: the same gap lines as a block
           dragged in from the library, the nearest one as the editor says. */}
       {drag.active?.kind === "section" && drag.feedback?.kind === "section" && (
@@ -584,29 +776,47 @@ export function PreviewBridge({
   );
 }
 
+/** The direction the page reads in, for rows that lay a chip at the start and a bar at the end. */
+function pageDirection(id: string): "rtl" | "ltr" {
+  const el = sectionEl(id) ?? document.body;
+  return isRtl(el) ? "rtl" : "ltr";
+}
+
 function SectionOutline({
   box,
   active,
+  quiet,
   total,
   label,
   strings,
+  actions,
+  hidden,
   onInsert,
-  onMove,
+  onAction,
   grip = null,
 }: {
   box: Box;
+  /** Selected (a solid outline, the name, the bar) rather than only under the pointer. */
   active: boolean;
+  /** An element inside is selected: the section steps back to a lighter line and drops its name. */
+  quiet: boolean;
   /** How many sections the page has, so the up/down buttons disable at either end. */
   total: number;
   label: string;
   strings: Strings;
+  actions: readonly SectionAction[];
+  /** Shoppers don't see this section: the eye button offers "show". */
+  hidden: boolean;
   onInsert: (index: number) => void;
-  onMove: (direction: "up" | "down") => void;
-  /** The selected section's drag grip (CanvasHandles.tsx), beside its up/down buttons. */
+  onAction: (action: SectionAction) => void;
+  /** The selected section's drag grip (CanvasHandles.tsx), first on its bar. */
   grip?: ReactNode;
 }) {
-  // The top bar rides the top edge, but never scrolls out of view with a tall section.
-  const chipTop = Math.min(Math.max(box.top, 0), box.top + box.height - 24);
+  // The row rides just under the top edge (clear of the "+" on it), and stays
+  // in view while a section taller than the screen scrolls past.
+  const pinned = Math.min(Math.max(box.top + 20, 6), box.top + box.height - 50);
+  const rowTop = box.height < 76 ? box.top + 20 : pinned;
+  const has = (action: SectionAction) => actions.includes(action);
 
   return (
     <>
@@ -617,67 +827,106 @@ function SectionOutline({
           left: box.left,
           width: box.width,
           height: box.height,
-          outline: `${active ? 2 : 1}px ${active ? "solid" : "dashed"} ${EDITOR_BLUE}`,
-          outlineOffset: -2,
-          background: active ? "transparent" : "rgba(37, 99, 235, 0.04)",
+          ...(active
+            ? { boxShadow: quiet ? "inset 0 0 0 1px rgba(22, 93, 255, 0.6)" : RING_INSIDE }
+            : { outline: `1px dashed ${BLUE}`, outlineOffset: -1, background: "rgba(22, 93, 255, 0.04)" }),
           pointerEvents: "none",
-          zIndex: 2147483000,
+          zIndex: LAYER,
         }}
       />
-      <div
-        style={{
-          position: "fixed",
-          top: chipTop,
-          left: box.left,
-          width: box.width,
-          pointerEvents: "none",
-          zIndex: 2147483001,
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: 4,
-          paddingInline: 4,
-        }}
-      >
-        {label ? (
-          <span
-            style={{
-              background: EDITOR_BLUE,
-              color: "#fff",
-              font: "500 11px/1.2 ui-sans-serif, system-ui, sans-serif",
-              padding: "4px 8px",
-              borderRadius: "0 0 6px 6px",
-              maxWidth: "60%",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {label}
-          </span>
-        ) : (
-          <span />
-        )}
-        <span style={{ display: "flex", gap: 3, pointerEvents: "auto", flexShrink: 0 }}>
-          {grip}
-          <MoveButtons
-            canMoveUp={box.index > 0}
-            canMoveDown={box.index < total - 1}
-            upLabel={strings.moveUp}
-            downLabel={strings.moveDown}
-            onMoveUp={() => onMove("up")}
-            onMoveDown={() => onMove("down")}
-          />
-        </span>
-      </div>
-      <InsertButton top={box.top} box={box} label={strings.addAbove} onClick={() => onInsert(box.index)} />
+      {(active || label) && (
+        <div
+          style={{
+            position: "fixed",
+            top: active ? rowTop : Math.max(box.top + 20, 6),
+            left: box.left,
+            width: box.width,
+            pointerEvents: "none",
+            zIndex: LAYER + 6,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 8,
+            paddingInline: 8,
+            direction: pageDirection(box.id),
+          }}
+        >
+          {label && !quiet ? <span data-zc="chip">{label}</span> : <span />}
+          {/* While one element is picked the bar steps aside: it would sit on the very thing being edited. */}
+          {active && !quiet && (grip || actions.length > 0) ? (
+            <span data-zc="bar" role="toolbar" aria-label={label || undefined}>
+              {grip}
+              {grip && actions.length > 0 ? <span data-zc="rule" aria-hidden /> : null}
+              {has("up") && (
+                <BarButton label={strings.moveUp} disabled={box.index <= 0} onClick={() => onAction("up")}>
+                  <ArrowUpIcon size={18} aria-hidden />
+                </BarButton>
+              )}
+              {has("down") && (
+                <BarButton label={strings.moveDown} disabled={box.index >= total - 1} onClick={() => onAction("down")}>
+                  <ArrowDownIcon size={18} aria-hidden />
+                </BarButton>
+              )}
+              {has("duplicate") && (
+                <BarButton label={strings.duplicate} onClick={() => onAction("duplicate")}>
+                  <CopySimpleIcon size={18} aria-hidden />
+                </BarButton>
+              )}
+              {has("hide") && (
+                <BarButton label={hidden ? strings.show : strings.hide} pressed={hidden} onClick={() => onAction("hide")}>
+                  {hidden ? <EyeIcon size={18} aria-hidden /> : <EyeSlashIcon size={18} aria-hidden />}
+                </BarButton>
+              )}
+              {has("delete") && (
+                <BarButton label={strings.remove} tone="danger" onClick={() => onAction("delete")}>
+                  <TrashIcon size={18} aria-hidden />
+                </BarButton>
+              )}
+            </span>
+          ) : null}
+        </div>
+      )}
+      <InsertButton top={box.top} box={box} label={strings.addAbove} text={strings.addSection} onClick={() => onInsert(box.index)} />
       <InsertButton
         top={box.top + box.height}
         box={box}
         label={strings.addBelow}
+        text={strings.addSection}
         onClick={() => onInsert(box.index + 1)}
       />
     </>
+  );
+}
+
+/** One round button on the section's bar. Up/down glyphs don't mirror in RTL: a section moves up or down the page either way. */
+function BarButton({
+  label,
+  onClick,
+  disabled = false,
+  pressed,
+  tone,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  pressed?: boolean;
+  tone?: "danger";
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      data-zc="act"
+      data-tone={tone}
+      aria-label={label}
+      aria-pressed={pressed}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -687,7 +936,7 @@ function SectionOutline({
  * every page, and can't be moved, inserted around or deleted.
  */
 function ShellOutline({ box, active, label }: { box: Box; active: boolean; label: string }) {
-  const chipTop = Math.min(Math.max(box.top, 0), box.top + box.height - 22);
+  const chipTop = Math.min(Math.max(box.top + 6, 6), box.top + box.height - 30);
   return (
     <>
       <div
@@ -697,107 +946,32 @@ function ShellOutline({ box, active, label }: { box: Box; active: boolean; label
           left: box.left,
           width: box.width,
           height: box.height,
-          outline: `${active ? 2 : 1}px ${active ? "solid" : "dashed"} ${EDITOR_BLUE}`,
-          outlineOffset: -2,
-          background: active ? "transparent" : "rgba(37, 99, 235, 0.04)",
+          ...(active
+            ? { boxShadow: RING_INSIDE }
+            : { outline: `1px dashed ${BLUE}`, outlineOffset: -1, background: "rgba(22, 93, 255, 0.04)" }),
           pointerEvents: "none",
-          zIndex: 2147483000,
+          zIndex: LAYER,
         }}
       />
       {label && (
-        // A full-width row, like a section's chip bar, so the name sits at the
-        // inline start in either direction.
+        // A full-width row, like a section's, so the name sits at the inline
+        // start in either direction.
         <div
           style={{
             position: "fixed",
-            top: chipTop,
+            top: box.height < 36 ? box.top + 2 : chipTop,
             left: box.left,
             width: box.width,
             display: "flex",
-            paddingInline: 4,
+            paddingInline: 8,
             pointerEvents: "none",
-            zIndex: 2147483001,
+            zIndex: LAYER + 1,
           }}
         >
-          <span
-            style={{
-              background: EDITOR_BLUE,
-              color: "#fff",
-              font: "500 11px/1.2 ui-sans-serif, system-ui, sans-serif",
-              padding: "4px 8px",
-              borderRadius: "0 0 6px 6px",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {label}
-          </span>
+          <span data-zc="chip">{label}</span>
         </div>
       )}
     </>
-  );
-}
-
-/**
- * The lighter-weight way to reorder a section without leaving the canvas —
- * beside the outline's "+" buttons rather than replacing the layer list's own
- * drag handle (LayerList.tsx, unaffected by any of this). Up/down glyphs
- * don't mirror in RTL — a section moves toward the top or bottom of the page
- * either way, never left or right.
- */
-function MoveButtons({
-  canMoveUp,
-  canMoveDown,
-  upLabel,
-  downLabel,
-  onMoveUp,
-  onMoveDown,
-}: {
-  canMoveUp: boolean;
-  canMoveDown: boolean;
-  upLabel: string;
-  downLabel: string;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-}) {
-  const buttonStyle = (enabled: boolean): CSSProperties => ({
-    width: 20,
-    height: 20,
-    borderRadius: 999,
-    border: "1.5px solid #fff",
-    background: EDITOR_BLUE,
-    color: "#fff",
-    font: "600 11px/1 ui-sans-serif, system-ui, sans-serif",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: enabled ? "pointer" : "default",
-    opacity: enabled ? 1 : 0.35,
-    boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
-  });
-
-  return (
-    <span style={{ display: "flex", gap: 3, pointerEvents: "auto", flexShrink: 0 }}>
-      <button
-        type="button"
-        onClick={onMoveUp}
-        disabled={!canMoveUp}
-        aria-label={upLabel}
-        title={upLabel}
-        style={buttonStyle(canMoveUp)}
-      >
-        ↑
-      </button>
-      <button
-        type="button"
-        onClick={onMoveDown}
-        disabled={!canMoveDown}
-        aria-label={downLabel}
-        title={downLabel}
-        style={buttonStyle(canMoveDown)}
-      >
-        ↓
-      </button>
-    </span>
   );
 }
 
@@ -834,15 +1008,18 @@ function DragGaps({ hoverIndex }: { hoverIndex: number | null }) {
             key={gap.index}
             style={{
               position: "fixed",
-              top: gap.top - (active ? 2 : 1),
+              top: gap.top - 2,
               left: gap.left,
               width: gap.width,
-              height: active ? 4 : 2,
+              height: 4,
               borderRadius: 999,
-              background: active ? EDITOR_BLUE : "rgba(37, 99, 235, 0.35)",
+              background: BLUE,
+              opacity: active ? 1 : 0.3,
+              transform: active ? "none" : "scaleY(0.5)",
+              boxShadow: active ? "0 0 0 1px #fff" : "none",
               pointerEvents: "none",
-              zIndex: 2147483003,
-              transition: "height 100ms, background 100ms",
+              zIndex: LAYER + 3,
+              transition: "opacity 100ms, transform 100ms",
             }}
           />
         );
@@ -851,43 +1028,31 @@ function DragGaps({ hoverIndex }: { hoverIndex: number | null }) {
   );
 }
 
+/** The round "+" on a section's edge; its words show on hover and keyboard focus (canvasChrome.ts). */
 function InsertButton({
   top,
   box,
   label,
+  text,
   onClick,
 }: {
   top: number;
   box: Box;
   label: string;
+  text: string;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
+      data-zc="add"
       onClick={onClick}
       aria-label={label}
       title={label}
-      style={{
-        position: "fixed",
-        top: top - 14,
-        left: box.left + box.width / 2 - 14,
-        width: 28,
-        height: 28,
-        borderRadius: 999,
-        border: "2px solid #fff",
-        background: EDITOR_BLUE,
-        color: "#fff",
-        font: "600 18px/1 ui-sans-serif, system-ui, sans-serif",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
-        zIndex: 2147483002,
-      }}
+      style={{ top, left: box.left + box.width / 2, zIndex: LAYER + 2 }}
     >
-      +
+      <PlusIcon size={16} aria-hidden />
+      <span>{text}</span>
     </button>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { IconRotateBack } from "@/components/icons";
 import { Button } from "@store-builder/ui";
 import { themeResetCurrent } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
@@ -123,7 +123,7 @@ export function ThemeResetButton() {
   return (
     <>
       <Button type="button" size="sm" variant="ghost" className="relative z-10 h-7 px-2 text-xs" onClick={() => setOpen(true)}>
-        <RotateCcw className="size-3.5" aria-hidden />
+        <IconRotateBack className="size-3.5" aria-hidden />
         {t.reset}
       </Button>
       <ConfirmDialog

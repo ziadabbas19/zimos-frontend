@@ -1,14 +1,15 @@
-import { useState } from "react";
-import { Monitor, Smartphone, Tablet } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { Button, Input, cn } from "@store-builder/ui";
 import type { PageElement } from "@store-builder/api-client";
 import { Field } from "@/components/Field";
 import { Select } from "@/components/Select";
-import { normalizeHex } from "@/lib/brandColors";
+import { Segmented } from "@/components/Segmented";
 import { useEditorLocale } from "./editorLocale";
+import { ColourControl, Group, NumberField, SwitchRow } from "./inspector/controls";
+import { inspectorUi, type InspectorUi } from "./inspector/strings";
 
 /**
- * The Style and Layout tabs of one element (SPEC §9.3).
+ * The look of one element.
  *
  *   element.settings.style    = { base, tablet, mobile }
  *   element.settings.styleRef = id of a named style
@@ -18,6 +19,11 @@ import { useEditorLocale } from "./editorLocale";
  * shows the value it inherits as a placeholder. Named styles live in the page
  * tree's `globalStyles.named`; an element that points at one takes its look
  * and may still override it.
+ *
+ * `tab="all"` is the inspector's Style page: one screen switch, then the
+ * fields in foldable groups (Text, Background, Border, Shadow, Size,
+ * Spacing, Advanced, Entrance, Shared style). `tab="style"` and
+ * `tab="layout"` keep the two halves the old element tabs showed.
  *
  * The contract (keys, ranges) is the backend's modules/pages/elementStyle.js,
  * and the storefront turns it into CSS in page-renderer/elementStyle.ts.
@@ -37,12 +43,8 @@ const STRINGS = {
     content: "Content",
     style: "Style",
     layout: "Layout",
-    base: "Desktop",
-    tablet: "Tablet",
-    mobile: "Mobile",
-    deviceHint: "Changes here apply to this device only.",
     color: "Text colour",
-    background: "Background",
+    background: "Background colour",
     fontSize: "Text size (px)",
     fontWeight: "Text weight",
     lineHeight: "Line height (%)",
@@ -53,15 +55,15 @@ const STRINGS = {
     shadow: "Shadow",
     opacity: "Opacity (%)",
     width: "Width (% of column)",
-    maxWidth: "Maximum width (px)",
+    maxWidth: "Widest (px)",
     hidden: "Hide on this device",
     align: "Alignment",
-    paddingTop: "Padding top (px)",
-    paddingBottom: "Padding bottom (px)",
-    paddingStart: "Padding start (px)",
-    paddingEnd: "Padding end (px)",
-    marginTop: "Space above (px)",
-    marginBottom: "Space below (px)",
+    paddingTop: "Inside: top",
+    paddingBottom: "Inside: bottom",
+    paddingStart: "Inside: start",
+    paddingEnd: "Inside: end",
+    marginTop: "Outside: above",
+    marginBottom: "Outside: below",
     unset: "Default",
     start: "Start",
     center: "Centre",
@@ -73,25 +75,21 @@ const STRINGS = {
     sm: "Small",
     md: "Medium",
     lg: "Large",
-    reset: "Clear this device's changes",
-    named: "Named style",
+    reset: "Clear this screen's changes",
+    named: "Shared style",
     namedNone: "None",
-    namedHint: "A named style is shared: changing it restyles every element that uses it.",
-    saveAs: "Save this look as a named style",
+    namedHint: "A shared style is used by several elements: changing it restyles every one of them.",
+    saveAs: "Save this look as a shared style",
     newName: "Style name, e.g. Primary button",
     create: "Save",
-    update: "Update the named style with this look",
+    update: "Update the shared style with this look",
   },
   ar: {
     content: "المحتوى",
     style: "الشكل",
     layout: "التخطيط",
-    base: "ديسكتوب",
-    tablet: "تابلت",
-    mobile: "موبايل",
-    deviceHint: "التغييرات هنا تخص هذا الجهاز فقط.",
     color: "لون النص",
-    background: "الخلفية",
+    background: "لون الخلفية",
     fontSize: "حجم النص (px)",
     fontWeight: "سُمك النص",
     lineHeight: "ارتفاع السطر (%)",
@@ -105,12 +103,12 @@ const STRINGS = {
     maxWidth: "أقصى عرض (px)",
     hidden: "إخفاء على هذا الجهاز",
     align: "المحاذاة",
-    paddingTop: "حشو علوي (px)",
-    paddingBottom: "حشو سفلي (px)",
-    paddingStart: "حشو البداية (px)",
-    paddingEnd: "حشو النهاية (px)",
-    marginTop: "مسافة فوق (px)",
-    marginBottom: "مسافة تحت (px)",
+    paddingTop: "الداخلية: أعلى",
+    paddingBottom: "الداخلية: أسفل",
+    paddingStart: "الداخلية: البداية",
+    paddingEnd: "الداخلية: النهاية",
+    marginTop: "الخارجية: أعلى",
+    marginBottom: "الخارجية: أسفل",
     unset: "الافتراضي",
     start: "البداية",
     center: "الوسط",
@@ -122,86 +120,129 @@ const STRINGS = {
     sm: "صغير",
     md: "متوسط",
     lg: "كبير",
-    reset: "مسح تغييرات هذا الجهاز",
+    reset: "مسح تغييرات هذه الشاشة",
     named: "ستايل مسمّى",
     namedNone: "بدون",
-    namedHint: "الستايل المسمّى مشترك: تغييره يغيّر كل عنصر يستخدمه.",
-    saveAs: "حفظ هذا الشكل كستايل مسمّى",
+    namedHint: "النمط المشترك تستخدمه عدة عناصر: تغييره يغيّر مظهرها كلها.",
+    saveAs: "حفظ هذا المظهر نمطًا مشتركًا",
     newName: "اسم الستايل، مثال: الزرار الأساسي",
     create: "حفظ",
-    update: "تحديث الستايل المسمّى بهذا الشكل",
+    update: "تحديث النمط المشترك بهذا المظهر",
   },
 } as const;
 type T = (typeof STRINGS)["en"];
 type Key = keyof T;
 
-type Spec =
-  | { key: Key; kind: "number"; min: number; max: number }
-  | { key: Key; kind: "colour" }
-  | { key: Key; kind: "select"; options: Array<{ value: string; label: Key }>; numeric?: boolean };
+/** Which of the two old tabs a field belonged to. */
+type Half = "style" | "layout";
 
-const STYLE_FIELDS: Spec[] = [
-  { key: "color", kind: "colour" },
-  { key: "background", kind: "colour" },
-  { key: "fontSize", kind: "number", min: 8, max: 160 },
+type Spec = { key: Key; half: Half } & (
+  | { kind: "number"; min: number; max: number; step?: number; narrow?: boolean }
+  | { kind: "colour" }
+  | { kind: "select"; options: Array<{ value: string; label: Key }>; numeric?: boolean }
+);
+
+type GroupId = "text" | "background" | "border" | "shadow" | "size" | "spacing" | "advanced";
+
+interface GroupSpec {
+  id: GroupId;
+  title: keyof InspectorUi & `group${string}`;
+  fields: Spec[];
+}
+
+const GROUPS: GroupSpec[] = [
   {
-    key: "fontWeight",
-    kind: "select",
-    numeric: true,
-    options: [300, 400, 500, 600, 700, 800, 900].map((w) => ({ value: String(w), label: String(w) as Key })),
-  },
-  { key: "lineHeight", kind: "number", min: 80, max: 300 },
-  { key: "borderWidth", kind: "number", min: 0, max: 20 },
-  {
-    key: "borderStyle",
-    kind: "select",
-    options: [
-      { value: "solid", label: "solid" },
-      { value: "dashed", label: "dashed" },
-      { value: "dotted", label: "dotted" },
-      { value: "none", label: "none" },
+    id: "text",
+    title: "groupText",
+    fields: [
+      { key: "color", kind: "colour", half: "style" },
+      { key: "fontSize", kind: "number", min: 8, max: 160, half: "style" },
+      {
+        key: "fontWeight",
+        kind: "select",
+        numeric: true,
+        half: "style",
+        options: [300, 400, 500, 600, 700, 800, 900].map((w) => ({ value: String(w), label: String(w) as Key })),
+      },
+      { key: "lineHeight", kind: "number", min: 80, max: 300, step: 10, half: "style" },
+      {
+        key: "align",
+        kind: "select",
+        half: "layout",
+        options: [
+          { value: "start", label: "start" },
+          { value: "center", label: "center" },
+          { value: "end", label: "end" },
+        ],
+      },
     ],
   },
-  { key: "borderColor", kind: "colour" },
-  { key: "radius", kind: "number", min: 0, max: 200 },
   {
-    key: "shadow",
-    kind: "select",
-    options: [
-      { value: "none", label: "none" },
-      { value: "sm", label: "sm" },
-      { value: "md", label: "md" },
-      { value: "lg", label: "lg" },
+    id: "background",
+    title: "groupBackground",
+    fields: [{ key: "background", kind: "colour", half: "style" }],
+  },
+  {
+    id: "border",
+    title: "groupBorder",
+    fields: [
+      { key: "borderWidth", kind: "number", min: 0, max: 20, half: "style" },
+      {
+        key: "borderStyle",
+        kind: "select",
+        half: "style",
+        options: [
+          { value: "solid", label: "solid" },
+          { value: "dashed", label: "dashed" },
+          { value: "dotted", label: "dotted" },
+          { value: "none", label: "none" },
+        ],
+      },
+      { key: "borderColor", kind: "colour", half: "style" },
+      { key: "radius", kind: "number", min: 0, max: 200, step: 2, half: "style" },
     ],
   },
-  { key: "opacity", kind: "number", min: 0, max: 100 },
-];
-
-const LAYOUT_FIELDS: Spec[] = [
   {
-    key: "align",
-    kind: "select",
-    options: [
-      { value: "start", label: "start" },
-      { value: "center", label: "center" },
-      { value: "end", label: "end" },
+    id: "shadow",
+    title: "groupShadow",
+    fields: [
+      {
+        key: "shadow",
+        kind: "select",
+        half: "style",
+        options: [
+          { value: "none", label: "none" },
+          { value: "sm", label: "sm" },
+          { value: "md", label: "md" },
+          { value: "lg", label: "lg" },
+        ],
+      },
+      { key: "opacity", kind: "number", min: 0, max: 100, step: 5, half: "style" },
     ],
   },
-  { key: "width", kind: "number", min: 5, max: 100 },
-  { key: "maxWidth", kind: "number", min: 50, max: 2000 },
-  { key: "paddingTop", kind: "number", min: 0, max: 300 },
-  { key: "paddingBottom", kind: "number", min: 0, max: 300 },
-  { key: "paddingStart", kind: "number", min: 0, max: 300 },
-  { key: "paddingEnd", kind: "number", min: 0, max: 300 },
-  { key: "marginTop", kind: "number", min: 0, max: 300 },
-  { key: "marginBottom", kind: "number", min: 0, max: 300 },
+  {
+    id: "size",
+    title: "groupSize",
+    fields: [
+      { key: "width", kind: "number", min: 5, max: 100, step: 5, half: "layout" },
+      { key: "maxWidth", kind: "number", min: 50, max: 2000, step: 50, half: "layout" },
+    ],
+  },
+  {
+    id: "spacing",
+    title: "groupSpacing",
+    fields: [
+      { key: "paddingTop", kind: "number", min: 0, max: 300, step: 4, narrow: true, half: "layout" },
+      { key: "paddingBottom", kind: "number", min: 0, max: 300, step: 4, narrow: true, half: "layout" },
+      { key: "paddingStart", kind: "number", min: 0, max: 300, step: 4, narrow: true, half: "layout" },
+      { key: "paddingEnd", kind: "number", min: 0, max: 300, step: 4, narrow: true, half: "layout" },
+      { key: "marginTop", kind: "number", min: 0, max: 300, step: 4, narrow: true, half: "layout" },
+      { key: "marginBottom", kind: "number", min: 0, max: 300, step: 4, narrow: true, half: "layout" },
+    ],
+  },
 ];
 
-const DEVICES: Array<{ id: StyleDevice; icon: typeof Monitor }> = [
-  { id: "base", icon: Monitor },
-  { id: "tablet", icon: Tablet },
-  { id: "mobile", icon: Smartphone },
-];
+const DEVICES: readonly StyleDevice[] = ["base", "tablet", "mobile"];
 
 const isObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
 
@@ -209,10 +250,15 @@ export function elementStyles(element: PageElement): DeviceStyles {
   const raw = isObject(element.settings) ? element.settings.style : null;
   if (!isObject(raw)) return {};
   const out: DeviceStyles = {};
-  for (const device of ["base", "tablet", "mobile"] as const) {
+  for (const device of DEVICES) {
     if (isObject(raw[device])) out[device] = raw[device] as Style;
   }
   return out;
+}
+
+/** The id of the named style an element points at, or "". */
+export function styleRefOf(element: PageElement): string {
+  return isObject(element.settings) && typeof element.settings.styleRef === "string" ? element.settings.styleRef : "";
 }
 
 /** Named styles of a page tree's `globalStyles`, ignoring anything malformed. */
@@ -227,7 +273,7 @@ export function namedStylesOf(globalStyles: unknown): NamedStyle[] {
 /** Drops empty devices and an empty style, so an untouched element stays untouched. */
 function compact(styles: DeviceStyles): DeviceStyles | undefined {
   const out: DeviceStyles = {};
-  for (const device of ["base", "tablet", "mobile"] as const) {
+  for (const device of DEVICES) {
     const style = styles[device];
     if (style && Object.keys(style).length > 0) out[device] = style;
   }
@@ -245,28 +291,53 @@ function withStyles(element: PageElement, styles: DeviceStyles, styleRef: string
   return Object.keys(next).length > 0 ? next : undefined;
 }
 
+/**
+ * The element's settings with some style values written per device — a value
+ * of `undefined` removes its key. Everything else in the settings, and the
+ * named style the element points at, stay as they are.
+ */
+export function patchElementStyles(element: PageElement, patch: Partial<Record<StyleDevice, Style>>): Record<string, unknown> | undefined {
+  const styles = elementStyles(element);
+  const next: DeviceStyles = { ...styles };
+  for (const device of DEVICES) {
+    const changes = patch[device];
+    if (!changes) continue;
+    const style: Style = { ...(styles[device] ?? {}) };
+    for (const [key, value] of Object.entries(changes)) {
+      if (value === undefined) delete style[key];
+      else style[key] = value;
+    }
+    next[device] = style;
+  }
+  return withStyles(element, next, styleRefOf(element) || undefined);
+}
+
 export function ElementStylePanel({
   element,
   tab,
   named,
   onSettingsChange,
   onNamedChange,
+  showHide = true,
 }: {
   element: PageElement;
-  tab: "style" | "layout";
+  /** "all" is the whole look on one page; "style" and "layout" are the two old halves of it. */
+  tab: "style" | "layout" | "all";
   named: NamedStyle[];
   onSettingsChange: (settings: Record<string, unknown> | undefined) => void;
   /** Absent where named styles cannot be saved (the funnel step editor). */
   onNamedChange?: (next: NamedStyle[]) => void;
+  /** The per-device "hide" switch. Off where the Visibility page holds it (inspector/HideOnDevices.tsx). */
+  showHide?: boolean;
 }) {
   const locale = useEditorLocale();
   const t: T = STRINGS[locale] as unknown as T;
+  const ti = inspectorUi(locale);
   const [device, setDevice] = useState<StyleDevice>("base");
   const [newName, setNewName] = useState("");
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
 
   const styles = elementStyles(element);
-  const styleRef = isObject(element.settings) && typeof element.settings.styleRef === "string" ? element.settings.styleRef : "";
+  const styleRef = styleRefOf(element);
   const refStyle = named.find((n) => n.id === styleRef)?.style ?? {};
   const own = styles[device] ?? {};
   // What a field shows when this device has nothing of its own for it.
@@ -282,71 +353,43 @@ export function ElementStylePanel({
     onSettingsChange(withStyles(element, { ...styles, [device]: nextDevice }, styleRef || undefined));
   }
 
-  function field(spec: Spec) {
+  const shows = (half: Half) => tab === "all" || tab === half;
+  const screenName: Record<StyleDevice, string> = { base: ti.screenDesktop, tablet: ti.screenTablet, mobile: ti.screenMobile };
+
+  function field(spec: Spec): ReactNode {
     const value = own[spec.key];
     const fallback = inherited(spec.key);
-    const draftKey = `${device}:${spec.key}`;
+    const reactKey = `${device}:${spec.key}`;
     if (spec.kind === "number") {
       return (
-        <Field key={spec.key} label={t[spec.key]}>
-          {({ id }) => (
-            <Input
-              id={id}
-              type="number"
-              inputMode="numeric"
-              min={spec.min}
-              max={spec.max}
-              placeholder={typeof fallback === "number" ? String(fallback) : undefined}
-              value={typeof value === "number" ? value : ""}
-              onChange={(e) => {
-                if (e.target.value === "") return setValue(spec.key, undefined);
-                const n = Math.round(Number(e.target.value));
-                if (Number.isFinite(n)) setValue(spec.key, Math.min(spec.max, Math.max(spec.min, n)));
-              }}
-            />
-          )}
-        </Field>
+        <NumberField
+          key={reactKey}
+          label={t[spec.key]}
+          strict
+          integer
+          min={spec.min}
+          max={spec.max}
+          step={spec.step}
+          placeholder={typeof fallback === "number" ? String(fallback) : undefined}
+          startAt={typeof fallback === "number" ? fallback : undefined}
+          value={typeof value === "number" ? value : ""}
+          onChange={(next) => setValue(spec.key, next === "" ? undefined : next)}
+        />
       );
     }
     if (spec.kind === "colour") {
-      const shown = drafts[draftKey] ?? (typeof value === "string" ? value : "");
-      const valid = normalizeHex(shown);
       return (
-        <Field key={spec.key} label={t[spec.key]}>
-          {({ id }) => (
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                aria-label={t[spec.key]}
-                value={valid ?? (typeof fallback === "string" ? (normalizeHex(fallback) ?? "#000000") : "#000000")}
-                onChange={(e) => {
-                  setDrafts((prev) => ({ ...prev, [draftKey]: e.target.value }));
-                  setValue(spec.key, e.target.value.toLowerCase());
-                }}
-                className="size-10 shrink-0 cursor-pointer rounded-[0.5rem] border border-line-strong bg-paper-raised p-1"
-              />
-              <Input
-                id={id}
-                dir="ltr"
-                spellCheck={false}
-                placeholder={typeof fallback === "string" ? fallback : "#"}
-                value={shown}
-                onChange={(e) => {
-                  const text = e.target.value;
-                  setDrafts((prev) => ({ ...prev, [draftKey]: text }));
-                  // Only a complete hex colour is stored; an emptied box clears it.
-                  const hex = normalizeHex(text);
-                  if (text.trim() === "") setValue(spec.key, undefined);
-                  else if (hex) setValue(spec.key, hex.toLowerCase());
-                }}
-              />
-            </div>
-          )}
-        </Field>
+        <ColourControl
+          key={reactKey}
+          label={t[spec.key]}
+          value={typeof value === "string" ? value : undefined}
+          fallback={typeof fallback === "string" ? fallback : undefined}
+          onChange={(hex) => setValue(spec.key, hex)}
+        />
       );
     }
     return (
-      <Field key={spec.key} label={t[spec.key]}>
+      <Field key={reactKey} label={t[spec.key]}>
         {({ id }) => (
           <Select
             id={id}
@@ -370,70 +413,89 @@ export function ElementStylePanel({
     );
   }
 
-  const fields = tab === "style" ? STYLE_FIELDS : LAYOUT_FIELDS;
+  /** The fields of a group, the narrow numbers two to a line. */
+  function fieldsOf(specs: Spec[]): ReactNode[] {
+    const out: ReactNode[] = [];
+    let pair: Spec[] = [];
+    const flush = () => {
+      if (pair.length === 0) return;
+      out.push(
+        <div key={`grid:${pair[0].key}`} className="grid grid-cols-2 items-end gap-x-2 gap-y-3">
+          {pair.map(field)}
+        </div>
+      );
+      pair = [];
+    };
+    for (const spec of specs) {
+      if (spec.kind === "number" && spec.narrow) {
+        pair.push(spec);
+        continue;
+      }
+      flush();
+      out.push(field(spec));
+    }
+    flush();
+    return out;
+  }
+
   const hasOwn = Object.keys(own).length > 0;
+  const changed = (["tablet", "mobile"] as const).filter((d) => Object.keys(styles[d] ?? {}).length > 0);
+
+  const groups = GROUPS.map((group) => {
+    const specs = group.fields.filter((spec) => shows(spec.half));
+    if (specs.length === 0) return null;
+    const keys = specs.map((spec) => spec.key as string);
+    const setHere = keys.filter((key) => own[key] !== undefined).length;
+    return (
+      <Group
+        key={group.id}
+        id={`style:${group.id}`}
+        title={ti[group.title]}
+        hint={group.id === "spacing" ? ti.groupSpacingHint : undefined}
+        mark={setHere}
+        collapsible
+        defaultOpen={group.id === "text" || setHere > 0}
+      >
+        {fieldsOf(specs)}
+      </Group>
+    );
+  });
 
   return (
-    <div className="space-y-3">
-      <div role="group" aria-label={t.base} className="inline-flex gap-1 rounded-[0.5rem] border border-line bg-paper-raised p-1">
-        {DEVICES.map(({ id, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            aria-pressed={device === id}
-            title={t[id]}
-            onClick={() => setDevice(id)}
-            className={cn(
-              "flex cursor-pointer items-center gap-1.5 rounded-[0.375rem] px-2.5 py-1.5 text-xs font-medium",
-              device === id ? "bg-primary-soft text-primary-dark dark:text-primary" : "text-ink-soft hover:text-ink"
-            )}
-          >
-            <Icon className="size-3.5" aria-hidden />
-            {t[id]}
-            {/* A dot marks a device that carries changes of its own. */}
-            {styles[id] && Object.keys(styles[id] ?? {}).length > 0 && <span className="size-1.5 rounded-full bg-primary" aria-hidden />}
-          </button>
-        ))}
-      </div>
-      {device !== "base" && <p className="text-xs text-ink-soft">{t.deviceHint}</p>}
-
-      {fields.map(field)}
-
-      {tab === "style" && (
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-ink">
-          <input
-            type="checkbox"
-            className="size-4 accent-primary"
-            checked={own.hidden === true}
-            onChange={(e) => setValue("hidden", e.target.checked ? true : device === "base" ? undefined : false)}
-          />
-          {t.hidden}
-        </label>
-      )}
-
-      {hasOwn && (
-        <Button
-          type="button"
-          variant="outline"
+    <div data-slot="inspector-style">
+      <div className="space-y-2 border-b border-line px-4 py-3">
+        <Segmented
+          value={device}
+          onChange={setDevice}
+          label={ti.screensLabel}
           size="sm"
-          onClick={() => {
-            setDrafts({});
-            onSettingsChange(withStyles(element, { ...styles, [device]: {} }, styleRef || undefined));
-          }}
-        >
-          {t.reset}
-        </Button>
+          className="w-full"
+          options={DEVICES.map((d) => ({ value: d, label: screenName[d] }))}
+        />
+        {device !== "base" && <p className="text-xs leading-5 text-ink-soft">{ti.onlyThisScreen(screenName[device])}</p>}
+        {changed.length > 0 && (
+          <p className="text-xs leading-5 text-ink-soft">{ti.ownChanges(changed.map((d) => screenName[d]).join(ti.joiner))}</p>
+        )}
+      </div>
+
+      {groups}
+
+      {shows("style") && showHide && (
+        <div className="border-b border-line px-4 py-2">
+          <SwitchRow
+            label={t.hidden}
+            checked={own.hidden === true}
+            onChange={(checked) => setValue("hidden", checked ? true : device === "base" ? undefined : false)}
+          />
+        </div>
       )}
 
-      {tab === "style" && (
-        <div className="space-y-2 border-t border-line pt-3">
+
+      {shows("style") && (
+        <Group id="style:named" title={ti.groupNamed} mark={styleRef ? 1 : 0} collapsible defaultOpen={Boolean(styleRef)}>
           <Field label={t.named} hint={t.namedHint}>
             {({ id }) => (
-              <Select
-                id={id}
-                value={styleRef}
-                onChange={(e) => onSettingsChange(withStyles(element, styles, e.target.value || undefined))}
-              >
+              <Select id={id} value={styleRef} onChange={(e) => onSettingsChange(withStyles(element, styles, e.target.value || undefined))}>
                 <option value="">{t.namedNone}</option>
                 {named.map((n) => (
                   <option key={n.id} value={n.id}>
@@ -448,6 +510,7 @@ export function ElementStylePanel({
               type="button"
               variant="outline"
               size="sm"
+              className="h-auto min-h-8 py-1.5 whitespace-normal"
               onClick={() => {
                 // The element's own look moves into the shared style; the element keeps only the reference.
                 onNamedChange(
@@ -472,13 +535,7 @@ export function ElementStylePanel({
           )}
           {onNamedChange && compact(styles) && named.length < 40 && (
             <div className="flex items-center gap-2">
-              <Input
-                aria-label={t.saveAs}
-                placeholder={t.newName}
-                maxLength={80}
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-              />
+              <Input aria-label={t.saveAs} placeholder={t.newName} maxLength={80} value={newName} onChange={(e) => setNewName(e.target.value)} />
               <Button
                 type="button"
                 size="sm"
@@ -495,24 +552,36 @@ export function ElementStylePanel({
               </Button>
             </div>
           )}
+        </Group>
+      )}
+
+      {hasOwn && (
+        <div className="px-4 py-3">
+          <Button type="button" variant="outline" size="sm" onClick={() => onSettingsChange(withStyles(element, { ...styles, [device]: {} }, styleRef || undefined))}>
+            {t.reset}
+          </Button>
         </div>
       )}
     </div>
   );
 }
 
-/** The Content / Style / Layout switch above an element's fields. */
+export type ElementTab = "content" | "style" | "layout";
+
+/**
+ * The Content / Style / Layout switch above an element's fields.
+ */
 export function ElementTabs({
   value,
   onChange,
 }: {
-  value: "content" | "style" | "layout";
-  onChange: (tab: "content" | "style" | "layout") => void;
+  value: ElementTab;
+  onChange: (tab: ElementTab) => void;
 }) {
   const locale = useEditorLocale();
   const t = STRINGS[locale];
   return (
-    <div role="tablist" className="flex gap-1 border-b border-line">
+    <div role="tablist" className="flex gap-1 overflow-x-auto border-b border-line [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {(["content", "style", "layout"] as const).map((tab) => (
         <button
           key={tab}
@@ -521,7 +590,7 @@ export function ElementTabs({
           aria-selected={value === tab}
           onClick={() => onChange(tab)}
           className={cn(
-            "-mb-px cursor-pointer border-b-2 px-3 py-1.5 text-xs font-medium",
+            "-mb-px inline-flex min-h-9 shrink-0 cursor-pointer items-center gap-1 border-b-2 px-3 py-1.5 text-xs font-medium whitespace-nowrap pointer-coarse:min-h-11",
             value === tab ? "border-primary text-primary" : "border-transparent text-ink-soft hover:text-ink"
           )}
         >

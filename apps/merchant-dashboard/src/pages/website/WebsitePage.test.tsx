@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import type { WebsiteTemplateDetail, WebsiteTemplateSummary, Workspace } from "@store-builder/api-client";
 import { api, fake, workspaceMock, type ListedWorkspace } from "@/test/mocks";
 import { currentPath, renderWithProviders } from "@/test/renderWithProviders";
@@ -91,19 +91,19 @@ describe("WebsitePage template gallery", () => {
     const { user } = renderWithProviders(<WebsitePage />, { route: "/website" });
 
     const chips = await screen.findByRole("group", { name: "Filter templates by category" });
-    // One chip per real category, plus All; a template without one adds none.
+    // One chip per real category, plus All, each with how many it holds; a template without one adds none.
     expect(
       Array.from(chips.querySelectorAll("button")).map((b) => b.textContent)
-    ).toEqual(["All", "Fashion", "Perfume"]);
+    ).toEqual(["All4", "Fashion2", "Perfume1"]);
     expect(screen.getAllByRole("button", { name: /^Preview / })).toHaveLength(4);
 
-    await user.click(screen.getByRole("button", { name: "Perfume" }));
-    expect(screen.getByRole("button", { name: "Perfume" })).toHaveAttribute("aria-pressed", "true");
+    await user.click(within(chips).getByRole("button", { name: /^Perfume/ }));
+    expect(within(chips).getByRole("button", { name: /^Perfume/ })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getAllByRole("button", { name: /^Preview / }).map((b) => b.getAttribute("aria-label"))).toEqual([
       "Preview Oud House",
     ]);
 
-    await user.click(screen.getByRole("button", { name: "Fashion" }));
+    await user.click(within(chips).getByRole("button", { name: /^Fashion/ }));
     await user.type(screen.getByRole("searchbox", { name: "Search templates" }), "zamalek");
     expect(screen.getAllByRole("button", { name: /^Preview / }).map((b) => b.getAttribute("aria-label"))).toEqual([
       "Preview Zamalek Fashion",
@@ -173,10 +173,12 @@ describe("WebsitePage template colour", () => {
     api.createWebsite.mockResolvedValue(fake({ website: { id: "site_1", name: "Nile Store" }, pages: [] }));
     const { user } = renderWithProviders(<WebsitePage />, { route: "/website" });
 
+    // The card opens the template's sheet; "use" asks once, saying what will happen, and then creates.
     await user.click(await screen.findByRole("button", { name: "Preview Oud House" }));
-    await screen.findByText(/This template includes one page/);
+    await screen.findByText(/Comes with 1 page/);
     await user.click(screen.getByRole("button", { name: "Use this template" }));
-    await waitFor(() => expect(currentPath()).toBe("/website/site_1/edit"));
+    await user.click(await screen.findByRole("button", { name: "Start with this template" }));
+    await waitFor(() => expect(currentPath()).toMatch(/^\/website\/site_1\/edit/));
   }
 
   it("copies the template's colour, marked as the template's, onto a store with no look of its own", async () => {

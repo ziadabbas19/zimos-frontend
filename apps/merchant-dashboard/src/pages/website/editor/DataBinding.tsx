@@ -7,7 +7,7 @@ import { Select } from "@/components/Select";
 import { useEditorLocale } from "./editorLocale";
 
 /**
- * Data binding in the editor (SPEC §9.4).
+ * Data binding in the editor.
  *
  * `BindingFields` — under an element's content: for each bindable prop, pick a
  * data source; it is stored as `props.bindings = { prop: source }` and the
@@ -22,7 +22,7 @@ import { useEditorLocale } from "./editorLocale";
 const STRINGS = {
   en: {
     bind: "Bind",
-    typed: "Use the text written above",
+    typed: "Use what is written in Content",
     hint: "The store shows the live value. What you wrote stays as a fallback.",
     "product.title": "Product — name",
     "product.description": "Product — description",
@@ -39,6 +39,7 @@ const STRINGS = {
     "legal.refund_policy": "Refund policy",
     "legal.privacy_policy": "Privacy policy",
     "legal.terms_of_service": "Terms of service",
+    "legal.shipping_policy": "Shipping policy",
     text: "Text",
     label: "Button text",
     src: "Image",
@@ -49,7 +50,7 @@ const STRINGS = {
   },
   ar: {
     bind: "ربط",
-    typed: "استخدم النص المكتوب أعلاه",
+    typed: "استخدم ما هو مكتوب في تبويب المحتوى",
     hint: "المتجر يعرض القيمة الحقيقية. ما كتبته يبقى كبديل.",
     "product.title": "المنتج — الاسم",
     "product.description": "المنتج — الوصف",
@@ -66,6 +67,7 @@ const STRINGS = {
     "legal.refund_policy": "سياسة الاسترجاع",
     "legal.privacy_policy": "سياسة الخصوصية",
     "legal.terms_of_service": "شروط الخدمة",
+    "legal.shipping_policy": "سياسة الشحن",
     text: "النص",
     label: "نص الزرار",
     src: "الصورة",
@@ -89,6 +91,7 @@ const TEXT_SOURCES = [
   "legal.refund_policy",
   "legal.privacy_policy",
   "legal.terms_of_service",
+  "legal.shipping_policy",
 ] as const;
 const IMAGE_SOURCES = ["product.images[0]", "product.images[1]", "product.images[2]"] as const;
 
@@ -107,6 +110,18 @@ const BINDABLE: Partial<Record<PageElementType, Array<{ key: PropKey; kind: "tex
   ],
 };
 
+/** Whether this kind of element has anything that can show live store data. */
+export function canBind(type: PageElementType): boolean {
+  return BINDABLE[type] !== undefined;
+}
+
+/** How many of the element's props are bound to live data. */
+export function boundCount(element: PageElement): number {
+  const raw = (element.props as Record<string, unknown> | undefined)?.bindings;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return 0;
+  return Object.values(raw).filter((v) => typeof v === "string" && v !== "").length;
+}
+
 export function BindingFields({
   element,
   onChange,
@@ -124,7 +139,7 @@ export function BindingFields({
   const current = (raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {}) as Record<string, unknown>;
 
   return (
-    <div className="space-y-3 rounded-[0.5rem] bg-paper p-3">
+    <div data-slot="inspector-bindings" className="space-y-3">
       {slots.map(({ key, kind }) => (
         <Field key={key} label={`${t.bind}: ${t[key]}`}>
           {({ id }) => (
@@ -150,7 +165,7 @@ export function BindingFields({
           )}
         </Field>
       ))}
-      <p className="text-xs text-ink-soft">{t.hint}</p>
+      <p className="text-xs leading-5 text-ink-soft">{t.hint}</p>
     </div>
   );
 }

@@ -302,6 +302,47 @@ function settingsOf(node: PageRow | PageColumn): unknown {
   return (node as { settings?: unknown }).settings;
 }
 
+/**
+ * Markers for the editor's canvas only (components/preview). Both are read
+ * off the element's marker, which exists in editable mode alone, so a
+ * shopper's page never carries them.
+ *
+ * `data-zimos-image-field`: the prop that holds the element's one picture, so
+ * "replace this picture" on the canvas knows where the new one goes. Left out
+ * when the picture is bound to live data (the prop is not what shows).
+ */
+const EDITABLE_IMAGE_FIELD: Record<string, string> = { image: "src", image_banner: "image" };
+
+function editableImageField(element: PageElement): string | undefined {
+  const field = EDITABLE_IMAGE_FIELD[element.type as string];
+  if (!field) return undefined;
+  const bindings = (propsOf(element) as { bindings?: unknown }).bindings;
+  const bound = bindings && typeof bindings === "object" ? (bindings as Record<string, unknown>)[field] : undefined;
+  return bound ? undefined : field;
+}
+
+/**
+ * `data-zimos-hidden`: the widths at which the element's own style hides it
+ * from shoppers ("desktop tablet mobile", any of them; absent when none). The
+ * canvas shows it there as a faded ghost instead, so it can still be picked.
+ * Follows the stylesheet's cascade (elementStyle.ts): tablet falls back to
+ * the base value, mobile to tablet's.
+ */
+function editableHiddenOn(element: PageElement): string | undefined {
+  const style = (element.settings as { style?: unknown } | undefined)?.style;
+  if (!style || typeof style !== "object" || Array.isArray(style)) return undefined;
+  const flag = (device: string): boolean | undefined => {
+    const block = (style as Record<string, unknown>)[device];
+    const hidden = block && typeof block === "object" ? (block as { hidden?: unknown }).hidden : undefined;
+    return typeof hidden === "boolean" ? hidden : undefined;
+  };
+  const desktop = flag("base") === true;
+  const tablet = flag("tablet") ?? desktop;
+  const mobile = flag("mobile") ?? tablet;
+  const on = [desktop ? "desktop" : "", tablet ? "tablet" : "", mobile ? "mobile" : ""].filter(Boolean).join(" ");
+  return on || undefined;
+}
+
 function ColumnNode({ column, ctx }: { column: PageColumn; ctx: Ctx }) {
   const span = Number.isInteger(column.span) ? Math.min(12, Math.max(1, column.span!)) : 12;
   const elements = Array.isArray(column.elements) ? column.elements : [];
@@ -318,7 +359,14 @@ function ColumnNode({ column, ctx }: { column: PageColumn; ctx: Ctx }) {
         data-zt-span={span}
       >
         {elements.map((element) => (
-          <div key={element.id} data-zimos-el={element.id} data-zimos-type={element.type} className="contents">
+          <div
+            key={element.id}
+            data-zimos-el={element.id}
+            data-zimos-type={element.type}
+            data-zimos-image-field={editableImageField(element)}
+            data-zimos-hidden={editableHiddenOn(element)}
+            className="contents"
+          >
             <StyledElement element={element} ctx={ctx} />
           </div>
         ))}
@@ -401,7 +449,12 @@ function EditableSectionNode({
 }) {
   const hasRows = Array.isArray(section.rows) && section.rows.length > 0;
   return (
-    <div data-zimos-section={section.id} data-zimos-index={index}>
+    <div
+      data-zimos-section={section.id}
+      data-zimos-index={index}
+      // The canvas ghosts a section marked hidden (settings.hidden) and offers "show" on its bar.
+      data-zimos-hidden={(section.settings as { hidden?: unknown } | undefined)?.hidden === true ? "" : undefined}
+    >
       {hasRows ? (
         <SectionNode section={section} ctx={ctx} hero={hero} />
       ) : (

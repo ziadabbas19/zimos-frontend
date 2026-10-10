@@ -1,4 +1,4 @@
-import { AppWindow, Images, LayoutDashboard, Layers3, MessageSquarePlus, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { IconDashboard, IconLayers, IconMedia, IconMessageAdd, IconPage, IconSliders, type IconComponent } from "@/components/icons";
 import type { PageElementType } from "@store-builder/api-client";
 import type { BlockPreset, FieldSpec, SectionSettingSpec } from "./blocks";
 
@@ -10,14 +10,14 @@ import type { BlockPreset, FieldSpec, SectionSettingSpec } from "./blocks";
  * Arabic labels from here, as showcaseBlocks.ts is.
  */
 
-type Spec = { label: string; icon: LucideIcon; defaultProps: Record<string, unknown>; fields: FieldSpec[] };
+type Spec = { label: string; icon: IconComponent; defaultProps: Record<string, unknown>; fields: FieldSpec[] };
 
-const PRODUCT_FIELD: FieldSpec = { key: "productId", label: "Product ID", kind: "text", hint: "Leave empty to use the page's product (else the newest)." };
+const PRODUCT_FIELD: FieldSpec = { key: "productId", label: "Product", kind: "product", hint: "Leave empty to use the page's product (else the newest)." };
 
 export const EXTRA_ELEMENT_SPECS: Record<string, Spec> = {
   image_gallery: {
     label: "Gallery with thumbnails",
-    icon: Images,
+    icon: IconMedia,
     defaultProps: { title: "", images: [], productId: "", thumbnails: "below" },
     fields: [
       { key: "title", label: "Title", kind: "text" },
@@ -36,7 +36,7 @@ export const EXTRA_ELEMENT_SPECS: Record<string, Spec> = {
   },
   variant_selector: {
     label: "Variant picker",
-    icon: SlidersHorizontal,
+    icon: IconSliders,
     defaultProps: { title: "", productId: "", showPrice: true },
     fields: [
       { key: "title", label: "Title", kind: "text" },
@@ -46,7 +46,7 @@ export const EXTRA_ELEMENT_SPECS: Record<string, Spec> = {
   },
   bundle_selector: {
     label: "Bundle picker",
-    icon: Layers3,
+    icon: IconLayers,
     defaultProps: { title: "", productId: "" },
     fields: [
       { key: "title", label: "Title", kind: "text" },
@@ -55,7 +55,7 @@ export const EXTRA_ELEMENT_SPECS: Record<string, Spec> = {
   },
   popup: {
     label: "Popup",
-    icon: AppWindow,
+    icon: IconPage,
     defaultProps: { key: "offer", title: "", text: "", image: "", buttonLabel: "", buttonHref: "", trigger: "click", delaySeconds: 5 },
     fields: [
       { key: "key", label: "Popup name", kind: "text", hint: "Lowercase letters, digits and hyphens. Any button or link to #popup-<name> opens it." },
@@ -79,7 +79,7 @@ export const EXTRA_ELEMENT_SPECS: Record<string, Spec> = {
   },
   masonry_grid: {
     label: "Masonry grid",
-    icon: LayoutDashboard,
+    icon: IconDashboard,
     defaultProps: { title: "", items: [], columns: 3 },
     fields: [
       { key: "title", label: "Title", kind: "text" },
@@ -102,7 +102,7 @@ export const EXTRA_ELEMENT_SPECS: Record<string, Spec> = {
   },
   review_form: {
     label: "Review form",
-    icon: MessageSquarePlus,
+    icon: IconMessageAdd,
     defaultProps: { title: "", productId: "" },
     fields: [
       { key: "title", label: "Title", kind: "text" },
@@ -118,7 +118,7 @@ export const EXTRA_PRESETS: BlockPreset[] = [
     key: "image-gallery",
     label: "Gallery with thumbnails",
     description: "A big picture with a row of thumbnails — the product's own pictures unless you add some.",
-    icon: Images,
+    icon: IconMedia,
     group: "commerce",
     elements: [t("image_gallery")],
   },
@@ -126,7 +126,7 @@ export const EXTRA_PRESETS: BlockPreset[] = [
     key: "variant-selector",
     label: "Variant picker",
     description: "The product's options (size, colour…) as buttons. The order form starts from the shopper's choice.",
-    icon: SlidersHorizontal,
+    icon: IconSliders,
     group: "commerce",
     elements: [t("variant_selector")],
   },
@@ -134,7 +134,7 @@ export const EXTRA_PRESETS: BlockPreset[] = [
     key: "bundle-selector",
     label: "Bundle picker",
     description: "The product's quantity offers to choose from, with the saving.",
-    icon: Layers3,
+    icon: IconLayers,
     group: "commerce",
     elements: [t("bundle_selector")],
   },
@@ -142,7 +142,7 @@ export const EXTRA_PRESETS: BlockPreset[] = [
     key: "popup",
     label: "Popup",
     description: "A window over the page — opened by a button linking to #popup-<name>, after a few seconds, or when leaving.",
-    icon: AppWindow,
+    icon: IconPage,
     group: "convert",
     elements: [t("popup")],
   },
@@ -150,7 +150,7 @@ export const EXTRA_PRESETS: BlockPreset[] = [
     key: "masonry-grid",
     label: "Masonry grid",
     description: "Pictures of different heights in neat columns, each with an optional caption and link.",
-    icon: LayoutDashboard,
+    icon: IconDashboard,
     group: "story",
     elements: [t("masonry_grid")],
   },
@@ -263,7 +263,7 @@ export const EXTRA_AR = {
     "masonry_grid.items": "الصور",
     "masonry_grid.columns": "الأعمدة على الكمبيوتر",
     "button.action": "لما يتضغط",
-    "button.productId": "معرّف المنتج",
+    "button.productId": "المنتج",
     "button.variantId": "معرّف النوع",
     "form.ratingLabel": "تقييم بالنجوم — عنوانه",
     "form.fileLabel": "رفع صورة — عنوانه",
@@ -295,7 +295,6 @@ export const EXTRA_AR = {
     "image-gallery": { label: "معرض صور بمصغّرات", description: "صورة كبيرة وتحتها صف مصغّرات — صور المنتج نفسه لو ماضفتش صور." },
     "variant-selector": { label: "اختيار النوع", description: "أنواع المنتج (المقاس، اللون…) كأزرار. فورم الطلب بيبدأ من اختيار العميل." },
     "bundle-selector": { label: "اختيار العرض", description: "عروض الكمية بتاعة المنتج يختار منها العميل، مع التوفير." },
-    "review-form": { label: "فورم التقييم", description: "يخلّي العملاء اللي استلموا المنتج يقيّموه، بالصور." },
     "masonry-grid": { label: "شبكة صور متفاوتة", description: "صور بأطوال مختلفة في أعمدة مرتبة، لكل صورة تعليق ورابط اختياري." },
     popup: { label: "نافذة منبثقة", description: "نافذة فوق الصفحة — بتتفتح من زرار لينكه #popup-<الاسم>، أو بعد كام ثانية، أو لما العميل يسيب الصفحة." },
   } as Record<string, { label: string; description: string }>,

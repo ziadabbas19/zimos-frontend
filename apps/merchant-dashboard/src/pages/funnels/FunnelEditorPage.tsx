@@ -24,6 +24,7 @@ import {
   Newspaper,
   FileText,
   FlaskConical,
+  Copy,
   GripVertical,
   History,
   LayoutTemplate,
@@ -116,6 +117,7 @@ import {
   addStepAfter,
   applyStarterPlan,
   collectFunnelProblems,
+  duplicateStep,
   groupProblems,
   insertStepOnEdge,
   newStep,
@@ -268,6 +270,7 @@ export function FunnelEditorPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const t = useT(EDITOR_STRINGS);
+  const listT = useT(LIST_STRINGS);
   const c = useCommon();
   const { locale } = useLocale();
   const describeError = useFunnelErrorMessage();
@@ -418,6 +421,15 @@ export function FunnelEditorPage() {
     if (!funnel) return;
     patch((f) => applyStarterPlan(f, starterPlan(id, locale), takenKeys(f)));
     setSelectedKey(null);
+  }
+
+  /** A copy of the step, right after it; it opens selected, and saves with the funnel like any new step. */
+  function copyStep(step: UiStep) {
+    if (!funnel) return;
+    const result = duplicateStep(funnel, step.key, fmt(listT.copyName, { name: step.name }), takenKeys(funnel));
+    if (!result) return;
+    patch(() => result.funnel);
+    setSelectedKey(result.key);
   }
 
   function deleteStep(step: UiStep) {
@@ -803,6 +815,7 @@ export function FunnelEditorPage() {
                         selected={s.key === selectedKey}
                         problemCount={grouped.byStep.get(s.key)?.length ?? 0}
                         onSelect={() => selectStep(s.key)}
+                        onDuplicate={() => copyStep(s)}
                         onDelete={() => setPendingDelete(s)}
                       />
                     ))}
@@ -1035,12 +1048,14 @@ function SortableStepRow({
   selected,
   problemCount,
   onSelect,
+  onDuplicate,
   onDelete,
 }: {
   step: UiStep;
   selected: boolean;
   problemCount: number;
   onSelect: () => void;
+  onDuplicate: () => void;
   onDelete: () => void;
 }) {
   const canvasT = useT(CANVAS_STRINGS);
@@ -1082,6 +1097,15 @@ function SortableStepRow({
             <span className="sr-only">{fmt(canvasT.toFix, { n: problemCount })}</span>
           </span>
         )}
+      </button>
+      <button
+        type="button"
+        onClick={onDuplicate}
+        aria-label={fmt(t.duplicateNamed, { name: step.name })}
+        title={fmt(t.duplicateNamed, { name: step.name })}
+        className="cursor-pointer rounded p-1.5 text-ink-soft hover:bg-primary-soft hover:text-primary"
+      >
+        <Copy className="size-3.5" aria-hidden />
       </button>
       <button type="button" onClick={onDelete} aria-label={fmt(t.deleteNamed, { name: step.name })} className="cursor-pointer rounded p-1.5 text-ink-soft hover:bg-danger-soft hover:text-danger">
         <Trash2 className="size-3.5" aria-hidden />
