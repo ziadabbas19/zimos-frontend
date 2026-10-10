@@ -69,6 +69,23 @@ export function SkeletonBar({ className }: { className?: string }) {
   return <div className={cn("relative h-3 animate-pulse overflow-hidden rounded-full bg-paper-sunken motion-reduce:animate-none", className)} />;
 }
 
+const SKELETON_CARD = "rounded-[var(--radius-card)] bg-paper-raised p-4 shadow-[var(--shadow-card)] ring-1 ring-line";
+
+// Line widths, in order, so a long card doesn't end in a block of equal lines.
+const CARD_LINES = ["w-11/12", "w-4/5", "w-3/5", "w-5/6", "w-2/3", "w-3/4", "w-1/2"] as const;
+
+/** A title line and a few lines of text (three by default). */
+export function CardSkeleton({ lines = 3, className }: { lines?: number; className?: string }) {
+  return (
+    <div data-slot="skeleton-card" className={cn(SKELETON_CARD, className)}>
+      <SkeletonBar className="h-4 w-2/5" />
+      {Array.from({ length: lines }, (_, i) => (
+        <SkeletonBar key={i} className={cn(i === 0 ? "mt-4" : "mt-3", CARD_LINES[i % CARD_LINES.length])} />
+      ))}
+    </div>
+  );
+}
+
 const STATE_INK = {
   danger: "text-danger",
   attention: "text-accent-dark",
