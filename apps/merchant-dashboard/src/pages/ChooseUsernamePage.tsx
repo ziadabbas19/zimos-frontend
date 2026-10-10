@@ -4,19 +4,19 @@ import { Alert, Button } from "@store-builder/ui";
 import { isApiErrorCode } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
-import { BrandPanel } from "@/components/BrandPanel";
 import { UsernameField } from "@/components/UsernameField";
 import { useErrorMessage } from "@/lib/errorMessages";
 import { normalizeUsername, usernameSubmittable, type UsernameStatus } from "@/lib/username";
 import { useT, type Messages } from "@/i18n/LocaleContext";
+import { AUTH_SUBMIT, AuthHeading, AuthShell } from "./AuthShell";
 
 const STRINGS = {
   en: {
     title: "Choose your username",
-    body: "Your account needs a username before you continue. We suggested one — keep it or pick your own.",
+    body: "Your account needs one before you go on. We suggested a name — keep it or write your own.",
     save: "Continue",
     saving: "Saving…",
-    chooseAvailable: "Choose an available username first.",
+    chooseAvailable: "Choose a username that is free first.",
     taken: "Someone just took this username. Choose another one.",
   },
   ar: {
@@ -28,6 +28,8 @@ const STRINGS = {
     taken: "استخدم شخص آخر هذا الاسم للتو. اختر اسمًا آخر.",
   },
 } satisfies Messages;
+
+const FIELD = "choose-username";
 
 /**
  * The step an account made through Google goes through before the dashboard:
@@ -64,10 +66,16 @@ export function ChooseUsernamePage() {
     };
   }, []);
 
+  // The problem is said under the field, and the cursor goes back into it.
+  function fail(message: string) {
+    setError(message);
+    window.setTimeout(() => document.getElementById(FIELD)?.querySelector("input")?.focus(), 0);
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!usernameSubmittable(status)) {
-      setError(t.chooseAvailable);
+      fail(t.chooseAvailable);
       return;
     }
     setSaving(true);
@@ -77,28 +85,41 @@ export function ChooseUsernamePage() {
       await refreshUser();
       navigate(from, { replace: true });
     } catch (err) {
-      setError(isApiErrorCode(err, "USERNAME_TAKEN") ? t.taken : errorMessage(err));
+      if (isApiErrorCode(err, "USERNAME_TAKEN")) fail(t.taken);
+      else setError(errorMessage(err));
     } finally {
       setSaving(false);
     }
   }
 
+  const underField = error === t.chooseAvailable || error === t.taken;
+
   return (
-    <div className="flex min-h-screen">
-      <BrandPanel />
-      <div className="flex flex-1 items-center justify-center px-6 py-16">
-        <form onSubmit={submit} className="w-full max-w-sm space-y-5" noValidate>
-          <div>
-            <h1 className="font-display text-3xl font-medium text-ink">{t.title}</h1>
-            <p className="mt-2 text-sm text-ink-soft">{t.body}</p>
-          </div>
-          {error && <Alert variant="danger">{error}</Alert>}
-          <UsernameField value={username} onChange={setUsername} onStatus={setStatus} autoFocus disabled={saving} />
-          <Button type="submit" className="min-h-11 w-full" disabled={saving}>
-            {saving ? t.saving : t.save}
-          </Button>
-        </form>
-      </div>
-    </div>
+    <AuthShell>
+      <form onSubmit={submit} className="space-y-4" noValidate>
+        <AuthHeading title={t.title}>{t.body}</AuthHeading>
+        {error && !underField && <Alert variant="danger">{error}</Alert>}
+        <div id={FIELD} className="space-y-1.5">
+          <UsernameField
+            value={username}
+            onChange={(value) => {
+              setUsername(value);
+              if (underField) setError(null);
+            }}
+            onStatus={setStatus}
+            autoFocus
+            disabled={saving}
+          />
+          {error && underField && (
+            <p role="alert" className="text-[13px] leading-5 font-medium text-danger">
+              {error}
+            </p>
+          )}
+        </div>
+        <Button type="submit" className={AUTH_SUBMIT} disabled={saving}>
+          {saving ? t.saving : t.save}
+        </Button>
+      </form>
+    </AuthShell>
   );
 }

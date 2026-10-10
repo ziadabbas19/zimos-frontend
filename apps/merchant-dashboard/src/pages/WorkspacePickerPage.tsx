@@ -14,6 +14,7 @@ import { CopyButton } from "@/components/CopyButton";
 import { SignOutButton } from "@/components/SignOutButton";
 import { PlanPicker, type PlanChoice } from "@/components/plans/PlanPicker";
 import { useT, fmt, type Messages } from "@/i18n/LocaleContext";
+import { AuthShell } from "./AuthShell";
 
 const STRINGS = {
   en: {
@@ -183,8 +184,7 @@ export function WorkspacePickerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-paper px-4 py-10 sm:px-6 sm:py-16">
-      <div className="mx-auto max-w-2xl">
+    <AuthShell size="lg">
         <div className="flex items-start justify-between">
           <div>
             <h1 className="font-display text-3xl font-medium text-ink">{workspaces.length > 0 ? t.choose : t.setUp}</h1>
@@ -274,8 +274,7 @@ export function WorkspacePickerPage() {
             </Card>
           </>
         )}
-      </div>
-    </div>
+    </AuthShell>
   );
 }
 
@@ -303,8 +302,7 @@ function StoreCreated({
   const url = storeUrl(workspace.slug);
 
   return (
-    <div className="min-h-screen bg-paper px-4 py-10 sm:px-6 sm:py-16">
-      <div className="mx-auto max-w-2xl">
+    <AuthShell size="lg">
         <div className={draft ? "flex size-12 items-center justify-center rounded-full bg-primary-soft" : "flex size-12 items-center justify-center rounded-full bg-success-soft"}>
           {draft ? <PencilRuler className="size-6 text-primary" aria-hidden /> : <PartyPopper className="size-6 text-success" aria-hidden />}
         </div>
@@ -349,7 +347,6 @@ function StoreCreated({
             </Button>
           )}
         </div>
-      </div>
-    </div>
+    </AuthShell>
   );
 }

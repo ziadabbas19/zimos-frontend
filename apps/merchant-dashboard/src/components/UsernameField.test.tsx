@@ -42,7 +42,8 @@ describe("UsernameField", () => {
     await user.clear(input);
     await user.type(input, "free.one");
     expect(await screen.findByText("Available")).toBeInTheDocument();
-    expect(screen.getByTestId("status")).toHaveTextContent("available");
+    // The field reports its status from an effect, one commit after the hint is drawn.
+    await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("available"));
     expect(input).toHaveAttribute("dir", "ltr");
   });
 
