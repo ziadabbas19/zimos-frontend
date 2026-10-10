@@ -10,6 +10,10 @@ import { useSyncExternalStore } from "react";
  * theme/liquid-glass.css read. The pre-paint script in index.html sets the
  * same things from the same keys before the first frame; a test runs both
  * over the same storage and compares what they leave on <html>.
+ *
+ * The same choices are also kept on the signed-in account, so they follow it
+ * to another device: that is lib/appearanceSync.ts, which reads and writes
+ * through this file and never draws anything itself.
  */
 
 /** Light as ever, Black for OLED screens, Dark with a tone. */
@@ -243,11 +247,31 @@ export function useAppearance(): Appearance {
   return useSyncExternalStore(subscribe, snapshot, snapshot);
 }
 
-export function setLook(look: Look) {
+// Told of each choice made on this page: not of one that came from another tab, the device or the account.
+const editListeners = new Set<() => void>();
+
+function edited() {
+  changed();
+  editListeners.forEach((fn) => fn());
+}
+
+/** Calls back after each choice made on this page (lib/appearanceSync saves it to the account). */
+export function onAppearanceEdit(listener: () => void): () => void {
+  editListeners.add(listener);
+  return () => {
+    editListeners.delete(listener);
+  };
+}
+
+function keepLook(look: Look) {
   write(LOOK_KEY, look);
   if (look !== "light") write(DARK_LOOK_KEY, look);
   write(LEGACY_THEME_KEY, look === "light" ? "light" : "dark");
-  changed();
+}
+
+export function setLook(look: Look) {
+  keepLook(look);
+  edited();
 }
 
 /** The toolbar's sun / moon switch: Light, or the dark look that was chosen last (Black or Dark). */
@@ -256,16 +280,24 @@ export function toggleScheme() {
   setLook(now.look === "light" ? now.darkLook : "light");
 }
 
-/** 0 (midnight blue) … 100 (slate); the default tone is kept as nothing at all. */
-export function setTone(tone: number) {
+function keepTone(tone: number) {
   const next = clampPercent(tone);
   write(TONE_KEY, next === TONE_DEFAULT ? null : String(next));
-  changed();
+}
+
+/** 0 (midnight blue) … 100 (slate); the default tone is kept as nothing at all. */
+export function setTone(tone: number) {
+  keepTone(tone);
+  edited();
+}
+
+function keepGlass(on: boolean) {
+  write(GLASS_KEY, on ? null : "off");
 }
 
 export function setGlass(on: boolean) {
-  write(GLASS_KEY, on ? null : "off");
-  changed();
+  keepGlass(on);
+  edited();
 }
 
 export interface GlowChange {
@@ -276,7 +308,7 @@ export interface GlowChange {
   intensity?: number;
 }
 
-export function setGlow(change: GlowChange) {
+function keepGlow(change: GlowChange) {
   if (change.left !== undefined && (change.left === null || parseHexColour(change.left))) {
     write(GLOW_LEFT_KEY, parseHexColour(change.left));
   }
@@ -287,12 +319,60 @@ export function setGlow(change: GlowChange) {
     const next = clampPercent(change.intensity);
     write(GLOW_INTENSITY_KEY, next === GLOW_FULL ? null : String(next));
   }
-  changed();
+}
+
+export function setGlow(change: GlowChange) {
+  keepGlow(change);
+  edited();
 }
 
 /** Back to the glows the backdrop always had. */
 export function resetGlow() {
   setGlow({ left: null, right: null, intensity: GLOW_FULL });
+}
+
+/**
+ * The choices as they are kept here, whatever this device makes of them: what
+ * an account carries from one device to another (lib/appearanceSync).
+ */
+export interface KeptAppearance {
+  /** null while nothing was chosen and the dashboard follows the device. */
+  look: Look | null;
+  tone: number;
+  /** The glass switch itself, not what the Black look or the device does with it. */
+  glass: boolean;
+  glowLeft: string | null;
+  glowRight: string | null;
+  glowIntensity: number;
+}
+
+export function keptAppearance(): KeptAppearance {
+  return {
+    look: chosenLook(),
+    tone: parsePercent(read(TONE_KEY)) ?? TONE_DEFAULT,
+    glass: read(GLASS_KEY) !== "off",
+    glowLeft: parseHexColour(read(GLOW_LEFT_KEY)),
+    glowRight: parseHexColour(read(GLOW_RIGHT_KEY)),
+    glowIntensity: parsePercent(read(GLOW_INTENSITY_KEY)) ?? GLOW_FULL,
+  };
+}
+
+/** Whether anything about the look was ever kept on this device. */
+export function hasKeptAppearance(): boolean {
+  return [LOOK_KEY, DARK_LOOK_KEY, TONE_KEY, GLASS_KEY, GLOW_LEFT_KEY, GLOW_RIGHT_KEY, GLOW_INTENSITY_KEY].some((key) => read(key) !== null);
+}
+
+/**
+ * Takes the choices kept on the account: kept and drawn here like a choice
+ * made on this page, without being one. A look that was never chosen there
+ * leaves the one here as it is.
+ */
+export function adoptAppearance(next: KeptAppearance) {
+  if (next.look) keepLook(next.look);
+  keepTone(next.tone);
+  keepGlass(next.glass);
+  keepGlow({ left: next.glowLeft, right: next.glowRight, intensity: next.glowIntensity });
+  changed();
 }
 
 /**

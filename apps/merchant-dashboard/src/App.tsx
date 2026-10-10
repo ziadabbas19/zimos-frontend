@@ -4,6 +4,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { LocaleProvider } from "@/i18n/LocaleContext";
 import { WorkspaceProvider } from "@/context/WorkspaceContext";
 import { ToastProvider } from "@/components/Toast";
+import { AppearanceSync } from "@/components/AppearanceSync";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { RequireWorkspace } from "@/routes/RequireWorkspace";
 import { LazyRoute } from "@/routes/LazyRoute";
@@ -146,6 +147,8 @@ export default function App() {
       <RouteCommitSignal />
       <LocaleProvider>
         <AuthProvider>
+          {/* The signed-in account's look, followed from one device to another (lib/appearanceSync). */}
+          <AppearanceSync />
           <WorkspaceProvider>
             <ToastProvider>
               <Routes>
