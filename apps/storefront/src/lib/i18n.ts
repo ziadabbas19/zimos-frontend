@@ -181,6 +181,13 @@ const en = {
     seeAll: (q: string) => `See all results for “${q}”`,
     noSuggestions: "No matching products — press Enter to search anyway.",
     suggestionsCount: (n: number) => (n === 1 ? "1 suggestion" : `${n} suggestions`),
+    activeFilters: "Filters in use",
+    removeFilter: (label: string) => `Remove filter: ${label}`,
+    clearAll: "Clear all",
+    priceChip: (min: number | null, max: number | null) =>
+      min !== null && max !== null ? `${min} – ${max}` : min !== null ? `From ${min}` : `Up to ${max ?? 0}`,
+    optionChip: (name: string, value: string) => `${name}: ${value}`,
+    filtersChosen: (n: number) => (n === 0 ? "Nothing chosen yet" : n === 1 ? "1 filter chosen" : `${n} filters chosen`),
   },
   menu: {
     required: "Required",
@@ -1019,6 +1026,18 @@ const ar: Dictionary = {
     seeAll: (q: string) => `شوف كل النتايج لـ «${q}»`,
     noSuggestions: "مفيش منتجات مطابقة — دوس Enter عشان تدوّر برضه.",
     suggestionsCount: (n: number) => (n === 1 ? "اقتراح واحد" : `${arNum(n)} اقتراحات`),
+    activeFilters: "الفلاتر اللي اخترتها",
+    removeFilter: (label: string) => `شيل الفلتر: ${label}`,
+    clearAll: "امسح الكل",
+    priceChip: (min: number | null, max: number | null) =>
+      min !== null && max !== null
+        ? `من ${arNum(min)} لحد ${arNum(max)}`
+        : min !== null
+          ? `من ${arNum(min)}`
+          : `لحد ${arNum(max ?? 0)}`,
+    optionChip: (name: string, value: string) => `${name}: ${value}`,
+    filtersChosen: (n: number) =>
+      n === 0 ? "لسه ما اخترتش حاجة" : n === 1 ? "فلتر واحد مختار" : n === 2 ? "فلترين مختارين" : `${arNum(n)} فلاتر مختارة`,
   },
   menu: {
     required: "إجباري",

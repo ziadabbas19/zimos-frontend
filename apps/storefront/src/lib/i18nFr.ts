@@ -97,6 +97,13 @@ export const fr: Dictionary = {
     seeAll: (q: string) => `Voir tous les résultats pour « ${q} »`,
     noSuggestions: "Aucun produit correspondant — appuyez sur Entrée pour rechercher quand même.",
     suggestionsCount: (n: number) => (n === 1 ? "1 suggestion" : `${n} suggestions`),
+    activeFilters: "Filtres actifs",
+    removeFilter: (label: string) => `Retirer le filtre : ${label}`,
+    clearAll: "Tout effacer",
+    priceChip: (min: number | null, max: number | null) =>
+      min !== null && max !== null ? `${min} – ${max}` : min !== null ? `À partir de ${min}` : `Jusqu'à ${max ?? 0}`,
+    optionChip: (name: string, value: string) => `${name} : ${value}`,
+    filtersChosen: (n: number) => (n === 0 ? "Aucun filtre choisi" : n === 1 ? "1 filtre choisi" : `${n} filtres choisis`),
   },
   menu: {
     required: "Obligatoire",

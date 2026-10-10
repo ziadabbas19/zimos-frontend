@@ -6,11 +6,13 @@ import {
   type StorefrontListing,
   type StorefrontProduct,
 } from "@store-builder/api-client";
+import { ActiveFilterChips } from "@/components/catalog/ActiveFilterChips";
 import { CatalogFilters } from "@/components/catalog/CatalogFilters";
 import { FilterDrawer } from "@/components/catalog/FilterDrawer";
+import { FilterSheet } from "@/components/catalog/FilterSheet";
 import { SortSelect } from "@/components/catalog/SortSelect";
 import { SpecFilteredResults } from "@/components/specs/SpecFilteredResults";
-import { PRODUCT_SPECS_ENABLED } from "@/lib/features";
+import { PRODUCT_SPECS_ENABLED, STORE_SIDEBAR_ENABLED } from "@/lib/features";
 import { ChevronIcon } from "@/components/Icons";
 import { ProductCard } from "@/components/ProductCard";
 import { StoreImage } from "@/components/StoreImage";
@@ -71,6 +73,11 @@ export async function generateMetadata({ params, searchParams }: { params: Param
  * filters are the merchant's choice (settings.storefront_catalog, read as
  * store.catalog); on a phone they open as a sheet.
  *
+ * With lib/features STORE_SIDEBAR_ENABLED the same sidebar is "refined": the
+ * filters in use show as chips over the grid, the sort moves into the column
+ * from `lg`, and the phone's sheet rises from the bottom and waits for
+ * "Apply". Every list is still the API's own answer for the URL.
+ *
  * Collections live here as `?collection=<slug>` rather than on a route of
  * their own: "products" is a path the website editor already reserves, while
  * a new "/collections" route would shadow any page a merchant built there.
@@ -101,6 +108,7 @@ export default async function ProductsPage({ params, searchParams }: { params: P
   const collections = catalog.sidebar_enabled ? await getStoreCollections(workspaceId) : [];
   const filterCount = activeFilterCount(state);
   const sidebar = catalog.sidebar_enabled && listing.facets !== undefined;
+  const refined = STORE_SIDEBAR_ENABLED && sidebar;
   const title = state.q ? t.catalog.searchTitle(state.q) : (listing.collection?.name ?? t.catalog.allProducts);
   const clearHref = catalogHref(state, { collection: null, tags: [], min: null, max: null, options: {} });
 
@@ -132,6 +140,7 @@ export default async function ProductsPage({ params, searchParams }: { params: P
       facets={listing.facets}
       collections={collections}
       idPrefix="side"
+      sort={refined ? { current: listing.sort } : undefined}
     />
   ) : null;
 
@@ -163,7 +172,9 @@ export default async function ProductsPage({ params, searchParams }: { params: P
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            {sidebar && (
+            {refined ? (
+              <FilterSheet state={state} filters={catalog.filters} facets={listing.facets} collections={collections} />
+            ) : sidebar && (
               <FilterDrawer count={filterCount} total={listing.total}>
                 {/* The sheet's own copy: separate ids from the sidebar's. */}
                 <CatalogFilters
@@ -180,15 +191,36 @@ export default async function ProductsPage({ params, searchParams }: { params: P
                 )}
               </FilterDrawer>
             )}
-            <SortSelect state={state} current={listing.sort} />
+            {refined ? (
+              // From `lg` the sort is a block of the column beside the grid.
+              <div className="lg:hidden">
+                <SortSelect state={state} current={listing.sort} />
+              </div>
+            ) : (
+              <SortSelect state={state} current={listing.sort} />
+            )}
           </div>
         </header>
 
         <div className={sidebar ? "mt-8 lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-10" : "mt-8"}>
           {sidebar && (
             <aside aria-label={t.catalog.filters} className="hidden lg:block">
+              {refined && (
+                <div className="mb-4 flex min-h-11 items-center justify-between gap-3 border-b border-line pb-2">
+                  <p className="font-display text-base font-bold text-ink">{t.catalog.filters}</p>
+                  {filterCount > 0 && (
+                    <StoreLink
+                      href={clearHref}
+                      scroll={false}
+                      className={`inline-flex min-h-11 items-center rounded-md px-1 text-sm font-semibold text-primary underline-offset-4 hover:underline ${focusRing}`}
+                    >
+                      {t.catalog.clearAll}
+                    </StoreLink>
+                  )}
+                </div>
+              )}
               {filters}
-              {filterCount > 0 && (
+              {!refined && filterCount > 0 && (
                 <StoreLink href={clearHref} scroll={false} className={`${btnSecondary} mt-6 w-full`}>
                   {t.catalog.clearFilters}
                 </StoreLink>
@@ -197,6 +229,9 @@ export default async function ProductsPage({ params, searchParams }: { params: P
           )}
 
           <div className="min-w-0">
+            {refined && (
+              <ActiveFilterChips t={t} state={state} collections={collections} collectionName={listing.collection?.name} />
+            )}
             {/* Specification filters (lib/features): once a value is ticked, its matches stand in for the results. */}
             {PRODUCT_SPECS_ENABLED ? (
               <SpecFilteredResults

@@ -111,6 +111,76 @@ export function activeFilterCount(state: CatalogState): number {
   );
 }
 
+/** Every filter off. The search and the sort are not filters: they stay. */
+export const NO_FILTERS = { collection: null, tags: [], min: null, max: null, options: {} } satisfies Partial<CatalogState>;
+
+/**
+ * The sorts a shopper is offered: "best match" only while searching and the
+ * merchant's own order only inside a collection, where there is one to follow.
+ */
+export function sortChoices(state: Pick<CatalogState, "q" | "collection">): StorefrontSort[] {
+  return [
+    ...(state.q ? (["relevance"] as const) : []),
+    "newest",
+    "price_asc",
+    "price_desc",
+    "name",
+    ...(state.collection ? (["position"] as const) : []),
+  ];
+}
+
+/** One filter the shopper has set, as the chip that takes it off again. */
+export interface FilterChip {
+  /** Unique within one state. */
+  key: string;
+  kind: "collection" | "tag" | "price" | "option";
+  /** The collection's slug (or id), the tag, or the option's value; empty for the price range. */
+  value: string;
+  /** The option's name, for an option value. */
+  name?: string;
+  /** The listing without this one filter, back on page 1. */
+  href: string;
+}
+
+/**
+ * The filters in use, one chip each, in the order the URL writes them. As many
+ * as activeFilterCount counts: the price range is one chip, an option with
+ * two values is two.
+ */
+export function activeFilterChips(state: CatalogState, path = "/products"): FilterChip[] {
+  const chips: FilterChip[] = [];
+  if (state.collection) {
+    chips.push({ key: "collection", kind: "collection", value: state.collection, href: catalogHref(state, { collection: null }, path) });
+  }
+  for (const tag of state.tags) {
+    chips.push({ key: `tag:${tag}`, kind: "tag", value: tag, href: catalogHref(state, { tags: toggle(state.tags, tag) }, path) });
+  }
+  if (state.min !== null || state.max !== null) {
+    chips.push({ key: "price", kind: "price", value: "", href: catalogHref(state, { min: null, max: null }, path) });
+  }
+  for (const [name, values] of Object.entries(state.options)) {
+    for (const value of values) {
+      chips.push({
+        key: `option:${name}:${value}`,
+        kind: "option",
+        name,
+        value,
+        href: catalogHref(state, { options: toggleOption(state.options, name, value) }, path),
+      });
+    }
+  }
+  return chips;
+}
+
+/**
+ * Whether two states ask for the same list: the same search, filters and
+ * sort. The page number is left out, as any change of the others starts
+ * again from page 1.
+ */
+export function sameListing(a: CatalogState, b: CatalogState): boolean {
+  return catalogHref(a) === catalogHref(b);
+}
+
 /** The API query for this state. */
 export function toListingParams(state: CatalogState, defaultSort: StorefrontSort): StorefrontListingParams {
   const toMinor = (major: number | null) => (major === null ? undefined : Math.round(major * 100));
