@@ -4,12 +4,12 @@ import { Alert, Button, Spinner } from "@store-builder/ui";
 import { isApiErrorCode, type PublicPlan } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
-import { BrandPanel } from "@/components/BrandPanel";
 import { PlanPicker, type PlanChoice } from "@/components/plans/PlanPicker";
 import { TermsConsent } from "@/components/plans/TermsConsent";
 import { useErrorMessage } from "@/lib/errorMessages";
 import { forgetPlanChoice, recallPlanChoice } from "@/lib/planChoice";
 import { useT, type Messages } from "@/i18n/LocaleContext";
+import { AUTH_SUBMIT, AuthHeading, AuthShell } from "./AuthShell";
 
 const STRINGS = {
   en: {
@@ -101,14 +101,10 @@ export function ChoosePlanPage() {
   }
 
   return (
-    <div className="flex min-h-screen">
-      <BrandPanel />
-      <div className="flex flex-1 items-start justify-center px-4 py-10 sm:items-center sm:px-6 sm:py-16">
-        <div className="w-full max-w-xl">
-          <h1 id={headingId} className="font-display text-3xl font-medium text-ink">
-            {t.title}
-          </h1>
-          <p className="mt-2 text-sm text-ink-soft">{t.body}</p>
+    <AuthShell size="md">
+      <AuthHeading id={headingId} title={t.title}>
+        {t.body}
+      </AuthHeading>
 
           {error && (
             <Alert variant="danger" className="mt-4">
@@ -145,11 +141,9 @@ export function ChoosePlanPage() {
             />
           </div>
 
-          <Button className="mt-6 min-h-11 w-full" onClick={() => void save()} disabled={saving || !plans}>
+          <Button className={`mt-6 ${AUTH_SUBMIT}`} onClick={() => void save()} disabled={saving || !plans}>
             {saving ? t.saving : t.save}
           </Button>
-        </div>
-      </div>
-    </div>
+    </AuthShell>
   );
 }

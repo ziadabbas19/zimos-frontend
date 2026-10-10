@@ -1,0 +1,134 @@
+/* The funnels list, the new-funnel wizard and the template cards —
+   pages/funnels/FunnelsPage.tsx, FunnelWizard.tsx, list/*.
+   Part of the liquid-glass layer (../liquid-glass.css): everything here is under the
+   same switch, so with data-glass="off" none of it applies and each component stands
+   on its own solid Tailwind classes. Fills and rims come from the --lg-* variables.
+
+   Nothing here is blurred: stat cards, choices and template cards lie in the page flow
+   or inside a sheet that is already frosted. Text is var(--color-ink) / var(--lg-ink-soft)
+   on the panes and var(--lg-on-brand) on the brand fill; a chosen card is the pane washed
+   with the store's colour over a near-solid fill, so its words keep 4.5:1 in both themes. */
+:root:not([data-glass="off"]) {
+  --funnel-chosen: color-mix(in srgb, var(--color-primary) 11%, var(--lg-control-lit));
+  --funnel-chosen-ring: 0 0 0 2px var(--lg-brand-solid);
+  --funnel-well: color-mix(in srgb, var(--color-ink) 6%, transparent);
+
+  &.dark {
+    --funnel-chosen: color-mix(in srgb, var(--color-primary) 20%, var(--lg-control-lit));
+    --funnel-well: rgb(255 255 255 / 0.08);
+  }
+
+  /* ---- The stat cards over the list: small panes, lit along the rim. ---- */
+  .zimos-funnel-stat {
+    background-color: var(--lg-fill);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge), var(--shadow-card);
+  }
+  .zimos-funnel-stat dt {
+    color: var(--lg-ink-soft);
+  }
+
+  /* ---- «افتح» on a row: a small pane, like the list's own pills. ---- */
+  .zimos-funnel-open {
+    background-color: var(--lg-control);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge);
+  }
+  @media (hover: hover) {
+    .zimos-funnel-open:hover {
+      background-color: var(--lg-control-lit);
+    }
+  }
+
+  /* ---- An answer in the wizard (a product, an offer, a template, the switch). ---- */
+  .zimos-wizard-choice {
+    background-color: var(--lg-control);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge);
+  }
+  @media (hover: hover) {
+    .zimos-wizard-choice:not([data-active]):hover {
+      background-color: var(--lg-control-lit);
+    }
+  }
+  .zimos-wizard-choice[data-active],
+  .zimos-wizard-picked {
+    background-color: var(--funnel-chosen);
+    box-shadow: var(--lg-rim-line), var(--funnel-chosen-ring);
+  }
+  .zimos-wizard-tick:not(:empty),
+  .zimos-wizard-bar[data-on] {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+  }
+  .zimos-wizard-bar:not([data-on]) {
+    background-color: var(--funnel-well);
+  }
+
+  /* ---- Quiet notes and facts inside a sheet: wells, not panes. ---- */
+  .zimos-wizard-note {
+    background-color: var(--lg-control);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge);
+  }
+  .zimos-wizard-fact,
+  .zimos-funnel-note,
+  .zimos-funnel-code {
+    background-color: var(--funnel-well);
+    box-shadow: inset 0 0 0 1px var(--lg-edge);
+  }
+  .zimos-funnel-warn {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 30%, transparent);
+  }
+  .zimos-ai-glyph {
+    box-shadow: var(--lg-rim-line);
+  }
+
+  /* ---- A template in a grid of templates: a card pane that lifts under the pointer. ---- */
+  .zimos-template-card {
+    background-color: var(--lg-fill);
+    box-shadow: var(--lg-rim), 0 0 0 1px var(--lg-edge), var(--shadow-card);
+    transition:
+      transform var(--dur-fade) var(--ease-out),
+      box-shadow var(--dur-fade) var(--ease-out);
+  }
+  @media (hover: hover) {
+    .zimos-template-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--lg-rim), 0 0 0 1px var(--lg-edge), var(--shadow-raised);
+    }
+  }
+  .zimos-template-tile {
+    background-image: var(--lg-sheen);
+  }
+
+  /* ---- The pages of a template: the strip's pictures and the stage under them. ---- */
+  .zimos-template-page {
+    box-shadow: 0 0 0 1px var(--lg-edge), var(--shadow-card);
+  }
+  .zimos-template-page[data-active] {
+    box-shadow: var(--funnel-chosen-ring), var(--shadow-card);
+  }
+  .zimos-template-stage {
+    background-color: var(--funnel-well);
+    box-shadow: inset 0 0 0 1px var(--lg-edge);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .zimos-template-card {
+      transition: none;
+    }
+    .zimos-template-card:hover {
+      transform: none;
+    }
+  }
+}
+
+/* A wizard screen arriving: a short rise and a fade. Used through a motion-safe utility, so it never runs for people who asked for less. */
+@keyframes funnel-wizard-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

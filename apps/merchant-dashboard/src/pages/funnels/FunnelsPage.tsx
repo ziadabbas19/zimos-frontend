@@ -40,7 +40,6 @@ import {
 import { RangeSwitch } from "@/components/RangeSwitch";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
-import { Modal } from "@/components/Modal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { ContextMenuItem } from "@/components/ContextMenu";
 import { EmptyState } from "@/components/EmptyState";
@@ -60,7 +59,7 @@ import {
 import { STARTER_TEMPLATE_TEXT } from "./FunnelEditorPage.strings";
 import { StepChain } from "./StepChain";
 import { funnelPreviewUrl, useStoreBaseUrl } from "./FunnelPublicLink";
-import { FunnelShareDialog, FunnelWizard } from "./FunnelWizard";
+import { FunnelShareDialog, FunnelWizardSheet } from "./FunnelWizard";
 import { FunnelDesk, FunnelRow } from "./list/FunnelRow";
 import { FunnelStats, type FunnelStat } from "./list/FunnelStats";
 import { FUNNEL_LIST_STRINGS } from "./list/funnelListStrings";
@@ -389,9 +388,7 @@ export function FunnelsPage() {
         )}
       </DataState>
 
-      <Modal open={creating} onClose={() => setCreating(false)} title={t.modalTitle} description={t.modalDescription}>
-        {creating && <FunnelWizard onCancel={() => setCreating(false)} onCreated={(id) => navigate(`/funnels/${id}`)} />}
-      </Modal>
+      <FunnelWizardSheet open={creating} onOpenChange={setCreating} onCreated={(id) => navigate(`/funnels/${id}`)} />
 
       <FunnelShareDialog funnel={sharing} onClose={() => setSharing(null)} />
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Button } from "@store-builder/ui";
+import { Button } from "@store-builder/ui";
+import { IconClock } from "@/components/icons";
 import { funnelExtrasDiscardDraft, funnelExtrasGetDraft, funnelExtrasSaveDraft } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { formatDate } from "@/lib/format";
@@ -18,14 +19,16 @@ import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 
 const STRINGS = {
   en: {
-    found: "You have unsaved work on this funnel from {date}.",
+    found: "You have unsaved work from {date}.",
     load: "Load draft",
     discard: "Start over",
+    label: "Unsaved work found",
   },
   ar: {
-    found: "لديك عمل غير محفوظ على هذا المسار من {date}.",
+    found: "لديك عمل غير محفوظ من {date}.",
     load: "تحميل المسودة",
     discard: "ابدأ من جديد",
+    label: "وُجد عمل غير محفوظ",
   },
 } satisfies Messages;
 
@@ -89,22 +92,32 @@ export function useFunnelDraft<T>({
   return { offered, discard, dismiss: () => setOffered(null) };
 }
 
-/** The "Load draft?" / "Start over" notice above the map. */
+/**
+ * The "Load draft?" / "Start over" notice: one slim strip under the editor's
+ * bar, 48px and never taller — the sentence gives way (it truncates) before
+ * the two actions do, so the map is never pushed down by more than that.
+ * Material (tint, rim, the drop-in) is in glass/funnel.css.
+ */
 export function FunnelDraftBanner({ at, onLoad, onDiscard }: { at: string; onLoad: () => void; onDiscard: () => void }) {
   const t = useT(STRINGS);
+  const sentence = fmt(t.found, { date: formatDate(at) });
   return (
-    <Alert className="mb-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p>{fmt(t.found, { date: formatDate(at) })}</p>
-        <div className="flex gap-2">
-          <Button type="button" size="sm" onClick={onLoad}>
-            {t.load}
-          </Button>
-          <Button type="button" size="sm" variant="outline" onClick={onDiscard}>
-            {t.discard}
-          </Button>
-        </div>
-      </div>
-    </Alert>
+    <div
+      role="status"
+      aria-label={t.label}
+      data-slot="funnel-draft"
+      className="flex h-12 shrink-0 items-center gap-2 border-b border-line bg-accent-soft px-3"
+    >
+      <IconClock className="size-4 shrink-0 text-accent-dark" aria-hidden />
+      <p className="min-w-0 flex-1 truncate text-sm text-ink" title={sentence}>
+        {sentence}
+      </p>
+      <Button type="button" variant="ghost" onClick={onDiscard} className="h-9 shrink-0 rounded-full px-3 text-ink-soft pointer-coarse:h-11">
+        {t.discard}
+      </Button>
+      <Button type="button" variant="secondary" onClick={onLoad} className="zimos-editor-soft h-9 shrink-0 rounded-full px-3.5 pointer-coarse:h-11">
+        {t.load}
+      </Button>
+    </div>
   );
 }

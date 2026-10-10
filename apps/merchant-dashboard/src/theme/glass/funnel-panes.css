@@ -1,0 +1,147 @@
+/* The funnel editor's two side panes: the steps list (pages/funnels/editor/StepsPane.tsx,
+   GenericPagesPanel.tsx) and the step inspector (editor/StepInspector.tsx), with the
+   step-type menu they share (panes/StepTypePicker.tsx).
+   Part of the liquid-glass layer (../liquid-glass.css): everything here is under the
+   same switch, so with data-glass="off" none of it applies and the components stand
+   on their own solid Tailwind classes. Fills and rims come from the --lg-* variables.
+   Rows, groups and fields lie in the flow of a pane, so none of them is blurred. */
+:root:not([data-glass="off"]) {
+  /* ---------------------------------------------------------------- *
+   * A row of the list: no fill at rest, a wash under the pointer, and
+   * the shared selection fill (the main button's) on the chosen step.
+   * ---------------------------------------------------------------- */
+  @media (hover: hover) {
+    .zimos-funnel-step-row:not([data-selected]):not([data-dragging]):hover,
+    .zimos-funnel-icon-button:hover {
+      background-color: color-mix(in srgb, var(--color-ink) 7%, transparent);
+    }
+  }
+  @media (hover: hover) {
+    &.dark .zimos-funnel-step-row:not([data-selected]):not([data-dragging]):hover,
+    &.dark .zimos-funnel-icon-button:hover {
+      background-color: rgb(255 255 255 / 0.09);
+    }
+  }
+
+  .zimos-funnel-step-row[data-selected] {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.28), var(--lg-brand-glow);
+  }
+  /* Everything written on the fill takes its ink: the type line, the page's path, the handle, the menu dots. */
+  .zimos-funnel-step-row[data-selected] .zimos-funnel-row-quiet,
+  .zimos-funnel-step-row[data-selected] .zimos-funnel-row-quiet:hover {
+    color: var(--lg-on-brand);
+  }
+  /* The type's tile becomes a lit chip on the fill, whatever its own tone was. */
+  .zimos-funnel-step-row[data-selected] [data-slot="funnel-type-tile"] {
+    background-color: rgb(255 255 255 / 0.22);
+    color: var(--lg-on-brand);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.3);
+  }
+  /* The problem count stays a solid chip, so its red still reads on the fill. */
+  .zimos-funnel-step-row[data-selected] .zimos-funnel-row-badge {
+    background-color: var(--color-paper-raised);
+    color: var(--color-danger);
+  }
+  .zimos-funnel-step-row[data-selected] :focus-visible {
+    outline-color: var(--lg-on-brand);
+  }
+
+  /* A row being carried is a small lit pane over the others. */
+  .zimos-funnel-step-row[data-dragging]:not([data-selected]) {
+    background-color: var(--lg-control-lit);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge), var(--shadow-raised);
+  }
+  .zimos-funnel-step-row[data-dragging][data-selected] {
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.28), var(--shadow-raised);
+  }
+
+  /* The count beside a heading: a small track. */
+  .zimos-funnel-count {
+    background-color: var(--lg-control);
+    box-shadow: inset 0 0 0 1px var(--lg-edge);
+  }
+
+  /* "Add step" is the pane's main action: the brand fill and its glow. */
+  .zimos-funnel-add {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.28), var(--lg-brand-glow);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * The step-type menu (a popover on a desktop, a sheet on a phone):
+   * the surface is the overlay's own; a row only washes under the
+   * pointer and marks the current type.
+   * ---------------------------------------------------------------- */
+  @media (hover: hover) {
+    .zimos-funnel-type-row:hover {
+      background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    }
+  }
+  .zimos-funnel-type-row:focus-visible,
+  .zimos-funnel-type-row[data-current] {
+    background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  }
+  &.dark .zimos-funnel-type-row:focus-visible,
+  &.dark .zimos-funnel-type-row[data-current] {
+    background-color: color-mix(in srgb, var(--color-primary) 22%, transparent);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * The inspector: small panes for a way out, the page card and the
+   * running-test line; fields that sit on the pane like its text.
+   * ---------------------------------------------------------------- */
+  .zimos-funnel-way {
+    background-color: var(--lg-control);
+    border-block-color: transparent;
+    border-inline-end-color: transparent;
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge);
+  }
+  /* The page card and the test line carry no condition colour: their whole hairline is the pane's edge. */
+  .zimos-funnel-way:not([data-condition]) {
+    border-color: transparent;
+  }
+  .zimos-funnel-way [data-slot="funnel-page-thumb"] {
+    background-color: var(--lg-control-lit);
+    border-color: var(--lg-edge);
+  }
+
+  .zimos-funnel-select {
+    background-color: var(--lg-control);
+    border-color: transparent;
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge);
+  }
+  @media (hover: hover) {
+    .zimos-funnel-select:hover {
+      background-color: var(--lg-control-lit);
+    }
+  }
+  .zimos-funnel-select[aria-expanded="true"] {
+    background-color: var(--lg-control-lit);
+    box-shadow: var(--lg-rim-line), 0 0 0 1.5px var(--color-primary);
+  }
+
+  /* The name reads as the step's title until it is pressed: no box at rest, a field under the pointer and in focus. */
+  .zimos-funnel-name:not(:focus):not([aria-invalid="true"]) {
+    background-color: transparent;
+    border-color: transparent;
+    box-shadow: 0 1px 0 0 var(--lg-edge);
+  }
+  @media (hover: hover) {
+    .zimos-funnel-name:not(:focus):not([aria-invalid="true"]):hover {
+      background-color: var(--lg-control);
+      box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge);
+    }
+  }
+
+  /* What to fix: a calm amber pane, its words in the page's ink. */
+  .zimos-funnel-fix {
+    background-color: color-mix(in srgb, var(--color-accent-soft) 86%, transparent);
+    border-color: transparent;
+    box-shadow: var(--lg-rim-line), 0 0 0 1px color-mix(in srgb, var(--color-accent) 42%, transparent);
+  }
+}

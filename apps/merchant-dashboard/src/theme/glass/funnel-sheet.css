@@ -1,0 +1,130 @@
+/* The funnel's settings sheet and its report — pages/funnels/FunnelGrowthPanel.tsx, pages/funnels/sheet/*,
+   pages/funnels/SplitTestVersions.tsx, pages/analytics/FunnelAnalyticsPage.tsx.
+   Part of the liquid-glass layer (../liquid-glass.css): everything here is under the
+   same switch, so with data-glass="off" none of it applies and the component stands
+   on its own solid Tailwind classes. Fills and rims come from the --lg-* variables.
+
+   Nothing here is blurred. The sheet itself is the overlay pane of glass/sheet.css (frosted
+   on a desktop, solid on a phone); what is styled here lies inside it, or in the page flow of
+   the report: small panes on the control fill, lit along their rim.
+
+   Text (worked out from the token values, not measured on rendered pixels): ink and
+   --lg-ink-soft on --lg-control over the sheet's overlay fill are the same pair as every
+   field and segmented track in a sheet (4.5:1 or better in both themes); a picked country
+   chip is --lg-on-brand on the shared selection fill; the "ahead / winner" chip keeps the
+   success text shade on its soft tint (--lg-text-success, 4.5:1 or better). */
+:root:not([data-glass="off"]) {
+  /* ---------------------------------------------------------------- *
+   * Small panes inside the sheet: a test's row, a version's card, a
+   * fold, the list of country rules, the "new redirect" box. Control
+   * glass, a hairline drawn as a shadow so the pane keeps its size.
+   * ---------------------------------------------------------------- */
+  .zimos-funnel-sheet
+    :is(
+      [data-slot="funnel-test-row"],
+      [data-slot="funnel-test-version"],
+      [data-funnel-sheet-fold],
+      [data-slot="funnel-geo-rules"],
+      [data-slot="funnel-versions"] > ul > li,
+      section[aria-labelledby="geo-add-title"]
+    ) {
+    background-color: var(--lg-control);
+    box-shadow:
+      var(--lg-rim-line),
+      0 0 0 1px var(--lg-edge);
+  }
+
+  /* A row opens its test: it lifts 2px under a pointer and presses in under a finger. */
+  .zimos-funnel-sheet [data-slot="funnel-test-row"] {
+    transition:
+      translate var(--dur-fade) var(--ease-out),
+      scale var(--dur-fade) var(--ease-out),
+      background-color var(--dur-fade) var(--ease-out);
+  }
+  /* Only under a pointer, and not for people who asked for less motion. */
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .zimos-funnel-sheet [data-slot="funnel-test-row"]:hover {
+      translate: 0 -2px;
+      background-color: var(--lg-control-lit);
+    }
+  }
+
+  /* The version that is ahead, or that won: a lit pane with a green hairline — the chip says it in words. */
+  .zimos-funnel-sheet [data-slot="funnel-test-version"][data-mark] {
+    background-color: var(--lg-control-lit);
+    box-shadow:
+      var(--lg-rim-line),
+      0 0 0 1px color-mix(in srgb, var(--color-success) 45%, transparent);
+  }
+  .zimos-funnel-sheet [data-slot="funnel-test-mark"] {
+    background-color: color-mix(in srgb, var(--color-success) 16%, transparent);
+    color: var(--lg-text-success);
+  }
+
+  /* The one sentence about who is ahead: a quiet inset pane. */
+  .zimos-funnel-sheet [data-slot="funnel-test-verdict"] {
+    background-color: var(--lg-control);
+    box-shadow: var(--lg-rim-line);
+  }
+  .zimos-funnel-sheet [data-slot="funnel-test-verdict"]:is([data-kind="winner"], [data-kind="leader"]) {
+    background-color: color-mix(in srgb, var(--color-success) 12%, var(--lg-control));
+  }
+
+  /* ---------------------------------------------------------------- *
+   * The split bar of a test's shares: a sunken track, the first
+   * version (the original) in the brand gradient.
+   * ---------------------------------------------------------------- */
+  [data-slot="funnel-shares"] > [role="img"] {
+    background-color: var(--lg-control);
+    box-shadow: inset 0 0 0 1px var(--lg-edge);
+  }
+  [data-slot="funnel-share"][data-i="0"] {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+  }
+
+  /* A country chip: a control pane at rest, the shared selection fill once picked. */
+  .zimos-funnel-sheet [data-slot="funnel-geo-chip"] {
+    background-color: var(--lg-control);
+    box-shadow:
+      var(--lg-rim-line),
+      0 0 0 1px var(--lg-edge);
+  }
+  .zimos-funnel-sheet [data-slot="funnel-geo-chip"][aria-pressed="true"] {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.28),
+      var(--lg-brand-glow);
+  }
+
+  /* The part's save bar, pinned under the body: lit a little, so it reads as standing above what scrolls. */
+  .zimos-funnel-sheet [data-funnel-sheet-foot] {
+    background-image: linear-gradient(to bottom, color-mix(in srgb, var(--lg-control-lit) 55%, transparent), transparent);
+    border-end-start-radius: inherit;
+    border-end-end-radius: inherit;
+  }
+
+  /* Secondary words inside the sheet's parts go one step deeper on glass, as in every sheet. */
+  .zimos-funnel-sheet :is([data-funnel-sheet-nav], [data-funnel-sheet-back]) :where(p, button) {
+    color: var(--lg-ink-soft);
+  }
+  .zimos-funnel-sheet [data-funnel-sheet-back] button:hover {
+    color: var(--color-ink);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * The report's step bars: a track on the control fill, the part of
+   * the sessions that moved on in the brand gradient.
+   * ---------------------------------------------------------------- */
+  [data-slot="funnel-report-bar"] {
+    background-color: var(--lg-control);
+    box-shadow: inset 0 0 0 1px var(--lg-edge);
+  }
+  [data-slot="funnel-report-bar"] > :first-child {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+  }
+}
+
