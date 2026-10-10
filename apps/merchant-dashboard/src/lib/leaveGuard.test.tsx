@@ -290,8 +290,9 @@ describe("the guard itself", () => {
     await user.click(sideLink("Orders"));
     await user.click(within(await screen.findByRole("dialog", { name: "Discard changes?" })).getByRole("button", { name: "Discard" }));
     expect(await screen.findByRole("heading", { name: "Orders list" })).toBeInTheDocument();
-    // The page left with its form: nothing is unsaved any more.
-    expect(browserWouldWarn()).toBe(false);
+    // The page left with its form: nothing is unsaved any more. The page says so as it unmounts, one render
+    // after the new page is drawn, so the browser's warning is given that moment to stand down.
+    await waitFor(() => expect(browserWouldWarn()).toBe(false));
   });
 
   it("is mounted once by App.tsx, inside the router and around every route", () => {

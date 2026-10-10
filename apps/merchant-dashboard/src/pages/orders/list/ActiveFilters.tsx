@@ -16,7 +16,7 @@ const STRINGS = {
 
 export interface ActiveFilterChip {
   id: string;
-  /** What the filter is, in words: «التاريخ: النهارده», «المحافظة: القاهرة». */
+  /** What the filter is, in words: "Date: today", "Governorate: Cairo". */
   label: string;
   onRemove: () => void;
 }
@@ -24,7 +24,7 @@ export interface ActiveFilterChip {
 /**
  * The filters in effect, as a row of chips under the toolbar — there only
  * while any is set. A chip is one button: pressing it anywhere takes its
- * filter off (44px under a finger). «امسح الكل» ends the row. On a phone the
+ * filter off (44px under a finger). "Clear all" ends the row. On a phone the
  * row scrolls sideways and runs to the screen edges, like the stage chips, so
  * it never pushes the orders further down than one line.
  *

@@ -14,11 +14,13 @@ const STRINGS = {
     noName: "Customer without a name",
     test: "Test",
     poorData: "Poor data",
+    pickup: "Pickup from the store",
   },
   ar: {
     noName: "عميل بدون اسم",
     test: "تجريبي",
     poorData: "بيانات ضعيفة",
+    pickup: "استلام من المتجر",
   },
 } satisfies Messages;
 
@@ -61,14 +63,14 @@ export interface OrderRowView {
   order: Order;
   /** The order's own page. */
   to: string;
-  /** The customer's name, or «عميل من غير اسم». */
+  /** The customer's name, or "Customer without a name". */
   name: string;
   /** The number as it came — masked for most roles (010****665). */
   rawPhone: string;
   /** The number when it is whole: only then is there anything to dial, message or copy. */
   phone: string | null;
   whatsapp: string | null;
-  /** «القاهرة · مدينة نصر»; empty without an address. */
+  /** "Cairo · Nasr City"; empty without an address. */
   place: string;
   money: string;
   stageLabel: string | null;
@@ -126,7 +128,7 @@ export function useOrderRowViews(orders: readonly Order[]): OrderRowView[] {
           rawPhone,
           phone,
           whatsapp: phone ? toWhatsAppNumber(phone) : null,
-          place: orderPlace(order),
+          place: order.deliveryMethod === "pickup" ? t.pickup : orderPlace(order),
           money: formatMoney(order.totalAmount, order.currency),
           stageLabel: order.stage ? labels.stage(order.stage) : null,
           flagged: order.riskFlags.length > 0,

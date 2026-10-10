@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
-import type { SettlementDetail, SettlementSummary, UnsettledOrder } from "@store-builder/api-client";
+import type { SettlementDetail, SettlementSummary, StatementReport, UnsettledOrder } from "@store-builder/api-client";
 import { api, fake } from "@/test/mocks";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { SettlementsPage } from "./SettlementsPage";
@@ -57,6 +57,34 @@ const draft = fake<SettlementDetail>({
 interface Init {
   method?: string;
   body?: unknown;
+}
+
+/** What `POST …/statement/match` answers: one row that matches and one whose amount differs. */
+function statementReport(): StatementReport {
+  return {
+    carrierCode: "bosta",
+    currency: "EGP",
+    summary: {
+      rows: 2,
+      ok: 1,
+      amountMismatch: 1,
+      alreadySettled: 0,
+      notSettleable: 0,
+      notFound: 0,
+      duplicate: 0,
+      invalid: 0,
+      statementAmount: 45000,
+      matchedDueAmount: 50000,
+      differenceAmount: -5000,
+      missingOrders: 0,
+      missingAmount: 0,
+    },
+    lines: [
+      { line: 2, waybill: "WB123", statementAmount: 25000, feeAmount: 0, status: "ok", orderNumber: "ORD-1", dueAmount: 25000, differenceAmount: 0 },
+      { line: 3, waybill: "WB124", statementAmount: 20000, feeAmount: 0, status: "amount_mismatch", orderNumber: "ORD-2", dueAmount: 25000, differenceAmount: -5000 },
+    ],
+    missingFromStatement: [],
+  };
 }
 
 function serveLists(carriers: Array<Record<string, unknown>>) {
@@ -132,7 +160,7 @@ describe("SettlementsPage", () => {
   it("matches a courier's statement as CSV text, the one form this API reads", async () => {
     serveLists([{ carrierCode: "bosta", orders: 1, dueAmount: 25000 }]);
     api.request.mockImplementation(async (path: string, init?: Init) => {
-      if (path.includes("/statement") && init?.method === "POST") return { report: { matched: [], unmatched: [], missing: [], totals: { collected: 0, fees: 0, net: 0 } } };
+      if (path.includes("/statement") && init?.method === "POST") return { report: statementReport() };
       return new Promise(() => undefined);
     });
     const { user } = renderWithProviders(<SettlementsPage />, { route: "/settlements" });
@@ -149,6 +177,35 @@ describe("SettlementsPage", () => {
     await waitFor(() => expect(api.request.mock.calls.some(([path, init]) => path.includes("/statement") && init?.method === "POST")).toBe(true));
     const call = api.request.mock.calls.find(([path, init]) => path.includes("/statement") && init?.method === "POST")!;
     expect(call[1]!.body).toEqual({ csv: "waybill,collected\nWB123,250\n", carrierCode: "bosta" });
+    // The answer, as the API sends it: the figures, and the one row that needs a look.
+    const dialog = screen.getByRole("dialog");
+    expect(await within(dialog).findByText("Rows that need a look")).toBeInTheDocument();
+    expect(within(dialog).getByText("WB124")).toBeInTheDocument();
+    expect(within(dialog).queryByText("WB123")).not.toBeInTheDocument();
+  });
+
+  it("still shows a statement's figures when the answer carries no rows", async () => {
+    serveLists([{ carrierCode: "bosta", orders: 1, dueAmount: 25000 }]);
+    // `lines` left out altogether: the dialog used to throw on it and take the page down.
+    const { lines: _lines, ...withoutRows } = statementReport();
+    api.request.mockImplementation(async (path: string, init?: Init) => {
+      if (path.includes("/statement") && init?.method === "POST") return { report: withoutRows };
+      return new Promise(() => undefined);
+    });
+    const { user } = renderWithProviders(<SettlementsPage />, { route: "/settlements" });
+
+    await user.click(await screen.findByRole("button", { name: "Settlement tools" }));
+    await user.click(await screen.findByRole("menuitem", { name: /Import a courier statement/ }));
+    await screen.findByRole("dialog");
+    const file = new File(["waybill,collected\nWB123,250\n"], "bosta.csv", { type: "text/csv" });
+    await user.upload(document.querySelector('input[type="file"]') as HTMLInputElement, file);
+    await user.click(await screen.findByRole("button", { name: "Match waybills" }));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(await within(dialog).findByText("Every row matches an order and its amount.")).toBeInTheDocument();
+    expect(within(dialog).getByText("Matched")).toBeInTheDocument();
+    // The page under the dialog is still there.
+    expect(screen.getByRole("button", { name: "Settlement tools" })).toBeInTheDocument();
   });
 
   it("reads in the dashboard's own Arabic", async () => {
