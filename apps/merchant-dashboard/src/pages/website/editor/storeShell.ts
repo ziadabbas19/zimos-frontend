@@ -8,7 +8,7 @@
  * — the two apps share no code, so the saved shape is spelled out in both:
  *
  *   header: { announcement, menu?: [{ label, href, kind, …kept }], logo?: { size?, align? },
- *             show?: { cart?, language?, theme?, trackOrder? }, sticky? }
+ *             show?: { cart?, language?, theme?, trackOrder? }, sticky?, layout?: "side" }
  *   footer: { groups?: [{ title, links }], text?, show?: { brand?, links?, help? } }
  *
  * A menu link or footer group may carry keys the panels do not edit: a
@@ -62,6 +62,12 @@ export function submenuCount(link: ShellLink): number {
 
 export type LogoSize = "sm" | "md" | "lg";
 export type LogoAlign = "start" | "center";
+/**
+ * Where the store's navigation sits on a wide screen: the bar across the top
+ * every store has, or a column beside the page. Saved as `header.layout`, and
+ * only when it is "side".
+ */
+export type NavLayout = "top" | "side";
 
 export interface HeaderLook {
   /** The merchant's own menu, or null for the built-in links. */
@@ -73,6 +79,7 @@ export interface HeaderLook {
   showTheme: boolean;
   showTrackOrder: boolean;
   sticky: boolean;
+  layout: NavLayout;
 }
 
 export interface FooterGroupLook {
@@ -120,6 +127,7 @@ export const DEFAULT_HEADER_LOOK: HeaderLook = {
   showTheme: true,
   showTrackOrder: true,
   sticky: true,
+  layout: "top",
 };
 
 export const DEFAULT_FOOTER_LOOK: FooterLook = {
@@ -232,6 +240,7 @@ export function readHeaderLook(rawHeader: unknown): HeaderLook {
     showTheme: readShow(show, "theme"),
     showTrackOrder: readShow(show, "trackOrder"),
     sticky: header.sticky !== false,
+    layout: header.layout === "side" ? "side" : "top",
   };
 }
 
@@ -303,6 +312,7 @@ export function writeHeader(existing: unknown, header: HeaderLook, announcement:
   delete next.logo;
   delete next.show;
   delete next.sticky;
+  delete next.layout;
   next.announcement = announcement;
   if (header.menu !== null) next.menu = saveLinks(header.menu);
   const logo: Blob = restOf(objectOf(before?.logo), LOGO_KEYS);
@@ -317,6 +327,7 @@ export function writeHeader(existing: unknown, header: HeaderLook, announcement:
   ]);
   if (show) next.show = show;
   if (!header.sticky) next.sticky = false;
+  if (header.layout === "side") next.layout = "side";
   return next;
 }
 
@@ -376,7 +387,8 @@ export function sameHeader(a: HeaderLook, b: HeaderLook): boolean {
     a.showLanguage === b.showLanguage &&
     a.showTheme === b.showTheme &&
     a.showTrackOrder === b.showTrackOrder &&
-    a.sticky === b.sticky
+    a.sticky === b.sticky &&
+    a.layout === b.layout
   );
 }
 

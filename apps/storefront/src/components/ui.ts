@@ -85,6 +85,16 @@ export const sheet = (open: boolean) =>
     open ? "translate-x-0" : "translate-x-full rtl:-translate-x-full"
   }`;
 
+/**
+ * The same layer's sheet rising from the bottom edge instead: the phone's
+ * filter sheet. As tall as its content up to most of the screen, so the page
+ * it filters stays in sight above it.
+ */
+export const bottomSheet = (open: boolean) =>
+  `absolute inset-x-0 bottom-0 flex max-h-[88dvh] flex-col rounded-t-3xl bg-paper-raised shadow-2xl transition-transform duration-300 ease-out motion-reduce:transition-none ${
+    open ? "translate-y-0" : "translate-y-full"
+  }`;
+
 export const backdrop = (open: boolean) =>
   `absolute inset-0 bg-ink/40 backdrop-blur-[2px] transition-opacity duration-300 motion-reduce:transition-none ${
     open ? "opacity-100" : "pointer-events-none opacity-0"

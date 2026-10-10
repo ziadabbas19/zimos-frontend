@@ -103,8 +103,14 @@ function isShellPart(value: unknown): value is ShellPart {
   return typeof value === "string" && (SHELL_PARTS as readonly string[]).includes(value);
 }
 
+/**
+ * The element that is a fixed part. A store with the side navigation has two
+ * headers in the page, the bar and the column, and shows one of them at a
+ * time (the width decides): the one that is drawn is the part.
+ */
 function shellEl(part: ShellPart): HTMLElement | null {
-  return document.querySelector<HTMLElement>(`[${SHELL_ATTR}="${part}"]`);
+  const all = Array.from(document.querySelectorAll<HTMLElement>(`[${SHELL_ATTR}="${part}"]`));
+  return all.find((el) => el.getClientRects().length > 0) ?? all[0] ?? null;
 }
 const INDEX_ATTR = "data-zimos-index";
 const OVERLAY_ATTR = "data-zimos-overlay";
@@ -252,8 +258,11 @@ const PREVIEW_LOGO_CLASS: Record<string, string> = {
  * saved logo is what's being removed, just the store name.
  */
 function applyLogo(logoUrl: string | null | undefined) {
-  const link = document.querySelector<HTMLElement>("[data-store-logo]");
-  if (!link) return;
+  // The bar's logo, and the side navigation's when the store has that too.
+  document.querySelectorAll<HTMLElement>("[data-store-logo]").forEach((link) => applyLogoTo(link, logoUrl));
+}
+
+function applyLogoTo(link: HTMLElement, logoUrl: string | null | undefined) {
   const savedImg = link.querySelector<HTMLElement>(":scope > img:not([data-zimos-logo])");
   const fallback = link.querySelector<HTMLElement>(":scope > .zimos-logo");
   let preview = link.querySelector<HTMLImageElement>(":scope > img[data-zimos-logo]");

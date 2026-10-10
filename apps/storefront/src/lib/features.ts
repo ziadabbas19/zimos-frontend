@@ -76,3 +76,13 @@ export const AD_PIXELS_ENABLED = process.env.NEXT_PUBLIC_AD_PIXELS_ENABLED === "
  * before whatever its props hold. Pairs with the dashboard's VITE_HERO_MEDIA_ENABLED.
  */
 export const HERO_MEDIA_ENABLED = process.env.NEXT_PUBLIC_HERO_MEDIA_ENABLED === "true";
+
+/**
+ * The store's side columns. On the product listing: the chosen filters as
+ * chips over the grid, the sort inside the filter column, and on a phone a
+ * bottom sheet whose choices wait for "Apply". Store-wide: the side
+ * navigation a store can pick in its look (`themeSettings.header.layout`).
+ * Off, the listing and the header are exactly as before, whatever the store
+ * saved. Pairs with the dashboard's VITE_STORE_SIDEBAR_ENABLED, which offers the choice.
+ */
+export const STORE_SIDEBAR_ENABLED = process.env.NEXT_PUBLIC_STORE_SIDEBAR_ENABLED === "true";

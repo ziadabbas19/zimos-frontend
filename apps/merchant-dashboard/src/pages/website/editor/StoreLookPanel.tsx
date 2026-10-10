@@ -19,6 +19,7 @@ import { TextField } from "@/components/Field";
 import { Segmented } from "@/components/Segmented";
 import { BRAND_COLOR_PRESETS, DEFAULT_PRIMARY, DEFAULT_SECONDARY } from "@/lib/brandColors";
 import { checkAccent, labelOn, suggestAccent } from "@/lib/contrast";
+import { STORE_SIDEBAR_ENABLED } from "@/lib/features";
 import { formatMoney } from "@/lib/format";
 import { useThemeFonts } from "@/lib/themeFonts";
 import { ImageField } from "./ImageField";
@@ -31,7 +32,7 @@ import {
   type StoreAnnouncementLook,
   type StoreLook,
 } from "./storeLook";
-import type { ShellPart } from "./storeShell";
+import type { NavLayout, ShellPart } from "./storeShell";
 import { ORIGINAL_LOOK, THEME_CHOICES, THEME_SPECS, accentGrounds, type ColorMode } from "./storeThemes";
 import { ThemeSketch } from "./ThemeSketch";
 import { ColorWell, SwatchRow } from "./theme/ColorWell";
@@ -67,6 +68,8 @@ export { ThemePresetRow } from "./theme/ThemePresetRow";
  *     its own button shape (the storefront reads no button setting).
  *  5. Logo.
  *  6. Theme — the layout families as drawn cards.
+ *  7. Navigation — top bar or side bar on a wide screen, only while
+ *     lib/features STORE_SIDEBAR_ENABLED is on.
  *
  * `onChange` takes a history key so a burst of typing in a colour box, or a
  * drag across the native colour picker, is one undo step.
@@ -363,6 +366,20 @@ export function StoreLookPanel({
         </p>
         <p className="text-xs text-ink-soft">{original ? ui.themeOriginalHint : ui.themeHint}</p>
       </LookBlock>
+
+      {/* Where the store's navigation sits on a wide screen (lib/features); saved with the header, as `header.layout`. */}
+      {STORE_SIDEBAR_ENABLED && (
+        <LookBlock title={ui.navLayout} hint={ui.navLayoutHint}>
+          <Segmented<NavLayout>
+            value={look.header.layout}
+            onChange={(layout) => onChange({ ...look, header: { ...look.header, layout } })}
+            options={(["top", "side"] as const).map((value) => ({ value, label: ui.navLayoutName(value) }))}
+            label={ui.navLayout}
+            size={sheet ? "md" : "sm"}
+            className="w-full"
+          />
+        </LookBlock>
+      )}
 
       {onEditShell && (
         <LookBlock title={t.shellTitle} hint={ui.shellEditHint}>

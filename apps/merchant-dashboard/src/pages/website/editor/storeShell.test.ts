@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lookToWorkspacePatch, readStoreLook, sameLook } from "./storeLook";
+import { lookToShellPreview, lookToWorkspacePatch, readStoreLook, sameLook, themeSettingsSize } from "./storeLook";
 import {
   DEFAULT_FOOTER_LOOK,
   DEFAULT_HEADER_LOOK,
@@ -187,5 +187,72 @@ describe("the Store look's save, end to end", () => {
     expect(patch.themeSettings.customKey).toBe(1);
     expect(sameLook(look, readStoreLook({ themeSettings: patch.themeSettings, logoUrl: null }))).toBe(false);
     expect(sameHeader(look.header, readStoreLook({ themeSettings: patch.themeSettings, logoUrl: null }).header)).toBe(true);
+  });
+});
+
+/*
+ * Where the store's navigation sits on a wide screen (the Store look's
+ * "Navigation" choice): `header.layout`, written only as "side". The key is
+ * read and written whether or not the dashboard offers the choice
+ * (lib/features STORE_SIDEBAR_ENABLED only hides the control), so a save made
+ * with the switch off never moves a store back to the top bar.
+ */
+describe("the navigation layout in the saved header", () => {
+  it("is the top bar for every store that saved nothing, and adds no key to what such a store saves", () => {
+    expect(DEFAULT_HEADER_LOOK.layout).toBe("top");
+    expect(readHeaderLook(undefined).layout).toBe("top");
+    expect(readHeaderLook(templateHeader()).layout).toBe("top");
+    expect(writeHeader(undefined, DEFAULT_HEADER_LOOK, ANNOUNCEMENT)).toEqual({ announcement: ANNOUNCEMENT });
+    expect(writeHeader(templateHeader(), readHeaderLook(templateHeader()), ANNOUNCEMENT)).not.toHaveProperty("layout");
+  });
+
+  it("is written as one key when the merchant picks the side bar, beside everything else the header holds", () => {
+    const saved = templateHeader();
+    const written = writeHeader(saved, { ...readHeaderLook(saved), layout: "side" }, saved.announcement);
+    expect(written.layout).toBe("side");
+    const { layout: _layout, ...rest } = written;
+    expect(rest).toEqual(writeHeader(saved, readHeaderLook(saved), saved.announcement));
+    expect(rest.megaMenu).toEqual({ columns: 3 });
+  });
+
+  it("round-trips a saved side bar through a save that changed something else", () => {
+    const saved = { ...templateHeader(), layout: "side" };
+    const look = readHeaderLook(saved);
+    expect(look.layout).toBe("side");
+    expect(writeHeader(saved, { ...look, sticky: false }, saved.announcement)).toMatchObject({ layout: "side", sticky: false });
+  });
+
+  it("leaves no key behind when the merchant goes back to the top bar", () => {
+    const saved = { ...templateHeader(), layout: "side" };
+    expect(writeHeader(saved, { ...readHeaderLook(saved), layout: "top" }, saved.announcement)).not.toHaveProperty("layout");
+  });
+
+  it("reads anything but the one known value as the top bar", () => {
+    for (const layout of ["top", "SIDE", "left", "", true, 1, null, { side: true }]) {
+      expect(readHeaderLook({ layout }).layout).toBe("top");
+    }
+  });
+
+  it("counts as an unsaved change", () => {
+    const top = readHeaderLook(templateHeader());
+    expect(sameHeader(top, { ...top })).toBe(true);
+    expect(sameHeader(top, { ...top, layout: "side" })).toBe(false);
+    const look = readStoreLook({ themeSettings: { header: templateHeader() }, logoUrl: null });
+    expect(sameLook(look, { ...look, header: { ...look.header, layout: "side" } })).toBe(false);
+  });
+
+  it("travels in the Store look's save and in what the preview is shown, well inside the size the API takes", () => {
+    const themeSettings = { primaryColor: "#112233", storeLocale: "ar", header: templateHeader() };
+    const look = readStoreLook({ themeSettings, logoUrl: null });
+    const side = { ...look, header: { ...look.header, layout: "side" as const } };
+
+    const patch = lookToWorkspacePatch(themeSettings, side);
+    expect((patch.themeSettings.header as Record<string, unknown>).layout).toBe("side");
+    // Nothing at the top level of the blob is added or lost: the choice lives inside `header`.
+    expect(Object.keys(patch.themeSettings).sort()).toEqual(Object.keys(lookToWorkspacePatch(themeSettings, look).themeSettings).sort());
+    expect(patch.themeSettings.storeLocale).toBe("ar");
+    expect(lookToShellPreview(themeSettings, side).header.layout).toBe("side");
+    expect(lookToShellPreview(themeSettings, look).header).not.toHaveProperty("layout");
+    expect(themeSettingsSize(themeSettings, side) - themeSettingsSize(themeSettings, look)).toBe(',"layout":"side"'.length);
   });
 });

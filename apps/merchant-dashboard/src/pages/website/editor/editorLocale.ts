@@ -836,6 +836,10 @@ const UI_EN = {
   showTheme: "Dark mode switch",
   showTrackOrder: "Track order link",
   stickyHeader: "Keep the header in view while scrolling",
+  navLayout: "Navigation",
+  navLayoutName: (layout: string): string => (layout === "side" ? "Side bar" : "Top bar"),
+  navLayoutHint:
+    "Where the menu, the search, the cart and the account sit on a computer screen: a bar across the top, or a column beside the page. On a phone the store keeps the top bar and its menu.",
   footerBrand: "Store name and text",
   footerText: "Text under the store name",
   footerTextHint: "Leave it empty to show your store's tagline.",
@@ -1111,6 +1115,10 @@ const UI_AR: EditorUi = {
   showTheme: "تبديل الوضع الداكن",
   showTrackOrder: "رابط تتبع الطلب",
   stickyHeader: "إبقاء الترويسة ظاهرة أثناء التمرير",
+  navLayout: "التنقّل",
+  navLayoutName: (layout) => (layout === "side" ? "شريط جانبي" : "شريط علوي"),
+  navLayoutHint:
+    "موضع القائمة والبحث والسلة والحساب على شاشة الحاسوب: شريط أعلى الصفحة، أو عمود بجانبها. على الهاتف يبقى الشريط العلوي وقائمته كما هما.",
   footerBrand: "اسم المتجر والنص",
   footerText: "النص أسفل اسم المتجر",
   footerTextHint: "اتركه فارغًا لعرض الشعار النصي لمتجرك.",

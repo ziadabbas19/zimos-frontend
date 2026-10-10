@@ -3,7 +3,7 @@
 import { useId } from "react";
 import type { StorefrontSort } from "@store-builder/api-client";
 import { useStore } from "@/lib/StoreContext";
-import { catalogHref, type CatalogState } from "@/lib/catalogQuery";
+import { catalogHref, sortChoices, type CatalogState } from "@/lib/catalogQuery";
 import { input } from "@/components/ui";
 import { useCatalogNavigate } from "./useCatalogNavigate";
 
@@ -16,14 +16,7 @@ export function SortSelect({ state, current }: { state: CatalogState; current: S
   const { t } = useStore();
   const id = useId();
   const { go, pending } = useCatalogNavigate();
-  const sorts: StorefrontSort[] = [
-    ...(state.q ? (["relevance"] as const) : []),
-    "newest",
-    "price_asc",
-    "price_desc",
-    "name",
-    ...(state.collection ? (["position"] as const) : []),
-  ];
+  const sorts = sortChoices(state);
   const value = sorts.includes(current) ? current : sorts[0];
 
   return (

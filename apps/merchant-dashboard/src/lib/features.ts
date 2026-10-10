@@ -132,3 +132,13 @@ export const CONFIRMATION_STATION_ENABLED = import.meta.env.VITE_CONFIRMATION_ST
  * together with the storefront's NEXT_PUBLIC_HERO_MEDIA_ENABLED, which is what draws them.
  */
 export const HERO_MEDIA_ENABLED = import.meta.env.VITE_HERO_MEDIA_ENABLED === "true";
+
+/**
+ * The Store look's "Navigation" choice in the website editor: the bar across
+ * the top, which every store has, or a column beside the page on a wide
+ * screen. It is saved with the look (`themeSettings.header.layout`), which the
+ * API keeps as it is. Off: the choice is not offered, and a store keeps
+ * whichever layout it has saved. Turn on together with the storefront's
+ * NEXT_PUBLIC_STORE_SIDEBAR_ENABLED, which is what draws the column.
+ */
+export const STORE_SIDEBAR_ENABLED = import.meta.env.VITE_STORE_SIDEBAR_ENABLED === "true";

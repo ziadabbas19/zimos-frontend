@@ -33,6 +33,7 @@ const PORTED = {
   CONFIRMATION_STATION_ENABLED: "VITE_CONFIRMATION_STATION_ENABLED",
   // Ours, not from zimos-additions: held to the same rule (off unless exactly "true").
   HERO_MEDIA_ENABLED: "VITE_HERO_MEDIA_ENABLED",
+  STORE_SIDEBAR_ENABLED: "VITE_STORE_SIDEBAR_ENABLED",
 } as const;
 
 type Features = typeof import("./features");

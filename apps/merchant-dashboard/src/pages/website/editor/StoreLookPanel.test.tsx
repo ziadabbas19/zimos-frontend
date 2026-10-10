@@ -101,3 +101,20 @@ describe("StoreLookPanel — accent per mode", () => {
     expect(screen.queryByRole("status")).toBeNull();
   });
 });
+
+// The choice of top bar or side bar is behind VITE_STORE_SIDEBAR_ENABLED, which is off here
+// (StoreLookPanel.navLayout.test.tsx is the panel with it on).
+describe("StoreLookPanel — navigation (switch off)", () => {
+  it("does not offer the choice, whatever the store saved", () => {
+    renderPanel(look({}));
+    expect(screen.queryByRole("radiogroup", { name: "Navigation" })).toBeNull();
+    expect(screen.queryByRole("radio", { name: "Side bar" })).toBeNull();
+  });
+
+  it("carries a saved side bar through any other change, untouched", async () => {
+    const { user, onChange } = renderPanel(look({ header: { layout: "side" } }));
+    expect(screen.queryByRole("radiogroup", { name: "Navigation" })).toBeNull();
+    await user.click(within(screen.getByRole("radiogroup", { name: "Theme" })).getByRole("radio", { name: "Glass" }));
+    expect(onChange.mock.calls[0][0].header.layout).toBe("side");
+  });
+});
