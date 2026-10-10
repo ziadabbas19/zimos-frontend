@@ -11,6 +11,7 @@ import {
 import { AccordionGroup, AccordionSection } from "@/components/Accordion";
 import { IconContacts, IconGlobe, IconKey, IconOrders, IconRobot, IconShield, type IconComponent } from "@/components/icons";
 import { SaveBar } from "@/components/SaveBar";
+import { useReportDirty } from "@/lib/useUnsavedGuard";
 import { Select } from "@/components/Select";
 import { useToast } from "@/components/Toast";
 import { useWorkspace } from "@/context/WorkspaceContext";
@@ -77,6 +78,7 @@ export function ProtectionRulesTab() {
   const blockedCountriesProblem = parseCountries(draft.blockedCountries) === null;
   const invalid = rangeProblems.length > 0 || countriesProblem || blockedCountriesProblem;
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
+  useReportDirty(editable && dirty);
 
   function patch(next: Partial<Draft>) {
     setDraft((prev) => ({ ...prev, ...next }));

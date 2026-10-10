@@ -10,6 +10,7 @@ import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
 import { useErrorMessage } from "@/lib/errorMessages";
+import { useReportDirty } from "@/lib/useUnsavedGuard";
 import { formatDateTime } from "@/lib/format";
 import { STOREFRONT_URL } from "@/lib/storefrontUrl";
 import { useWorkspace } from "@/context/WorkspaceContext";
@@ -712,6 +713,7 @@ function MethodList({
       : fmt(m.method === "card" ? t.methodCard : t.methodWallet, { name: nameOf(m.provider) });
 
   const dirty = JSON.stringify(draft.map((m) => [m.id, m.enabled])) !== JSON.stringify(methods.map((m) => [m.id, m.enabled]));
+  useReportDirty(dirty);
 
   function move(index: number, delta: number) {
     setDraft((list) => {

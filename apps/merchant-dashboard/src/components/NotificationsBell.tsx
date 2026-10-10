@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { useGuardedLeave } from "@/lib/useUnsavedGuard";
 import {
   AlertTriangle,
   Bell,
@@ -205,6 +206,7 @@ function NotificationsDrawer({
   const t = useT(STRINGS);
   const nt = useT(NOTIFICATION_STRINGS);
   const navigate = useNavigate();
+  const leave = useGuardedLeave();
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const [items, setItems] = useState<MerchantNotificationDto[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -264,8 +266,9 @@ function NotificationsDrawer({
       }
     }
     if (n.link) {
+      const to = n.link;
       onClose();
-      navigate(n.link);
+      leave(() => navigate(to));
     }
   }
 
@@ -376,7 +379,7 @@ function NotificationsDrawer({
             type="button"
             onClick={() => {
               onClose();
-              navigate("/settings?tab=notifications");
+              leave(() => navigate("/settings?tab=notifications"));
             }}
             className="cursor-pointer text-sm text-primary hover:underline"
           >

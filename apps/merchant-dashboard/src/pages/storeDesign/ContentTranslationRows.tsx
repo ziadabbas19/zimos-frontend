@@ -5,6 +5,7 @@ import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
 import { useErrorMessage } from "@/lib/errorMessages";
+import { useReportDirty } from "@/lib/useUnsavedGuard";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { DataState } from "@/components/DataState";
 import { Textarea } from "@/components/Textarea";
@@ -100,6 +101,7 @@ function ItemEditor({ item, locale, onSaved }: { item: ContentTranslationItem; l
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const dirty = Object.keys(draft).length > 0;
+  useReportDirty(dirty);
 
   async function save() {
     setBusy(true);

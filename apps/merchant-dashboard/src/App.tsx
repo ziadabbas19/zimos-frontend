@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { RequireWorkspace } from "@/routes/RequireWorkspace";
 import { LazyRoute } from "@/routes/LazyRoute";
 import { RouteCommitSignal } from "@/lib/viewTransition";
+import { UnsavedGuardProvider } from "@/lib/useUnsavedGuard";
 import {
   AI_ENABLED,
   BLOG_ENABLED,
@@ -151,6 +152,8 @@ export default function App() {
           <AppearanceSync />
           <WorkspaceProvider>
             <ToastProvider>
+              {/* Asks before a link, a reload or a closed tab drops unsaved changes (lib/useUnsavedGuard). */}
+              <UnsavedGuardProvider>
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
@@ -273,6 +276,7 @@ export default function App() {
                   </Route>
                 </Route>
               </Routes>
+              </UnsavedGuardProvider>
               {/* A draft store's subscribe dialog, opened from anywhere (lib/goLive). */}
               <GoLiveDialog />
               {/* The email-confirmation code, above it when both are open (lib/emailConfirm). */}

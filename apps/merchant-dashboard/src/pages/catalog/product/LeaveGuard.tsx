@@ -8,9 +8,10 @@ import { useViewNavigate } from "@/lib/viewTransition";
  * size charts…). The app has no route blockers, so the question is asked at
  * the click: while anything on the page is unsaved, a plain click on an
  * in-app link waits for the answer of the guard's dialog. Links that open a
- * new tab, links to another site and in-page `#links` pass untouched; the
- * side menu and the dock are outside the page and are covered by the
- * browser's own prompt on reload and close only.
+ * new tab, links to another site and in-page `#links` pass untouched. The
+ * side menu and the dock are outside the page: the app's own guard
+ * (`UnsavedGuardProvider` in App.tsx) asks for those, and when it is mounted
+ * it answers for the links in here too, before this one sees the click.
  *
  * Must sit inside `UnsavedGuardProvider`.
  */
