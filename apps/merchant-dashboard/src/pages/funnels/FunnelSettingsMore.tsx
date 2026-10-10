@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSheetDirty } from "./sheet/sheetKit";
 import { Button, Input, Label } from "@store-builder/ui";
 import { funnelsGet, funnelsUpdate, isApiErrorCode, shippingProfilesList, type FunnelOwnSettings } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
@@ -14,6 +15,7 @@ import { FunnelPublicLink } from "./FunnelPublicLink";
 const STRINGS = {
   en: {
     link: "Funnel link",
+    linkIrreversible: "Changing the link takes effect at once, on its own button.",
     linkHint: "Lowercase letters, numbers and dashes. The old link stops working once you change it — update your ads.",
     saveLink: "Change link",
     linkSaved: "Link changed.",
@@ -28,6 +30,7 @@ const STRINGS = {
   },
   ar: {
     link: "رابط الفانل",
+    linkIrreversible: "تغيير الرابط يُنفَّذ فورًا من زره الخاص.",
     linkHint: "حروف إنجليزي صغيرة وأرقام وشرطات. الرابط القديم هيبطل يشتغل أول ما تغيّره — حدّث إعلاناتك.",
     saveLink: "تغيير الرابط",
     linkSaved: "اتغيّر الرابط.",
@@ -45,7 +48,14 @@ const STRINGS = {
 const LINK = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 
 /** The funnel's link (SPEC §9.7 "domain or subdomain"): /f/<subdomain>, changeable. */
-export function FunnelLinkSetting({ funnelId, onSaved }: { funnelId: string; onSaved?: (subdomain: string) => void }) {
+export function FunnelLinkSetting({
+  funnelId,
+  onSaved,
+}: {
+  funnelId: string;
+  /** Optional: told the new link once it is saved (the open editor can then show it). */
+  onSaved?: (subdomain: string) => void;
+}) {
   const t = useT(STRINGS);
   const workspaceId = useWorkspaceId();
   const toast = useToast();
@@ -56,6 +66,8 @@ export function FunnelLinkSetting({ funnelId, onSaved }: { funnelId: string; onS
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const value = draft ?? current;
+  // Typed and not changed yet: the sheet asks before it closes over it.
+  useSheetDirty("funnel-link", draft !== null && draft.trim() !== current);
 
   async function save() {
     const next = value.trim().toLowerCase();
@@ -69,8 +81,8 @@ export function FunnelLinkSetting({ funnelId, onSaved }: { funnelId: string; onS
       await funnelsUpdate(apiClient, workspaceId, funnelId, { subdomain: next });
       await loaded.refresh({ silent: true });
       setDraft(null);
-      onSaved?.(next);
       toast.success(t.linkSaved);
+      onSaved?.(next);
     } catch (err) {
       setError(isApiErrorCode(err, "FUNNEL_SUBDOMAIN_TAKEN") ? t.linkTaken : describeError(err));
     } finally {
@@ -85,7 +97,7 @@ export function FunnelLinkSetting({ funnelId, onSaved }: { funnelId: string; onS
         <Input
           id="fs-link"
           dir="ltr"
-          className="min-w-0 flex-1"
+          className="h-11 min-w-0 flex-1"
           maxLength={63}
           value={value}
           disabled={busy || loaded.loading}
@@ -96,49 +108,52 @@ export function FunnelLinkSetting({ funnelId, onSaved }: { funnelId: string; onS
             setDraft(e.target.value);
           }}
         />
-        <Button type="button" variant="outline" className="min-h-11" disabled={busy || !value.trim() || value.trim() === current} onClick={() => void save()}>
+        <Button type="button" variant="outline" className="min-h-11 rounded-full px-4" disabled={busy || !value.trim() || value.trim() === current} onClick={() => void save()}>
           {t.saveLink}
         </Button>
       </div>
-      <p id="fs-link-hint" className={error ? "text-sm text-danger" : "text-xs text-ink-soft"} role={error ? "alert" : undefined}>
-        {error ?? t.linkHint}
+      <p id="fs-link-hint" className={error ? "text-sm text-danger" : "text-xs leading-5 text-ink-soft"} role={error ? "alert" : undefined}>
+        {error ?? `${t.linkHint} ${t.linkIrreversible}`}
       </p>
+      {/* The address shoppers open, on the store's own domain, with a button to copy it. */}
       {loaded.data && <FunnelPublicLink funnel={loaded.data.funnel} />}
     </div>
   );
 }
 
-/**
- * The funnel's scripts and shipping group (SPEC §9.7), edited with the rest
- * of the funnel settings (same draft, same Save).
- */
-export function FunnelCodeAndShippingFields({
-  value,
-  onChange,
-  disabled,
-}: {
+interface SettingsFieldsProps {
   value: (key: keyof FunnelOwnSettings) => string;
   onChange: (key: keyof FunnelOwnSettings, next: string) => void;
   disabled?: boolean;
-}) {
+}
+
+/** The funnel's shipping group, edited with the rest of the funnel settings (same draft, same Save). */
+export function FunnelShippingFields({ value, onChange, disabled }: SettingsFieldsProps) {
   const t = useT(STRINGS);
   const workspaceId = useWorkspaceId();
   // Shipping groups need shipping.manage; without it the select just offers "none".
   const profiles = useAsync(() => shippingProfilesList(apiClient, workspaceId).catch(() => []), [workspaceId]);
   return (
-    <div className="space-y-3">
-      <div className="space-y-1.5">
-        <Label htmlFor="fs-shipping">{t.shipping}</Label>
-        <Select id="fs-shipping" value={value("shippingProfileId")} disabled={disabled} onChange={(e) => onChange("shippingProfileId", e.target.value)}>
-          <option value="">{t.shippingNone}</option>
-          {(profiles.data ?? []).map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </Select>
-        <p className="text-xs text-ink-soft">{t.shippingHint}</p>
-      </div>
+    <div className="space-y-1.5">
+      <Label htmlFor="fs-shipping">{t.shipping}</Label>
+      <Select id="fs-shipping" className="h-11" value={value("shippingProfileId")} disabled={disabled} onChange={(e) => onChange("shippingProfileId", e.target.value)}>
+        <option value="">{t.shippingNone}</option>
+        {(profiles.data ?? []).map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
+          </option>
+        ))}
+      </Select>
+      <p className="text-xs leading-5 text-ink-soft">{t.shippingHint}</p>
+    </div>
+  );
+}
+
+/** The funnel's own scripts, on every step — same draft, same Save as the rest of the settings. */
+export function FunnelCodeFields({ value, onChange, disabled }: SettingsFieldsProps) {
+  const t = useT(STRINGS);
+  return (
+    <div className="space-y-4">
       <div className="space-y-1.5">
         <Label htmlFor="fs-head">{t.headCode}</Label>
         <Textarea id="fs-head" dir="ltr" rows={4} className="font-mono text-xs" maxLength={20000} value={value("headCode")} disabled={disabled} onChange={(e) => onChange("headCode", e.target.value)} />
@@ -146,8 +161,21 @@ export function FunnelCodeAndShippingFields({
       <div className="space-y-1.5">
         <Label htmlFor="fs-body">{t.bodyCode}</Label>
         <Textarea id="fs-body" dir="ltr" rows={4} className="font-mono text-xs" maxLength={20000} value={value("bodyCode")} disabled={disabled} onChange={(e) => onChange("bodyCode", e.target.value)} />
-        <p className="text-xs text-ink-soft">{t.codeHint}</p>
+        <p className="text-xs leading-5 text-ink-soft">{t.codeHint}</p>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The funnel's scripts and shipping group together, as one block (the shape
+ * this file had before the settings sheet folded the code under «متقدّم»).
+ */
+export function FunnelCodeAndShippingFields(props: SettingsFieldsProps) {
+  return (
+    <div className="space-y-4">
+      <FunnelShippingFields {...props} />
+      <FunnelCodeFields {...props} />
     </div>
   );
 }

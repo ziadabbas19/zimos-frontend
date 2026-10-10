@@ -1,15 +1,16 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
-import type { SplitTest } from "@store-builder/api-client";
-import { api, fake } from "@/test/mocks";
+import type { FunnelDetailDto, SplitTest } from "@store-builder/api-client";
+import { api, fake, testWorkspace } from "@/test/mocks";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import type { UiStep } from "./funnelAdapter";
 import { FunnelGrowthButton } from "./FunnelGrowthPanel";
 import { stepPageTree } from "./funnelPages";
 
 /**
- * A split test takes two to five versions. A is the page as it is; every other
- * version starts as a copy of it and has a page of its own to edit.
+ * The funnel's settings sheet: its settings, its split tests and its country
+ * rules. A split test takes two to five versions. A is the page as it is;
+ * every other version starts as a copy of it and has a page of its own to edit.
  */
 
 const landing: UiStep = {
@@ -37,11 +38,19 @@ const threeWay = fake<SplitTest>({
   status: "running",
   winnerVariantKey: null,
   updatedAt: "2026-10-05T10:00:00Z",
+  autoWinner: { enabled: false, afterVisits: 2000, metric: "conversion_rate" },
   variants: [
     { key: "A", name: "A", weight: 50 },
     { key: "B", name: "Red button", weight: 30, builderData: pageB },
     { key: "C", name: "C", weight: 20, builderData: pageC },
   ],
+});
+
+const funnel = fake<FunnelDetailDto>({
+  funnel: { id: "f1", name: "Headphones COD", subdomain: "headphones", status: "published", publishedRevisionId: "rev_3", createdAt: "", updatedAt: "" },
+  steps: [],
+  edges: [],
+  publishedRevision: null,
 });
 
 function serve(tests: SplitTest[]) {
@@ -50,13 +59,23 @@ function serve(tests: SplitTest[]) {
     if (path === "/workspaces/ws_1/experiments" && init?.method === "POST") return { experiment: threeWay };
     if (path === "/workspaces/ws_1/experiments/exp_1" && !init?.method) return { experiment: threeWay, results: { variants: [] } };
     if (path === "/workspaces/ws_1/experiments/exp_1" && init?.method === "PATCH") return { experiment: threeWay };
+    if (path === "/workspaces/ws_1/funnels/f1" && !init?.method) return funnel;
+    if (path === "/workspaces/ws_1/funnels/f1/settings" && !init?.method) return { settings: {}, currency: "EGP" };
     return new Promise(() => undefined);
   });
 }
 
+const withSlug = { currentWorkspace: { ...testWorkspace, slug: "nile" } };
+
+async function openSheet() {
+  const view = renderWithProviders(<FunnelGrowthButton funnelId="f1" steps={[landing]} />, { workspace: withSlug });
+  await view.user.click(screen.getByRole("button", { name: "Funnel settings" }));
+  return view;
+}
+
 async function openTests() {
-  const view = renderWithProviders(<FunnelGrowthButton funnelId="f1" steps={[landing]} />);
-  await view.user.click(screen.getByRole("button", { name: "Tests and settings" }));
+  const view = await openSheet();
+  await view.user.click(screen.getByRole("radio", { name: "A/B tests" }));
   return view;
 }
 
@@ -64,11 +83,31 @@ afterEach(() => {
   api.request.mockReset();
 });
 
+describe("the funnel's settings sheet", () => {
+  it("has the settings, the split tests and the countries, and no order emails", async () => {
+    serve([]);
+    await openSheet();
+    expect(screen.getAllByRole("radio").map((tab) => tab.textContent)).toEqual(["Settings", "A/B tests", "Countries"]);
+  });
+
+  it("shows the address shoppers open, on the store's own domain, under the link field", async () => {
+    serve([]);
+    await openSheet();
+
+    expect(await screen.findByLabelText("Funnel link")).toHaveValue("headphones");
+    expect(screen.getByTestId("funnel-link-url")).toHaveTextContent("https://nile.zimos.co/f/headphones");
+    expect(screen.getByRole("link", { name: "Open the funnel in a new tab" })).toHaveAttribute("href", "https://nile.zimos.co/f/headphones");
+    // The shipping group is the only shipping setting here: no threshold of the funnel's own.
+    expect(screen.getByLabelText("Shipping group")).toBeInTheDocument();
+    expect(screen.queryByText(/free shipping/i)).not.toBeInTheDocument();
+  });
+});
+
 describe("a split test with more than two versions", () => {
   it("starts with three versions, each but the original a copy of the page", async () => {
     serve([]);
     const { user } = await openTests();
-    await user.click(await screen.findByRole("button", { name: "New split test" }));
+    await user.click(await screen.findByRole("button", { name: "New test" }));
     await user.type(screen.getByRole("textbox", { name: "Test name" }), "Headline test");
     await user.click(screen.getByRole("button", { name: "Add a version" }));
     await user.click(screen.getByRole("button", { name: "Start test" }));
@@ -87,7 +126,7 @@ describe("a split test with more than two versions", () => {
   it("still sends the two halves a test always had when nothing is added", async () => {
     serve([]);
     const { user } = await openTests();
-    await user.click(await screen.findByRole("button", { name: "New split test" }));
+    await user.click(await screen.findByRole("button", { name: "New test" }));
     await user.type(screen.getByRole("textbox", { name: "Test name" }), "Headline test");
     await user.click(screen.getByRole("button", { name: "Start test" }));
     await waitFor(() => expect(api.request).toHaveBeenCalledWith("/workspaces/ws_1/experiments", expect.objectContaining({ method: "POST" })));
@@ -98,22 +137,23 @@ describe("a split test with more than two versions", () => {
 
   it("lists every version of a running test, and each one but the original has a page to edit", async () => {
     serve([threeWay]);
-    await openTests();
-    const table = await screen.findByRole("table");
-    const lines = within(table).getAllByRole("row").slice(1);
-    expect(lines).toHaveLength(3);
-    expect(lines[0].textContent).toContain("A — original");
-    expect(lines[1].textContent).toContain("B · Red button");
-    expect(within(lines[0]).queryByRole("button", { name: /Edit the page of version/ })).toBeNull();
-    expect(within(lines[1]).getByRole("button", { name: "Edit the page of version B" })).toBeTruthy();
-    expect(within(lines[2]).getByRole("button", { name: "Edit the page of version C" })).toBeTruthy();
+    const { user } = await openTests();
+    await user.click(await screen.findByRole("button", { name: "Open the test «Headline test»" }));
+
+    const sheet = screen.getByRole("dialog");
+    expect(await within(sheet).findByText("A — original")).toBeInTheDocument();
+    expect(within(sheet).getByText(/Red button/)).toBeInTheDocument();
+    expect(within(sheet).queryByRole("button", { name: "Edit A's page" })).toBeNull();
+    expect(within(sheet).getByRole("button", { name: "Edit B's page" })).toBeInTheDocument();
+    expect(within(sheet).getByRole("button", { name: "Edit C's page" })).toBeInTheDocument();
   });
 
   it("saves one version's page without dropping the other versions' pages", async () => {
     serve([threeWay]);
     const { user } = await openTests();
-    await user.click(await screen.findByRole("button", { name: "Edit the page of version C" }));
-    await user.click(await screen.findByRole("button", { name: "Save the page of version C" }));
+    await user.click(await screen.findByRole("button", { name: "Open the test «Headline test»" }));
+    await user.click(await screen.findByRole("button", { name: "Edit C's page" }));
+    await user.click(await screen.findByRole("button", { name: "Save C's page" }));
     await waitFor(() => expect(api.request).toHaveBeenCalledWith("/workspaces/ws_1/experiments/exp_1", expect.objectContaining({ method: "PATCH" })));
     const call = api.request.mock.calls.find(([path, init]) => path === "/workspaces/ws_1/experiments/exp_1" && init?.method === "PATCH")!;
     const body = call[1]!.body as { variants: Array<{ key: string; builderData?: unknown }> };

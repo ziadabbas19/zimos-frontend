@@ -57,136 +57,135 @@ function serve(detail: FunnelDetailDto) {
   });
 }
 
-const renderEditor = (locale: "en" | "ar" = "en") =>
-  renderWithProviders(<FunnelEditorPage />, { route: "/funnels/f1", path: "/funnels/:funnelId", locale });
-
 const withSlug = { currentWorkspace: { ...testWorkspace, slug: "nile" } };
 
+const renderEditor = (locale: "en" | "ar" = "en") =>
+  renderWithProviders(<FunnelEditorPage />, { route: "/funnels/f1", path: "/funnels/:funnelId", workspace: withSlug, locale });
+
+/** The bar's «…» menu, opened; its rows by name. */
+async function openMore(user: ReturnType<typeof renderEditor>["user"]) {
+  await user.click(screen.getAllByRole("button", { name: "More" })[0]);
+  return (await screen.findAllByRole("menuitem")).map((item) => item.textContent);
+}
+
+afterEach(() => vi.restoreAllMocks());
+
 describe("FunnelEditorPage", () => {
-  it("shows a published funnel's public link on its store, with Copy and Open", async () => {
-    serve(liveFunnel);
-    renderWithProviders(<FunnelEditorPage />, { route: "/funnels/f1", path: "/funnels/:funnelId", workspace: withSlug });
-
-    const link = await screen.findByTestId("funnel-link-url");
-    expect(link).toHaveTextContent("https://nile.zimos.co/f/headphones");
-    expect(screen.getByRole("button", { name: "Copy link" })).toBeInTheDocument();
-    const open = screen.getByRole("link", { name: "Open the funnel in a new tab" });
-    expect(open).toHaveAttribute("href", "https://nile.zimos.co/f/headphones");
-    expect(open).toHaveAttribute("target", "_blank");
-    expect(open).toHaveAttribute("rel", "noopener noreferrer");
-  });
-
-  it("Preview opens the published funnel on its store when no base URL is configured", async () => {
-    const open = vi.spyOn(window, "open").mockReturnValue(null);
-    serve(liveFunnel);
-    renderWithProviders(<FunnelEditorPage />, { route: "/funnels/f1", path: "/funnels/:funnelId", workspace: withSlug });
-
-    (await screen.findByRole("button", { name: "Preview" })).click();
-    expect(open).toHaveBeenCalledWith("https://nile.zimos.co/f/headphones", "_blank", "noopener");
-  });
-
-  it("hides Preview on a draft funnel", async () => {
-    serve(emptyFunnel);
-    renderWithProviders(<FunnelEditorPage />, { route: "/funnels/f1", path: "/funnels/:funnelId", workspace: withSlug });
-
-    await screen.findByTestId("funnel-link-hint");
-    expect(screen.queryByRole("button", { name: "Preview" })).not.toBeInTheDocument();
-  });
-
-  it("opens the step-type menu outside the map's zoom, where the transform cannot trap it", async () => {
-    serve(liveFunnel);
-    const { user } = renderWithProviders(<FunnelEditorPage />, { route: "/funnels/f1", path: "/funnels/:funnelId", workspace: withSlug });
-
-    await user.click(await screen.findByRole("button", { name: "Add a step after Product page" }));
-    const menu = screen.getByText("Add which step?");
-    const zoomed = screen.getByTestId("canvas-menu-anchor").parentElement!;
-    expect(zoomed.style.transform).toMatch(/scale\(/);
-    expect(zoomed).not.toContainElement(menu);
-    expect(menu.closest("[data-popover]")).not.toBeNull();
-
-    await user.click(screen.getAllByRole("button", { name: "Close" }).at(-1)!);
-    expect(screen.queryByText("Add which step?")).not.toBeInTheDocument();
-  });
-
-  it("asks to publish a draft before it has a link", async () => {
-    serve(emptyFunnel);
-    renderWithProviders(<FunnelEditorPage />, { route: "/funnels/f1", path: "/funnels/:funnelId", workspace: withSlug, locale: "ar" });
-
-    expect(await screen.findByTestId("funnel-link-hint")).toHaveTextContent("انشر الفانل للحصول على الرابط.");
-    expect(screen.queryByTestId("funnel-link-url")).not.toBeInTheDocument();
-  });
-
-  it("says the funnel is live and puts each publish problem on its step", async () => {
+  it("says what visitors get now and puts each publish problem on its step", async () => {
     serve(liveFunnel);
     const { user } = renderEditor();
 
-    expect(await screen.findByText("Live — revision #3")).toBeInTheDocument();
-    // The upsell has no offer: flagged on the card, counted in the header.
+    expect(await screen.findByText("Live · rev #3")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Saved");
+    // The upsell has no offer: flagged on its card, counted in the bar.
     expect(screen.getByText("No offer picked")).toBeInTheDocument();
-    const pill = screen.getByRole("button", { name: /1 thing to fix before publishing/ });
 
-    await user.click(pill);
+    await user.click(screen.getByRole("button", { name: "1 thing before publishing" }));
     const panel = screen.getByRole("alert");
     expect(within(panel).getByText("Extra offer")).toBeInTheDocument();
     expect(within(panel).getByText(/needs an offer/)).toBeInTheDocument();
 
-    // "Show step" opens that step in the inspector, with the same problem inline.
+    // "Show step" opens that step's details, with the same problem inline.
     await user.click(within(panel).getByRole("button", { name: "Show step" }));
-    expect(screen.getByLabelText("Name")).toHaveValue("Extra offer");
+    expect(await screen.findByLabelText("Name")).toHaveValue("Extra offer");
     expect(screen.getByText("Fix before publishing")).toBeInTheDocument();
   });
 
-  it("draws yes and no connectors and can add a step into one", async () => {
+  it("Preview opens the published funnel on its store", async () => {
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
     serve(liveFunnel);
     const { user } = renderEditor();
-    await screen.findByText("Live — revision #3");
 
-    expect(screen.getAllByText("Yes")).not.toHaveLength(0);
-    expect(screen.getAllByText("No")).not.toHaveLength(0);
+    await user.click(await screen.findByRole("button", { name: "Preview" }));
+    expect(open).toHaveBeenCalledWith("https://nile.zimos.co/f/headphones", "_blank", "noopener");
+  });
+
+  it("has no Preview while the funnel is a draft, in the bar or in the menu", async () => {
+    serve(emptyFunnel);
+    const { user } = renderEditor();
+
+    expect(await screen.findByText("Draft")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Preview" })).not.toBeInTheDocument();
+    expect(await openMore(user)).not.toContain("Preview");
+  });
+
+  it("offers the page, the preview, the history, the report, the settings and the pause in its menu, and nothing else", async () => {
+    serve(liveFunnel);
+    const { user } = renderEditor();
+    await screen.findByText("Live · rev #3");
+
+    // No template market, no order emails, no conversion event: those parts are not in this product.
+    expect(await openMore(user)).toEqual(["Edit the step's page", "Preview", "History", "The funnel's report", "Tests and settings", "Pause"]);
+  });
+
+  it("adds a step into a connector, from a menu that sits outside the map's zoom", async () => {
+    serve(liveFunnel);
+    const { user } = renderEditor();
+    await screen.findByText("Live · rev #3");
 
     await user.click(screen.getByRole("button", { name: "Add a step between Product page and COD checkout" }));
-    await user.click(screen.getByRole("button", { name: "Sales page" }));
-    expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
-    expect(screen.getByLabelText("Name")).toHaveValue("Sales page");
+    const menu = screen.getByRole("dialog", { name: "Add which step?" });
+    // A zoomed ancestor would scale the menu and trap it inside the map's box.
+    for (let el = menu.parentElement; el; el = el.parentElement) expect(el.style.transform).not.toMatch(/scale\(/);
+
+    await user.click(within(menu).getByRole("button", { name: "Sales page" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Unsaved changes");
+    expect(screen.getByRole("button", { name: "Add a step between Product page and Sales page" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add a step between Sales page and COD checkout" })).toBeInTheDocument();
+  });
+
+  it("copies a step from the steps list, as unsaved work", async () => {
+    serve(liveFunnel);
+    const { user } = renderEditor();
+    await screen.findByText("Live · rev #3");
+
+    await user.click(screen.getByRole("button", { name: "Steps" }));
+    await user.click(await screen.findByRole("button", { name: "Actions for Extra offer" }));
+    expect((await screen.findAllByRole("menuitem")).map((item) => item.textContent)).toEqual(["Open the page", "Rename", "Duplicate", "Delete"]);
+    await user.click(screen.getByRole("menuitem", { name: "Duplicate" }));
+
+    expect(await screen.findByRole("button", { name: "Actions for Extra offer (copy)" })).toBeInTheDocument();
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent("Unsaved changes");
+    // Nothing is sent until Save.
+    expect(api.request.mock.calls.filter(([, init]) => init?.method)).toHaveLength(0);
   });
 
   it(
     "edits a step's page with the section library and saves it with the funnel",
     async () => {
-    serve(liveFunnel);
-    const { user } = renderEditor();
-    await screen.findByText("Live — revision #3");
+      serve(liveFunnel);
+      const { user } = renderEditor();
+      await screen.findByText("Live · rev #3");
 
-    await user.click(screen.getByRole("button", { name: "Page" }));
-    expect(await screen.findByText("Page of “Product page”")).toBeInTheDocument();
+      await user.click(screen.getAllByRole("button", { name: "More" })[0]);
+      await user.click(await screen.findByRole("menuitem", { name: "Edit the step's page" }));
+      expect(await screen.findByText("Page of “Product page”")).toBeInTheDocument();
 
-    const library = screen.getAllByRole("button", { name: /^Divider/ })[0];
-    await user.click(library);
-    await user.click(screen.getByRole("button", { name: /^Save$/ }));
+      await user.click(screen.getByRole("button", { name: "Add section" }));
+      await user.click(await screen.findByTitle("Add FAQ"));
+      await user.click(screen.getByRole("button", { name: /^Save$/ }));
 
-    await waitFor(() =>
-      expect(api.request).toHaveBeenCalledWith(
-        "/workspaces/ws_1/funnels/f1/steps/step_product",
-        expect.objectContaining({ method: "PATCH", body: expect.objectContaining({ builderData: expect.anything() }) })
-      )
-    );
+      await waitFor(() =>
+        expect(api.request).toHaveBeenCalledWith(
+          "/workspaces/ws_1/funnels/f1/steps/step_product",
+          expect.objectContaining({ method: "PATCH", body: expect.objectContaining({ builderData: expect.anything() }) })
+        )
+      );
     },
-    // The block library has grown past this suite's original 5s default —
-    // rendering all of it (plus the "commonly used" row) now regularly takes
-    // 6-9s even in isolation. Not a flake: give this one test real headroom
-    // rather than the whole suite's default.
-    10_000
+    // The whole section library renders here: give this one test real headroom rather than the suite's default.
+    15_000
   );
 
-  it("offers templates on an empty funnel, in Arabic too", async () => {
+  it("offers templates on an empty funnel, in the dashboard's own Arabic", async () => {
     serve(emptyFunnel);
     const { user } = renderEditor("ar");
 
-    expect(await screen.findByText("مسودة — غير منشور")).toBeInTheDocument();
+    expect(await screen.findByText("مسودة")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "ابدأ مسار البيع من قالب" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /منتج بالدفع عند الاستلام مع عرض إضافي بنقرة/ }));
 
-    expect(screen.getByRole("button", { name: "صفحة المنتج" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "عرض إضافي بنقرة" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "إضافة خطوة بعد صفحة المنتج" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "إضافة خطوة بعد عرض إضافي بنقرة" })).toBeInTheDocument();
     // Its upsell still needs an offer before it can go live.
     expect(screen.getByText("لم تختر عرضًا بعد")).toBeInTheDocument();
   });

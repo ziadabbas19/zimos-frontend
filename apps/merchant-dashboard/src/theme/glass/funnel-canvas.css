@@ -1,0 +1,251 @@
+/* The funnel's flow map: the ground, the step cards, the arrows' pills, the link dots,
+   the floating bars and the empty map — pages/funnels/editor/FlowCanvas.tsx and
+   pages/funnels/canvas/*.
+   Part of the liquid-glass layer (../liquid-glass.css): everything here is under the
+   same switch, so with data-glass="off" none of it applies and the map stands on its
+   own solid Tailwind classes (bg-paper-raised, ring-line, the card shadow).
+   Fills, blur and rims come from the --lg-* variables, which turn solid by themselves
+   under prefers-reduced-transparency and forced colours.
+   Blur is kept for what the map passes under: the two floating bars and the step-type
+   menu. Cards and pills are panes in the flow — translucent, no blur — so a map of
+   fifty steps pans at 60fps. */
+:root:not([data-glass="off"]) {
+  /* ---------------------------------------------------------------- *
+   * The ground. The shell's pane shows through; the dot grid is drawn
+   * by the component (it scales with the zoom).
+   * ---------------------------------------------------------------- */
+  .zimos-flow {
+    background-color: color-mix(in srgb, var(--color-paper) 46%, transparent);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * A step card: a small pane, dense enough that its words hold 4.5:1
+   * whatever line or dot lies under it. Selected, it takes the shared
+   * selection ring (the store's colour, 2px) and its glow; a step that
+   * cannot publish keeps a danger hairline.
+   * ---------------------------------------------------------------- */
+  .zimos-flow-card {
+    background-color: color-mix(in srgb, var(--color-paper-raised) 86%, transparent);
+    background-image: var(--lg-sheen);
+    --tw-inset-shadow: var(--lg-rim-line);
+  }
+  .zimos-flow-card:not([data-selected]):not([data-problem]) {
+    --tw-ring-color: var(--lg-edge);
+  }
+  .zimos-flow-card[data-selected] {
+    background-color: color-mix(in srgb, var(--color-paper-raised) 92%, var(--lg-brand-solid));
+    --tw-ring-color: var(--lg-brand-solid);
+    --tw-shadow: var(--lg-brand-glow), var(--shadow-raised);
+  }
+  .zimos-flow-card[data-dragging] {
+    --tw-shadow: var(--shadow-pop);
+  }
+  @media (hover: hover) {
+    .zimos-flow-card:not([data-selected]):not([data-problem]):hover {
+      --tw-ring-color: color-mix(in srgb, var(--lg-brand-solid) 45%, transparent);
+    }
+  }
+  &.dark .zimos-flow-card {
+    background-color: color-mix(in srgb, var(--color-paper-raised) 90%, transparent);
+  }
+  &.dark .zimos-flow-card[data-selected] {
+    background-color: color-mix(in srgb, var(--color-paper-raised) 86%, var(--lg-brand-solid));
+  }
+
+  /* Each card lays out on its own (not "paint": the start badge and the link dots hang over its edge). */
+  .zimos-flow-card {
+    contain: layout style;
+  }
+
+  /* The icon tile: the type's own tint (its Tailwind class), lit along the top edge. */
+  .zimos-flow-card [data-slot="flow-tile"] {
+    background-image: linear-gradient(160deg, rgb(255 255 255 / 0.55) 0%, rgb(255 255 255 / 0) 62%);
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.7),
+      inset 0 0 0 1px color-mix(in srgb, currentColor 16%, transparent);
+  }
+  &.dark .zimos-flow-card [data-slot="flow-tile"] {
+    background-image: linear-gradient(160deg, rgb(255 255 255 / 0.1) 0%, rgb(255 255 255 / 0) 62%);
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.14),
+      inset 0 0 0 1px color-mix(in srgb, currentColor 22%, transparent);
+  }
+
+  /* «البداية»: the main action's fill, small. */
+  .zimos-flow-card [data-slot="flow-entry"],
+  .zimos-flow-starter [data-slot="flow-best"] {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.28);
+  }
+
+  /* The page's picture keeps its own ground; only its edge joins the glass. */
+  .zimos-flow-card [data-slot="step-thumb"] {
+    background-color: color-mix(in srgb, var(--color-paper) 70%, transparent);
+    border-color: var(--lg-edge);
+  }
+
+  /* «افتح الصفحة», lying over the page's picture of the selected card. */
+  .zimos-flow-open {
+    background-color: color-mix(in srgb, var(--color-paper-raised) 88%, var(--lg-brand-solid));
+    color: var(--lg-text-primary);
+    --tw-inset-shadow: var(--lg-rim-line);
+  }
+  @media (hover: hover) {
+    .zimos-flow-open:hover {
+      background-color: var(--lg-brand-solid);
+      background-image: var(--lg-brand-grad);
+      color: var(--lg-on-brand);
+      --tw-inset-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.28);
+    }
+  }
+
+  /* ---------------------------------------------------------------- *
+   * An arrow's pill: the overlay fill without the blur, so the number
+   * reads on any line. Its ring keeps the condition's colour.
+   * ---------------------------------------------------------------- */
+  .zimos-flow-pill {
+    background-color: var(--lg-overlay);
+    --tw-inset-shadow: var(--lg-rim-line);
+  }
+  .zimos-flow-pill[data-condition="always"],
+  .zimos-flow-pill[data-condition="clicked_through"] {
+    --tw-ring-color: var(--lg-edge);
+  }
+  .zimos-flow-pill[data-active] {
+    --tw-shadow: var(--shadow-raised);
+  }
+
+  /* The small "+" (on a pill, at a card's corner): a lit well; pressed or hovered, the store's colour. */
+  .zimos-flow-plus {
+    background-color: var(--lg-control);
+    box-shadow:
+      var(--lg-rim-line),
+      0 0 0 1px var(--lg-edge);
+  }
+  @media (hover: hover) {
+    .zimos-flow-plus:hover {
+      background-color: var(--lg-brand-solid);
+      background-image: var(--lg-brand-grad);
+      color: var(--lg-on-brand);
+      box-shadow:
+        inset 0 1px 0 0 rgb(255 255 255 / 0.28),
+        var(--lg-brand-glow);
+    }
+  }
+  .zimos-flow-plus:active {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+  }
+
+  /* A link dot, and the name beside it. */
+  .zimos-flow-dot {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-paper-raised) 80%, transparent);
+  }
+  [data-slot="flow-dot-label"] {
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.5),
+      0 1px 2px 0 rgb(15 23 42 / 0.08);
+  }
+  &.dark [data-slot="flow-dot-label"] {
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.1);
+  }
+
+  /* The A/B chip on a card's top edge: opaque enough to cover the card's rim behind it. */
+  .zimos-flow-ab {
+    --tw-inset-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.45);
+    --tw-shadow: 0 2px 6px -2px rgb(15 23 42 / 0.18);
+    box-shadow: var(--tw-inset-shadow), 0 0 0 1px var(--tw-ring-color, var(--lg-edge)), var(--tw-shadow);
+  }
+  &.dark .zimos-flow-ab {
+    --tw-inset-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.12);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * The floating bars (period and legend; zoom, fit, tidy): the map
+   * passes under them, so they are frosted.
+   * ---------------------------------------------------------------- */
+  /* Not blurred: the map scrolls under these on every pan and drag frame, and re-blurring it each frame is what
+     made the map stutter on a slow phone. A nearly solid pane reads the same over a dotted ground. */
+  .zimos-flow-bar {
+    background-color: color-mix(in srgb, var(--color-paper-raised) 94%, transparent);
+    --tw-ring-color: var(--lg-edge);
+    --tw-inset-shadow: var(--lg-rim-line);
+  }
+  @media (hover: hover) {
+    .zimos-flow-tool:hover:not(:disabled) {
+      background-color: var(--lg-control-lit);
+    }
+  }
+  /* The period: a quiet well inside the bar, not a second bordered field. */
+  .zimos-flow-bar .zimos-flow-period {
+    border-color: transparent;
+    background-color: var(--lg-control);
+    box-shadow: var(--lg-rim-line);
+  }
+
+  /* "Add which step?" at a spot on the map, and the list a link dot opens. */
+  .zimos-flow-menu {
+    background-color: var(--lg-overlay);
+    -webkit-backdrop-filter: var(--lg-blur-overlay);
+    backdrop-filter: var(--lg-blur-overlay);
+    --tw-ring-color: var(--lg-edge);
+    --tw-inset-shadow: var(--lg-rim-line);
+  }
+  /* It opens like a menu: a short fade out of a slightly smaller pane (the class's transitions cover the rest). */
+  .zimos-flow-menu {
+    animation: funnel-canvas-menu-in var(--dur-fade) var(--ease-out) backwards;
+  }
+
+  /* ---------------------------------------------------------------- *
+   * The empty map: each starter is a pane; the one the main button
+   * applies wears the store's colour on its edge. Hover lifts it 2px.
+   * ---------------------------------------------------------------- */
+  .zimos-flow-starter {
+    background-color: var(--lg-fill);
+    background-image: var(--lg-sheen);
+    --tw-ring-color: var(--lg-edge);
+    --tw-inset-shadow: var(--lg-rim-line);
+    --tw-shadow: var(--shadow-card);
+    box-shadow: var(--tw-inset-shadow), 0 0 0 1px var(--tw-ring-color), var(--tw-shadow);
+  }
+  .zimos-flow-starter[data-first] {
+    --tw-ring-color: color-mix(in srgb, var(--lg-brand-solid) 55%, transparent);
+  }
+  @media (hover: hover) {
+    .zimos-flow-starter:hover:not(:active) {
+      translate: 0 -2px;
+      --tw-ring-color: color-mix(in srgb, var(--lg-brand-solid) 55%, transparent);
+      --tw-shadow: var(--shadow-raised);
+    }
+  }
+  /* The step chips inside a starter: small lit wells. */
+  .zimos-flow-starter [data-slot="step-chain"] > li:not([aria-hidden]) {
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.5),
+      0 0 0 1px var(--tw-ring-color, var(--lg-edge));
+  }
+  &.dark .zimos-flow-starter [data-slot="step-chain"] > li:not([aria-hidden]) {
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.1),
+      0 0 0 1px var(--tw-ring-color, var(--lg-edge));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .zimos-flow-menu {
+      animation: none;
+    }
+    .zimos-flow-starter:hover:not(:active) {
+      translate: none;
+    }
+  }
+}
+
+@keyframes funnel-canvas-menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}

@@ -1,11 +1,12 @@
 import { useState, type PointerEvent as ReactPointerEvent } from "react";
+import { IconPlus } from "@/components/icons";
 import { cn } from "@store-builder/ui";
 import type { PageElement, PageTree } from "@store-builder/api-client";
-import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
+import { fmt, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
 import { tempId, type UiEdge, type UiEdgeCondition, type UiFunnel, type UiStep } from "./funnelAdapter";
 
 /**
- * Link points on a funnel map card (SPEC §9.2): every way out of the step's
+ * Link points on a funnel map card: every way out of the step's
  * page — each button that moves the shopper on, the order form, an offer's
  * "Yes" and "No" — is a dot on the card's edge. Dragging from a dot to
  * another card draws that path; pressing it (or Enter) lists the steps to
@@ -17,13 +18,14 @@ import { tempId, type UiEdge, type UiEdgeCondition, type UiFunnel, type UiStep }
 const STRINGS = {
   en: {
     order: "Order placed",
-    yes: "Yes, add it",
-    no: "No, thanks",
+    yes: "Yes",
+    no: "No",
     next: "Continue",
     link: "Link “{label}” to another step",
     linkTo: "“{label}” goes to…",
     linked: "goes to {name}",
     newStep: "A new step…",
+    close: "Close",
   },
   ar: {
     order: "تم الطلب",
@@ -34,6 +36,7 @@ const STRINGS = {
     linkTo: "«{label}» يروح على…",
     linked: "بيروح على {name}",
     newStep: "خطوة جديدة…",
+    close: "إغلاق",
   },
 } satisfies Messages;
 
@@ -106,7 +109,21 @@ export function linkPoint(f: UiFunnel, fromKey: string, toKey: string, point: Li
 
 export type LinkDrag = { fromKey: string; point: LinkPoint; x1: number; y1: number; x2: number; y2: number };
 
-/** A card's dots, on its end edge. Drag one to a card, or press it to pick a step. */
+/** A dot's colour says which way out it is: yes green, no amber, the order in the store's colour. */
+const DOT_TONE: Record<UiEdgeCondition, { dot: string; chip: string }> = {
+  accepted_offer: { dot: "border-success text-success", chip: "bg-success-soft text-success" },
+  declined_offer: { dot: "border-accent text-accent", chip: "bg-accent-soft text-accent-dark" },
+  completed_checkout: { dot: "border-primary text-primary", chip: "bg-primary-soft text-primary-dark dark:text-primary" },
+  clicked_through: { dot: "border-ink text-ink", chip: "bg-paper-raised text-ink ring-1 ring-line" },
+  always: { dot: "border-ink-soft text-ink-soft", chip: "bg-paper-raised text-ink-soft ring-1 ring-line" },
+};
+
+/**
+ * A card's dots, on its end edge. Drag one to a card, or press it to pick a
+ * step. An offer's two answers are always named beside their dots; the other
+ * ways out are named while they lead nowhere yet, or when `showLabels` is on
+ * (the card is selected).
+ */
 export function LinkPoints({
   step,
   steps,
@@ -116,6 +133,8 @@ export function LinkPoints({
   onDrag,
   onDrop,
   onPick,
+  showLabels = false,
+  zoom = 1,
 }: {
   step: UiStep;
   steps: UiStep[];
@@ -125,8 +144,13 @@ export function LinkPoints({
   onDrag: (drag: LinkDrag | null) => void;
   onDrop: (drag: LinkDrag) => void;
   onPick: (point: LinkPoint, toKey: string | null) => void;
+  /** Name every dot, not only an offer's answers and the dots that lead nowhere. Default false. */
+  showLabels?: boolean;
+  /** The map's zoom: the list a dot opens is drawn at its real size whatever the zoom. Default 1. */
+  zoom?: number;
 }) {
   const t = useT(STRINGS);
+  const { dir } = useLocale();
   const [open, setOpen] = useState<string | null>(null);
   const [drag, setDrag] = useState<LinkDrag | null>(null);
   const points = linkPointsOf(step, t);
@@ -148,12 +172,17 @@ export function LinkPoints({
   };
   const end = (e: ReactPointerEvent<HTMLButtonElement>, point: LinkPoint) => {
     if (!drag) return;
-    e.currentTarget.releasePointerCapture(e.pointerId);
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
     const moved = Math.abs(drag.x2 - drag.x1) + Math.abs(drag.y2 - drag.y1) > 8;
     setDrag(null);
     onDrag(null);
     if (moved) onDrop(drag);
     else setOpen((o) => (o === point.id ? null : point.id));
+  };
+  const cancel = () => {
+    if (!drag) return;
+    setDrag(null);
+    onDrag(null);
   };
 
   return (
@@ -162,8 +191,22 @@ export function LinkPoints({
         const edge = edges.find((e) => e.fromStepKey === step.key && pointOfEdge([point], e) === 0);
         const target = edge ? steps.find((s) => s.key === edge.toStepKey) : undefined;
         const label = fmt(t.link, { label: point.label });
+        const tone = DOT_TONE[point.condition];
+        const isAnswer = point.condition === "accepted_offer" || point.condition === "declined_offer";
+        const named = isAnswer || showLabels || !target;
         return (
-          <div key={point.id} className="absolute z-[4]" style={{ left: step.x + cardWidth - 6, top: step.y + pointY(index) - 6 }}>
+          <div
+            key={point.id}
+            data-flow-item=""
+            className={cn("absolute", open === point.id ? "z-30" : "z-[4]")}
+            style={{ left: step.x + cardWidth - 7, top: step.y + pointY(index) - 7 }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape" && open === point.id) {
+                e.stopPropagation();
+                setOpen(null);
+              }
+            }}
+          >
             <button
               type="button"
               aria-label={label}
@@ -172,57 +215,72 @@ export function LinkPoints({
               onPointerDown={(e) => start(e, point, index)}
               onPointerMove={move}
               onPointerUp={(e) => end(e, point)}
+              onPointerCancel={cancel}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
+                  e.stopPropagation();
                   setOpen((o) => (o === point.id ? null : point.id));
                 }
               }}
+              data-linked={target ? "" : undefined}
+              // The dot is small; the pressable area around it is wider than it is tall, so five stacked dots never overlap.
               className={cn(
-                "block size-3 cursor-crosshair rounded-full border-2 bg-paper-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-                target ? "border-primary" : "border-ink-soft"
+                "zimos-flow-dot relative block size-3.5 cursor-crosshair touch-none rounded-full border-2 before:absolute before:-inset-x-4 before:-inset-y-1 before:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                tone.dot,
+                target ? "bg-current" : "bg-paper-raised"
               )}
             />
-            <span className="pointer-events-none absolute end-4 top-1/2 max-w-24 -translate-y-1/2 truncate rounded bg-paper-raised/90 px-1 text-[10px] leading-4 text-ink-soft" dir="auto">
-              {point.label}
-            </span>
+            {named && (
+              <span
+                data-slot="flow-dot-label"
+                className={cn("pointer-events-none absolute start-5 top-1/2 max-w-24 -translate-y-1/2 truncate rounded-full px-1.5 text-[10.5px] font-medium leading-4 whitespace-nowrap", tone.chip)}
+              >
+                <bdi>{point.label}</bdi>
+              </span>
+            )}
             {open === point.id && (
-              <div className="absolute start-5 top-0 z-30 w-48 overflow-hidden rounded-xl border border-line bg-paper-raised text-sm shadow-lg">
-                <p className="border-b border-line px-3 py-1.5 text-xs font-semibold text-ink-soft" dir="auto">
-                  {fmt(t.linkTo, { label: point.label })}
-                </p>
-                <ul className="max-h-48 overflow-y-auto py-1">
-                  {steps
-                    .filter((s) => s.key !== step.key)
-                    .map((s) => (
-                      <li key={s.key}>
+              <>
+                <button type="button" aria-label={t.close} tabIndex={-1} className="fixed inset-0 z-20 cursor-default" onClick={() => setOpen(null)} />
+                <div className="absolute start-6 top-0 z-30" style={{ transform: `scale(${1 / zoom})`, transformOrigin: "0 0" }}>
+                  <div dir={dir} data-slot="flow-menu" className="zimos-flow-menu w-56 overflow-hidden rounded-2xl bg-paper-raised text-sm text-ink shadow-[var(--shadow-pop)] ring-1 ring-line">
+                    <p className="border-b border-line px-3 py-2 text-xs font-semibold text-ink-soft">
+                      <bdi>{fmt(t.linkTo, { label: point.label })}</bdi>
+                    </p>
+                    <ul className="max-h-56 overflow-y-auto overscroll-contain p-1">
+                      {steps
+                        .filter((s) => s.key !== step.key)
+                        .map((s) => (
+                          <li key={s.key}>
+                            <button
+                              type="button"
+                              className="flex min-h-9 w-full cursor-pointer items-center rounded-lg px-2.5 text-start hover:bg-paper-sunken focus-visible:bg-paper-sunken focus-visible:outline-none pointer-coarse:min-h-11"
+                              onClick={() => {
+                                setOpen(null);
+                                onPick(point, s.key);
+                              }}
+                            >
+                              <bdi className="truncate">{s.name}</bdi>
+                            </button>
+                          </li>
+                        ))}
+                      <li>
                         <button
                           type="button"
-                          className="block w-full px-3 py-1.5 text-start hover:bg-paper"
-                          dir="auto"
+                          className="flex min-h-9 w-full cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-start font-medium text-primary hover:bg-primary-soft focus-visible:bg-primary-soft focus-visible:outline-none pointer-coarse:min-h-11"
                           onClick={() => {
                             setOpen(null);
-                            onPick(point, s.key);
+                            onPick(point, null);
                           }}
                         >
-                          {s.name}
+                          <IconPlus className="size-4 shrink-0" aria-hidden />
+                          {t.newStep}
                         </button>
                       </li>
-                    ))}
-                  <li>
-                    <button
-                      type="button"
-                      className="block w-full px-3 py-1.5 text-start text-primary hover:bg-paper"
-                      onClick={() => {
-                        setOpen(null);
-                        onPick(point, null);
-                      }}
-                    >
-                      {t.newStep}
-                    </button>
-                  </li>
-                </ul>
-              </div>
+                    </ul>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         );

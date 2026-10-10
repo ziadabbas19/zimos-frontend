@@ -1,0 +1,147 @@
+/* The funnel builder: flow map, step cards, arrows — pages/funnels/*.
+   Part of the liquid-glass layer (../liquid-glass.css): everything here is under the
+   same switch, so with data-glass="off" none of it applies and the component stands
+   on its own solid Tailwind classes. Fills, blur and rims come from the --lg-* variables. */
+:root:not([data-glass="off"]) {
+  /* [shell] --------------------------------------------------------- *
+   * The funnel editor's frame (pages/funnels/FunnelEditorPage.tsx and
+   * editor/EditorHeader.tsx). Its bar, side panes, bottom bar and the
+   * failed-save strip wear the store editor's slots — editor-toolbar,
+   * editor-panel, editor-dock, editor-alert — so glass/editor.css
+   * already gives them the same material: one editor in the product.
+   * Only what the funnel adds is here. Everything lies in the flow
+   * beside the map, so nothing in this block is blurred.
+   * ---------------------------------------------------------------- */
+
+  /* The second row of the bar on a phone: the same pane, joined to the bar above it. */
+  [data-slot="funnel-subbar"] {
+    background-color: var(--lg-overlay);
+    border-color: var(--lg-edge);
+    box-shadow: var(--lg-rim-line), var(--shadow-card);
+  }
+  /* With that row under it, the bar keeps its rim and hands its shadow down. */
+  [data-slot="editor-toolbar"][data-editor="funnel"]:has(+ [data-slot="funnel-subbar"]) {
+    border-bottom-color: var(--lg-hairline);
+    box-shadow: var(--lg-rim-line);
+  }
+
+  /* The map's ground while it waits for its cards: flat and quiet, like the store editor's stage. */
+  [data-slot="funnel-stage"] {
+    background-color: var(--color-paper-sunken);
+    background-image: none;
+  }
+  [data-slot="funnel-ghost"] {
+    background-color: var(--lg-fill);
+    --tw-ring-color: var(--lg-edge);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge), var(--shadow-card);
+  }
+
+  /* The bar's chips: small lit panes, tinted by what they say. The words keep their token colours. */
+  [data-slot="funnel-status"],
+  [data-slot="funnel-readiness"] {
+    box-shadow: var(--lg-rim-line), inset 0 0 0 1px var(--lg-edge);
+  }
+  [data-slot="funnel-status"][data-status="draft"] {
+    background-color: var(--lg-control);
+  }
+  [data-slot="funnel-status"][data-status="published"],
+  [data-slot="funnel-readiness"][data-ready] {
+    background-color: color-mix(in srgb, var(--color-success) 13%, var(--lg-control-lit));
+  }
+  [data-slot="funnel-status"][data-status="paused"] {
+    background-color: color-mix(in srgb, var(--color-accent) 16%, var(--lg-control-lit));
+  }
+  [data-slot="funnel-readiness"]:not([data-ready]) {
+    background-color: color-mix(in srgb, var(--color-danger) 12%, var(--lg-control-lit));
+  }
+  /* A live funnel's dot wears a soft halo; nothing moves. */
+  [data-slot="funnel-status"][data-status="published"] > span:first-child {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-success) 22%, transparent);
+  }
+  [data-slot="funnel-notes-count"] {
+    background-color: var(--lg-control-lit);
+    box-shadow: var(--lg-rim-line);
+  }
+  /* «اتغيّر ومتحفظش»: the amber dot is lit. */
+  [data-slot="funnel-save-state"][data-state="dirty"] > span:first-child {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 24%, transparent);
+  }
+
+  /* The draft found on the server: a tinted strip in the flow, dropping in under the bar. */
+  [data-slot="funnel-draft"] {
+    background-color: color-mix(in srgb, var(--color-accent) 13%, var(--lg-overlay));
+    border-color: var(--lg-edge);
+    box-shadow: var(--lg-rim-line);
+    animation: funnel-drop var(--dur-move) var(--ease-spring) both;
+  }
+
+  /* "Before you publish": each entry is a small pane in the flow; one that blocks a publish has a red edge. */
+  [data-slot="funnel-issue"] {
+    background-color: var(--lg-fill);
+    --tw-ring-color: var(--lg-edge);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge);
+  }
+  [data-slot="funnel-issue"][data-severity="fatal"] {
+    box-shadow: var(--lg-rim-line), 0 0 0 1px color-mix(in srgb, var(--color-danger) 38%, transparent);
+  }
+  [data-slot="funnel-issue"] [data-slot="button"][data-variant="outline"]:not(:disabled),
+  [data-slot="funnel-revisions"] [data-slot="button"][data-variant="outline"]:not(:disabled) {
+    background-color: var(--lg-control-lit);
+    border-color: var(--lg-edge);
+    box-shadow: var(--lg-rim-line), var(--shadow-card);
+  }
+  [data-slot="funnel-server-issues"] {
+    border-color: var(--lg-hairline);
+  }
+
+  /* Published revisions: the live one is a tinted row. */
+  [data-slot="funnel-revisions"] li[data-live] {
+    background-color: color-mix(in srgb, var(--color-success) 10%, transparent);
+  }
+  @media (hover: hover) {
+    [data-slot="funnel-revisions"] li:not([data-live]):hover,
+    [data-slot="funnel-add-list"] button:hover {
+      background-color: color-mix(in srgb, var(--color-ink) 6%, transparent);
+    }
+  }
+  &.dark [data-slot="funnel-revisions"] li:not([data-live]):hover,
+  &.dark [data-slot="funnel-add-list"] button:hover {
+    background-color: rgb(255 255 255 / 0.08);
+  }
+  /* The step types to add: each glyph sits in a small bead of glass. */
+  [data-slot="funnel-add-list"] button > span:first-child {
+    box-shadow: var(--lg-rim-line);
+  }
+
+  /* The phone's bottom bar: the selected step's button is a lit bead, so it reads as "this one". */
+  [data-slot="editor-dock"] [data-active] > span:first-child {
+    background-color: var(--lg-control-lit);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge);
+  }
+  /* The collapsed steps pane: a 48px rail of the same pane. */
+  [data-slot="editor-panel"][data-rail] {
+    box-shadow: var(--lg-rim-line);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-slot="funnel-draft"] {
+      animation: none;
+    }
+  }
+}
+
+/* [shell] keyframes */
+/* The details pane arriving from the end edge (FunnelEditorPage names it in a class, so it moves with
+   the glass off too; --pane-x is 1rem, mirrored in RTL by the class beside it). */
+@keyframes funnel-pane-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--pane-x, 1rem));
+  }
+}
+@keyframes funnel-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
