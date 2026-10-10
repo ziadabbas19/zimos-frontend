@@ -57,6 +57,14 @@ describe("a slide of the picture slider", () => {
     expect(screen.getByLabelText("Text width (px)")).toBeInTheDocument();
   });
 
+  it("offers nothing of the hero media while its switch is off", () => {
+    const keys = slideFields().map((field) => field.key);
+    for (const key of ["sideMobile", "verticalMobile", "overlay", "overlayMobile", "video"]) expect(keys).not.toContain(key);
+    open();
+    expect(screen.queryByLabelText("Text sits at, on a phone")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Veil over the picture (%)")).not.toBeInTheDocument();
+  });
+
   it("keeps every value inside what the server accepts", () => {
     const fields = slideFields();
     const colour = fields.find((field) => field.key === "text");

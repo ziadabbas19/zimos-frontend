@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { StoreLink } from "@/components/StoreRoute";
 import { swipeStep } from "@/lib/swipe";
+import type { HeroSide, HeroVertical } from "./heroLook";
 
 export interface HeroSlide {
   key: string;
@@ -14,8 +15,13 @@ export interface HeroSlide {
   subheading: string;
   buttonLabel: string;
   buttonHref: string | null;
-  side: "start" | "center" | "end";
-  vertical: "top" | "middle" | "bottom";
+  side: HeroSide;
+  vertical: HeroVertical;
+  /** The text's place on a phone, only where it differs from `side` / `vertical` (heroLook.ts). */
+  phoneSide?: HeroSide;
+  phoneVertical?: HeroVertical;
+  /** The veil between the picture and the text, as an opacity for each device; null or absent draws none. */
+  overlay?: { desktop: number; phone: number } | null;
   contentWidth: number;
   text: "dark" | "light";
 }
@@ -120,6 +126,8 @@ export function HeroSlider({
             className={`zs-hero__slide${on ? " is-active" : ""}`}
             data-h={slide.side}
             data-v={slide.vertical}
+            data-hm={slide.phoneSide}
+            data-vm={slide.phoneVertical}
             data-text={slide.text}
             aria-hidden={on ? undefined : true}
             inert={on ? undefined : true}
@@ -140,6 +148,13 @@ export function HeroSlider({
                   draggable={false}
                 />
               </picture>
+              {slide.overlay ? (
+                <span
+                  className="zs-hero__overlay"
+                  aria-hidden
+                  style={{ "--zs-ov": String(slide.overlay.desktop), "--zs-ov-m": String(slide.overlay.phone) } as CSSProperties}
+                />
+              ) : null}
             </div>
             {hasText || (slide.buttonLabel && slide.buttonHref) ? (
               <div className="zs-hero__shell">

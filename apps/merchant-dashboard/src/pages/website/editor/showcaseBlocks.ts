@@ -1,6 +1,8 @@
 import { IconCarousel, IconClick, IconFilm, IconGridDense, IconGridView, IconOrders, IconPanelTop, IconRows, IconShield, IconVideoBlock, type IconComponent } from "@/components/icons";
 import type { PageElementType } from "@store-builder/api-client";
+import { HERO_MEDIA_ENABLED } from "@/lib/features";
 import type { BlockPreset, FieldSpec } from "./blocks";
+import type { ItemSubField } from "./ItemListField";
 
 /**
  * The showcase sections in the editor: what the inspector offers for each of
@@ -67,6 +69,57 @@ const productBand = (limit: number): FieldSpec[] => [
   TONE,
 ];
 
+/** Where a slide's text sits, across and up-and-down: the same three places on a computer and on a phone. */
+const SLIDE_SIDES = [
+  { value: "start", label: "Start", labelAr: "البداية" },
+  { value: "center", label: "Centre", labelAr: "الوسط" },
+  { value: "end", label: "End", labelAr: "النهاية" },
+];
+const SLIDE_HEIGHTS = [
+  { value: "top", label: "Top", labelAr: "فوق" },
+  { value: "middle", label: "Middle", labelAr: "النص" },
+  { value: "bottom", label: "Bottom", labelAr: "تحت" },
+];
+
+/** The first choice of a phone's own setting: it stores nothing, and the store then uses the computer's value. */
+const SAME_AS_COMPUTER = { label: "Same as on a computer", labelAr: "كما على الكمبيوتر" };
+
+/**
+ * A slide's settings behind the HERO_MEDIA switch (lib/features): the text's
+ * place on a phone and the veil over the picture. They are plain props of the
+ * slide (the storefront reads them in showcase/heroLook.ts), so the server
+ * stores them as they are. Off, the editor offers none of them.
+ */
+const HERO_MEDIA_SLIDE_FIELDS: ItemSubField[] = HERO_MEDIA_ENABLED
+  ? [
+      { key: "sideMobile", label: "Text sits at, on a phone", labelAr: "مكان النص على الموبايل", kind: "choice", unset: SAME_AS_COMPUTER, options: SLIDE_SIDES },
+      { key: "verticalMobile", label: "Text height, on a phone", labelAr: "ارتفاع النص على الموبايل", kind: "choice", unset: SAME_AS_COMPUTER, options: SLIDE_HEIGHTS },
+      {
+        key: "overlay",
+        label: "Veil over the picture (%)",
+        labelAr: "طبقة فوق الصورة (%)",
+        kind: "number",
+        min: 0,
+        max: 60,
+        step: 5,
+        startAt: 0,
+        hint: "Makes the text easier to read: dark under light text, light under dark text. Empty or 0 leaves the picture as it is.",
+        hintAr: "تسهّل قراءة النص: داكنة تحت النص الفاتح، وفاتحة تحت النص الداكن. الفراغ أو الصفر يترك الصورة كما هي.",
+      },
+      {
+        key: "overlayMobile",
+        label: "Veil on a phone (%)",
+        labelAr: "الطبقة على الموبايل (%)",
+        kind: "number",
+        min: 0,
+        max: 60,
+        step: 5,
+        hint: "Leave empty to use the same strength as on a computer.",
+        hintAr: "اتركه فارغًا لاستخدام القوة نفسها التي على الكمبيوتر.",
+      },
+    ]
+  : [];
+
 export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
   hero_slider: {
     label: "Picture slider",
@@ -93,22 +146,9 @@ export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
           { key: "buttonLabel", label: "Button text", labelAr: "نص الزرار", kind: "text" },
           { key: "buttonLabelEn", label: "Button text (English)", labelAr: "نص الزرار (إنجليزي)", kind: "text" },
           { key: "buttonHref", label: "Button links to", labelAr: "رابط الزرار", kind: "text", ltr: true },
-          { key: "side", label: "Text sits at", labelAr: "مكان النص", kind: "select", options: [
-          { value: "start", label: "Start", labelAr: "البداية" },
-          { value: "center", label: "Centre", labelAr: "الوسط" },
-          { value: "end", label: "End", labelAr: "النهاية" },
-        ] },
-          {
-            key: "vertical",
-            label: "Text height",
-            labelAr: "ارتفاع النص",
-            kind: "select",
-            options: [
-              { value: "top", label: "Top", labelAr: "فوق" },
-              { value: "middle", label: "Middle", labelAr: "النص" },
-              { value: "bottom", label: "Bottom", labelAr: "تحت" },
-            ],
-          },
+          { key: "side", label: "Text sits at", labelAr: "مكان النص", kind: "select", options: SLIDE_SIDES },
+          { key: "vertical", label: "Text height", labelAr: "ارتفاع النص", kind: "select", options: SLIDE_HEIGHTS },
+          ...HERO_MEDIA_SLIDE_FIELDS,
           {
             key: "text",
             label: "Text colour",

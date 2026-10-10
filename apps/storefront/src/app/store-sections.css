@@ -421,6 +421,30 @@ section[data-zt-section]:has(.zs),
   .zs-hero__wave { height: 36px; }
 }
 
+/* The veil between a slide's picture and its text (heroLook.ts): light under
+   dark text, dark under light text. Drawn only for a slide that asks for one. */
+.zs-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: var(--zs-ov, 0);
+  pointer-events: none;
+}
+.zs-hero__slide[data-text="light"] .zs-hero__overlay {
+  background: #000;
+}
+/* A phone's own veil and its own place for the text; each is set only where it
+   differs from the computer's, so a slide without them keeps the rules above. */
+@media (max-width: 749px) {
+  .zs-hero__overlay { opacity: var(--zs-ov-m, var(--zs-ov, 0)); }
+  .zs-hero__slide[data-vm="top"] .zs-hero__shell { align-items: flex-start; }
+  .zs-hero__slide[data-vm="middle"] .zs-hero__shell { align-items: center; }
+  .zs-hero__slide[data-vm="bottom"] .zs-hero__shell { align-items: flex-end; }
+  .zs-hero__slide[data-hm="start"] .zs-hero__shell { justify-content: flex-start; }
+  .zs-hero__slide[data-hm="center"] .zs-hero__shell { justify-content: center; }
+  .zs-hero__slide[data-hm="end"] .zs-hero__shell { justify-content: flex-end; }
+}
+
 /* ------------------------------------------------------- category tiles */
 
 .zs-cats {

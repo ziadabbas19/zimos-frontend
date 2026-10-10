@@ -101,3 +101,15 @@ export const AD_PIXELS_ENABLED = import.meta.env.VITE_AD_PIXELS_ENABLED === "tru
 
 /** Store reports, scheduled reports, and customer segments (RFM). */
 export const STORE_REPORTS_ENABLED = import.meta.env.VITE_STORE_REPORTS_ENABLED === "true";
+
+/*
+ * Our own additions to the website builder. No API switch pairs with this one:
+ * what it writes goes into the page's own props, which the API keeps as they are.
+ */
+
+/**
+ * The picture slider's newer settings in the website editor: where the text
+ * sits on a phone, the veil over the picture, and a background video. Turn on
+ * together with the storefront's NEXT_PUBLIC_HERO_MEDIA_ENABLED, which is what draws them.
+ */
+export const HERO_MEDIA_ENABLED = import.meta.env.VITE_HERO_MEDIA_ENABLED === "true";

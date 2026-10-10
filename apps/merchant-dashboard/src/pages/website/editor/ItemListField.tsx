@@ -38,14 +38,16 @@ export type ItemSubField =
     }
   // A whole number inside a range. Emptied, the key is dropped and the store's own value applies.
   | { key: string; label: string; labelAr: string; kind: "number"; min: number; max: number; step?: number; startAt?: number; hint?: string; hintAr?: string }
-  // One of a few values, always one of them: `fallback` is what shows (and what the store draws) while nothing is stored.
+  // One of a few values. With `fallback` it is always one of them: the fallback shows (and is what the store draws)
+  // while nothing is stored. With `unset` a first choice stores nothing at all — "same as…" — and picking it drops the key.
   | {
       key: string;
       label: string;
       labelAr: string;
       kind: "choice";
       options: Array<{ value: string; label: string; labelAr: string }>;
-      fallback: string;
+      fallback?: string;
+      unset?: { label: string; labelAr: string };
       hint?: string;
       hintAr?: string;
     };
@@ -154,14 +156,18 @@ export function ItemListField({
     }
     if (field.kind === "choice") {
       const stored = str(item[field.key]);
+      const known = field.options.some((option) => option.value === stored);
+      const options = field.options.map((option) => ({ value: option.value, label: ar ? option.labelAr : option.label }));
+      // "" is the choice that stores nothing; it is never written, the key is dropped instead.
+      if (field.unset) options.unshift({ value: "", label: ar ? field.unset.labelAr : field.unset.label });
       return (
         <ChoiceField
           key={field.key}
           label={name}
           hint={ar ? field.hintAr : field.hint}
-          value={field.options.some((option) => option.value === stored) ? stored : field.fallback}
-          options={field.options.map((option) => ({ value: option.value, label: ar ? option.labelAr : option.label }))}
-          onChange={(v) => patch(i, field.key, v)}
+          value={known ? stored : field.unset ? "" : (field.fallback ?? field.options[0]?.value ?? "")}
+          options={options}
+          onChange={(v) => patch(i, field.key, v === "" ? undefined : v)}
         />
       );
     }
