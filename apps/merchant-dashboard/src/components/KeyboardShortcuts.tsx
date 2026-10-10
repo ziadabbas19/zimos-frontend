@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useGuardedLeave } from "@/lib/useUnsavedGuard";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { findNavItem, isNavItemVisible } from "@/lib/navigation";
 import { useT, type Messages } from "@/i18n/LocaleContext";
@@ -90,8 +91,9 @@ export function KeyboardShortcuts() {
   const role = currentWorkspace?.role;
   const [open, setOpen] = useState(false);
   // The handler reads the latest role and dialog state without re-subscribing.
-  const state = useRef({ role, open });
-  state.current = { role, open };
+  const leave = useGuardedLeave();
+  const state = useRef({ role, open, leave });
+  state.current = { role, open, leave };
 
   useEffect(() => {
     let waitingForSecondKey = false;
@@ -100,7 +102,8 @@ export function KeyboardShortcuts() {
     const go = (to: string) => {
       const item = findNavItem(to);
       if (item && !isNavItemVisible(item, state.current.role)) return;
-      navigate(to);
+      // Unsaved changes on the page: asks before going.
+      state.current.leave(() => navigate(to));
     };
 
     const onKey = (e: KeyboardEvent) => {

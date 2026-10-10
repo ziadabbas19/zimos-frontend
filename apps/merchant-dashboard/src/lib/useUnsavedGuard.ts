@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useInRouterContext, useLocation, useNavigate } from "react-router-dom";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useT, type Messages } from "@/i18n/LocaleContext";
 
@@ -40,17 +41,34 @@ const UnsavedGuardContext = createContext<UnsavedGuardValue | null>(null);
 
 /**
  * One place that knows whether anything on the page is unsaved and asks
- * before it would be lost. A tabbed page wraps its tab area in this, and asks
- * `confirmLeave()` before switching tabs; the forms inside report through
- * `useUnsavedGuard().setDirty`. While anything is dirty the browser's own
- * reload / close prompt is armed here, once, instead of in every form.
+ * before it would be lost. The forms report through `useReportDirty` /
+ * `useUnsavedGuard().setDirty`.
  *
- * In-app links to another route are not caught: the app is a plain
- * BrowserRouter with no route blockers, so leaving the page is only guarded
- * by the browser prompt on reload and close.
+ * The app mounts ONE of these around its routes (App.tsx), and a page may
+ * wrap itself in its own to ask before one of its tabs is switched
+ * (`confirmLeave()`). A guard inside another reports what it holds to the one
+ * above, so the outermost always knows about every unsaved form on screen;
+ * that outermost guard is the one that covers leaving the page:
+ *
+ *  - a reload or a closed tab: the browser's own prompt, armed while anything
+ *    is unsaved;
+ *  - a link to another page of the app (the side menu, the dock, a breadcrumb,
+ *    a link in the page): the app is a plain BrowserRouter with no route
+ *    blockers, so the click is caught before React Router sees it, the
+ *    question is asked, and the link is followed only on "leave". A link that
+ *    opens a new tab, a link to another site, a modified click and a link that
+ *    stays on this page (its tabs, its filters) pass untouched.
+ *
+ * The shell's ways out that are not links (search, keyboard shortcuts, a
+ * notification) go through `useGuardedLeave()`. The browser's Back button is
+ * not caught.
  */
 export function UnsavedGuardProvider({ children }: { children: ReactNode }) {
   const t = useT(STRINGS);
+  const parent = useContext(UnsavedGuardContext);
+  const outermost = parent === null;
+  const inRouter = useInRouterContext();
+  const self = useId();
   const [dirtySources, setDirtySources] = useState<ReadonlySet<string>>(() => new Set<string>());
   const dirty = dirtySources.size > 0;
   // The open question, if there is one. Calling it answers it and closes the dialog.
@@ -66,6 +84,17 @@ export function UnsavedGuardProvider({ children }: { children: ReactNode }) {
       return next;
     });
   }, []);
+
+  // A guard inside another: what it holds counts for the one above, and goes with it.
+  const reportUp = parent?.setDirty;
+  useEffect(() => {
+    reportUp?.(self, dirty);
+  }, [reportUp, self, dirty]);
+  useEffect(() => {
+    return () => {
+      reportUp?.(self, false);
+    };
+  }, [reportUp, self]);
 
   const confirmLeave = useCallback(() => {
     if (!dirty) return Promise.resolve(true);
@@ -89,14 +118,14 @@ export function UnsavedGuardProvider({ children }: { children: ReactNode }) {
 
   // Reload / close. The browser shows its own wording; the string is what older ones require.
   useEffect(() => {
-    if (!dirty) return;
+    if (!dirty || !outermost) return;
     const warn = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       e.returnValue = "";
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+  }, [dirty, outermost]);
 
   const value = useMemo<UnsavedGuardValue>(
     () => ({ dirty, setDirty, confirmLeave }),
@@ -104,11 +133,13 @@ export function UnsavedGuardProvider({ children }: { children: ReactNode }) {
   );
 
   // A .ts file, hence createElement: the same tree as
-  // <Provider value>{children}<ConfirmDialog … /></Provider>.
+  // <Provider value>{children}<LinkGuard … /><ConfirmDialog … /></Provider>.
   return createElement(
     UnsavedGuardContext.Provider,
     { value },
     children,
+    // Only while there is something to lose, so a page with nothing unsaved has no listener at all.
+    outermost && inRouter && dirty ? createElement(LinkGuard, { confirmLeave }) : null,
     createElement(ConfirmDialog, {
       open: pending !== null,
       title: t.title,
@@ -120,6 +151,54 @@ export function UnsavedGuardProvider({ children }: { children: ReactNode }) {
       onConfirm: () => pending?.(true),
     })
   );
+}
+
+/**
+ * Catches a plain click on a link that would take the merchant to another
+ * page of the app, asks, and follows the link only on "leave". Listens on the
+ * document in the capture phase, so it also covers the links outside the page
+ * (the side menu, the dock) and runs before any handler of the link itself.
+ */
+function LinkGuard({ confirmLeave }: { confirmLeave: () => Promise<boolean> }): null {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  // The listener is attached once and reaches the newest values through this.
+  const latest = useRef({ confirmLeave, navigate, pathname });
+  useEffect(() => {
+    latest.current = { confirmLeave, navigate, pathname };
+  });
+
+  useEffect(() => {
+    function onClick(event: MouseEvent) {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest("a[href]");
+      if (!(link instanceof HTMLAnchorElement)) return;
+      if ((link.target && link.target !== "_self") || link.hasAttribute("download")) return;
+      let url: URL;
+      try {
+        url = new URL(link.href, window.location.href);
+      } catch {
+        return;
+      }
+      if (url.origin !== window.location.origin) return;
+      // The same page: one of its tabs or filters, or a place on it.
+      if (url.pathname === latest.current.pathname) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      const to = `${url.pathname}${url.search}${url.hash}`;
+      void latest.current.confirmLeave().then((leave) => {
+        if (leave) latest.current.navigate(to);
+      });
+    }
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, []);
+
+  return null;
 }
 
 function alwaysLeave() {
@@ -163,4 +242,28 @@ export function useReportDirty(dirty: boolean): void {
   useEffect(() => {
     setDirty(dirty);
   }, [dirty, setDirty]);
+}
+
+/**
+ * For a way out of the page that is not a link (the search window, a keyboard
+ * shortcut, a notification, the store switcher): `leave(go)` runs `go` at once
+ * when nothing is unsaved, and otherwise asks first and runs it only on
+ * "leave". Used from the shell, which sits under the app's own guard.
+ */
+export function useGuardedLeave(): (go: () => void) => void {
+  const ctx = useContext(UnsavedGuardContext);
+  const dirty = ctx?.dirty ?? false;
+  const confirmLeave = ctx?.confirmLeave;
+  return useCallback(
+    (go: () => void) => {
+      if (!dirty || !confirmLeave) {
+        go();
+        return;
+      }
+      void confirmLeave().then((leave) => {
+        if (leave) go();
+      });
+    },
+    [dirty, confirmLeave]
+  );
 }

@@ -242,3 +242,22 @@ export async function lostOrdersSendWhatsapp(
 ): Promise<{ message: { id: string; conversationId: string; status: string }; recoveryStatus: LostOrderRecoveryStatus }> {
   return client.request(`${base(workspaceId)}/${sessionId}/whatsapp`, { method: "POST", body: options });
 }
+
+/**
+ * How long a checkout may sit quiet before it counts as lost:
+ * `settings.fraud_rules.abandoned_after_minutes`, 5–1440 minutes; null puts
+ * back the default (15). Needs workspace.manage (403 otherwise). Returns the
+ * minutes now in force.
+ */
+export async function lostOrdersSaveAbandonAfter(client: ApiClient, workspaceId: string, minutes: number | null): Promise<number> {
+  const body = await client.request<{
+    workspace?: { settings?: { fraud_rules?: { abandoned_after_minutes?: unknown } } };
+    settings?: { fraud_rules?: { abandoned_after_minutes?: unknown } };
+  }>(`/workspaces/${workspaceId}`, { method: "PATCH", body: { settings: { fraud_rules: { abandoned_after_minutes: minutes } } } });
+  const stored = (body.workspace?.settings ?? body.settings)?.fraud_rules?.abandoned_after_minutes;
+  return typeof stored === "number" ? stored : LOST_ORDER_DEFAULT_ABANDON_MINUTES;
+}
+
+/** The backend's default (lostOrderService.js) and the bounds it accepts. */
+export const LOST_ORDER_DEFAULT_ABANDON_MINUTES = 15;
+export const LOST_ORDER_ABANDON_MINUTES_RANGE = { min: 5, max: 1440 } as const;

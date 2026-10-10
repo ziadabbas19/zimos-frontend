@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ApiError, type Workspace } from "@store-builder/api-client";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { useErrorMessage } from "@/lib/errorMessages";
+import { useReportDirty } from "@/lib/useUnsavedGuard";
 import { useToast } from "@/components/Toast";
 
 /**
@@ -35,6 +36,8 @@ export function useSettingsEditor<T>(
 
   const editable = EDITOR_ROLES.has(currentWorkspace?.role ?? "") && !forbidden;
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
+  // Leaving the page with an edit that is not saved asks first (lib/useUnsavedGuard).
+  useReportDirty(editable && dirty);
 
   async function save() {
     setSaving(true);

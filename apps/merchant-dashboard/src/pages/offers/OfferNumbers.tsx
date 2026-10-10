@@ -2,7 +2,7 @@ import { offersStatsGet, type OfferStat, type OfferStats } from "@store-builder/
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatPercentValue } from "@/lib/format";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 
@@ -30,7 +30,7 @@ export function useOfferStats(days = 30): OfferStats | null {
 }
 
 /**
- * One offer's line of numbers (SPEC §10.11): views, acceptances (with the
+ * One offer's line of numbers: views, acceptances (with the
  * rate when it has views) and the revenue it added. Nothing until loaded.
  */
 export function OfferNumbers({ stat, days = 30 }: { stat: OfferStat | null | undefined; days?: number }) {
@@ -38,16 +38,25 @@ export function OfferNumbers({ stat, days = 30 }: { stat: OfferStat | null | und
   const { currentWorkspace } = useWorkspace();
   if (!stat) return null;
   const currency = (currentWorkspace as { defaultCurrency?: string } | null)?.defaultCurrency ?? "EGP";
-  const rate = stat.impressions > 0 ? `${((stat.accepted / stat.impressions) * 100).toFixed(1)}%` : null;
+  const rate = stat.impressions > 0 ? formatPercentValue(stat.accepted / stat.impressions) : null;
   return (
-    <p className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-ink-soft">
-      <span>{fmt(t.views, { n: stat.impressions.toLocaleString() })}</span>
+    <p data-slot="offer-numbers" className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs leading-5 text-ink-soft tabular-nums">
+      <span>{fmt(t.views, { n: stat.impressions })}</span>
       <span>
-        {fmt(t.accepted, { n: stat.accepted.toLocaleString() })}
-        {rate && <> {fmt(t.rate, { rate })}</>}
+        {fmt(t.accepted, { n: stat.accepted })}
+        {rate && (
+          <>
+            {" "}
+            <bdi dir="ltr">{fmt(t.rate, { rate })}</bdi>
+          </>
+        )}
       </span>
-      {stat.revenue !== null && <span className="font-medium text-ink">{fmt(t.revenue, { amount: formatMoney(stat.revenue, currency) })}</span>}
-      <span>· {fmt(t.period, { days })}</span>
+      {stat.revenue !== null && (
+        <span className="font-medium text-ink">
+          <bdi>{fmt(t.revenue, { amount: formatMoney(stat.revenue, currency) })}</bdi>
+        </span>
+      )}
+      <span>{fmt(t.period, { days })}</span>
     </p>
   );
 }

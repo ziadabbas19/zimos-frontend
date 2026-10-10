@@ -1,7 +1,6 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { CheckCircle2, CircleAlert, Copy } from "lucide-react";
-import { Alert, Button, Card, Input } from "@store-builder/ui";
+import { useId, useState } from "react";
+import { IconChecklist, IconError, IconSuccess } from "@/components/icons";
+import { Button, Input, cn } from "@store-builder/ui";
 import {
   FEED_CHANNELS,
   feedsChecklist,
@@ -16,21 +15,32 @@ import { apiBaseUrl, apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
 import { useErrorMessage } from "@/lib/errorMessages";
+import { useReportDirty } from "@/lib/useUnsavedGuard";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
-import { PageHeader } from "@/components/PageHeader";
+import { AccordionSection } from "@/components/Accordion";
 import { DataState } from "@/components/DataState";
-import { TextField } from "@/components/Field";
+import { SaveBar } from "@/components/SaveBar";
+import { SettingsGroup, SettingsRow, SettingsSwitch } from "@/components/settings";
+import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
+import { ViewLink } from "@/components/ViewLink";
+import { FormProblem, OfferPage, TOUCH_FIELD } from "./OfferKit";
 
 /**
- * The product feed (SPEC §7.8): one fixed link per ad channel that always
+ * The product feed: one fixed link per ad channel that always
  * holds the store's current catalog, and the Google Merchant checklist —
- * what approval needs from the store's contact details and policies.
+ * what approval needs from the store's contact details and policies. The
+ * store-wide settings are one group of rows, the channels' links another, the
+ * checklist a section that folds, and one save bar holds whatever changed.
  */
 
 const STRINGS = {
   en: {
-    back: "Offers",
+    stateOn: "Published",
+    stateOff: "Off",
+    checklistLeft: "{count} left before Google accepts the feed",
+    checklistCount: "{count} left",
+    checklistDone: "Ready",
     title: "Product feed",
     description: "A link for each ad platform's catalog. It updates by itself when you change products or prices.",
     enabled: "Publish the product feed",
@@ -72,7 +82,11 @@ const STRINGS = {
     fix_catalog: "Products",
   },
   ar: {
-    back: "العروض",
+    stateOn: "منشور",
+    stateOff: "متوقف",
+    checklistLeft: "بقي {count} قبل أن يقبل Google الملف",
+    checklistCount: "بقي {count}",
+    checklistDone: "جاهز",
     title: "ملف المنتجات",
     description: "رابط لكتالوج كل منصة إعلانات. يتحدّث تلقائيًا عند تغيير المنتجات أو الأسعار.",
     enabled: "نشر ملف المنتجات",
@@ -100,7 +114,7 @@ const STRINGS = {
     checklistReady: "متجرك فيه ما يطلبه Google Merchant.",
     checklistMissing: "أكمل هذه قبل إرسال الملف إلى Google Merchant:",
     check_store_info_enabled: "معلومات المتجر ظاهرة في المتجر",
-    check_email: "إيميل للتواصل",
+    check_email: "بريد إلكتروني للتواصل",
     check_phone: "رقم هاتف للتواصل",
     check_address: "عنوان النشاط",
     check_shipping_policy: "سياسة الشحن",
@@ -123,14 +137,19 @@ function absoluteApiBase(): string {
   return /^https?:\/\//i.test(apiBaseUrl) ? apiBaseUrl : `${window.location.origin}${apiBaseUrl}`;
 }
 
+/** A draft as one string: two drafts that save the same thing compare equal. */
+const fingerprint = (feed: FeedSettings) => JSON.stringify(feed);
+
 export function ProductFeedPage() {
   const t = useT(STRINGS);
   const workspaceId = useWorkspaceId();
   const toast = useToast();
   const errorMessage = useErrorMessage();
+  const ids = useId();
   const [state, setState] = useState<FeedState | null>(null);
   const [draft, setDraft] = useState<FeedSettings | null>(null);
   const [checklist, setChecklist] = useState<FeedChecklist | null>(null);
+  const [checklistOpen, setChecklistOpen] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -142,7 +161,13 @@ export function ProductFeedPage() {
     return feed;
   }, [workspaceId]);
 
-  const set = <K extends keyof FeedSettings>(key: K, value: FeedSettings[K]) => setDraft((current) => (current ? { ...current, [key]: value } : current));
+  const set = <K extends keyof FeedSettings>(key: K, value: FeedSettings[K]) => {
+    setDraft((current) => (current ? { ...current, [key]: value } : current));
+    setError(null);
+  };
+
+  const dirty = Boolean(draft && state && fingerprint(draft) !== fingerprint(state.feed));
+  useReportDirty(dirty);
 
   async function save() {
     if (!draft) return;
@@ -161,6 +186,8 @@ export function ProductFeedPage() {
     }
   }
 
+  const missing = (checklist?.checks ?? []).filter((check) => !check.ok);
+
   async function copy(path: string) {
     try {
       await navigator.clipboard.writeText(`${absoluteApiBase()}${path}`);
@@ -170,112 +197,144 @@ export function ProductFeedPage() {
     }
   }
 
-  const missing = (checklist?.checks ?? []).filter((check) => !check.ok);
-
   return (
-    <div className="max-w-3xl space-y-4">
-      <PageHeader title={t.title} description={t.description} back={{ to: "/offers", label: t.back }} />
+    <OfferPage
+      title={t.title}
+      description={t.description}
+      titleBadge={
+        state ? (
+          <StatusBadge
+            value={state.feed.enabled ? "active" : "disabled"}
+            tone={state.feed.enabled ? "success" : "neutral"}
+            text={state.feed.enabled ? t.stateOn : t.stateOff}
+          />
+        ) : undefined
+      }
+    >
       <DataState loading={data.loading} error={data.error} onRetry={() => data.refresh()}>
         {draft && state && (
-          <>
-            <Card className="space-y-4 p-5">
-              <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-medium text-ink">
-                <input type="checkbox" className="size-4 accent-primary" checked={draft.enabled} disabled={busy} onChange={(e) => set("enabled", e.target.checked)} />
-                {t.enabled}
-              </label>
-              <p className="text-sm text-ink-soft">
-                {state.itemCount > 0 ? fmt(t.count, { items: state.itemCount, products: state.productCount }) : t.countEmpty}
-              </p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <TextField label={t.brand} hint={t.brandHint} maxLength={100} value={draft.brand} disabled={busy} onChange={(e) => set("brand", e.target.value)} />
-                <TextField
-                  label={t.category}
-                  hint={t.categoryHint}
-                  dir="ltr"
-                  maxLength={250}
-                  value={draft.googleProductCategory}
-                  disabled={busy}
-                  onChange={(e) => set("googleProductCategory", e.target.value)}
-                />
-              </div>
-              <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-ink">
-                <input
-                  type="checkbox"
-                  className="size-4 accent-primary"
-                  checked={draft.excludeOutOfStock}
-                  disabled={busy}
-                  onChange={(e) => set("excludeOutOfStock", e.target.checked)}
-                />
-                {t.excludeOut}
-              </label>
-              {error && <Alert variant="danger">{error}</Alert>}
-              <div className="flex justify-end">
-                <Button type="button" disabled={busy} onClick={() => void save()}>
-                  {busy ? t.saving : t.save}
-                </Button>
-              </div>
-            </Card>
+          <div className="space-y-5">
+            <SettingsGroup>
+              <SettingsSwitch
+                checked={draft.enabled}
+                onChange={(next) => set("enabled", next)}
+                label={t.enabled}
+                hint={state.itemCount > 0 ? fmt(t.count, { items: state.itemCount, products: state.productCount }) : t.countEmpty}
+                disabled={busy}
+              />
+              <SettingsRow
+                label={t.brand}
+                hint={t.brandHint}
+                htmlFor={`${ids}-brand`}
+                control={
+                  <Input
+                    id={`${ids}-brand`}
+                    maxLength={100}
+                    value={draft.brand}
+                    disabled={busy}
+                    onChange={(e) => set("brand", e.target.value)}
+                    className={TOUCH_FIELD}
+                  />
+                }
+              />
+              <SettingsRow
+                label={t.category}
+                hint={t.categoryHint}
+                htmlFor={`${ids}-category`}
+                control={
+                  <Input
+                    id={`${ids}-category`}
+                    dir="ltr"
+                    maxLength={250}
+                    value={draft.googleProductCategory}
+                    disabled={busy}
+                    onChange={(e) => set("googleProductCategory", e.target.value)}
+                    className={TOUCH_FIELD}
+                  />
+                }
+              />
+              <SettingsSwitch checked={draft.excludeOutOfStock} onChange={(next) => set("excludeOutOfStock", next)} label={t.excludeOut} disabled={busy} />
+            </SettingsGroup>
 
-            <Card className="space-y-3 p-5">
-              <div>
-                <h2 className="font-medium text-ink">{t.links}</h2>
-                <p className="mt-0.5 text-sm text-ink-soft">{state.feed.enabled ? t.linksHint : t.linksOff}</p>
-              </div>
-              <ul className="space-y-3">
-                {FEED_CHANNELS.map((channel) => (
-                  <li key={channel} className="space-y-1.5">
-                    <p className="text-sm font-medium text-ink">{t[`channel_${channel}`]}</p>
+            {/* One fixed link per ad channel; the links work once the feed is published and saved. */}
+            <SettingsGroup title={t.links} description={state.feed.enabled ? t.linksHint : t.linksOff}>
+              {FEED_CHANNELS.map((channel) => (
+                <SettingsRow
+                  key={channel}
+                  stacked
+                  label={t[`channel_${channel}`]}
+                  htmlFor={`${ids}-link-${channel}`}
+                  control={
                     <div className="flex flex-wrap gap-2">
                       <Input
-                        aria-label={t[`channel_${channel}`]}
+                        id={`${ids}-link-${channel}`}
                         dir="ltr"
                         readOnly
                         value={`${absoluteApiBase()}${state.links[channel].xml}`}
                         onFocus={(e) => e.target.select()}
-                        className="min-w-0 flex-1"
+                        className={cn(TOUCH_FIELD, "min-w-0 flex-1")}
                       />
-                      <Button type="button" variant="outline" className="shrink-0" disabled={!state.feed.enabled} onClick={() => void copy(state.links[channel].xml)}>
-                        <Copy className="size-4" aria-hidden />
+                      <Button type="button" variant="outline" className="min-h-11 shrink-0" disabled={!state.feed.enabled} onClick={() => void copy(state.links[channel].xml)}>
                         {t.copyXml}
                       </Button>
-                      <Button type="button" variant="ghost" className="shrink-0" disabled={!state.feed.enabled} onClick={() => void copy(state.links[channel].csv)}>
+                      <Button type="button" variant="ghost" className="min-h-11 shrink-0" disabled={!state.feed.enabled} onClick={() => void copy(state.links[channel].csv)}>
                         {t.copyCsv}
                       </Button>
                     </div>
-                  </li>
-                ))}
-              </ul>
-            </Card>
+                  }
+                />
+              ))}
+            </SettingsGroup>
 
             {checklist && (
-              <Card className="space-y-3 p-5">
-                <h2 className="font-medium text-ink">{t.checklist}</h2>
-                <Alert variant={checklist.ready ? "success" : "info"}>{checklist.ready ? t.checklistReady : t.checklistMissing}</Alert>
-                <ul className="divide-y divide-line">
+              <AccordionSection
+                title={t.checklist}
+                icon={IconChecklist}
+                summary={checklist.ready ? t.checklistReady : fmt(t.checklistLeft, { count: missing.length })}
+                badge={
+                  <StatusBadge
+                    value={checklist.ready ? "active" : "pending"}
+                    tone={checklist.ready ? "success" : "warning"}
+                    text={checklist.ready ? t.checklistDone : fmt(t.checklistCount, { count: missing.length })}
+                  />
+                }
+                // Open by itself while something is missing; the merchant's own fold wins after that.
+                open={checklistOpen ?? !checklist.ready}
+                onOpenChange={setChecklistOpen}
+                flush
+              >
+                <p className="px-4 pt-3 text-[13px] leading-5 text-ink-soft">{checklist.ready ? t.checklistReady : t.checklistMissing}</p>
+                <ul className="mt-1 divide-y divide-line px-4 pb-2">
                   {(checklist.ready ? checklist.checks : [...missing, ...checklist.checks.filter((c) => c.ok)]).map((check) => {
                     const route = FIX_ROUTE[check.fixAt];
                     return (
-                      <li key={check.key} className="flex items-center gap-3 py-2.5 text-sm">
+                      <li key={check.key} className="flex min-h-11 items-center gap-3 py-1.5 text-sm">
                         {check.ok ? (
-                          <CheckCircle2 className="size-5 shrink-0 text-success" aria-hidden />
+                          <IconSuccess className="size-5 shrink-0 text-success" aria-hidden />
                         ) : (
-                          <CircleAlert className="size-5 shrink-0 text-accent-dark" aria-hidden />
+                          <IconError className="size-5 shrink-0 text-accent-dark" aria-hidden />
                         )}
-                        <span className={check.ok ? "text-ink-soft" : "font-medium text-ink"}>{t[`check_${check.key as FeedCheckKey}`]}</span>
+                        <span className={check.ok ? "min-w-0 flex-1 text-ink-soft" : "min-w-0 flex-1 font-medium text-ink"}>{t[`check_${check.key as FeedCheckKey}`]}</span>
                         {!check.ok && route && (
-                          <Link to={route} className="ms-auto shrink-0 text-sm font-medium text-primary hover:underline">
+                          <ViewLink
+                            to={route}
+                            className="inline-flex min-h-11 shrink-0 items-center rounded-full px-2 text-sm font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
+                          >
                             {t[`fix_${check.fixAt}` as "fix_store_info" | "fix_legal" | "fix_catalog"]}
-                          </Link>
+                          </ViewLink>
                         )}
                       </li>
                     );
                   })}
                 </ul>
-              </Card>
+              </AccordionSection>
             )}
-          </>
+
+            <FormProblem>{error}</FormProblem>
+            <SaveBar dirty={dirty} saving={busy} onSave={() => void save()} onDiscard={() => setDraft(state.feed)} />
+          </div>
         )}
       </DataState>
-    </div>
+    </OfferPage>
   );
 }

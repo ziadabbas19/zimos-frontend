@@ -1,5 +1,6 @@
 import { Alert, Button } from "@store-builder/ui";
 import { useT, type Messages } from "@/i18n/LocaleContext";
+import { useReportDirty } from "@/lib/useUnsavedGuard";
 
 const STRINGS = {
   en: {
@@ -47,6 +48,8 @@ export function SettingsFormFooter({
   onReset: () => void;
 }) {
   const t = useT(STRINGS);
+  // A tab that keeps its own draft is covered here: leaving with it unsaved asks first.
+  useReportDirty(editable && dirty);
   return (
     <div className="space-y-3">
       {error && <Alert variant="danger">{error}</Alert>}

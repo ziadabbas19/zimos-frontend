@@ -1,768 +1,432 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { Download, MessageCircle, Phone, ShoppingBag, Trash2 } from "lucide-react";
-import { Alert, Button, Card } from "@store-builder/ui";
-import {
-  LOST_ORDER_REASONS,
-  LOST_ORDER_RECOVERY_STATUSES,
-  LOST_ORDER_TABS,
-  apiFieldProblems,
-  isInvalidCursorError,
-  lostOrdersConvert,
-  lostOrdersDelete,
-  lostOrdersExport,
-  lostOrdersList,
-  lostOrdersStats,
-  lostOrdersRevealPhone,
-  lostOrdersSendWhatsapp,
-  lostOrdersUpdate,
-  type LostOrder,
-  type LostOrderReason,
-  type LostOrderRecoveryStatus,
-  type LostOrderStats,
-  type LostOrderTab,
-} from "@store-builder/api-client";
+import { useDeferredValue, useMemo, useState, type ReactNode } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Button, cn } from "@store-builder/ui";
+import { LOST_ORDER_TABS, lostOrdersStats, type LostOrderStats, type LostOrderTab } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
-import { useAsync } from "@/lib/useAsync";
-import { useCursorList } from "@/lib/useCursorList";
-import { useErrorMessage } from "@/lib/errorMessages";
-import { formatDateTime, formatMinorMoney, formatMoney } from "@/lib/format";
-import { storeUrl } from "@/lib/storeAddress";
+import { useCachedAsync } from "@/lib/useCachedAsync";
+import { countOf } from "@/lib/plural";
 import { useT, fmt, type Messages } from "@/i18n/LocaleContext";
-import { PageHeader } from "@/components/PageHeader";
-import { DataState } from "@/components/DataState";
-import { DataTable, type Column } from "@/components/DataTable";
-import { EmptyState } from "@/components/EmptyState";
-import { Field, TextField } from "@/components/Field";
-import { FilterTabs } from "@/components/FilterTabs";
-import { KpiCard } from "@/components/KpiCard";
-import { LoadMore } from "@/components/LoadMore";
-import { Modal } from "@/components/Modal";
-import { Select } from "@/components/Select";
-import { StatusBadge } from "@/components/StatusBadge";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { useToast } from "@/components/Toast";
-import { useWorkspace } from "@/context/WorkspaceContext";
-import { LostOrderProductFilter, LostOrdersBulkBar, useLostOrderSelection } from "./LostOrdersBulk";
-
-/**
- * System role keys carrying orders.manage, which every action here needs
- * (the list itself only needs orders.view). The dashboard sees only the role
- * key, so a custom role with the permission doesn't get the buttons; one
- * without it that slips through gets the 403 toast.
- */
-const MANAGE_ROLES: ReadonlySet<string> = new Set(["owner", "workspace_manager", "order_operator"]);
+import { DataState } from "@/components/DataState";
+import { EmptyState } from "@/components/EmptyState";
+import { IconChecklist, IconLostOrders, IconRefresh, IconSearch, IconWarning } from "@/components/icons";
+import { ChipRow, ListSkeleton, ListToolbar } from "@/components/list";
+import { LoadMore } from "@/components/LoadMore";
+import { PageHeader } from "@/components/PageHeader";
+import { ViewLink } from "@/components/ViewLink";
+import { LostOrderCards } from "./LostOrderCards";
+import { LostOrderConvertModal } from "./LostOrderConvertModal";
+import { LostOrderQuickLook } from "./LostOrderQuickLook";
+import { LOST_ORDER_TIMING_ENABLED } from "@/lib/features";
+import { LostOrderTimingSheet } from "./LostOrderTiming";
+import { LostOrdersBulkBar, LostOrdersSelectHint, useLostOrderProducts, useLostOrderSelection } from "./LostOrdersBulk";
+import {
+  LostOrdersActiveFilters,
+  LostOrdersFilterSheet,
+  NO_FILTERS,
+  countFilters,
+  toLostOrderQuery,
+  type LostOrderFilterState,
+} from "./LostOrdersFilters";
+import { LostOrdersKpis } from "./LostOrdersKpis";
+import { LostOrdersTable } from "./LostOrdersTable";
+import { LostOrdersTools } from "./LostOrdersTools";
+import { useLostOrderLabels } from "./lostOrderLabels";
+import { isTab, matchesSearch, useIsPhone, useLast } from "./lostOrderModel";
+import { useLostOrderActions } from "./useLostOrderActions";
+import { useLostOrdersList } from "./useLostOrdersList";
+import { WhatsappSendConfirm } from "./WhatsappSendConfirm";
 
 const STRINGS = {
   en: {
     title: "Lost orders",
-    description: "Every checkout that did not become an order: left unfinished, refused by a rule, or never verified. Win them back or turn them into orders.",
-    exportCsv: "Export",
-    exporting: "Exporting…",
-    exported: "{n} lost orders exported.",
-    statLost: "Lost this month",
-    statRate: "Lost per 100 visits",
-    statRateNone: "No visits recorded yet",
-    statRecovered: "Recovered this month",
-    statRecoveredHint: "Orders won back: {n}",
+    description:
+      "Every checkout that did not become an order: left unfinished, refused by a rule, or never verified. Win them back or turn them into orders.",
+    searchPlaceholder: "Name, phone or product",
+    searchLabel: "Search the lost orders shown",
+    searchHint: "Searching what is loaded so far. Load more to look further back.",
     tabsLabel: "Lost orders by review state",
-    tab_all: "All",
-    tab_under_review: "Under review",
-    tab_completed: "Completed",
-    tab_recovered: "Recovered",
-    filterReason: "Reason",
-    anyReason: "Any reason",
-    filterSource: "Source",
-    anySource: "Store and funnels",
-    source_store: "Store",
-    source_funnel: "Funnel",
-    from: "From",
-    to: "To",
-    colCustomer: "Customer",
-    colReason: "Reason",
-    colProducts: "Products",
-    colTotal: "Total",
-    colRecovery: "Recovery",
-    colDate: "Last activity",
-    colActions: "Actions",
-    unnamed: "No name yet",
-    reason_incomplete: "Left the checkout",
-    reason_invalid_data: "Incorrect data",
-    reason_integrity_check: "Failed the bot check",
-    reason_otp_unverified: "Phone not verified",
-    reason_outside_country: "Outside allowed countries",
-    reason_vpn: "VPN or server address",
-    reason_blocked: "Blocked customer",
-    reason_limit_exceeded: "Over a limit",
-    reason_payment_failed: "Payment failed",
-    status_awaiting_otp: "Waiting for the code",
-    status_in_progress: "Still at checkout",
-    recovery_not_contacted: "Not contacted",
-    recovery_contacted: "Contacted",
-    recovery_recovered: "Recovered",
-    recovery_lost: "Gave up",
-    recoveryLabel: "Recovery status",
-    whatsapp: "WhatsApp",
-    call: "Call",
-    convert: "Convert to order",
-    remove: "Delete",
-    markReviewed: "Mark completed",
-    reopen: "Back to review",
-    orderPlaced: "Order {order}",
-    more: "+{n} more",
-    whatsappMessage: "Hello {name}, you left your order unfinished. You can complete it here: {link}",
-    whatsappSent: "Recovery message sent from your WhatsApp number.",
-    whatsappFromStore: "Send the recovery message from your WhatsApp number",
-    saved: "Saved.",
+    select: "Select orders",
+    selectStop: "Stop selecting",
+    show: "Show {count}",
+    showMore: "Show {count} and more",
+    showNone: "No matches",
+    showLoading: "Loading…",
     emptyTitle: "No lost orders",
-    emptyDescription: "Checkouts that are left unfinished or refused will show up here.",
-    emptyFiltered: "Nothing matches these filters.",
+    emptyDescription: "A checkout that is left unfinished, or refused, shows up here so you can win it back.",
+    emptyAction: "See the orders",
+    emptyFiltered: "Nothing matches these filters",
+    emptyFilteredHint: "Try fewer filters, or another tab.",
+    clearFilters: "Clear the filters",
+    emptyTab: "Nothing in this tab",
+    emptyTabHint: "The other tabs may have lost orders waiting.",
+    showAll: "Show all",
+    emptySearch: "Nothing shown matches “{q}”",
+    emptySearchHint: "The search looks through what is loaded so far.",
+    clearSearch: "Clear the search",
+    refreshFailed: "Couldn't refresh the list. What you see may be out of date.",
+    moreFailed: "Couldn't load more.",
+    retry: "Try again",
     removeTitle: "Delete this lost order?",
-    removeDescription: "It disappears from the list and its recovery link stops working.",
+    removeTitleNamed: "Delete the lost order of {name}?",
+    removeDescription: "It disappears from the list and its recovery link stops working. It cannot be brought back.",
+    remove: "Delete",
     removing: "Deleting…",
     cancel: "Cancel",
-    removed: "Lost order deleted.",
-    convertTitle: "Convert to an order",
-    convertDescription: "An order is created from what the shopper typed. Complete or correct it first.",
-    name: "Customer name",
-    phone: "Phone number",
-    governorate: "Governorate",
-    city: "City",
-    address: "Address",
-    required: "Fill this in.",
-    placeOrder: "Create order",
-    placing: "Creating…",
-    converted: "Order {order} created.",
-    abandonedAfter: "A checkout counts as left after {n} minutes without activity.",
   },
   ar: {
     title: "الطلبات المفقودة",
-    description: "كل طلب لم يكتمل: تُرك دون إتمام، أو رُفض بقاعدة، أو لم يُؤكَّد رقمه. استرجعها أو حوّلها إلى أوردرات.",
-    exportCsv: "تصدير",
-    exporting: "جارٍ التصدير…",
-    exported: "تم تصدير {n} طلب مفقود.",
-    statLost: "المفقود هذا الشهر",
-    statRate: "المفقود لكل 100 زيارة",
-    statRateNone: "لا توجد زيارات مسجلة بعد",
-    statRecovered: "المسترجَع هذا الشهر",
-    statRecoveredHint: "أوردرات تم استرجاعها: {n}",
+    description: "كل طلب لم يكتمل: تُرك دون إتمام، أو رُفض بقاعدة، أو لم يُؤكَّد رقمه. استرجعها أو حوّلها إلى طلبات.",
+    searchPlaceholder: "اسم أو رقم أو منتج",
+    searchLabel: "البحث في الطلبات المفقودة المعروضة",
+    searchHint: "البحث يشمل ما تم تحميله فقط. اضغط «عرض المزيد» للبحث في الأقدم.",
     tabsLabel: "الطلبات المفقودة حسب حالة المراجعة",
-    tab_all: "الكل",
-    tab_under_review: "تحت المراجعة",
-    tab_completed: "مكتملة",
-    tab_recovered: "مسترجَعة",
-    filterReason: "السبب",
-    anyReason: "أي سبب",
-    filterSource: "المصدر",
-    anySource: "المتجر والفانلز",
-    source_store: "المتجر",
-    source_funnel: "فانل",
-    from: "من",
-    to: "إلى",
-    colCustomer: "العميل",
-    colReason: "السبب",
-    colProducts: "المنتجات",
-    colTotal: "الإجمالي",
-    colRecovery: "الاسترجاع",
-    colDate: "آخر نشاط",
-    colActions: "إجراءات",
-    unnamed: "بدون اسم بعد",
-    reason_incomplete: "ترك صفحة الطلب",
-    reason_invalid_data: "بيانات غير صحيحة",
-    reason_integrity_check: "فشل فحص البوتات",
-    reason_otp_unverified: "الرقم لم يُؤكَّد",
-    reason_outside_country: "خارج الدول المسموح بها",
-    reason_vpn: "عنوان VPN أو سيرفر",
-    reason_blocked: "عميل محظور",
-    reason_limit_exceeded: "تجاوز حدًّا",
-    reason_payment_failed: "فشل الدفع",
-    status_awaiting_otp: "بانتظار الكود",
-    status_in_progress: "ما زال في صفحة الطلب",
-    recovery_not_contacted: "لم يتم التواصل",
-    recovery_contacted: "تم التواصل",
-    recovery_recovered: "تم الاسترجاع",
-    recovery_lost: "لن يكمل",
-    recoveryLabel: "حالة الاسترجاع",
-    whatsapp: "واتساب",
-    call: "اتصال",
-    convert: "تحويل إلى أوردر",
-    remove: "حذف",
-    markReviewed: "تمت المراجعة",
-    reopen: "إعادة للمراجعة",
-    orderPlaced: "الأوردر {order}",
-    more: "+{n} أخرى",
-    whatsappMessage: "أهلًا {name}، طلبك لسه ما اكتملش. تقدر تكمّله من هنا: {link}",
-    whatsappSent: "اتبعتت رسالة الاسترجاع من رقم واتساب بتاعك.",
-    whatsappFromStore: "ابعت رسالة الاسترجاع من رقم واتساب بتاعك",
-    saved: "تم الحفظ.",
+    select: "تحديد طلبات",
+    selectStop: "إنهاء التحديد",
+    show: "عرض {count}",
+    showMore: "عرض {count} وأكثر",
+    showNone: "لا توجد نتائج",
+    showLoading: "جارٍ التحميل…",
     emptyTitle: "لا توجد طلبات مفقودة",
-    emptyDescription: "الطلبات التي تُترك دون إتمام أو تُرفض ستظهر هنا.",
-    emptyFiltered: "لا توجد نتائج بهذه التصفية.",
+    emptyDescription: "أي طلب يُترك دون إتمام أو يُرفض يظهر هنا لتتمكن من استرجاعه.",
+    emptyAction: "عرض الطلبات",
+    emptyFiltered: "لا توجد نتائج بهذه التصفية",
+    emptyFilteredHint: "جرّب فلاتر أقل أو تبويبًا آخر.",
+    clearFilters: "مسح الفلاتر",
+    emptyTab: "لا شيء في هذا التبويب",
+    emptyTabHint: "قد توجد طلبات مفقودة تنتظر في التبويبات الأخرى.",
+    showAll: "عرض الكل",
+    emptySearch: "لا شيء من المعروض يطابق «{q}»",
+    emptySearchHint: "البحث يشمل ما تم تحميله فقط.",
+    clearSearch: "مسح البحث",
+    refreshFailed: "تعذّر تحديث القائمة. ما تراه قد يكون قديمًا.",
+    moreFailed: "تعذّر تحميل المزيد.",
+    retry: "إعادة المحاولة",
     removeTitle: "حذف هذا الطلب المفقود؟",
-    removeDescription: "سيختفي من القائمة ويتوقف رابط الاسترجاع الخاص به.",
+    removeTitleNamed: "حذف الطلب المفقود الخاص بـ {name}؟",
+    removeDescription: "سيختفي من القائمة ويتوقف رابط الاسترجاع الخاص به، ولا يمكن استعادته.",
+    remove: "حذف",
     removing: "جارٍ الحذف…",
     cancel: "إلغاء",
-    removed: "تم حذف الطلب المفقود.",
-    convertTitle: "تحويل إلى أوردر",
-    convertDescription: "يُنشأ أوردر مما كتبه المشتري. أكمل البيانات أو صحّحها أولًا.",
-    name: "اسم العميل",
-    phone: "رقم الهاتف",
-    governorate: "المحافظة",
-    city: "المدينة",
-    address: "العنوان",
-    required: "املأ هذا الحقل.",
-    placeOrder: "إنشاء الأوردر",
-    placing: "جارٍ الإنشاء…",
-    converted: "تم إنشاء الأوردر {order}.",
-    abandonedAfter: "يُعتبر الطلب متروكًا بعد {n} دقيقة بدون نشاط.",
   },
 } satisfies Messages;
 
-const RECOVERY_TONE: Record<LostOrderRecoveryStatus, "neutral" | "info" | "success" | "warning"> = {
-  not_contacted: "warning",
-  contacted: "info",
-  recovered: "success",
-  lost: "neutral",
-};
+// The «حدّد» toggle at the end of the toolbar: the same pill as a chip (glass/list.css styles `.zimos-chip`
+// once), round, 44px. Phones only — from md the table always has its column of tick boxes.
+const SELECT_TOGGLE =
+  "zimos-chip inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full select-none md:hidden " +
+  "transition-[scale,background-color,color] duration-[var(--dur-fade)] ease-[var(--ease-out)] motion-reduce:transition-none " +
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.97] motion-reduce:active:scale-100";
+const TOGGLE_ON = "bg-primary text-primary-foreground forced-colors:bg-[color:Highlight] forced-colors:text-[color:HighlightText]";
+const TOGGLE_OFF = "bg-paper-raised text-ink ring-1 ring-line hover:bg-paper-sunken";
 
-function isTab(value: unknown): value is LostOrderTab {
-  return typeof value === "string" && (LOST_ORDER_TABS as readonly string[]).includes(value);
-}
-
-/** Digits with the country code, for a wa.me link. Egyptian local numbers get 20. */
-const reachable = (phone: string | null | undefined) => Boolean(phone && (/\d{6,}/.test(phone) || isMasked(phone)));
-/** Phones are masked for roles without customers.reveal_sensitive; the row actions ask for the number (audited). */
-const isMasked = (phone: string | null | undefined) => Boolean(phone && phone.includes("*"));
-
-function whatsappNumber(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  if (digits.startsWith("00")) return digits.slice(2);
-  if (digits.startsWith("0")) return `20${digits.slice(1)}`;
-  return digits;
+/** Something went wrong beside rows that are still on screen: one line and a way to try again. */
+function Notice({ text, retry, onRetry }: { text: string; retry: string; onRetry: () => void }) {
+  return (
+    <div
+      role="alert"
+      data-slot="lost-notice"
+      className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[1.25rem] bg-danger-soft py-1.5 ps-4 pe-1.5 text-sm text-ink"
+    >
+      <span className="flex min-w-0 flex-1 basis-48 items-center gap-2 py-1.5">
+        <IconWarning className="size-4 shrink-0 text-danger" aria-hidden />
+        <span className="min-w-0">{text}</span>
+      </span>
+      <Button type="button" variant="ghost" className="h-auto min-h-9 gap-1.5 rounded-full px-3.5" onClick={onRetry}>
+        <IconRefresh className="size-4" aria-hidden />
+        {retry}
+      </Button>
+    </div>
+  );
 }
 
 /**
  * /abandoned-carts — "Lost orders": every checkout that did not become an
  * order, with why, and the ways to win it back.
+ *
+ * The page composes; each zone is its own file. Top to bottom: the header
+ * with its «أدوات» menu (refresh, export, the abandon-after setting), this
+ * month in three figures, ONE toolbar (search over what is loaded, the
+ * Filters sheet), the four tabs (?tab=), the filters in effect, then the
+ * list — cards on a phone, a glass table from md. A row opens Quick Look;
+ * right-click or a long press opens its menu; ticking rows raises the bulk
+ * bar. What a row can do, and the dialogs, are held by useLostOrderActions.
  */
 export function LostOrdersPage() {
   const t = useT(STRINGS);
+  const labels = useLostOrderLabels();
   const workspaceId = useWorkspaceId();
-  const toast = useToast();
-  const errorMessage = useErrorMessage();
-  const { currentWorkspace } = useWorkspace();
-  const canManage = MANAGE_ROLES.has(currentWorkspace?.role ?? "");
+  const isPhone = useIsPhone();
 
+  // The tab is the one thing in the URL: links, the dock and the home page point at it.
   const [params, setParams] = useSearchParams();
   const rawTab = params.get("tab");
   const tab: LostOrderTab = isTab(rawTab) ? rawTab : "all";
-  const [reason, setReason] = useState<"" | LostOrderReason>("");
-  const [source, setSource] = useState<"" | "store" | "funnel">("");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [productId, setProductId] = useState("");
+  const [filterState, setFilterState] = useState<LostOrderFilterState>(NO_FILTERS);
+  const filters = useMemo(() => toLostOrderQuery(tab, filterState), [tab, filterState]);
+  const activeCount = countFilters(filterState);
 
-  const filters = useMemo(
-    () => ({
-      tab,
-      lostReason: reason || undefined,
-      source: source || undefined,
-      from: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
-      to: to ? new Date(`${to}T23:59:59`).toISOString() : undefined,
-      productId: productId || undefined,
-    }),
-    [tab, reason, source, from, to, productId]
-  );
-  const filtered = Boolean(reason || source || from || to || productId);
-
-  const [abandonedAfter, setAbandonedAfter] = useState<number | null>(null);
-  const list = useCursorList<LostOrder>(
-    async (cursor) => {
-      const page = await lostOrdersList(apiClient, workspaceId, { ...filters, before: cursor });
-      setAbandonedAfter(page.abandonedAfterMinutes);
-      return { items: page.sessions, nextCursor: page.nextCursor };
-    },
-    [workspaceId, filters],
-    { isStaleCursor: (err) => isInvalidCursorError(err, "before") }
-  );
-  const stats = useAsync<LostOrderStats>(() => lostOrdersStats(apiClient, workspaceId), [workspaceId]);
-
-  const [converting, setConverting] = useState<LostOrder | null>(null);
-  const [removing, setRemoving] = useState<LostOrder | null>(null);
-  const [exporting, setExporting] = useState(false);
-
-  function replace(updated: LostOrder) {
-    list.setItems((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-  }
-
-  async function update(session: LostOrder, payload: Parameters<typeof lostOrdersUpdate>[3]) {
-    try {
-      replace(await lostOrdersUpdate(apiClient, workspaceId, session.id, payload));
-      toast.success(t.saved);
-    } catch (err) {
-      toast.error(errorMessage(err));
-    }
-  }
-
-  function recoveryLink(session: LostOrder): string | null {
-    if (!session.recoveryPath || !currentWorkspace?.slug) return null;
-    return `${storeUrl(currentWorkspace.slug)}${session.recoveryPath}`;
-  }
-
-  function whatsappHref(session: LostOrder): string {
-    const link = recoveryLink(session) ?? "";
-    const text = fmt(t.whatsappMessage, { name: session.customerName ?? "", link });
-    return `https://wa.me/${whatsappNumber(session.phone)}?text=${encodeURIComponent(text)}`;
-  }
-
-  // With the store's WhatsApp connected, the row's WhatsApp sends the recovery template from that number (§6.3).
-  const storeWhatsapp = useAsync(
-    () => apiClient.getWhatsappIntegration(workspaceId).then((i) => Boolean(i && "connected" in i && i.connected)).catch(() => false),
+  const list = useLostOrdersList(workspaceId, filters);
+  // This calendar month, whatever the filters say. Remembered for the session, so the strip is there at once on the way back.
+  const stats = useCachedAsync<LostOrderStats>(
+    `lost-orders:stats:${workspaceId}`,
+    () => lostOrdersStats(apiClient, workspaceId),
     [workspaceId]
   );
-  const sendsFromStore = storeWhatsapp.data === true;
+  const refreshStats = () => void stats.refresh({ silent: true });
+  const act = useLostOrderActions({ list, refreshStats });
 
-  async function sendFromStore(session: LostOrder) {
-    try {
-      const res = await lostOrdersSendWhatsapp(apiClient, workspaceId, session.id);
-      replace({ ...session, recoveryStatus: res.recoveryStatus });
-      toast.success(t.whatsappSent);
-    } catch (err) {
-      toast.error(errorMessage(err));
-    }
+  // The search narrows the rows already loaded (the API has no text search). The field never waits:
+  // the list follows a deferred copy of what was typed.
+  const [query, setQuery] = useState("");
+  const typed = useDeferredValue(query).trim();
+  const shown = useMemo(() => (typed ? act.rows.filter((row) => matchesSearch(row, typed)) : act.rows), [act.rows, typed]);
+
+  const selection = useLostOrderSelection(shown);
+  // Phones: the cards show their tick boxes only while «حدّد» is on.
+  const [selecting, setSelecting] = useState(false);
+  const stopSelecting = () => {
+    selection.clear();
+    setSelecting(false);
+  };
+
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  // The products of the filter are read the first time the sheet opens, not with the page.
+  const [filtersSeen, setFiltersSeen] = useState(false);
+  const products = useLostOrderProducts(filtersSeen);
+  const [timingOpen, setTimingOpen] = useState(false);
+  const minutes = list.abandonedAfter ?? stats.data?.abandonedAfterMinutes ?? null;
+
+  function changeTab(next: LostOrderTab) {
+    selection.clear();
+    setParams(
+      (prev) => {
+        const out = new URLSearchParams(prev);
+        if (next === "all") out.delete("tab");
+        else out.set("tab", next);
+        return out;
+      },
+      { replace: true }
+    );
+  }
+  function changeFilters(next: LostOrderFilterState) {
+    selection.clear();
+    setFilterState(next);
+  }
+  function reloadAll() {
+    list.reload();
+    refreshStats();
   }
 
-  /** WhatsApp or call a masked number: the server hands over the one number, and logs it. */
-  async function reach(session: LostOrder, kind: "whatsapp" | "call") {
-    // Opened now, while the click still counts as the shopper's gesture; pointed at WhatsApp once the number is in.
-    const win = kind === "whatsapp" ? window.open("", "_blank") : null;
-    try {
-      const phone = await lostOrdersRevealPhone(apiClient, workspaceId, session.id);
-      if (!phone) {
-        win?.close();
-        return;
-      }
-      if (kind === "call") {
-        window.location.href = `tel:${phone}`;
-        return;
-      }
-      if (win) win.location.href = whatsappHref({ ...session, phone });
-      if (canManage && session.recoveryStatus === "not_contacted") void update(session, { recoveryStatus: "contacted" });
-    } catch (err) {
-      win?.close();
-      toast.error(errorMessage(err));
-    }
-  }
+  const peekRow = act.peek.id ? (act.rows.find((row) => row.id === act.peek.id) ?? null) : null;
+  // The panel keeps its row while it closes, and after the row itself is gone (deleted, converted away).
+  const peekShown = useLast(peekRow);
+  const convertingRow = act.convertingId ? (act.rows.find((row) => row.id === act.convertingId) ?? null) : null;
+  const removingShown = useLast(act.removing);
+  const removingName = removingShown?.customerName?.trim() ?? "";
 
-  async function runExport() {
-    setExporting(true);
-    try {
-      const { csv, count, filename } = await lostOrdersExport(apiClient, workspaceId, filters);
-      const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success(fmt(t.exported, { n: count }));
-    } catch (err) {
-      toast.error(errorMessage(err));
-    } finally {
-      setExporting(false);
-    }
-  }
+  const applyLabel = list.loading
+    ? t.showLoading
+    : shown.length === 0
+      ? t.showNone
+      : fmt(list.hasMore ? t.showMore : t.show, { count: countOf("order", shown.length) });
 
-  async function confirmRemove() {
-    if (!removing) return;
-    try {
-      await lostOrdersDelete(apiClient, workspaceId, removing.id);
-    } catch (err) {
-      throw new Error(errorMessage(err));
-    }
-    const id = removing.id;
-    list.setItems((prev) => prev.filter((s) => s.id !== id));
-    toast.success(t.removed);
-    setRemoving(null);
-    void stats.refresh({ silent: true });
-  }
-
-  const selection = useLostOrderSelection(list.items);
-  const columns: Column<LostOrder>[] = [
-    {
-      key: "customer",
-      header: t.colCustomer,
-      cell: (s) => (
-        <div className="min-w-0">
-          <div className="font-medium text-ink" dir="auto">
-            {s.customerName || t.unnamed}
-          </div>
-          <bdi dir="ltr" className="text-xs text-ink-soft">
-            {s.phone}
-          </bdi>
-          {s.source === "funnel" && <div className="text-xs text-ink-soft">{t.source_funnel}</div>}
-        </div>
-      ),
-    },
-    {
-      key: "reason",
-      header: t.colReason,
-      cell: (s) => (
-        <div className="flex flex-col items-start gap-1">
-          {s.lostReason && (
-            <StatusBadge
-              value={s.lostReason}
-              tone={s.lostReason === "incomplete" ? "neutral" : "warning"}
-              text={t[`reason_${s.lostReason}`]}
-            />
-          )}
-          {s.status === "awaiting_otp" && <StatusBadge value="awaiting_otp" tone="info" text={t.status_awaiting_otp} />}
-          {s.status === "in_progress" && <StatusBadge value="in_progress" tone="info" text={t.status_in_progress} />}
-          {s.convertedOrder && (
-            <Link to={`/orders/${s.convertedOrder.id}`} className="text-xs font-medium text-primary hover:underline">
-              {fmt(t.orderPlaced, { order: `⁦${s.convertedOrder.orderNumber}⁩` })}
-            </Link>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "products",
-      header: t.colProducts,
-      cell: (s) => (
-        <div className="min-w-0 text-ink">
-          {s.items.slice(0, 2).map((item, i) => (
-            <div key={`${item.variantId}-${i}`} className="truncate" dir="auto">
-              {item.productName} <span className="text-ink-soft">× {item.quantity}</span>
-            </div>
-          ))}
-          {s.items.length > 2 && <div className="text-xs text-ink-soft">{fmt(t.more, { n: s.items.length - 2 })}</div>}
-        </div>
-      ),
-    },
-    {
-      key: "total",
-      header: t.colTotal,
-      align: "end",
-      cell: (s) => <span className="font-medium text-ink">{formatMoney(s.subtotalAmount, s.currency)}</span>,
-    },
-    {
-      key: "recovery",
-      header: t.colRecovery,
-      cell: (s) =>
-        canManage && s.status !== "converted" ? (
-          <Select
-            aria-label={t.recoveryLabel}
-            value={s.recoveryStatus}
-            className="h-9 w-auto min-w-36"
-            onChange={(e) => void update(s, { recoveryStatus: e.target.value as LostOrderRecoveryStatus })}
-          >
-            {LOST_ORDER_RECOVERY_STATUSES.map((key) => (
-              <option key={key} value={key}>
-                {t[`recovery_${key}`]}
-              </option>
-            ))}
-          </Select>
-        ) : (
-          <StatusBadge value={s.recoveryStatus} tone={RECOVERY_TONE[s.recoveryStatus]} text={t[`recovery_${s.recoveryStatus}`]} />
-        ),
-    },
-    {
-      key: "date",
-      header: t.colDate,
-      cell: (s) => <time dateTime={s.lastActivityAt} className="text-ink-soft">{formatDateTime(s.lastActivityAt)}</time>,
-    },
-    {
-      key: "actions",
-      header: <span className="sr-only">{t.colActions}</span>,
-      align: "end",
-      cell: (s) => (
-        <div className="flex flex-wrap justify-end gap-1.5">
-          {/* A lost order captured from a name alone has no number to reach. */}
-          {reachable(s.phone) && (
-            <>
-          <a
-            href={whatsappHref(s)}
-            target="_blank"
-            rel="noreferrer"
-            title={sendsFromStore ? t.whatsappFromStore : t.whatsapp}
-            aria-label={sendsFromStore ? t.whatsappFromStore : t.whatsapp}
-            onClick={(e) => {
-              if (sendsFromStore) {
-                e.preventDefault();
-                void sendFromStore(s);
-                return;
-              }
-              if (isMasked(s.phone)) {
-                e.preventDefault();
-                void reach(s, "whatsapp");
-                return;
-              }
-              if (canManage && s.recoveryStatus === "not_contacted") void update(s, { recoveryStatus: "contacted" });
-            }}
-            className="inline-flex size-9 items-center justify-center rounded-md border border-line text-ink hover:border-primary/50 hover:text-primary"
-          >
-            <MessageCircle className="size-4" aria-hidden />
-          </a>
-          <a
-            href={`tel:${s.phone}`}
-            onClick={(e) => {
-              if (!isMasked(s.phone)) return;
-              e.preventDefault();
-              void reach(s, "call");
-            }}
-            title={t.call}
-            aria-label={t.call}
-            className="inline-flex size-9 items-center justify-center rounded-md border border-line text-ink hover:border-primary/50 hover:text-primary"
-          >
-            <Phone className="size-4" aria-hidden />
-          </a>
-            </>
-          )}
-          {canManage && s.status !== "converted" && (
-            <>
-              <Button variant="outline" size="sm" className="min-h-9" onClick={() => setConverting(s)}>
-                <ShoppingBag className="size-4" aria-hidden />
-                {t.convert}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="min-h-9"
-                onClick={() => void update(s, { reviewStatus: s.reviewStatus === "completed" ? "under_review" : "completed" })}
-              >
-                {s.reviewStatus === "completed" ? t.reopen : t.markReviewed}
-              </Button>
-              <Button variant="outline" size="sm" className="min-h-9" title={t.remove} aria-label={t.remove} onClick={() => setRemoving(s)}>
-                <Trash2 className="size-4" aria-hidden />
-              </Button>
-            </>
-          )}
-        </div>
-      ),
-    },
-  ];
-
-  return (
-    <div className="max-w-6xl">
-      <PageHeader
-        title={t.title}
-        description={t.description}
-        actions={
-          <Button variant="outline" className="min-h-10" onClick={() => void runExport()} disabled={exporting}>
-            <Download className="size-4" aria-hidden />
-            {exporting ? t.exporting : t.exportCsv}
+  // Why the list is empty decides what it says and the one way out it offers.
+  let empty: ReactNode;
+  if (act.rows.length > 0) {
+    empty = (
+      <EmptyState
+        icon={<IconSearch aria-hidden />}
+        title={fmt(t.emptySearch, { q: typed })}
+        description={list.hasMore ? t.emptySearchHint : undefined}
+        action={
+          <Button type="button" variant="outline" className="rounded-full px-5" onClick={() => setQuery("")}>
+            {t.clearSearch}
           </Button>
         }
       />
-
-      {stats.data && (
-        <div className="mb-4 grid gap-3 sm:grid-cols-3">
-          <KpiCard label={t.statLost} value={String(stats.data.lost)} />
-          <KpiCard
-            label={t.statRate}
-            value={stats.data.lostRate === null ? "—" : String(stats.data.lostRate)}
-            hint={stats.data.lostRate === null ? t.statRateNone : undefined}
-          />
-          <KpiCard
-            label={t.statRecovered}
-            value={formatMinorMoney(stats.data.recoveredAmount, stats.data.currency)}
-            hint={fmt(t.statRecoveredHint, { n: stats.data.recovered })}
-          />
-        </div>
-      )}
-
-      <FilterTabs
-        label={t.tabsLabel}
-        value={tab}
-        tabs={LOST_ORDER_TABS.map((key) => ({ value: key, label: t[`tab_${key}`] }))}
-        className="mb-3"
-        onChange={(next) =>
-          setParams(
-            (prev) => {
-              const out = new URLSearchParams(prev);
-              if (next === "all") out.delete("tab");
-              else out.set("tab", next);
-              return out;
-            },
-            { replace: true }
-          )
+    );
+  } else if (activeCount > 0) {
+    empty = (
+      <EmptyState
+        icon={<IconLostOrders aria-hidden />}
+        title={t.emptyFiltered}
+        description={t.emptyFilteredHint}
+        action={
+          <Button type="button" variant="outline" className="rounded-full px-5" onClick={() => changeFilters(NO_FILTERS)}>
+            {t.clearFilters}
+          </Button>
         }
       />
+    );
+  } else if (tab !== "all") {
+    empty = (
+      <EmptyState
+        icon={<IconLostOrders aria-hidden />}
+        title={t.emptyTab}
+        description={t.emptyTabHint}
+        action={
+          <Button type="button" variant="outline" className="rounded-full px-5" onClick={() => changeTab("all")}>
+            {t.showAll}
+          </Button>
+        }
+      />
+    );
+  } else {
+    empty = (
+      <EmptyState
+        tone="success"
+        icon={<IconLostOrders aria-hidden />}
+        title={t.emptyTitle}
+        description={t.emptyDescription}
+        action={
+          <ViewLink
+            to="/orders"
+            className="inline-flex items-center rounded-full px-5 text-sm font-semibold text-ink underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            {t.emptyAction}
+          </ViewLink>
+        }
+      />
+    );
+  }
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <LostOrderProductFilter value={productId} onChange={setProductId} />
-        <Field label={t.filterReason}>
-          {(props) => (
-            <Select {...props} value={reason} onChange={(e) => setReason(e.target.value as "" | LostOrderReason)}>
-              <option value="">{t.anyReason}</option>
-              {LOST_ORDER_REASONS.map((key) => (
-                <option key={key} value={key}>
-                  {t[`reason_${key}`]}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-        <Field label={t.filterSource}>
-          {(props) => (
-            <Select {...props} value={source} onChange={(e) => setSource(e.target.value as "" | "store" | "funnel")}>
-              <option value="">{t.anySource}</option>
-              <option value="store">{t.source_store}</option>
-              <option value="funnel">{t.source_funnel}</option>
-            </Select>
-          )}
-        </Field>
-        <TextField label={t.from} type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} />
-        <TextField label={t.to} type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} />
+  return (
+    <div className="max-w-6xl">
+      {/* On a phone the title alone says what the page is: the sentence under it waits for a wider screen. */}
+      <div className="max-sm:[&_h1+p]:hidden">
+        <PageHeader
+          title={t.title}
+          description={t.description}
+          actions={
+            <LostOrdersTools
+              filters={filters}
+              minutes={minutes}
+              refreshing={list.refreshing}
+              onRefresh={reloadAll}
+              onOpenTiming={() => setTimingOpen(true)}
+              onSelect={() => setSelecting(true)}
+            />
+          }
+        />
       </div>
 
-      <LostOrdersBulkBar
-        selection={selection}
-        onDone={() => {
-          list.reload();
-          void stats.refresh({ silent: true });
-        }}
-      />
-      <DataState loading={list.loading} error={list.items.length ? null : list.error} onRetry={list.reload}>
-        <Card className="p-0">
-          <DataTable
-            columns={[selection.column, ...columns]}
-            rows={list.items}
-            rowKey={(s) => s.id}
-            minWidth="68rem"
-            empty={
-              filtered || tab !== "all" ? (
-                <EmptyState title={t.emptyFiltered} />
-              ) : (
-                <EmptyState icon={<ShoppingBag className="size-6" aria-hidden />} title={t.emptyTitle} description={t.emptyDescription} />
-              )
-            }
-          />
-        </Card>
-        <LoadMore hasMore={list.hasMore} loading={list.loadingMore} onClick={list.loadMore} />
-        {abandonedAfter !== null && <p className="mt-3 text-xs text-ink-soft">{fmt(t.abandonedAfter, { n: abandonedAfter })}</p>}
-      </DataState>
+      <LostOrdersKpis stats={stats.loading ? null : stats.data} loading={stats.loading} />
 
-      <ConvertModal
-        session={converting}
-        onClose={() => setConverting(null)}
-        onConverted={(updated, orderNumber) => {
-          replace(updated);
-          setConverting(null);
-          toast.success(fmt(t.converted, { order: `⁦${orderNumber}⁩` }));
-          void stats.refresh({ silent: true });
+      <ListToolbar
+        className="mb-3"
+        search={{
+          value: query,
+          onChange: setQuery,
+          placeholder: t.searchPlaceholder,
+          label: t.searchLabel,
+          hint: typed && list.hasMore ? t.searchHint : undefined,
         }}
+        filters={{
+          count: activeCount,
+          onOpen: () => {
+            setFiltersSeen(true);
+            setFiltersOpen(true);
+          },
+        }}
+      >
+        <button
+          type="button"
+          aria-pressed={selecting}
+          aria-label={selecting ? t.selectStop : t.select}
+          title={selecting ? t.selectStop : t.select}
+          onClick={() => (selecting ? stopSelecting() : setSelecting(true))}
+          className={cn(SELECT_TOGGLE, selecting ? TOGGLE_ON : TOGGLE_OFF)}
+        >
+          <IconChecklist className="size-5" aria-hidden />
+        </button>
+      </ListToolbar>
+
+      {/* Fixed to the foot of the page; written here so Tab reaches it before the rows. */}
+      <LostOrdersBulkBar selection={selection} onClear={stopSelecting} onDone={reloadAll} />
+
+      <ChipRow
+        className="mb-3"
+        items={LOST_ORDER_TABS.map((key) => ({ value: key, label: labels.tab(key) }))}
+        value={tab}
+        onChange={changeTab}
+        label={t.tabsLabel}
+        collapseEmpty={false}
+      />
+
+      <LostOrdersActiveFilters value={filterState} onChange={changeFilters} products={products} />
+
+      {isPhone && selecting && selection.ids.length === 0 && shown.length > 0 && (
+        <LostOrdersSelectHint selection={selection} onDone={stopSelecting} />
+      )}
+
+      <div data-slot="lost-list" aria-busy={list.refreshing || undefined}>
+        {list.loading ? (
+          <ListSkeleton rows={6} variant={isPhone ? "card" : "table"} />
+        ) : list.error && act.rows.length === 0 ? (
+          // Could not load, or not allowed (403 says who can grant it and offers no retry).
+          <DataState loading={false} error={list.error} onRetry={list.reload}>
+            {null}
+          </DataState>
+        ) : (
+          <div className="space-y-3">
+            {Boolean(list.error) && <Notice text={t.refreshFailed} retry={t.retry} onRetry={list.reload} />}
+            {shown.length === 0 ? (
+              empty
+            ) : isPhone ? (
+              <LostOrderCards rows={shown} selection={selection} selecting={selecting} actions={act.actions} />
+            ) : (
+              <LostOrdersTable rows={shown} selection={selection} actions={act.actions} />
+            )}
+            {Boolean(list.moreError) && <Notice text={t.moreFailed} retry={t.retry} onRetry={list.loadMore} />}
+            <LoadMore hasMore={list.hasMore} loading={list.loadingMore} onClick={list.loadMore} />
+          </div>
+        )}
+      </div>
+
+      <LostOrdersFilterSheet
+        open={filtersOpen}
+        onOpenChange={setFiltersOpen}
+        value={filterState}
+        onChange={changeFilters}
+        products={products}
+        applyLabel={applyLabel}
+      />
+      {LOST_ORDER_TIMING_ENABLED && <LostOrderTimingSheet open={timingOpen} onOpenChange={setTimingOpen} minutes={minutes} onSaved={reloadAll} />}
+
+      <LostOrderQuickLook
+        session={peekShown}
+        open={act.peek.open && peekRow !== null}
+        onOpenChange={(open) => {
+          if (!open) act.closePeek();
+        }}
+        actions={act.actions}
+      />
+      <WhatsappSendConfirm
+        session={act.asking}
+        name={act.asking?.customerName?.trim() ?? ""}
+        onCancel={act.cancelAsk}
+        onConfirm={act.confirmSend}
+      />
+      <LostOrderConvertModal
+        session={convertingRow}
+        revealing={convertingRow ? act.actions.isRevealing(convertingRow.id) : false}
+        onReveal={act.actions.reveal}
+        onClose={act.cancelConvert}
+        onConverted={act.converted}
       />
       <ConfirmDialog
-        open={removing !== null}
-        title={t.removeTitle}
+        open={act.removing !== null}
+        title={removingName ? fmt(t.removeTitleNamed, { name: removingName }) : t.removeTitle}
         description={t.removeDescription}
         confirmLabel={t.remove}
         busyLabel={t.removing}
         cancelLabel={t.cancel}
         destructive
-        onCancel={() => setRemoving(null)}
-        onConfirm={confirmRemove}
+        onCancel={act.cancelRemove}
+        onConfirm={act.confirmRemove}
       />
     </div>
-  );
-}
-
-function ConvertModal({
-  session,
-  onClose,
-  onConverted,
-}: {
-  session: LostOrder | null;
-  onClose: () => void;
-  onConverted: (session: LostOrder, orderNumber: string) => void;
-}) {
-  const t = useT(STRINGS);
-  const workspaceId = useWorkspaceId();
-  const errorMessage = useErrorMessage();
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [province, setProvince] = useState("");
-  const [city, setCity] = useState("");
-  const [address, setAddress] = useState("");
-  const [showErrors, setShowErrors] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    if (!session) return;
-    setName(session.customerName ?? "");
-    setPhone(session.phone ?? "");
-    setProvince(session.shippingAddress?.province ?? "");
-    setCity(session.shippingAddress?.city ?? "");
-    setAddress(session.shippingAddress?.addressLine ?? "");
-    setShowErrors(false);
-    setError(null);
-  }, [session]);
-
-  if (!session) return null;
-  const missing = !name.trim() || !phone.trim() || !city.trim() || !address.trim();
-
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    if (!session) return;
-    if (missing) {
-      setShowErrors(true);
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    try {
-      const result = await lostOrdersConvert(apiClient, workspaceId, session.id, {
-        contact: { fullName: name.trim(), phone: phone.trim() },
-        shippingAddress: {
-          country: session.shippingAddress?.country ?? "EG",
-          ...(province.trim() ? { province: province.trim() } : {}),
-          city: city.trim(),
-          addressLine: address.trim(),
-        },
-      });
-      onConverted(result.session, result.order.orderNumber);
-    } catch (err) {
-      setError(apiFieldProblems(err)[0]?.message ?? errorMessage(err));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const need = (value: string) => (showErrors && !value.trim() ? t.required : undefined);
-
-  return (
-    <Modal open onClose={onClose} title={t.convertTitle} description={t.convertDescription}>
-      <form onSubmit={submit} noValidate className="space-y-4">
-        <ul className="space-y-1 rounded-md border border-line bg-paper p-3 text-sm">
-          {session.items.map((item, i) => (
-            <li key={`${item.variantId}-${i}`} className="flex justify-between gap-3">
-              <span dir="auto">
-                {item.productName} <span className="text-ink-soft">× {item.quantity}</span>
-              </span>
-              <span className="shrink-0">{formatMoney(item.lineTotalAmount, session.currency)}</span>
-            </li>
-          ))}
-        </ul>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <TextField label={t.name} required dir="auto" value={name} onChange={(e) => setName(e.target.value)} error={need(name)} />
-          <TextField label={t.phone} required dir="ltr" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} error={need(phone)} />
-          <TextField label={t.governorate} dir="auto" value={province} onChange={(e) => setProvince(e.target.value)} />
-          <TextField label={t.city} required dir="auto" value={city} onChange={(e) => setCity(e.target.value)} error={need(city)} />
-        </div>
-        <TextField label={t.address} required dir="auto" value={address} onChange={(e) => setAddress(e.target.value)} error={need(address)} />
-        {error && <Alert variant="danger">{error}</Alert>}
-        <div className="flex justify-end gap-3 pt-1">
-          <Button type="button" variant="outline" onClick={onClose} disabled={busy}>
-            {t.cancel}
-          </Button>
-          <Button type="submit" disabled={busy}>
-            {busy ? t.placing : t.placeOrder}
-          </Button>
-        </div>
-      </form>
-    </Modal>
   );
 }

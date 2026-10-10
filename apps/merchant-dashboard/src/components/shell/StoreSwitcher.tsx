@@ -5,6 +5,7 @@ import { Popover } from "@/components/Popover";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { useCommon, useT, type Messages } from "@/i18n/LocaleContext";
 import { useViewNavigate } from "@/lib/viewTransition";
+import { useGuardedLeave } from "@/lib/useUnsavedGuard";
 
 const STRINGS = {
   en: {
@@ -53,6 +54,7 @@ interface StoreSwitcherProps {
 export function StoreSwitcher({ onNavigate, size = "md", className }: StoreSwitcherProps) {
   const { currentWorkspace, workspaces, selectWorkspace } = useWorkspace();
   const navigate = useViewNavigate();
+  const leave = useGuardedLeave();
   const t = useT(STRINGS);
   const c = useCommon();
   const [open, setOpen] = useState(false);
@@ -63,7 +65,7 @@ export function StoreSwitcher({ onNavigate, size = "md", className }: StoreSwitc
   function go(to: string) {
     setOpen(false);
     onNavigate?.();
-    navigate(to);
+    leave(() => navigate(to));
   }
 
   return (
@@ -105,7 +107,9 @@ export function StoreSwitcher({ onNavigate, size = "md", className }: StoreSwitc
                     key={workspace.id}
                     type="button"
                     onClick={() => {
-                      selectWorkspace(workspace.id);
+                      // Another store reloads the page for it: unsaved changes ask first.
+                      if (isCurrent) selectWorkspace(workspace.id);
+                      else leave(() => selectWorkspace(workspace.id));
                       setOpen(false);
                     }}
                     className={ITEM}

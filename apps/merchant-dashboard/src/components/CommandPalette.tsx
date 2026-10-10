@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { useGuardedLeave } from "@/lib/useUnsavedGuard";
 import { CornerDownLeft, Package, Plus, Search, ShoppingBag, Users, Workflow, type LucideIcon } from "lucide-react";
 import { cn } from "@store-builder/ui";
 import { dashboardSearch, type DashboardSearchResult } from "@store-builder/api-client";
@@ -76,6 +77,7 @@ export function CommandPalette() {
   const t = useT(STRINGS);
   const navLabels = useT(NAV_LABELS);
   const navigate = useNavigate();
+  const leave = useGuardedLeave();
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id;
   const role = currentWorkspace?.role;
@@ -204,7 +206,8 @@ export function CommandPalette() {
   function go(entry: Entry | undefined) {
     if (!entry) return;
     setOpen(false);
-    navigate(entry.to);
+    // Unsaved changes on the page: asks before going.
+    leave(() => navigate(entry.to));
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
