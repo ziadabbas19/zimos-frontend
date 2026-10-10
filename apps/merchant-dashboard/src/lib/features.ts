@@ -120,3 +120,15 @@ export const LOST_ORDER_TIMING_ENABLED = import.meta.env.VITE_LOST_ORDER_TIMING_
  * result is pressed.
  */
 export const CONFIRMATION_STATION_ENABLED = import.meta.env.VITE_CONFIRMATION_STATION_ENABLED === "true";
+
+/*
+ * Our own additions to the website builder. No API switch pairs with this one:
+ * what it writes goes into the page's own props, which the API keeps as they are.
+ */
+
+/**
+ * The picture slider's newer settings in the website editor: where the text
+ * sits on a phone, the veil over the picture, and a background video. Turn on
+ * together with the storefront's NEXT_PUBLIC_HERO_MEDIA_ENABLED, which is what draws them.
+ */
+export const HERO_MEDIA_ENABLED = import.meta.env.VITE_HERO_MEDIA_ENABLED === "true";

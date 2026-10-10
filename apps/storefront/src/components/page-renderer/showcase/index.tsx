@@ -1,10 +1,12 @@
 import type { StorefrontProduct } from "@store-builder/api-client";
 import { Fragment, type ReactNode } from "react";
 import { StoreLink } from "@/components/StoreRoute";
+import { HERO_MEDIA_ENABLED } from "@/lib/features";
 import { dirFor, formatNumber, getDictionary, type Locale } from "@/lib/i18n";
 import { firstImage } from "@/lib/product";
 import { EmptyBlock } from "../commerce";
 import { showcaseCopy } from "./copy";
+import { heroLookMarkup, resolveHeroLook } from "./heroLook";
 import { HeroSlider, type HeroSlide } from "./HeroSlider";
 import { NeedTabs, type NeedTab } from "./NeedTabs";
 import { RailTrack } from "./RailTrack";
@@ -88,6 +90,7 @@ function HeroSliderElement({ props, locale, editable }: ElementProps) {
   items(props, "slides", 8).forEach((slide, i) => {
     const image = localizedImage(slide, "image", locale);
     if (!image) return;
+    const look = resolveHeroLook(slide, HERO_MEDIA_ENABLED);
     slides.push({
       key: `${i}`,
       image,
@@ -98,8 +101,12 @@ function HeroSliderElement({ props, locale, editable }: ElementProps) {
       subheading: loc(slide, "subheading", locale),
       buttonLabel: loc(slide, "buttonLabel", locale),
       buttonHref: linkOf(slide, "buttonHref"),
-      side: pick(str(slide, "side"), ["start", "center", "end"] as const, "center"),
-      vertical: pick(str(slide, "vertical"), ["top", "middle", "bottom"] as const, "bottom"),
+      // The computer's place as it always was; the phone's own place and the veil only while the switch is on (heroLook.ts).
+      side: look.desktop.side,
+      vertical: look.desktop.vertical,
+      ...heroLookMarkup(look),
+      // A background video over the picture, which stays as its poster; read only while the switch is on.
+      video: HERO_MEDIA_ENABLED ? safeUrl(str(slide, "video")) : null,
       contentWidth: num(slide, "contentWidth", 620, 200, 900),
       text: pick(str(slide, "text"), ["dark", "light"] as const, "dark"),
     });

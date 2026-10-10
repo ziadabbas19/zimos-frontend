@@ -1,6 +1,8 @@
 import { IconCarousel, IconClick, IconFilm, IconGridDense, IconGridView, IconOrders, IconPanelTop, IconRows, IconShield, IconVideoBlock, type IconComponent } from "@/components/icons";
 import type { PageElementType } from "@store-builder/api-client";
+import { HERO_MEDIA_ENABLED } from "@/lib/features";
 import type { BlockPreset, FieldSpec } from "./blocks";
+import type { ItemSubField } from "./ItemListField";
 
 /**
  * The showcase sections in the editor: what the inspector offers for each of
@@ -67,6 +69,78 @@ const productBand = (limit: number): FieldSpec[] => [
   TONE,
 ];
 
+/** Where a slide's text sits, across and up-and-down: the same three places on a computer and on a phone. */
+const SLIDE_SIDES = [
+  { value: "start", label: "Start", labelAr: "البداية" },
+  { value: "center", label: "Centre", labelAr: "الوسط" },
+  { value: "end", label: "End", labelAr: "النهاية" },
+];
+const SLIDE_HEIGHTS = [
+  { value: "top", label: "Top", labelAr: "فوق" },
+  { value: "middle", label: "Middle", labelAr: "النص" },
+  { value: "bottom", label: "Bottom", labelAr: "تحت" },
+];
+
+/** The first choice of a phone's own setting: it stores nothing, and the store then uses the computer's value. */
+const SAME_AS_COMPUTER = { label: "Same as on a computer", labelAr: "كما على الكمبيوتر" };
+
+/**
+ * A slide's background video, behind the same switch. The slide's own picture
+ * stays and is the video's poster (the storefront's showcase/HeroVideo.tsx),
+ * so no second picture is asked for. `videoBytes` is the file's size, kept
+ * only so the editor can go on warning about a heavy one.
+ */
+const HERO_MEDIA_VIDEO_FIELDS: ItemSubField[] = HERO_MEDIA_ENABLED
+  ? [
+      {
+        key: "video",
+        label: "Background video",
+        labelAr: "فيديو الخلفية",
+        kind: "video",
+        sizeKey: "videoBytes",
+        posterKey: "image",
+        hint: "Plays without sound over the picture on a computer. A phone, a slow connection and anyone who asks for less motion get the picture.",
+        hintAr: "يعمل بلا صوت فوق الصورة على الكمبيوتر. على الموبايل وعلى الاتصال البطيء ولمن يطلب تقليل الحركة تظهر الصورة.",
+      },
+    ]
+  : [];
+
+/**
+ * A slide's settings behind the HERO_MEDIA switch (lib/features): the text's
+ * place on a phone and the veil over the picture. They are plain props of the
+ * slide (the storefront reads them in showcase/heroLook.ts), so the server
+ * stores them as they are. Off, the editor offers none of them.
+ */
+const HERO_MEDIA_SLIDE_FIELDS: ItemSubField[] = HERO_MEDIA_ENABLED
+  ? [
+      { key: "sideMobile", label: "Text sits at, on a phone", labelAr: "مكان النص على الموبايل", kind: "choice", unset: SAME_AS_COMPUTER, options: SLIDE_SIDES },
+      { key: "verticalMobile", label: "Text height, on a phone", labelAr: "ارتفاع النص على الموبايل", kind: "choice", unset: SAME_AS_COMPUTER, options: SLIDE_HEIGHTS },
+      {
+        key: "overlay",
+        label: "Veil over the picture (%)",
+        labelAr: "طبقة فوق الصورة (%)",
+        kind: "number",
+        min: 0,
+        max: 60,
+        step: 5,
+        startAt: 0,
+        hint: "Makes the text easier to read: dark under light text, light under dark text. Empty or 0 leaves the picture as it is.",
+        hintAr: "تسهّل قراءة النص: داكنة تحت النص الفاتح، وفاتحة تحت النص الداكن. الفراغ أو الصفر يترك الصورة كما هي.",
+      },
+      {
+        key: "overlayMobile",
+        label: "Veil on a phone (%)",
+        labelAr: "الطبقة على الموبايل (%)",
+        kind: "number",
+        min: 0,
+        max: 60,
+        step: 5,
+        hint: "Leave empty to use the same strength as on a computer.",
+        hintAr: "اتركه فارغًا لاستخدام القوة نفسها التي على الكمبيوتر.",
+      },
+    ]
+  : [];
+
 export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
   hero_slider: {
     label: "Picture slider",
@@ -86,27 +160,42 @@ export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
           { key: "mobileImage", label: "Picture on a phone", labelAr: "الصورة على الموبايل", kind: "image" },
           { key: "imageEn", label: "Picture (English store)", labelAr: "الصورة (النسخة الإنجليزية)", kind: "image" },
           { key: "mobileImageEn", label: "Phone picture (English store)", labelAr: "صورة الموبايل (النسخة الإنجليزية)", kind: "image" },
+          ...HERO_MEDIA_VIDEO_FIELDS,
           { key: "alt", label: "Describes the picture", labelAr: "وصف الصورة", kind: "text" },
+          { key: "eyebrow", label: "Small line above the heading", labelAr: "سطر صغير فوق العنوان", kind: "text" },
           { key: "heading", label: "Heading", labelAr: "العنوان", kind: "text" },
           { key: "subheading", label: "Line under it", labelAr: "السطر تحته", kind: "text" },
           { key: "buttonLabel", label: "Button text", labelAr: "نص الزرار", kind: "text" },
           { key: "buttonLabelEn", label: "Button text (English)", labelAr: "نص الزرار (إنجليزي)", kind: "text" },
           { key: "buttonHref", label: "Button links to", labelAr: "رابط الزرار", kind: "text", ltr: true },
-          { key: "side", label: "Text sits at", labelAr: "مكان النص", kind: "select", options: [
-          { value: "start", label: "Start", labelAr: "البداية" },
-          { value: "center", label: "Centre", labelAr: "الوسط" },
-          { value: "end", label: "End", labelAr: "النهاية" },
-        ] },
+          { key: "side", label: "Text sits at", labelAr: "مكان النص", kind: "select", options: SLIDE_SIDES },
+          { key: "vertical", label: "Text height", labelAr: "ارتفاع النص", kind: "select", options: SLIDE_HEIGHTS },
+          ...HERO_MEDIA_SLIDE_FIELDS,
           {
-            key: "vertical",
-            label: "Text height",
-            labelAr: "ارتفاع النص",
-            kind: "select",
+            key: "text",
+            label: "Text colour",
+            labelAr: "لون النص",
+            kind: "choice",
+            fallback: "dark",
             options: [
-              { value: "top", label: "Top", labelAr: "فوق" },
-              { value: "middle", label: "Middle", labelAr: "النص" },
-              { value: "bottom", label: "Bottom", labelAr: "تحت" },
+              { value: "dark", label: "Dark", labelAr: "داكن" },
+              { value: "light", label: "Light", labelAr: "فاتح" },
             ],
+            hint: "Light suits a dark picture, dark a bright one.",
+            hintAr: "الفاتح يناسب الصورة الداكنة، والداكن يناسب الصورة الفاتحة.",
+          },
+          {
+            key: "contentWidth",
+            label: "Text width (px)",
+            labelAr: "عرض النص (بكسل)",
+            kind: "number",
+            min: 200,
+            // The server takes up to 900, but the store never draws the text block wider than 600 (store-sections.css).
+            max: 600,
+            step: 20,
+            startAt: 600,
+            hint: "The widest the text block may get. Leave empty for the store's own width.",
+            hintAr: "أقصى عرض لمساحة النص. اتركه فارغًا لعرض المتجر المعتاد.",
           },
         ],
       },

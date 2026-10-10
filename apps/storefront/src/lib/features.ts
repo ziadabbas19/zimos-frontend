@@ -64,3 +64,15 @@ export const SHOPPER_RETURNS_ENABLED = process.env.NEXT_PUBLIC_SHOPPER_RETURNS_E
 
 /** The extra ad platforms' pixels: Pinterest, X, Taboola, Outbrain, Kwai, Reddit and Microsoft Ads. */
 export const AD_PIXELS_ENABLED = process.env.NEXT_PUBLIC_AD_PIXELS_ENABLED === "true";
+
+/*
+ * Our own additions to the website builder. No API switch pairs with this one:
+ * what it reads is stored in the page's own props, which the API keeps as they are.
+ */
+
+/**
+ * The hero slider's newer settings: where the text sits on a phone, the veil
+ * over the picture, and a background video. Off, a slide is drawn exactly as
+ * before whatever its props hold. Pairs with the dashboard's VITE_HERO_MEDIA_ENABLED.
+ */
+export const HERO_MEDIA_ENABLED = process.env.NEXT_PUBLIC_HERO_MEDIA_ENABLED === "true";

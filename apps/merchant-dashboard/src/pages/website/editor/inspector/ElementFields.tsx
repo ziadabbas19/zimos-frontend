@@ -478,9 +478,10 @@ export function ElementField({
       );
 
     case "number":
-      // The prop stays numeric — the storefront renderer expects a number —
-      // and goes back to "" when the field is emptied, as it always did.
-      return <NumberField label={label} hint={hint} min={spec.min} max={spec.max} value={asNumber(raw)} onChange={(v) => onChange(spec.key, v)} />;
+      // The prop stays numeric — the storefront renderer expects a number. An
+      // emptied field is "not set": the prop is taken out (setElementProp),
+      // never stored as "" — the server refuses "" where it checks a range.
+      return <NumberField label={label} hint={hint} min={spec.min} max={spec.max} value={asNumber(raw)} onChange={(v) => onChange(spec.key, v === "" ? undefined : v)} />;
 
     case "datetime": {
       // datetime-local speaks the editor's own clock; the prop is an ISO date.
@@ -522,7 +523,9 @@ export function ElementField({
                 const v = e.target.value;
                 // "level" on a heading is an int in the seeded trees; keep it one.
                 const numeric = spec.options.every((o) => /^\d+$/.test(o.value));
-                onChange(spec.key, numeric ? Number(v) : v);
+                // "—" on a list of words is "not set": the prop is taken out (setElementProp), never stored
+                // as "" — the server refuses "" where it checks the value against a list.
+                onChange(spec.key, numeric ? Number(v) : v === "" ? undefined : v);
               }}
             >
               <option value="">—</option>
