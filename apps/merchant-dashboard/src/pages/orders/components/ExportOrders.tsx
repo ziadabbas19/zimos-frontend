@@ -107,7 +107,7 @@ export function ExportOrders({
   );
 }
 
-function ExportOrdersDialog({ filters, onClose }: { filters: ExportOrdersFilters; onClose: () => void }) {
+export function ExportOrdersDialog({ filters, onClose }: { filters: ExportOrdersFilters; onClose: () => void }) {
   const workspaceId = useWorkspaceId();
   const t = useT(STRINGS);
   const { locale } = useLocale();

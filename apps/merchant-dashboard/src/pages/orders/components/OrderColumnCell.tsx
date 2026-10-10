@@ -1,7 +1,7 @@
 import { orderListExtrasOf, type Order, type OrderStage } from "@store-builder/api-client";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, placeName } from "@/lib/format";
 import { providerName } from "@/lib/providers";
-import { useLocale, useT, type Messages } from "@/i18n/LocaleContext";
+import { fmt, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
 import { StatusBadge } from "@/components/StatusBadge";
 import { RiskBadge } from "@/pages/fraud/RiskBadge";
 import { OrderNetworkRate } from "@/pages/fraud/NetworkRate";
@@ -13,6 +13,7 @@ const STRINGS = {
   en: {
     phoneLabel: "Phone",
     pickup: "Pickup from the store",
+    moreItems: "+{n} more",
     dq_good: "Good",
     dq_low: "Poor data",
     noShipment: "Not shipped",
@@ -21,6 +22,7 @@ const STRINGS = {
   ar: {
     phoneLabel: "الهاتف",
     pickup: "استلام من المتجر",
+    moreItems: "+{n} أخرى",
     dq_good: "جيدة",
     dq_low: "بيانات ضعيفة",
     noShipment: "لم يُشحن",
@@ -68,6 +70,27 @@ export function OrderColumnCell({
           )}
         </td>
       );
+    case "products": {
+      // What was ordered, at a glance: the first lines by name (the API sends no picture of a line).
+      const items = order.items ?? [];
+      const shown = items.slice(0, 2);
+      return (
+        <td className="max-w-56 px-4 py-3 text-xs text-ink-soft">
+          {items.length === 0 ? (
+            "—"
+          ) : (
+            <>
+              {shown.map((item) => (
+                <div key={item.id} className="truncate">
+                  <bdi className="text-ink">{item.productNameSnapshot}</bdi> × {item.quantity}
+                </div>
+              ))}
+              {items.length > shown.length && <div>{fmt(t.moreItems, { n: items.length - shown.length })}</div>}
+            </>
+          )}
+        </td>
+      );
+    }
     case "total":
       return <td className="px-4 py-3 text-ink-soft">{formatMoney(order.totalAmount, order.currency)}</td>;
     case "payment":
@@ -106,7 +129,7 @@ export function OrderColumnCell({
     case "source":
       return <td className="px-4 py-3 text-xs text-ink-soft">{sourceLabel(meta.source)}</td>;
     case "governorate":
-      return <td className="px-4 py-3 text-xs text-ink-soft">{order.deliveryMethod === "pickup" ? t.pickup : address?.province || "—"}</td>;
+      return <td className="px-4 py-3 text-xs text-ink-soft">{order.deliveryMethod === "pickup" ? t.pickup : placeName(address?.province) || "—"}</td>;
     case "address":
       return (
         <td className="max-w-56 px-4 py-3 text-xs text-ink-soft">
@@ -114,7 +137,7 @@ export function OrderColumnCell({
             <div className="font-medium text-ink">{t.pickup}</div>
           ) : address ? (
             <>
-              <div className="text-ink">{[address.province, address.city].filter(Boolean).join(" · ") || "—"}</div>
+              <div className="text-ink">{[placeName(address.province), placeName(address.city)].filter(Boolean).join(" · ") || "—"}</div>
               {address.addressLine && <div className="line-clamp-2">{address.addressLine}</div>}
             </>
           ) : (
