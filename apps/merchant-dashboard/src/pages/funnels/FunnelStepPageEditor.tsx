@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -14,6 +14,7 @@ import { Eye, PackageCheck, Redo2, Undo2 } from "lucide-react";
 import { Button } from "@store-builder/ui";
 import type { PageSection, PageTree } from "@store-builder/api-client";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { MediaPicker } from "@/components/MediaPicker";
 import { Select } from "@/components/Select";
 import { StorefrontPreview } from "@/components/StorefrontPreview";
 import { CollapsiblePane } from "@/components/CollapsiblePane";
@@ -34,6 +35,7 @@ import { duplicateSection, inlineTextIds, setElementText } from "../website/edit
 import { applyCanvasEdit, nudgeElement } from "../website/editor/canvasEdits";
 import { stepEdit } from "@/lib/canvasDrag";
 import { PageSettingsButton } from "../website/editor/PageSettingsDialog";
+import { InspectorEnvProvider, type InspectorEnv } from "../website/editor/inspector/env";
 import { PAGE_STRINGS, STEP_TYPE_LABELS } from "./FunnelEditorPage.strings";
 import type { UiStep } from "./funnelAdapter";
 
@@ -189,21 +191,39 @@ export function FunnelStepPageEditor({
     setPendingDelete(null);
   }
 
+  // One media library sheet for every picture field of the inspector.
+  const [imageOpen, setImageOpen] = useState(false);
+  const imageRequest = useRef<((url: string) => void) | null>(null);
+  const inspectorEnv = useMemo<InspectorEnv>(
+    () => ({
+      compact: false,
+      pairImages: false,
+      requestImage: (apply) => {
+        imageRequest.current = apply;
+        setImageOpen(true);
+      },
+    }),
+    []
+  );
+
   const inspector = selected && (
-    <SectionInspector
-      section={selected}
-      onChange={updateSection}
-      funnelId={funnelId}
-      namedStyles={namedStylesOf(step.tree.globalStyles)}
-      onNamedStylesChange={(named) => change({ ...step.tree, globalStyles: { ...(step.tree.globalStyles ?? {}), named } })}
-      onDelete={() => setPendingDelete(selected)}
-      onDuplicate={() => {
-        const copy = duplicateSection(selected);
-        setSections(insertSection(sections, copy, sections.findIndex((s) => s.id === selected.id) + 1));
-        selectSection(copy.id);
-      }}
-      onClose={() => setSelectedId(null)}
-    />
+    // The section's picture fields offer "choose from the library" through this.
+    <InspectorEnvProvider value={inspectorEnv}>
+      <SectionInspector
+        section={selected}
+        onChange={updateSection}
+        funnelId={funnelId}
+        namedStyles={namedStylesOf(step.tree.globalStyles)}
+        onNamedStylesChange={(named) => change({ ...step.tree, globalStyles: { ...(step.tree.globalStyles ?? {}), named } })}
+        onDelete={() => setPendingDelete(selected)}
+        onDuplicate={() => {
+          const copy = duplicateSection(selected);
+          setSections(insertSection(sections, copy, sections.findIndex((s) => s.id === selected.id) + 1));
+          selectSection(copy.id);
+        }}
+        onClose={() => setSelectedId(null)}
+      />
+    </InspectorEnvProvider>
   );
 
   return (
@@ -407,6 +427,20 @@ export function FunnelStepPageEditor({
         destructive
         onCancel={() => setPendingDelete(null)}
         onConfirm={() => pendingDelete && deleteSection(pendingDelete)}
+      />
+
+      <MediaPicker
+        open={imageOpen}
+        onOpenChange={(open) => {
+          if (!open) setImageOpen(false);
+        }}
+        onPick={(file) => {
+          const apply = imageRequest.current;
+          imageRequest.current = null;
+          setImageOpen(false);
+          apply?.(file.url);
+        }}
+        accept="image"
       />
     </EditorLocaleContext.Provider>
   );
