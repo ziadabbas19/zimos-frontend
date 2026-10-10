@@ -180,6 +180,7 @@ export {
   RefreshCw as IconRefresh,
   ChartColumn as IconReports,
   Undo2 as IconReturns,
+  Star as IconReviews,
   Bot as IconRobot,
   RotateCcw as IconRotateBack,
   Rows3 as IconRows,
