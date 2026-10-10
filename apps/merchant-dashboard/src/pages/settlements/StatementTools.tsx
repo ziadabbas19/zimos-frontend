@@ -199,7 +199,8 @@ export function StatementImportSheet({
   const s = report?.summary;
   const settleable = s ? s.ok + s.amountMismatch : 0;
   const money = (v: number | null | undefined) => (v === null || v === undefined ? "—" : formatMoney(v, report?.currency ?? "EGP"));
-  const problems = report?.lines.filter((line) => line.status !== "ok") ?? [];
+  // A report that came back without its rows still shows its figures: no rows is "nothing to look at", not a crash.
+  const problems = report?.lines?.filter((line) => line.status !== "ok") ?? [];
   const tone = (status: StatementLineStatus) =>
     status === "amount_mismatch" ? "warning" : status === "not_found" || status === "invalid" ? "danger" : "neutral";
 
