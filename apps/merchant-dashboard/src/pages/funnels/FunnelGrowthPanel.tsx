@@ -32,13 +32,23 @@ import { useToast } from "@/components/Toast";
 import { useFunnelErrorMessage, type UiStep } from "./funnelAdapter";
 import { FunnelCodeAndShippingFields, FunnelLinkSetting } from "./FunnelSettingsMore";
 import { FunnelStepPageEditor } from "./FunnelStepPageEditor";
+import {
+  CONTROL_KEY,
+  SharesBar,
+  VersionSharesEditor,
+  sharesTotal,
+  toPayload,
+  versionLabel,
+  type VersionDraft,
+} from "./SplitTestVersions";
 
 /**
  * A funnel's split tests, country redirects and own settings (SPEC §9.6,
  * §9.7), opened from the funnel editor's top bar.
  *
- * Split test: one page of the funnel shown in two versions. A is the page as
- * it is; B starts as a copy and is edited here with the same page editor. The
+ * Split test: one page of the funnel shown in two to five versions
+ * (SplitTestVersions.tsx). A is the page as it is; every other version starts
+ * as a copy and is edited here with the same page editor. The
  * numbers are the server's — visits, orders, conversion, revenue per visit —
  * and a test ends when a winner is picked, by hand or automatically.
  */
@@ -52,13 +62,12 @@ const STRINGS = {
     tabSettings: "Funnel settings",
     close: "Close",
     // tests
-    testsIntro: "Show one page in two versions and keep the one that sells more. A is the page as it is now; B starts as a copy you then change.",
+    testsIntro: "Show one page in two to five versions and keep the one that sells more. A is the page as it is now; every other version starts as a copy you then change.",
     noTests: "No split test on this funnel yet.",
     newTest: "New split test",
     page: "Page",
     name: "Test name",
     namePlaceholder: "Headline test",
-    shareB: "Visitors who see B (%)",
     auto: "Pick the winner automatically",
     afterVisits: "After this many visits",
     metric: "By",
@@ -71,9 +80,10 @@ const STRINGS = {
     completed: "Finished",
     pause: "Pause",
     resume: "Resume",
-    editB: "Edit B's page",
-    saveB: "Save B's page",
-    savedB: "B's page saved. It is live for visitors in B at once.",
+    editPage: "Edit page",
+    editPageOf: "Edit the page of version {key}",
+    savePage: "Save the page of version {key}",
+    savedPage: "The page of version {key} is saved. Its visitors see it at once.",
     back: "Back to tests",
     remove: "Delete test",
     variant: "Version",
@@ -114,13 +124,12 @@ const STRINGS = {
     tabGeo: "التحويل حسب الدولة",
     tabSettings: "إعدادات المسار",
     close: "إغلاق",
-    testsIntro: "اعرض صفحة واحدة بنسختين واحتفظ بالتي تبيع أكثر. A هي الصفحة كما هي الآن؛ B تبدأ كنسخة ثم تعدّلها.",
+    testsIntro: "اعرض صفحة واحدة بنسختين إلى خمس نسخ واحتفظ بالتي تبيع أكثر. A هي الصفحة كما هي الآن؛ وكل نسخة أخرى تبدأ نسخةً منها ثم تعدّلها.",
     noTests: "لا يوجد اختبار على هذا المسار بعد.",
     newTest: "اختبار جديد",
     page: "الصفحة",
     name: "اسم الاختبار",
     namePlaceholder: "اختبار العنوان",
-    shareB: "نسبة الزوار الذين يرون B (%)",
     auto: "اختيار الفائز تلقائيًا",
     afterVisits: "بعد هذا العدد من الزيارات",
     metric: "حسب",
@@ -133,9 +142,10 @@ const STRINGS = {
     completed: "انتهى",
     pause: "إيقاف",
     resume: "استكمال",
-    editB: "تعديل صفحة B",
-    saveB: "حفظ صفحة B",
-    savedB: "تم حفظ صفحة B. تظهر فورًا للزوار في B.",
+    editPage: "تعديل الصفحة",
+    editPageOf: "تعديل صفحة النسخة {key}",
+    savePage: "حفظ صفحة النسخة {key}",
+    savedPage: "تم حفظ صفحة النسخة {key}. تظهر فورًا لزوارها.",
     back: "رجوع للاختبارات",
     remove: "حذف الاختبار",
     variant: "النسخة",
@@ -148,7 +158,7 @@ const STRINGS = {
     winner: "الفائز",
     makeWinner: "اجعله الفائز",
     confidence: "{pct}% ثقة أن المتصدر يحوّل أفضل فعلًا.",
-    confidenceLow: "الزيارات غير كافية بعد للتفريق بين النسختين.",
+    confidenceLow: "الزيارات غير كافية بعد للتفريق بين النسخ.",
     control: "A — الأصلية",
     geoIntro: "حوّل زوار بعض الدول إلى مسار آخر — للغة أو عملة أو شحن مختلف. الباقون يرون هذا المسار.",
     noRules: "لا يوجد تحويل حسب الدولة على هذا المسار.",
@@ -224,6 +234,12 @@ export function FunnelGrowthButton({
 
 // --- split tests ------------------------------------------------------------
 
+/** A new test starts as the page against one copy of it, half the visitors each. */
+const DEFAULT_VERSIONS: VersionDraft[] = [
+  { key: CONTROL_KEY, name: "", weight: 50 },
+  { key: "B", name: "", weight: 50 },
+];
+
 function SplitTestsTab({ funnelId, steps }: { funnelId: string; steps: UiStep[] }) {
   const t = useT(STRINGS);
   const workspaceId = useWorkspaceId();
@@ -231,12 +247,14 @@ function SplitTestsTab({ funnelId, steps }: { funnelId: string; steps: UiStep[] 
   const describeError = useFunnelErrorMessage();
   const list = useAsync(() => splitTestsList(apiClient, workspaceId, funnelId), [workspaceId, funnelId]);
   const [creating, setCreating] = useState(false);
-  const [editing, setEditing] = useState<{ test: SplitTest; tree: PageTree } | null>(null);
+  /** A version's own page, open in the page editor. */
+  const [editing, setEditing] = useState<{ test: SplitTest; key: string; tree: PageTree } | null>(null);
   const [busy, setBusy] = useState(false);
 
   const [stepKey, setStepKey] = useState(steps[0]?.key ?? "");
   const [name, setName] = useState("");
-  const [shareB, setShareB] = useState(50);
+  // A is the page as it is; the API takes two to five versions whose shares add up to 100.
+  const [versions, setVersions] = useState<VersionDraft[]>(DEFAULT_VERSIONS);
   const [auto, setAuto] = useState(false);
   const [afterVisits, setAfterVisits] = useState(2000);
   const [metric, setMetric] = useState<SplitTestMetric>("conversion_rate");
@@ -267,15 +285,13 @@ function SplitTestsTab({ funnelId, steps }: { funnelId: string; steps: UiStep[] 
         funnelId,
         stepKey,
         name: name.trim(),
-        variants: [
-          { key: "A", weight: 100 - shareB },
-          // B starts as a copy of the page as it is now.
-          { key: "B", weight: shareB, builderData: step.tree },
-        ],
+        // Every version but A starts as a copy of the page as it is now.
+        variants: toPayload(versions.map((v) => ({ ...v, builderData: step.tree }))),
         autoWinner: { enabled: auto, afterVisits, metric },
       });
       setCreating(false);
       setName("");
+      setVersions(DEFAULT_VERSIONS);
       await list.refresh({ silent: true });
     } catch (err) {
       setError(describeError(err));
@@ -284,7 +300,7 @@ function SplitTestsTab({ funnelId, steps }: { funnelId: string; steps: UiStep[] 
     }
   }
 
-  // Editing B's page: the same page editor a funnel step uses, on B's own tree.
+  // Editing a version's page: the same page editor a funnel step uses, on that version's own tree.
   if (editing) {
     const step = stepOf(editing.test.stepKey);
     const host: UiStep | null = step ? { ...step, tree: editing.tree } : null;
@@ -301,16 +317,19 @@ function SplitTestsTab({ funnelId, steps }: { funnelId: string; steps: UiStep[] 
             onClick={() =>
               void run(async () => {
                 await splitTestsUpdate(apiClient, workspaceId, editing.test.id, {
+                  // Every version but A sends its page back, the edited one with its changes.
                   variants: editing.test.variants.map((v) =>
-                    v.key === "B" ? { key: v.key, name: v.name, weight: v.weight, builderData: editing.tree } : { key: v.key, name: v.name, weight: v.weight }
+                    v.key === CONTROL_KEY
+                      ? { key: v.key, name: v.name, weight: v.weight }
+                      : { key: v.key, name: v.name, weight: v.weight, builderData: v.key === editing.key ? editing.tree : v.builderData }
                   ),
                 });
-                toast.success(t.savedB);
+                toast.success(fmt(t.savedPage, { key: editing.key }));
                 setEditing(null);
               })
             }
           >
-            {t.saveB}
+            {fmt(t.savePage, { key: editing.key })}
           </Button>
         </div>
         {host && (
@@ -349,12 +368,12 @@ function SplitTestsTab({ funnelId, steps }: { funnelId: string; steps: UiStep[] 
             }
             onWinner={(key) => void run(() => splitTestsChooseWinner(apiClient, workspaceId, test.id, key))}
             onDelete={() => void run(() => splitTestsDelete(apiClient, workspaceId, test.id))}
-            onEditB={() =>
+            onEditVersion={(key) =>
               void run(async () => {
                 const { experiment } = await splitTestsGet(apiClient, workspaceId, test.id);
-                const b = experiment.variants.find((v) => v.key === "B");
-                const tree = (b?.builderData ?? { version: 1, sections: [] }) as PageTree;
-                setEditing({ test: experiment, tree: { ...tree, sections: Array.isArray(tree.sections) ? tree.sections : [] } });
+                const version = experiment.variants.find((v) => v.key === key);
+                const tree = (version?.builderData ?? { version: 1, sections: [] }) as PageTree;
+                setEditing({ test: experiment, key, tree: { ...tree, sections: Array.isArray(tree.sections) ? tree.sections : [] } });
               })
             }
           />
@@ -377,18 +396,8 @@ function SplitTestsTab({ funnelId, steps }: { funnelId: string; steps: UiStep[] 
                 <Label htmlFor="st-name">{t.name}</Label>
                 <Input id="st-name" maxLength={200} value={name} placeholder={t.namePlaceholder} onChange={(e) => setName(e.target.value)} />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="st-share">{t.shareB}</Label>
-                <Input
-                  id="st-share"
-                  type="number"
-                  min={1}
-                  max={99}
-                  value={shareB}
-                  onChange={(e) => setShareB(Math.min(99, Math.max(1, Math.round(Number(e.target.value) || 50))))}
-                />
-              </div>
             </div>
+            <VersionSharesEditor versions={versions} onChange={setVersions} newPage={stepOf(stepKey)?.tree} idPrefix="st" />
             <label className="flex cursor-pointer items-center gap-2 text-sm text-ink">
               <input type="checkbox" className="size-4 accent-primary" checked={auto} onChange={(e) => setAuto(e.target.checked)} />
               {t.auto}
@@ -419,7 +428,7 @@ function SplitTestsTab({ funnelId, steps }: { funnelId: string; steps: UiStep[] 
               <Button type="button" variant="outline" onClick={() => setCreating(false)} disabled={busy}>
                 {t.close}
               </Button>
-              <Button type="button" onClick={() => void create()} disabled={busy || !name.trim() || !stepKey}>
+              <Button type="button" onClick={() => void create()} disabled={busy || !name.trim() || !stepKey || sharesTotal(versions) !== 100}>
                 {t.create}
               </Button>
             </div>
@@ -441,7 +450,7 @@ function SplitTestCard({
   onPauseResume,
   onWinner,
   onDelete,
-  onEditB,
+  onEditVersion,
 }: {
   test: SplitTest;
   pageName: string;
@@ -449,7 +458,7 @@ function SplitTestCard({
   onPauseResume: () => void;
   onWinner: (variantKey: string) => void;
   onDelete: () => void;
-  onEditB: () => void;
+  onEditVersion: (variantKey: string) => void;
 }) {
   const t = useT(STRINGS);
   const workspaceId = useWorkspaceId();
@@ -470,20 +479,17 @@ function SplitTestCard({
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant={test.status === "running" ? "default" : "secondary"}>{t[test.status]}</Badge>
           {!done && (
-            <>
-              <Button type="button" size="sm" variant="outline" disabled={busy} onClick={onPauseResume}>
-                {test.status === "running" ? t.pause : t.resume}
-              </Button>
-              <Button type="button" size="sm" variant="outline" disabled={busy} onClick={onEditB}>
-                {t.editB}
-              </Button>
-            </>
+            <Button type="button" size="sm" variant="outline" disabled={busy} onClick={onPauseResume}>
+              {test.status === "running" ? t.pause : t.resume}
+            </Button>
           )}
           <Button type="button" size="icon-sm" variant="ghost" aria-label={t.remove} title={t.remove} disabled={busy} onClick={onDelete}>
             <Trash2 className="size-4 text-danger" aria-hidden />
           </Button>
         </div>
       </div>
+
+      <SharesBar versions={test.variants} markKey={test.winnerVariantKey} className="mt-3" />
 
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[34rem] text-sm">
@@ -506,7 +512,7 @@ function SplitTestCard({
               return (
                 <tr key={v.key}>
                   <td className="py-2 font-medium text-ink">
-                    {v.key === "A" ? t.control : v.key}
+                    <bdi>{versionLabel(v, t.control)}</bdi>
                     {isWinner && <Badge className="ms-2">{t.winner}</Badge>}
                   </td>
                   <td className="py-2 text-end tabular-nums text-ink-soft">{v.weight}%</td>
@@ -517,9 +523,23 @@ function SplitTestCard({
                   <td className="py-2 text-end tabular-nums text-ink-soft">{r ? formatMoney(r.revenuePerVisitAmount) : "—"}</td>
                   <td className="py-2 text-end">
                     {!done && (
-                      <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => onWinner(v.key)}>
-                        {t.makeWinner}
-                      </Button>
+                      <span className="inline-flex flex-wrap justify-end gap-1">
+                        {v.key !== CONTROL_KEY && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            disabled={busy}
+                            aria-label={fmt(t.editPageOf, { key: v.key })}
+                            onClick={() => onEditVersion(v.key)}
+                          >
+                            {t.editPage}
+                          </Button>
+                        )}
+                        <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => onWinner(v.key)}>
+                          {t.makeWinner}
+                        </Button>
+                      </span>
                     )}
                   </td>
                 </tr>
