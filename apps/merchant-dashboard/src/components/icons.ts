@@ -182,7 +182,6 @@ export {
   Rows3 as IconRows,
   Rss as IconRss,
   Ruler as IconRuler,
-  BadgePercent as IconSale,
   Save as IconSave,
   Scale as IconScale,
   CalendarDays as IconSchedule,
