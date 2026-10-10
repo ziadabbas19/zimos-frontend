@@ -10,7 +10,7 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { countOf } from "@/lib/plural";
 import { providerName } from "@/lib/providers";
 import { SETTLEMENT_STRINGS } from "./settlementStrings";
-// Handoff 364: what each line of a confirmed settlement really added to its order.
+// What each line of a confirmed settlement really added to its order.
 import { AppliedAmount, AppliedLessNote } from "./AppliedAmount";
 
 /** Deleting a draft is written in the danger colour here; the question it opens carries the full danger fill. */

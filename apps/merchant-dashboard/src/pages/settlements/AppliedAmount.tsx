@@ -12,11 +12,11 @@ const STRINGS = {
   },
 } satisfies Messages;
 
-/** Handoff 364: what a confirmed settlement's line really added to its order. Null while the settlement is a draft. */
+/** What a confirmed settlement's line really added to its order. Null while the settlement is a draft. */
 type AppliedLine = SettlementLine & { appliedAmount?: number | null };
 
 /**
- * «اتسجل على الطلب» under a settlement line's amounts, with the reason when
+ * "Recorded on the order" under a settlement line's amounts, with the reason when
  * the order took less than the courier collected. Nothing for a draft.
  */
 export function AppliedAmount({ line, money }: { line: SettlementLine; money: (minor: number) => string }) {
