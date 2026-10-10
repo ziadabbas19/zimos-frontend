@@ -7,9 +7,15 @@
  * The storefront reads every key here in apps/storefront/src/lib/storeShell.ts
  * — the two apps share no code, so the saved shape is spelled out in both:
  *
- *   header: { announcement, menu?, logo?: { size?, align? },
+ *   header: { announcement, menu?: [{ label, href, kind, …kept }], logo?: { size?, align? },
  *             show?: { cart?, language?, theme?, trackOrder? }, sticky? }
  *   footer: { groups?: [{ title, links }], text?, show?: { brand?, links?, help? } }
+ *
+ * A menu link or footer group may carry keys the panels do not edit: a
+ * template's dropdown is `menu[i].children`, read by the storefront's
+ * NavDropdown. They are read into `extra` and written back as they were, so
+ * editing the header never drops them. The same holds for a key inside `logo`
+ * or `show` that these panels have no field for.
  *
  * Only a value that differs from the default is ever written, and every
  * default is the header/footer every store already had — so a merchant who
@@ -39,6 +45,19 @@ export interface ShellLink {
   /** Empty on a built-in page: the storefront names it in the shopper's language. */
   label: string;
   href: string;
+  /**
+   * Whatever else the saved link carried that these panels do not edit: a
+   * template's dropdown (`children`, read by the storefront's NavDropdown), or
+   * any key written by hand. Never shown as a field; written back untouched so
+   * a save round-trips it.
+   */
+  extra?: Record<string, unknown>;
+}
+
+/** How many links a saved link's dropdown holds (0 when it has none). */
+export function submenuCount(link: ShellLink): number {
+  const children = link.extra?.children;
+  return Array.isArray(children) ? children.length : 0;
 }
 
 export type LogoSize = "sm" | "md" | "lg";
@@ -60,6 +79,8 @@ export interface FooterGroupLook {
   id: string;
   title: string;
   links: ShellLink[];
+  /** Saved keys of the group these panels do not edit; written back untouched (see ShellLink.extra). */
+  extra?: Record<string, unknown>;
 }
 
 export interface FooterLook {
@@ -114,6 +135,18 @@ type Blob = Record<string, unknown>;
 function objectOf(value: unknown): Blob | null {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Blob) : null;
 }
+
+/** A saved object without the keys the panels own: what has to travel back untouched. */
+function restOf(saved: Blob | null, owned: readonly string[]): Blob {
+  if (!saved) return {};
+  return Object.fromEntries(Object.entries(saved).filter(([key]) => !owned.includes(key)));
+}
+
+const LINK_KEYS = ["label", "href", "kind"] as const;
+const GROUP_KEYS = ["title", "links"] as const;
+const LOGO_KEYS = ["size", "align"] as const;
+const HEADER_SHOW_KEYS = ["cart", "language", "theme", "trackOrder"] as const;
+const FOOTER_SHOW_KEYS = ["brand", "links", "help"] as const;
 
 let nextId = 0;
 /** A fresh local id for a link or group row. */
@@ -171,7 +204,11 @@ function readLinks(raw: unknown, max: number): ShellLink[] {
     const label = typeof o.label === "string" ? o.label.slice(0, LINK_LABEL_MAX) : "";
     const kind =
       typeof o.kind === "string" && (LINK_KINDS as string[]).includes(o.kind) ? (o.kind as LinkKind) : kindOfHref(href);
-    links.push({ id: shellId("link"), kind, label, href });
+    // Everything but the three keys the panels own is kept as it was saved.
+    const rest = restOf(o, LINK_KEYS);
+    const link: ShellLink = { id: shellId("link"), kind, label, href };
+    if (Object.keys(rest).length > 0) link.extra = rest;
+    links.push(link);
     if (links.length >= max) break;
   }
   return links;
@@ -208,11 +245,14 @@ export function readFooterLook(rawFooter: unknown): FooterLook {
     for (const item of footer.groups) {
       const o = objectOf(item);
       if (!o) continue;
-      groups.push({
+      const rest = restOf(o, GROUP_KEYS);
+      const group: FooterGroupLook = {
         id: shellId("group"),
         title: typeof o.title === "string" ? o.title.slice(0, LINK_LABEL_MAX) : "",
         links: readLinks(o.links, MAX_GROUP_LINKS),
-      });
+      };
+      if (Object.keys(rest).length > 0) group.extra = rest;
+      groups.push(group);
       if (groups.length >= MAX_FOOTER_GROUPS) break;
     }
   }
@@ -225,22 +265,30 @@ export function readFooterLook(rawFooter: unknown): FooterLook {
   };
 }
 
-/** A link as saved: no local id, trimmed, and dropped entirely when it points nowhere. */
-function saveLinks(links: ShellLink[]): Array<Record<string, string>> {
-  const out: Array<Record<string, string>> = [];
+/**
+ * A link as saved: no local id, trimmed, and dropped entirely when it points
+ * nowhere. The keys the panels do not edit (`extra`: a dropdown's `children`)
+ * go back exactly as they were read; label, href and kind always win over them.
+ */
+function saveLinks(links: ShellLink[]): Array<Record<string, unknown>> {
+  const out: Array<Record<string, unknown>> = [];
   for (const link of links) {
     const href = (builtinHref(link.kind) ?? link.href).trim();
     if (!href) continue;
-    const saved: Record<string, string> = { label: link.label.trim(), href, kind: link.kind };
+    const saved: Record<string, unknown> = { ...(link.extra ?? {}), label: link.label.trim(), href, kind: link.kind };
     out.push(saved);
   }
   return out;
 }
 
-/** `show` with only the parts turned off — absent means shown. */
-function showPatch(entries: Array<[string, boolean]>): Blob | null {
-  const off = entries.filter(([, on]) => !on);
-  return off.length === 0 ? null : Object.fromEntries(off.map(([key]) => [key, false]));
+/**
+ * `show` with only the parts turned off (absent means shown), over whatever
+ * else the saved `show` carried that these panels have no switch for.
+ */
+function showPatch(existing: unknown, owned: readonly string[], entries: Array<[string, boolean]>): Blob | null {
+  const next: Blob = restOf(objectOf(existing), owned);
+  for (const [key, on] of entries) if (!on) next[key] = false;
+  return Object.keys(next).length === 0 ? null : next;
 }
 
 /**
@@ -249,18 +297,19 @@ function showPatch(entries: Array<[string, boolean]>): Blob | null {
  * default.
  */
 export function writeHeader(existing: unknown, header: HeaderLook, announcement: Blob): Blob {
-  const next: Blob = { ...(objectOf(existing) ?? {}) };
+  const before = objectOf(existing);
+  const next: Blob = { ...(before ?? {}) };
   delete next.menu;
   delete next.logo;
   delete next.show;
   delete next.sticky;
   next.announcement = announcement;
   if (header.menu !== null) next.menu = saveLinks(header.menu);
-  const logo: Blob = {};
+  const logo: Blob = restOf(objectOf(before?.logo), LOGO_KEYS);
   if (header.logoSize !== "md") logo.size = header.logoSize;
   if (header.logoAlign !== "start") logo.align = header.logoAlign;
   if (Object.keys(logo).length > 0) next.logo = logo;
-  const show = showPatch([
+  const show = showPatch(before?.show, HEADER_SHOW_KEYS, [
     ["cart", header.showCart],
     ["language", header.showLanguage],
     ["theme", header.showTheme],
@@ -276,15 +325,20 @@ export function writeHeader(existing: unknown, header: HeaderLook, announcement:
  * a store that never touched its footer keeps no `footer` key at all.
  */
 export function writeFooter(existing: unknown, footer: FooterLook): Blob | undefined {
-  const next: Blob = { ...(objectOf(existing) ?? {}) };
+  const before = objectOf(existing);
+  const next: Blob = { ...(before ?? {}) };
   delete next.groups;
   delete next.text;
   delete next.show;
   if (footer.groups !== null) {
-    next.groups = footer.groups.map((group) => ({ title: group.title.trim(), links: saveLinks(group.links) }));
+    next.groups = footer.groups.map((group) => ({
+      ...(group.extra ?? {}),
+      title: group.title.trim(),
+      links: saveLinks(group.links),
+    }));
   }
   if (footer.text.trim()) next.text = footer.text.trim();
-  const show = showPatch([
+  const show = showPatch(before?.show, FOOTER_SHOW_KEYS, [
     ["brand", footer.showBrand],
     ["links", footer.showLinks],
     ["help", footer.showHelp],
@@ -297,8 +351,20 @@ function sameLinks(a: ShellLink[] | null, b: ShellLink[] | null): boolean {
   if (a === null || b === null) return a === b;
   return (
     a.length === b.length &&
-    a.every((link, i) => link.kind === b[i].kind && link.label === b[i].label && link.href === b[i].href)
+    a.every(
+      (link, i) =>
+        link.kind === b[i].kind &&
+        link.label === b[i].label &&
+        link.href === b[i].href &&
+        sameExtra(link.extra, b[i].extra)
+    )
   );
+}
+
+/** The untouched keys travel by reference from read to write, so identity settles nearly every comparison. */
+function sameExtra(a: Record<string, unknown> | undefined, b: Record<string, unknown> | undefined): boolean {
+  if (a === b) return true;
+  return JSON.stringify(a ?? {}) === JSON.stringify(b ?? {});
 }
 
 export function sameHeader(a: HeaderLook, b: HeaderLook): boolean {
@@ -319,7 +385,12 @@ export function sameFooter(a: FooterLook, b: FooterLook): boolean {
     a.groups === null || b.groups === null
       ? a.groups === b.groups
       : a.groups.length === b.groups.length &&
-        a.groups.every((g, i) => g.title === b.groups![i].title && sameLinks(g.links, b.groups![i].links));
+        a.groups.every(
+          (g, i) =>
+            g.title === b.groups![i].title &&
+            sameLinks(g.links, b.groups![i].links) &&
+            sameExtra(g.extra, b.groups![i].extra)
+        );
   return (
     groupsSame &&
     a.text === b.text &&

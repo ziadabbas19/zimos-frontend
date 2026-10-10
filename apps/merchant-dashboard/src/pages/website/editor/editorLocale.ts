@@ -800,6 +800,7 @@ const UI_EN = {
   linkLabel: "Label",
   linkLabelAuto: "Named for the shopper's language",
   linkLabelRequired: "Add a label, or this link won't show.",
+  submenuKept: (n: number) => `Has a dropdown of ${n === 1 ? "1 link" : `${n} links`}, kept as it is.`,
   linkTarget: "Links to",
   linkKind: (kind: string) =>
     (
@@ -1072,6 +1073,8 @@ const UI_AR: EditorUi = {
   linkLabel: "النص",
   linkLabelAuto: "يُكتب بلغة العميل تلقائيًا",
   linkLabelRequired: "اكتب نصًّا للرابط، وإلا لن يظهر.",
+  submenuKept: (n) =>
+    `تتفرّع منه قائمة فيها ${n === 1 ? "رابط واحد" : n === 2 ? "رابطان" : n <= 10 ? `${n} روابط` : `${n} رابطًا`}، وستبقى كما هي.`,
   linkTarget: "يفتح",
   linkKind: (kind) =>
     (
