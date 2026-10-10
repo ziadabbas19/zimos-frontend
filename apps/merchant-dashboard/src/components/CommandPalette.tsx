@@ -26,7 +26,6 @@ const STRINGS = {
     cmdNewProduct: "New product",
     cmdNewOrder: "Go to orders",
     cmdNewDiscount: "Create a discount",
-    cmdAllStores: "All my stores",
     cmdForms: "Form submissions",
     cmdSegments: "Contact segments",
     ordersCount: "{n} orders",
@@ -48,7 +47,6 @@ const STRINGS = {
     cmdNewProduct: "منتج جديد",
     cmdNewOrder: "الذهاب إلى الطلبات",
     cmdNewDiscount: "إنشاء خصم",
-    cmdAllStores: "كل متاجري",
     cmdForms: "رسائل النماذج",
     cmdSegments: "شرائح جهات الاتصال",
     ordersCount: "{n} طلب",
@@ -147,7 +145,6 @@ export function CommandPalette() {
       { id: "cmd-product", group: t.commands, icon: Plus, title: t.cmdNewProduct, to: "/catalog/new" },
       { id: "cmd-discount", group: t.commands, icon: Plus, title: t.cmdNewDiscount, to: "/discounts" },
       { id: "cmd-orders", group: t.commands, icon: ShoppingBag, title: t.cmdNewOrder, to: "/orders" },
-      { id: "cmd-stores", group: t.commands, icon: Search, title: t.cmdAllStores, to: "/stores" },
       { id: "cmd-forms", group: t.commands, icon: Search, title: t.cmdForms, to: "/form-submissions" },
       { id: "cmd-segments", group: t.commands, icon: Users, title: t.cmdSegments, to: "/customers?tab=segments" },
     ].filter((c) => matches(String(c.title)));

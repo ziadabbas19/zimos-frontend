@@ -1,12 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Banknote,
-  HeartHandshake,
   FileDown,
   GraduationCap,
   MousePointerClick,
   Handshake,
-  UsersRound,
   Sparkles,
   Activity,
   BadgeDollarSign,
@@ -220,7 +218,6 @@ export const NAV_GROUPS: NavGroup[] = [
       // Gift cards only while the feature is switched on (lib/features).
       ...(GIFT_CARDS_ENABLED ? [{ key: "giftCards" as const, to: "/gift-cards", icon: Ticket }] : []),
       { key: "automations", to: "/automations", icon: Bot },
-      { key: "affiliates", to: "/affiliates", icon: UsersRound },
       // AI studio only while the AI features are switched on (lib/features).
       ...(AI_ENABLED ? [{ key: "ai" as const, to: "/ai", icon: Sparkles }] : []),
     ],
@@ -266,7 +263,6 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: "settings", to: "/settings", icon: Settings },
       { key: "activity", to: "/activity", icon: History },
       { key: "services", to: "/services", icon: Handshake },
-      { key: "referrals", to: "/referrals", icon: HeartHandshake },
       { key: "support", to: "/support", icon: LifeBuoy },
       { key: "suggestions", to: "/suggestions", icon: Lightbulb },
     ],

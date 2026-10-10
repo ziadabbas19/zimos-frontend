@@ -27,7 +27,6 @@ const STRINGS = {
     products: "Products",
     customers: "Customers",
     analytics: "Analytics",
-    affiliates: "Affiliates",
     website: "Website",
     settings: "Settings",
     then: "then",
@@ -48,7 +47,6 @@ const STRINGS = {
     products: "المنتجات",
     customers: "العملاء",
     analytics: "التحليلات",
-    affiliates: "المسوّقون",
     website: "الموقع",
     settings: "الإعدادات",
     then: "ثم",
@@ -71,7 +69,6 @@ const GO: Array<{ code: string; cap: string; to: string; label: Label }> = [
   { code: "KeyP", cap: "P", to: "/catalog", label: "products" },
   { code: "KeyU", cap: "U", to: "/customers", label: "customers" },
   { code: "KeyA", cap: "A", to: "/analytics", label: "analytics" },
-  { code: "KeyM", cap: "M", to: "/affiliates", label: "affiliates" },
   { code: "KeyW", cap: "W", to: "/website", label: "website" },
   { code: "KeyS", cap: "S", to: "/settings", label: "settings" },
 ];
