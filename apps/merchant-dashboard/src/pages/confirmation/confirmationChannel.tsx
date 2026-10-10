@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { MessageCircle } from "lucide-react";
+import { IconWhatsApp } from "@/components/icons";
 import { cn } from "@store-builder/ui";
 import type { ConfirmationChannel } from "@store-builder/api-client";
 import { useWorkspace } from "@/context/WorkspaceContext";
@@ -67,9 +67,9 @@ export function ChannelPicker({
             <label
               key={channel}
               className={cn(
-                "flex min-h-11 min-w-11 cursor-pointer items-center gap-2 rounded-[0.5rem] border px-3 text-sm transition-colors",
+                "flex min-h-11 min-w-11 cursor-pointer items-center gap-2 rounded-full px-3.5 text-sm ring-1 transition-colors duration-[var(--dur-fade)] motion-reduce:transition-none",
                 "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary",
-                checked ? "border-primary bg-primary-soft/40 font-medium text-ink" : "border-line text-ink-soft hover:border-primary/50",
+                checked ? "bg-primary-soft font-medium text-ink ring-primary" : "text-ink-soft ring-line hover:ring-primary/50",
                 "has-[:disabled]:cursor-default has-[:disabled]:opacity-80"
               )}
             >
@@ -92,6 +92,26 @@ export function ChannelPicker({
 }
 
 /**
+ * The click-to-chat link for confirming this order over WhatsApp, with the
+ * store's own message (Settings) or the default one; null when the number
+ * cannot be placed in a country. Nothing is sent by the platform.
+ */
+export function useWhatsAppConfirmUrl(order: WhatsAppOrder): string | null {
+  const { currentWorkspace } = useWorkspace();
+  return whatsAppConfirmUrl(
+    order,
+    currentWorkspace?.name ?? "",
+    currentWorkspace?.settings?.confirmation_whatsapp_template ?? null
+  );
+}
+
+/** The accessible name of a WhatsApp control for this order's customer. */
+export function useWhatsAppLabel(order: WhatsAppOrder): string {
+  const t = useT(STRINGS);
+  return fmt(t.openWhatsAppLabel, { name: order.contactSnapshot.fullName?.trim() || t.customer });
+}
+
+/**
  * Opens WhatsApp with the customer's number and the store's confirmation
  * message ready to send. Renders nothing when the number can't be dialled.
  * `onOpen` lets the caller note that WhatsApp was used on this call.
@@ -106,12 +126,8 @@ export function WhatsAppButton({
   className?: string;
 }) {
   const t = useT(STRINGS);
-  const { currentWorkspace } = useWorkspace();
-  const url = whatsAppConfirmUrl(
-    order,
-    currentWorkspace?.name ?? "",
-    currentWorkspace?.settings?.confirmation_whatsapp_template ?? null
-  );
+  const url = useWhatsAppConfirmUrl(order);
+  const label = useWhatsAppLabel(order);
   if (!url) return null;
   return (
     <a
@@ -119,14 +135,15 @@ export function WhatsAppButton({
       target="_blank"
       rel="noopener noreferrer"
       onClick={onOpen}
-      aria-label={fmt(t.openWhatsAppLabel, { name: order.contactSnapshot.fullName?.trim() || t.customer })}
+      aria-label={label}
+      data-slot="contact-whatsapp"
       className={cn(
-        "inline-flex min-h-11 items-center gap-2 rounded-[0.5rem] border border-line bg-paper-raised px-3 text-sm font-medium text-ink transition-colors hover:border-primary hover:text-primary",
+        "inline-flex min-h-11 items-center gap-2 rounded-full bg-success-soft px-4 text-sm font-semibold text-success transition-[scale,background-color,color] duration-[var(--dur-fade)] ease-[var(--ease-out)] active:scale-[0.97] pointer-fine:min-h-9 motion-reduce:transition-none motion-reduce:active:scale-100",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
         className
       )}
     >
-      <MessageCircle className="size-4 shrink-0" aria-hidden />
+      <IconWhatsApp className="size-4 shrink-0" aria-hidden />
       {t.openWhatsApp}
     </a>
   );

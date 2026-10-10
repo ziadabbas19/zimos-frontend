@@ -110,3 +110,13 @@ export const STORE_REPORTS_ENABLED = import.meta.env.VITE_STORE_REPORTS_ENABLED 
  * the store keeps the value it has (15 minutes unless it was set).
  */
 export const LOST_ORDER_TIMING_ENABLED = import.meta.env.VITE_LOST_ORDER_TIMING_ENABLED === "true";
+
+/**
+ * The confirmation queue's calling station: one order on the screen at a time
+ * with the result of the call as one press, the next order coming by itself.
+ * On: a role that takes calls gets it on the waiting tab (and a switch back to
+ * the list). Off: the queue is the list for everyone, as it always was. Both
+ * make the same requests; the station claims an order when Call, WhatsApp or a
+ * result is pressed.
+ */
+export const CONFIRMATION_STATION_ENABLED = import.meta.env.VITE_CONFIRMATION_STATION_ENABLED === "true";
