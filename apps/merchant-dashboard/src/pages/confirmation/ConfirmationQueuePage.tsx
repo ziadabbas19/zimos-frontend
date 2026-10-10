@@ -107,9 +107,10 @@ export function ConfirmationQueuePage() {
   const assigning = canManage && (hasOthers || Boolean(assignees.error));
   // An agent keeps the filter for "Assigned to me".
   const showAssignment = !canManage || assigning;
-  // Several orders at once. Handing them out needs a team; accepting or cancelling them all is for a role
-  // that both takes calls and manages orders (the owner, among the roles the dashboard knows).
-  const bulk = { assign: assigning, outcome: canConfirm && canManage };
+  // Several orders at once. Handing them out, or taking the assignment off them, is a manager's whatever the
+  // size of the team, as it always was; accepting or cancelling them all is for a role that both takes calls
+  // and manages orders (the owner, among the roles the dashboard knows).
+  const bulk = { assign: canManage, outcome: canConfirm && canManage };
   const assignmentLabel = useAssignmentLabel(team);
 
   // The station is for a role that takes calls, on the calls that wait; everyone and everything else gets the list.
@@ -275,6 +276,7 @@ export function ConfirmationQueuePage() {
             tab={tab}
             now={now}
             team={team}
+            assignees={members}
             bulk={bulk}
             onChanged={replaceTask}
             onResolved={resolvedInList}
