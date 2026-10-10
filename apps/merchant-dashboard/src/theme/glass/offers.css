@@ -1,0 +1,264 @@
+/* The offers and discounts hub — pages/offers, pages/discounts, pages/giftCards.
+   Part of the liquid-glass layer (../liquid-glass.css): everything here is under the
+   same switch, so with data-glass="off" none of it applies and the component stands
+   on its own solid Tailwind classes. Fills, blur and rims come from the --lg-* variables.
+
+   Nothing here is blurred: the tab track, the tool cards and the tables lie in the page
+   flow with only the still backdrop behind them. The sheets (a discount's form, the
+   share link, a new gift card) take their frost from sheet.css.
+
+   Two things are deliberately NOT glass, because they show the shopper's side:
+   the preview panes (.zimos-offer-paper — solid "paper", like the storefront) and the
+   gift card (.zimos-gift-art — the store's colour as a gradient, with a sheen).
+
+   Hooks: .zimos-hub-tabs / .zimos-hub-tab (the three tabs), .zimos-offer-tool with
+   .zimos-offer-tile, .zimos-offer-state, .zimos-offer-stat (a tool card), .zimos-offer-group
+   (a group heading), .zimos-offers-table / .zimos-offers-row (the two tables),
+   .zimos-offer-copy (the copy button of a phone card), .zimos-offer-action (the pills in a
+   discount's sheet), .zimos-offer-results (its results panel), .zimos-offer-paper with
+   .zimos-offer-code and .zimos-offer-thumb (a preview), .zimos-gift-art, .zimos-gift-chip
+   and .zimos-gift-meter (gift cards). */
+:root:not([data-glass="off"]) {
+  /* The tile behind a tool's glyph: the store's colour as a soft gradient over the pane. */
+  --offer-tile-from: color-mix(in srgb, var(--color-primary) 20%, var(--lg-control-lit));
+  --offer-tile-to: color-mix(in srgb, var(--color-primary) 8%, var(--lg-control-lit));
+  --offer-tile-rim: inset 0 1px 0 0 rgb(255 255 255 / 0.8), inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 16%, transparent);
+  /* A quiet brand tint: the code chip of a preview. */
+  --offer-tint: color-mix(in srgb, var(--color-primary) 12%, var(--color-paper-raised));
+  /* The light that crosses a gift card. */
+  --gift-sheen: linear-gradient(118deg, transparent 30%, rgb(255 255 255 / 0.3) 46%, rgb(255 255 255 / 0.06) 56%, transparent 70%);
+
+  &.dark {
+    --offer-tile-from: color-mix(in srgb, var(--color-primary) 30%, var(--lg-control-lit));
+    --offer-tile-to: color-mix(in srgb, var(--color-primary) 12%, var(--lg-control-lit));
+    --offer-tile-rim: inset 0 1px 0 0 rgb(255 255 255 / 0.14), inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 26%, transparent);
+    --offer-tint: color-mix(in srgb, var(--color-primary) 22%, var(--color-paper-raised));
+    --gift-sheen: linear-gradient(118deg, transparent 30%, rgb(255 255 255 / 0.2) 46%, rgb(255 255 255 / 0.04) 56%, transparent 70%);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * The three tabs: a track of glass (a small pane — translucent, the
+   * crisp rim, a hairline that is a shadow so the track keeps its size)
+   * and, on it, the current tab in the shared selection fill: the one
+   * the main button, the current side-menu row and the chosen segment
+   * have. A tab that is not the current one lights up under the pointer.
+   * ---------------------------------------------------------------- */
+  .zimos-hub-tabs {
+    background-color: var(--lg-control);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge);
+  }
+  .zimos-hub-tab:not([aria-current="page"]) {
+    color: var(--lg-ink-soft);
+  }
+  @media (hover: hover) {
+    .zimos-hub-tab:not([aria-current="page"]):hover {
+      background-color: var(--lg-control-lit);
+      color: var(--color-ink);
+    }
+  }
+  .zimos-hub-tab:not([aria-current="page"]):active {
+    background-color: var(--lg-control-lit);
+  }
+  .zimos-hub-tab[aria-current="page"] {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.28), var(--lg-brand-glow);
+  }
+  /* Going from one tab's page to another's, the fill travels to its new place on the spring
+     (lib/viewTransition.ts sets <html data-vt> for the length of the move, and only then). */
+  @media (prefers-reduced-motion: no-preference) {
+    &[data-vt] .zimos-hub-tab[aria-current="page"] {
+      view-transition-name: hub-tab;
+    }
+  }
+
+  /* ---------------------------------------------------------------- *
+   * A tool card: a sheet pane, like a row card of the lists — the
+   * translucent fill, the two crisp rim lines, the card shadow, and no
+   * blur (there are sixteen of them). Under the pointer it lights up
+   * and the shadow deepens while the component lifts it 2px; pressed,
+   * it only lights. The hairline is a shadow, not a border.
+   * ---------------------------------------------------------------- */
+  .zimos-offer-tool {
+    background-color: var(--lg-fill);
+    background-image: var(--lg-sheen);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge), var(--shadow-card);
+  }
+  @media (hover: hover) {
+    .zimos-offer-tool:hover {
+      background-color: var(--lg-control-lit);
+      box-shadow: var(--lg-rim-line), 0 0 0 1px color-mix(in srgb, var(--color-primary) 30%, transparent), var(--shadow-raised);
+    }
+  }
+  .zimos-offer-tool:active {
+    background-color: var(--lg-control-lit);
+  }
+  /* What a tool does: secondary ink one step deeper, so it holds 4.5:1 on the pane. */
+  .zimos-offer-tool .text-ink-soft,
+  .zimos-offer-group {
+    color: var(--lg-ink-soft);
+  }
+  .zimos-offer-stat {
+    color: var(--lg-text-primary);
+  }
+  /* «٣ شغّالين»: the success tone over a near-solid fill, the recipe of the lists' tinted figures. */
+  .zimos-offer-state {
+    background-color: var(--list-count-success, color-mix(in srgb, var(--color-success) 16%, var(--lg-control-lit)));
+    color: var(--lg-text-success);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 16%, transparent);
+  }
+
+  /* The tile: the glyph in two tones on a soft gradient of the store's colour, lit along the top. */
+  .zimos-offer-tile {
+    background-color: var(--offer-tile-to);
+    background-image: linear-gradient(145deg, var(--offer-tile-from) 0%, var(--offer-tile-to) 100%);
+    color: var(--lg-text-primary);
+    box-shadow: var(--offer-tile-rim);
+  }
+  @media (hover: hover) {
+    .zimos-offer-tool:hover .zimos-offer-tile {
+      background-image: linear-gradient(145deg, color-mix(in srgb, var(--color-primary) 30%, var(--lg-control-lit)) 0%, var(--offer-tile-to) 100%);
+    }
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Rows of the two tables (discounts, gift cards). The sheet is the
+   * pane (liquid-glass.css makes the raised box that holds a table one
+   * pane with a tinted head); a row has no fill of its own and lights
+   * up under the pointer or the keyboard, as every list's rows do.
+   * ---------------------------------------------------------------- */
+  .zimos-offers-table tbody tr.zimos-offers-row {
+    transition: background-color var(--dur-fade) var(--ease-out);
+  }
+  @media (hover: hover) {
+    .zimos-offers-table tbody tr.zimos-offers-row:hover {
+      background: var(--lg-row-lit);
+    }
+  }
+  .zimos-offers-table tbody tr.zimos-offers-row:focus-visible {
+    background: var(--lg-row-lit);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .zimos-offers-table tbody tr.zimos-offers-row {
+      transition: none;
+    }
+  }
+
+  /* The copy button of a phone card, and the pills of a discount's own actions: small panes. */
+  .zimos-offer-copy,
+  .zimos-offer-action {
+    background-color: var(--lg-control);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge);
+  }
+  @media (hover: hover) {
+    .zimos-offer-copy:hover,
+    .zimos-offer-action:hover {
+      background-color: var(--lg-control-lit);
+    }
+  }
+  .zimos-offer-copy:active,
+  .zimos-offer-action:active {
+    background-color: var(--lg-control-lit);
+  }
+
+  /* A discount's results inside its sheet: a quiet inset pane, parted from the form by its tint. */
+  .zimos-offer-results {
+    background-color: color-mix(in srgb, var(--color-ink) 4%, transparent);
+    box-shadow: inset 0 0 0 1px var(--lg-hairline);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * The preview panes: "paper". Solid, like the storefront the shopper
+   * sees — never glass, so what is on it reads as the store's page and
+   * not as part of the dashboard. A fine edge and a soft lifted shadow,
+   * as a sheet of paper lying on the sheet of glass.
+   * ---------------------------------------------------------------- */
+  .zimos-offer-paper {
+    background-color: var(--color-paper-raised);
+    background-image: none;
+    box-shadow:
+      0 0 0 1px var(--lg-edge),
+      0 1px 2px rgb(15 23 42 / 0.06),
+      0 12px 24px -16px rgb(15 23 42 / 0.28);
+  }
+  &.dark .zimos-offer-paper {
+    box-shadow:
+      0 0 0 1px rgb(255 255 255 / 0.12),
+      0 12px 24px -16px rgb(0 0 0 / 0.7);
+  }
+  .zimos-offer-code {
+    background-color: var(--offer-tint);
+    color: var(--lg-text-primary);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 22%, transparent);
+  }
+  .zimos-offer-thumb {
+    background-image: linear-gradient(145deg, var(--offer-tile-from) 0%, var(--offer-tile-to) 100%);
+    color: var(--lg-text-primary);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * The gift card: the store's colour as the brand gradient, a band of
+   * light across it (the sheen), a bright line along the top edge and
+   * the brand glow beneath — the fill of the main button, at the size
+   * of a card. The small chip of a list row is the same card in little.
+   * ---------------------------------------------------------------- */
+  .zimos-gift-art {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--gift-sheen), radial-gradient(120% 90% at 100% 0%, rgb(255 255 255 / 0.2) 0%, transparent 60%), var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.34),
+      inset 0 0 0 1px rgb(255 255 255 / 0.12),
+      0 18px 32px -18px color-mix(in srgb, var(--lg-brand-solid) 80%, transparent);
+  }
+  .zimos-gift-chip {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--gift-sheen), var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.3);
+  }
+  /* What is left on a card: a track in the pane, the fill in the brand gradient. */
+  .zimos-gift-meter {
+    background-color: color-mix(in srgb, var(--color-ink) 9%, transparent);
+  }
+  .zimos-gift-meter > div {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+  }
+
+  /* If forced colours are on while this layer still is: system colours, no tints, no gradients. */
+  @media (forced-colors: active) {
+    .zimos-hub-tabs,
+    .zimos-offer-tool,
+    .zimos-offer-tile,
+    .zimos-offer-paper,
+    .zimos-offer-code,
+    .zimos-offer-thumb,
+    .zimos-offer-copy,
+    .zimos-offer-action,
+    .zimos-offer-results,
+    .zimos-gift-art,
+    .zimos-gift-chip {
+      background-image: none;
+      box-shadow: none;
+      border: 1px solid CanvasText;
+    }
+    .zimos-hub-tab[aria-current="page"] {
+      background-color: Highlight;
+      background-image: none;
+      color: HighlightText;
+      box-shadow: none;
+    }
+  }
+}
+
+/* The fill of the current tab takes the size of its new label as it travels. */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(hub-tab),
+  ::view-transition-new(hub-tab) {
+    height: 100%;
+    width: 100%;
+    object-fit: fill;
+  }
+}

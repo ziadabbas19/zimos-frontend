@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, Download } from "lucide-react";
+import { IconCopy, IconDownload, IconMagic } from "@/components/icons";
 import { Alert, Button, Label } from "@store-builder/ui";
 import { couponsBulkGenerate, type CouponBulkPayload, type CouponBulkResult } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
@@ -13,7 +13,7 @@ import { TextField } from "@/components/Field";
 import { useToast } from "@/components/Toast";
 
 /**
- * Bulk code generation (SPEC §10.5): many random codes with one set of rules,
+ * Bulk code generation: many random codes with one set of rules,
  * for a campaign where each influencer or customer gets a code of their own.
  * The result is shown once here to copy or download; the codes are ordinary
  * discounts afterwards and appear in the list.
@@ -87,7 +87,8 @@ export function BulkCodesButton({ onGenerated }: { onGenerated: () => void }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button type="button" variant="outline" onClick={() => setOpen(true)}>
+      <Button type="button" variant="outline" className="min-h-11 rounded-full px-4 md:min-h-9" onClick={() => setOpen(true)}>
+        <IconMagic className="size-4" aria-hidden />
         {t.open}
       </Button>
       {open && <BulkCodesDialog onClose={() => setOpen(false)} onGenerated={onGenerated} />}
@@ -177,18 +178,18 @@ function BulkCodesDialog({ onClose, onGenerated }: { onClose: () => void; onGene
         }
       >
         <div className="space-y-3">
-          <ul dir="ltr" className="grid max-h-64 grid-cols-2 gap-x-4 gap-y-1 overflow-y-auto rounded-[0.5rem] border border-line bg-paper p-3 font-mono text-sm text-ink">
+          <ul dir="ltr" className="zimos-offer-paper grid max-h-64 grid-cols-2 gap-x-4 gap-y-1 overflow-y-auto rounded-[1rem] bg-paper-raised p-3 font-mono text-sm text-ink ring-1 ring-line">
             {result.codes.map((code) => (
               <li key={code}>{code}</li>
             ))}
           </ul>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" onClick={() => void copyAll()}>
-              <Copy className="size-4" aria-hidden />
+            <Button type="button" className="min-h-11 rounded-full px-5" onClick={() => void copyAll()}>
+              <IconCopy className="size-4" aria-hidden />
               {t.copy}
             </Button>
-            <Button type="button" variant="outline" onClick={download}>
-              <Download className="size-4" aria-hidden />
+            <Button type="button" variant="outline" className="min-h-11 rounded-full px-5" onClick={download}>
+              <IconDownload className="size-4" aria-hidden />
               {t.download}
             </Button>
           </div>
