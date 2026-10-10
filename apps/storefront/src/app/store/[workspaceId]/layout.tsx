@@ -41,6 +41,7 @@ import { storeThemeOf } from "@/lib/brandTheme";
 import { StoreUnavailable } from "@/components/StoreUnavailable";
 import { THEME_FONT_CSS } from "@/app/themeFonts";
 import { ThemeChrome } from "@/components/shell/ThemeChrome";
+import { StoreNavFrame } from "@/components/shell/StoreNavFrame";
 
 /** An unavailable store has no themeSettings; its own default language still counts. */
 function localeSource(store: UnavailableStore) {
@@ -120,6 +121,9 @@ export async function generateMetadata({
  *    merchant built in the website editor — sits under the same branding.
  *    Funnel pages (`/f/…`) are the exception: they draw their own masthead,
  *    so HideInFunnel leaves these two out there;
+ *  - the side navigation, for a store that chose it (StoreNavFrame): from
+ *    `xl` a column beside everything below. Any other store, and every store
+ *    while lib/features has it off, gets exactly what this layout drew before;
  *  - the store's own analytics (StoreAnalytics): one page_view per navigation
  *    for every page of the store, funnel pages included — the funnel layout
  *    nests inside this one, so it deliberately doesn't mount it again. An
@@ -213,41 +217,43 @@ export default async function StoreLayout({
           >
             {theme && <style dangerouslySetInnerHTML={{ __html: THEME_FONT_CSS }} />}
             <DocumentLocale locale={locale} />
-            <PaymentsPreviewBanner workspaceId={workspaceId} />
-            {/* The band across the top while the store is on holiday; on funnel pages too (HOLIDAY_MODE_ENABLED). */}
-            <HolidayBanner />
-            {/* A friend's invite from a `?ref=` link, above the store (lib/features); funnel pages keep their own path. */}
-            {CUSTOMER_REFERRALS_ENABLED && (
+            <StoreNavFrame store={store} locale={locale} collections={collections}>
+              <PaymentsPreviewBanner workspaceId={workspaceId} />
+              {/* The band across the top while the store is on holiday; on funnel pages too (HOLIDAY_MODE_ENABLED). */}
+              <HolidayBanner />
+              {/* A friend's invite from a `?ref=` link, above the store (lib/features); funnel pages keep their own path. */}
+              {CUSTOMER_REFERRALS_ENABLED && (
+                <HideInFunnel>
+                  <InviteBanner />
+                </HideInFunnel>
+              )}
               <HideInFunnel>
-                <InviteBanner />
+                <StoreHeader store={store} locale={locale} />
+                <MobileCategoryStrip collections={collections} t={t} />
               </HideInFunnel>
-            )}
-            <HideInFunnel>
-              <StoreHeader store={store} locale={locale} />
-              <MobileCategoryStrip collections={collections} t={t} />
-            </HideInFunnel>
-            <div className="flex flex-1 flex-col">{children}</div>
-            <HideInFunnel>
-              {/* The merchant's sign-up form: a band above the footer, or a popup (Offers → Newsletter). */}
-              <NewsletterSignup workspaceId={store.id} />
-              <StoreFooter store={store} locale={locale} year={new Date().getFullYear()} />
-              {/* The slide-over cart: opened by "add to cart" and the header's
-                  cart icon. Funnel pages have no cart, so it steps aside with
-                  the rest of the store's chrome. */}
-              <CartDrawer />
-              {/* The merchant's exit popup, once per visitor (Offers → Exit popup). */}
-              <ExitDownsell workspaceId={store.id} />
-              {/* Sales notifications from real orders (Offers → Sales notifications). */}
-              <SocialProofPopup workspaceId={store.id} />
-              {floatingWhatsapp && <FloatingWhatsapp phone={floatingWhatsapp.phone} message={floatingWhatsapp.message} />}
-            </HideInFunnel>
-            {/* Remembers a ?coupon=CODE link so a checkout applies it — the store's or a funnel's. */}
-            <CouponFromLink workspaceId={workspaceId} />
-            <BackToTop label={t.common.backToTop} />
-            {/* The store as an app for shoppers (Settings → Store app). */}
-            <StoreAppInstall app={storefrontStoreApp(store)} locale={arOrEn(locale)} />
-            {/* The phone toolbar and floating buttons a store can switch on (themeSettings). */}
-            <ThemeChrome store={store} />
+              <div className="flex flex-1 flex-col">{children}</div>
+              <HideInFunnel>
+                {/* The merchant's sign-up form: a band above the footer, or a popup (Offers → Newsletter). */}
+                <NewsletterSignup workspaceId={store.id} />
+                <StoreFooter store={store} locale={locale} year={new Date().getFullYear()} />
+                {/* The slide-over cart: opened by "add to cart" and the header's
+                    cart icon. Funnel pages have no cart, so it steps aside with
+                    the rest of the store's chrome. */}
+                <CartDrawer />
+                {/* The merchant's exit popup, once per visitor (Offers → Exit popup). */}
+                <ExitDownsell workspaceId={store.id} />
+                {/* Sales notifications from real orders (Offers → Sales notifications). */}
+                <SocialProofPopup workspaceId={store.id} />
+                {floatingWhatsapp && <FloatingWhatsapp phone={floatingWhatsapp.phone} message={floatingWhatsapp.message} />}
+              </HideInFunnel>
+              {/* Remembers a ?coupon=CODE link so a checkout applies it — the store's or a funnel's. */}
+              <CouponFromLink workspaceId={workspaceId} />
+              <BackToTop label={t.common.backToTop} />
+              {/* The store as an app for shoppers (Settings → Store app). */}
+              <StoreAppInstall app={storefrontStoreApp(store)} locale={arOrEn(locale)} />
+              {/* The phone toolbar and floating buttons a store can switch on (themeSettings). */}
+              <ThemeChrome store={store} />
+            </StoreNavFrame>
           </div>
         </StoreShellProvider>
       </StoreContextProvider>

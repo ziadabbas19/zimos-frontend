@@ -71,7 +71,8 @@ function useSuggestions(workspaceId: string, query: string) {
   return { data, loading };
 }
 
-function SearchCombobox({ autoFocus = false, onDone }: { autoFocus?: boolean; onDone?: () => void }) {
+/** The field with its suggestions, as wide as what holds it: the header's (SearchBox below) and the side navigation's. */
+export function SearchCombobox({ autoFocus = false, onDone }: { autoFocus?: boolean; onDone?: () => void }) {
   const { t, money } = useStore();
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const basePath = useStoreBasePath();

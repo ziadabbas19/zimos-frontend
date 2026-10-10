@@ -26,15 +26,20 @@ import { useEffect, useState, type ReactNode } from "react";
  * let the bar scroll away with the page; it then never floats, so it never
  * needs the scrolled shadow either. `data-zimos-shell` names the header for
  * the editor preview's click-to-select; it changes nothing on a live page.
+ *
+ * `className` is added after the shell's own classes (a store with the side
+ * navigation hides the bar from `xl`, StoreHeader); empty, nothing changes.
  */
 export function StickyHeader({
   children,
   transparent = false,
   sticky = true,
+  className = "",
 }: {
   children: ReactNode;
   transparent?: boolean;
   sticky?: boolean;
+  className?: string;
 }) {
   const [scrolled, setScrolled] = useState(false);
 
@@ -69,7 +74,7 @@ export function StickyHeader({
           : `border-line bg-paper-raised/95 backdrop-blur supports-[backdrop-filter]:bg-paper-raised/85 ${
               floating ? "shadow-[0_1px_0_0_var(--color-line),0_8px_24px_-16px_rgba(0,0,0,0.35)]" : ""
             }`
-      }`}
+      }${className}`}
     >
       {children}
     </header>

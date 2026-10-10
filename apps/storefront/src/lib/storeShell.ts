@@ -11,6 +11,7 @@
  *     logo?:   { size?: "sm" | "lg", align?: "center" },
  *     show?:   { cart?, language?, theme?, trackOrder? },  // false hides one
  *     sticky?: false,
+ *     layout?: "side",                     // absent → the bar across the top
  *   }
  *   themeSettings.footer = {
  *     groups?: [{ title, links: [{ label, href }] }],     // absent → built-in
@@ -35,6 +36,12 @@ export interface ShellLink {
 
 export type LogoSize = "sm" | "md" | "lg";
 export type LogoAlign = "start" | "center";
+/**
+ * Where the store's navigation sits on a wide screen: the bar across the top
+ * every store has had, or a column beside the page. A phone keeps the bar
+ * either way. Whether "side" is honoured at all is lib/storeNav's to say.
+ */
+export type NavLayout = "top" | "side";
 
 export interface HeaderShell {
   /** The merchant's own menu, or null for the built-in links. */
@@ -46,6 +53,7 @@ export interface HeaderShell {
   showTheme: boolean;
   showTrackOrder: boolean;
   sticky: boolean;
+  layout: NavLayout;
 }
 
 export interface FooterGroup {
@@ -81,6 +89,7 @@ export const DEFAULT_HEADER: HeaderShell = {
   showTheme: true,
   showTrackOrder: true,
   sticky: true,
+  layout: "top",
 };
 
 export const DEFAULT_FOOTER: FooterShell = {
@@ -131,6 +140,8 @@ export function readHeaderShell(themeSettings: Blob | null | undefined): HeaderS
     showTheme: shown(show, "theme"),
     showTrackOrder: shown(show, "trackOrder"),
     sticky: header.sticky !== false,
+    // Only the one known value moves the navigation; anything else is the top bar.
+    layout: header.layout === "side" ? "side" : "top",
   };
 }
 
