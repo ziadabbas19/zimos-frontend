@@ -1,729 +1,382 @@
-import { useMemo, useState } from "react";
-import { Banknote, FileText, Receipt, Truck, Wallet } from "lucide-react";
-import { Button, Card, Input } from "@store-builder/ui";
-import type { SettlementLinePayload, UnsettledOrder } from "@store-builder/api-client";
-import { apiClient } from "@/lib/apiClient";
-import { useAsync } from "@/lib/useAsync";
-import { useWorkspaceId } from "@/lib/useWorkspaceId";
-import { formatDate, formatMoney, majorToMinor, minorToMajorInput } from "@/lib/format";
-import { ApiError, getErrorMessage } from "@/lib/errors";
-import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
-import { PageHeader } from "@/components/PageHeader";
-import { KpiCard } from "@/components/KpiCard";
+import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Button } from "@store-builder/ui";
+import { statementGetHeld, type SettlementLinePayload, type SettlementListItem, type SettlementStatus } from "@store-builder/api-client";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DataState } from "@/components/DataState";
 import { EmptyState } from "@/components/EmptyState";
-import { StatusBadge } from "@/components/StatusBadge";
-import { Section } from "@/components/Section";
-import { DataTable } from "@/components/DataTable";
-import { Modal } from "@/components/Modal";
-import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { IconCash, IconCourier, IconDocument, IconPlus, IconReceipt, IconRefresh, IconUpload, IconWallet } from "@/components/icons";
+import { KpiCard } from "@/components/KpiCard";
+import { ChipRow, ListSkeleton, type ChipItem } from "@/components/list";
+import { LoadMore } from "@/components/LoadMore";
+import { PageHeader } from "@/components/PageHeader";
+import { ReportKpiStrip } from "@/components/report";
+import { Segmented } from "@/components/Segmented";
 import { useToast } from "@/components/Toast";
-import { HeldByCouriers, StatementImport } from "./StatementTools";
+import { ViewLink } from "@/components/ViewLink";
+import { useWorkspace } from "@/context/WorkspaceContext";
+import { fmt, useT } from "@/i18n/LocaleContext";
+import { formatCount } from "@/lib/analytics";
+import { apiClient } from "@/lib/apiClient";
+import { formatMoney } from "@/lib/format";
+import { countOf } from "@/lib/plural";
+import { useAsync } from "@/lib/useAsync";
+import { useCachedAsync } from "@/lib/useCachedAsync";
+import { useWorkspaceId } from "@/lib/useWorkspaceId";
+import { useAddressValue } from "@/pages/analytics/storeReports/storeReportParts";
+import { HeaderMenu } from "@/pages/profit/HeaderMenu";
+import { useIsCompact, useIsPhone } from "@/pages/returns/rowkit/useScreen";
+import { HeldList, heldRows } from "./HeldList";
+import { ReconcileSheet } from "./ReconcileSheet";
+import { SettlementList } from "./SettlementList";
+import { SettlementSheet } from "./SettlementSheet";
+import { SETTLEMENT_STRINGS, settlementErrorText } from "./settlementStrings";
+import { StatementImportSheet } from "./StatementTools";
 
-const STRINGS = {
-  en: {
-    title: "COD settlements",
-    description:
-      "Match the cash couriers collected on delivered orders with what they actually transferred to you.",
-    kpiUnsettled: "Unsettled orders",
-    kpiDue: "Due from couriers",
-    kpiReceived: "Received",
-    kpiFees: "Courier fees",
-    kpiDrafts: "Draft settlements",
-    unsettledTitle: "Delivered, not settled yet",
-    unsettledDesc: "Pick the orders a courier paid you for, adjust the amounts, then save a draft.",
-    noUnsettled: "No unsettled COD orders",
-    noUnsettledDesc: "Delivered cash-on-delivery orders with money still due will show up here.",
-    carrierOrders: "{n} orders · {due} due",
-    selectAll: "Select all",
-    selectOrder: "Select order {number}",
-    colOrder: "Order",
-    colCustomer: "Customer",
-    colWaybill: "Waybill",
-    colDelivered: "Delivered",
-    colDue: "Due",
-    colCollected: "Collected",
-    colFee: "Courier fee",
-    feePerOrder: "Fee per order",
-    applyFee: "Apply to selected",
-    selectedCount: "{n} selected",
-    createDraft: "Create draft settlement",
-    creating: "Saving…",
-    draftCreated: "Draft settlement saved",
-    invalidAmount: "Enter a valid amount for order {number}.",
-    exceedsDue: "Collected for order {number} is more than what's due.",
-    settlementsTitle: "Settlements",
-    noSettlements: "No settlements yet",
-    noSettlementsDesc: "Draft settlements you create from the orders above will be listed here.",
-    colDate: "Created",
-    colCarrier: "Courier",
-    colReference: "Reference",
-    colStatus: "Status",
-    colFees: "Fees",
-    colNet: "Net",
-    view: "View",
-    detailTitle: "Settlement · {carrier}",
-    notes: "Notes",
-    period: "Period",
-    confirmedAt: "Confirmed on {date}",
-    confirm: "Confirm settlement",
-    delete: "Delete draft",
-    close: "Close",
-    confirmTitle: "Confirm this settlement?",
-    confirmDesc:
-      "This records the collected amount as a payment on every order in it and marks them paid. A confirmed settlement can't be edited or deleted.",
-    confirmed: "Settlement confirmed",
-    deleteTitle: "Delete this draft?",
-    deleteDesc: "The orders go back to the unsettled list. Nothing is recorded on them.",
-    deleted: "Draft deleted",
-    errNotSettleable: "One of the orders can't be settled anymore — refresh and try again.",
-    errDuplicate: "An order is on this settlement twice.",
-    errExceeds: "A collected amount is more than what's due on its order.",
-    errConfirmed: "This settlement is already confirmed and can't be changed.",
-    errEmpty: "This settlement has no orders.",
-  },
-  ar: {
-    title: "تحصيل الشحن",
-    description: "طابق الفلوس اللي شركات الشحن حصّلتها من الطلبات المتسلّمة مع اللي حوّلوهولك فعلاً.",
-    kpiUnsettled: "طلبات لسه متسوّتش",
-    kpiDue: "مستحق عند شركات الشحن",
-    kpiReceived: "اللي وصلك",
-    kpiFees: "مصاريف الشحن",
-    kpiDrafts: "تسويات مسودة",
-    unsettledTitle: "اتسلّمت ولسه متسوّتش",
-    unsettledDesc: "اختار الطلبات اللي شركة الشحن دفعتلك تمنها، عدّل المبالغ، وبعدين احفظ مسودة.",
-    noUnsettled: "مفيش طلبات دفع عند الاستلام محتاجة تسوية",
-    noUnsettledDesc: "الطلبات اللي اتسلّمت ولسه ليك فلوس فيها هتظهر هنا.",
-    carrierOrders: "{n} طلب · {due} مستحق",
-    selectAll: "اختار الكل",
-    selectOrder: "اختار الطلب {number}",
-    colOrder: "الطلب",
-    colCustomer: "العميل",
-    colWaybill: "رقم البوليصة",
-    colDelivered: "اتسلّم",
-    colDue: "المستحق",
-    colCollected: "المحصّل",
-    colFee: "مصاريف الشحن",
-    feePerOrder: "المصاريف لكل طلب",
-    applyFee: "طبّق على المختار",
-    selectedCount: "{n} مختار",
-    createDraft: "اعمل مسودة تسوية",
-    creating: "بنحفظ…",
-    draftCreated: "اتحفظت مسودة التسوية",
-    invalidAmount: "اكتب مبلغ صحيح للطلب {number}.",
-    exceedsDue: "المحصّل للطلب {number} أكتر من المستحق.",
-    settlementsTitle: "التسويات",
-    noSettlements: "مفيش تسويات لسه",
-    noSettlementsDesc: "المسودات اللي هتعملها من الطلبات اللي فوق هتظهر هنا.",
-    colDate: "اتعملت",
-    colCarrier: "شركة الشحن",
-    colReference: "المرجع",
-    colStatus: "الحالة",
-    colFees: "المصاريف",
-    colNet: "الصافي",
-    view: "عرض",
-    detailTitle: "تسوية · {carrier}",
-    notes: "ملاحظات",
-    period: "الفترة",
-    confirmedAt: "اتأكدت يوم {date}",
-    confirm: "أكّد التسوية",
-    delete: "امسح المسودة",
-    close: "قفل",
-    confirmTitle: "تأكيد التسوية دي؟",
-    confirmDesc:
-      "ده هيسجّل المبلغ المحصّل كدفعة على كل طلب فيها ويعلّمهم مدفوعين. التسوية المتأكدة مينفعش تتعدّل أو تتمسح.",
-    confirmed: "التسوية اتأكدت",
-    deleteTitle: "مسح المسودة دي؟",
-    deleteDesc: "الطلبات هترجع لقايمة اللي لسه متسوّتش ومش هيتسجّل عليها حاجة.",
-    deleted: "المسودة اتمسحت",
-    errNotSettleable: "طلب من الطلبات مبقاش ينفع يتسوّى — اعمل تحديث وجرّب تاني.",
-    errDuplicate: "فيه طلب مكرر في التسوية دي.",
-    errExceeds: "فيه مبلغ محصّل أكتر من المستحق على الطلب بتاعه.",
-    errConfirmed: "التسوية دي متأكدة خلاص ومينفعش تتغيّر.",
-    errEmpty: "التسوية دي مفيهاش طلبات.",
-  },
-} satisfies Messages;
+type View = "held" | "settlements";
+type StatusChip = "all" | SettlementStatus;
+const PAGE_SIZE = 50;
 
-/** Per-row editor state. Amounts are major-unit text, as typed. */
-interface RowDraft {
-  checked: boolean;
-  collected: string;
-  fee: string;
-}
-
+/**
+ * Courier settlements (/settlements): what the couriers hold and what reached
+ * the merchant.
+ *
+ * Four figures, then ONE of two lists (`?tab=`): the money held, courier by
+ * courier with its age — the row's step is «سجّل تحويل», a sheet that ticks
+ * the orders the courier paid for and saves a draft — and the settlements,
+ * by status (`?status=`), each opening in a panel over the list where a draft
+ * is confirmed or deleted. The courier's own statement file is imported from
+ * the header's menu. Every call is the page's old one.
+ */
 export function SettlementsPage() {
-  const t = useT(STRINGS);
+  const t = useT(SETTLEMENT_STRINGS);
   const workspaceId = useWorkspaceId();
+  const { currentWorkspace } = useWorkspace();
   const toast = useToast();
+  const phone = useIsPhone();
+  const compact = useIsCompact();
+  const [params, setParams] = useSearchParams();
 
-  const summary = useAsync(() => apiClient.getSettlementSummary(workspaceId), [workspaceId]);
-  const unsettled = useAsync(() => apiClient.listUnsettledOrders(workspaceId), [workspaceId]);
-  const settlements = useAsync(
-    () => apiClient.listSettlements(workspaceId, { limit: 50 }),
+  function write(key: string, value: string, fallback: string) {
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (value === fallback) next.delete(key);
+        else next.set(key, value);
+        return next;
+      },
+      { replace: true }
+    );
+  }
+  const statusParam = params.get("status");
+  const [view, setView] = useAddressValue<View>(params.get("tab") === "settlements" ? "settlements" : "held", (next) =>
+    write("tab", next, "held")
+  );
+  const [status, setStatus] = useAddressValue<StatusChip>(
+    statusParam === "draft" || statusParam === "confirmed" ? statusParam : "all",
+    (next) => write("status", next, "all")
+  );
+
+  const summary = useCachedAsync(workspaceId ? `settlements:summary:${workspaceId}` : null, () => apiClient.getSettlementSummary(workspaceId), [
+    workspaceId,
+  ]);
+  const unsettled = useCachedAsync(
+    workspaceId ? `settlements:unsettled:${workspaceId}` : null,
+    () => apiClient.listUnsettledOrders(workspaceId),
     [workspaceId]
   );
-
-  const [rows, setRows] = useState<Record<string, RowDraft>>({});
-  const [feeByCarrier, setFeeByCarrier] = useState<Record<string, string>>({});
-  const [creating, setCreating] = useState<string | null>(null);
-  const [openId, setOpenId] = useState<string | null>(null);
-  const [pending, setPending] = useState<"confirm" | "delete" | null>(null);
-
-  const detail = useAsync(
-    () => (openId ? apiClient.getSettlement(workspaceId, openId) : Promise.resolve(null)),
-    [workspaceId, openId]
+  // The aging report needs its own right: without it the list still shows what can be settled.
+  const held = useCachedAsync(workspaceId ? `settlements:held:${workspaceId}` : null, () => statementGetHeld(apiClient, workspaceId), [workspaceId]);
+  const listKey = `${workspaceId}:${status}`;
+  const settlements = useCachedAsync(
+    workspaceId ? `settlements:list:${listKey}` : null,
+    () => apiClient.listSettlements(workspaceId, { limit: PAGE_SIZE, status: status === "all" ? undefined : status }),
+    [workspaceId, status]
   );
+  // Pages after the first, for the list they belong to.
+  const [more, setMore] = useState<{ key: string; rows: SettlementListItem[]; cursor: string | null } | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  // The settlement in the panel. It stays here while the panel closes, so the panel does not empty on its way out.
+  const [sheet, setSheet] = useState<{ id: string; open: boolean } | null>(null);
+  const [pending, setPending] = useState<{ kind: "confirm" | "delete"; id: string } | null>(null);
+  const [reconcile, setReconcile] = useState<{ carrier: string | null; open: boolean }>({ carrier: null, open: false });
+  const [importing, setImporting] = useState(false);
+
+  const sheetId = sheet?.id ?? null;
+  const detail = useAsync(() => (sheetId ? apiClient.getSettlement(workspaceId, sheetId) : Promise.resolve(null)), [workspaceId, sheetId]);
+  // While another settlement loads, the one before it is not shown under its name.
+  const shownDetail = detail.data && detail.data.id === sheetId ? detail.data : null;
 
   const orders = unsettled.data?.orders ?? [];
   const carriers = unsettled.data?.carriers ?? [];
-  const byCarrier = useMemo(() => {
-    const map: Record<string, UnsettledOrder[]> = {};
-    for (const o of orders) (map[o.carrierCode] ??= []).push(o);
-    return map;
-  }, [orders]);
+  const currency = held.data?.currency ?? orders[0]?.currency ?? currentWorkspace?.defaultCurrency ?? "EGP";
+  const money = (minor: number) => formatMoney(minor, currency);
 
-  // The API records one currency per settlement, taken from its orders, so a
-  // single fallback for the page is safe.
-  const currency = orders[0]?.currency ?? "EGP";
-  const money = (v: number | null | undefined, cur = currency) => (
-    <bdi dir="ltr">{formatMoney(v ?? 0, cur)}</bdi>
-  );
-
-  const rowOf = (o: UnsettledOrder): RowDraft =>
-    rows[o.orderId] ?? { checked: false, collected: minorToMajorInput(o.dueAmount), fee: "" };
-  const patchRow = (o: UnsettledOrder, patch: Partial<RowDraft>) =>
-    setRows((prev) => ({ ...prev, [o.orderId]: { ...rowOf(o), ...patch } }));
-
-  function errorText(err: unknown): string {
-    if (err instanceof ApiError) {
-      if (err.code === "ORDER_NOT_SETTLEABLE") return t.errNotSettleable;
-      if (err.code === "DUPLICATE_ORDER") return t.errDuplicate;
-      if (err.code === "COLLECTED_EXCEEDS_DUE") return t.errExceeds;
-      if (err.code === "SETTLEMENT_CONFIRMED") return t.errConfirmed;
-      if (err.code === "SETTLEMENT_EMPTY") return t.errEmpty;
-    }
-    return getErrorMessage(err);
-  }
+  const extra = more && more.key === listKey ? more : null;
+  // A row of the list before stays only if it belongs under this chip: nothing is shown under the wrong status.
+  const firstPage = (settlements.data?.settlements ?? []).filter((row) => status === "all" || row.status === status);
+  const list = extra ? [...firstPage, ...extra.rows] : firstPage;
+  const cursor = extra ? extra.cursor : (settlements.data?.nextCursor ?? null);
 
   function refreshAll() {
-    summary.refresh({ silent: true });
-    unsettled.refresh({ silent: true });
-    settlements.refresh({ silent: true });
+    setMore(null);
+    void summary.refresh({ silent: true });
+    void unsettled.refresh({ silent: true });
+    void held.refresh({ silent: true });
+    void settlements.refresh({ silent: true });
   }
 
-  function applyFee(carrier: string) {
-    const fee = feeByCarrier[carrier] ?? "";
-    setRows((prev) => {
-      const next = { ...prev };
-      for (const o of byCarrier[carrier] ?? []) {
-        const r = prev[o.orderId] ?? {
-          checked: false,
-          collected: minorToMajorInput(o.dueAmount),
-          fee: "",
-        };
-        if (r.checked) next[o.orderId] = { ...r, fee };
-      }
-      return next;
-    });
-  }
-
-  async function createDraft(carrier: string) {
-    const picked = (byCarrier[carrier] ?? []).filter((o) => rowOf(o).checked);
-    const lines: SettlementLinePayload[] = [];
-    for (const o of picked) {
-      const r = rowOf(o);
-      const collected = majorToMinor(r.collected);
-      const fee = r.fee.trim() === "" ? 0 : majorToMinor(r.fee);
-      if (!Number.isFinite(collected) || collected < 0 || !Number.isFinite(fee) || fee < 0) {
-        toast.error(fmt(t.invalidAmount, { number: o.orderNumber }));
-        return;
-      }
-      // Checked client-side too: the 422 names an order id, not a number.
-      if (collected > o.dueAmount) {
-        toast.error(fmt(t.exceedsDue, { number: o.orderNumber }));
-        return;
-      }
-      lines.push({ orderId: o.orderId, collectedAmount: collected, feeAmount: fee });
-    }
-    if (lines.length === 0) return;
-    setCreating(carrier);
+  async function loadMore() {
+    if (!cursor || loadingMore) return;
+    setLoadingMore(true);
     try {
-      // A group of the store's own courier settles under their id too.
-      const courierId = (unsettled.data?.carriers ?? []).find((c) => c.carrierCode === carrier)?.courierId ?? null;
-      const created = await apiClient.createSettlement(workspaceId, { carrierCode: carrier, ...(courierId ? { courierId } : {}), lines });
-      toast.success(t.draftCreated);
-      setRows((prev) => {
-        const next = { ...prev };
-        for (const l of lines) delete next[l.orderId];
-        return next;
+      const page = await apiClient.listSettlements(workspaceId, {
+        limit: PAGE_SIZE,
+        status: status === "all" ? undefined : status,
+        before: cursor,
       });
-      refreshAll();
-      setOpenId(created.id);
+      setMore({ key: listKey, rows: [...(extra?.rows ?? []), ...page.settlements], cursor: page.nextCursor });
     } catch (err) {
-      toast.error(errorText(err));
+      toast.error(settlementErrorText(err, t));
     } finally {
-      setCreating(null);
+      setLoadingMore(false);
     }
+  }
+
+  const openSettlement = (id: string) => setSheet({ id, open: true });
+  const closeSheet = () => setSheet((current) => (current ? { ...current, open: false } : current));
+
+  async function createDraft(carrierCode: string, lines: SettlementLinePayload[]) {
+    // A group of the store's own courier settles under their id too.
+    const courierId = carriers.find((c) => c.carrierCode === carrierCode)?.courierId ?? null;
+    const created = await apiClient.createSettlement(workspaceId, { carrierCode, ...(courierId ? { courierId } : {}), lines });
+    toast.success(t.draftCreated);
+    setReconcile((current) => ({ ...current, open: false }));
+    refreshAll();
+    openSettlement(created.id);
   }
 
   const s = summary.data;
-  const list = settlements.data?.settlements ?? [];
-  const d = detail.data;
+  const rows = heldRows(carriers, held.data);
+  const summaryRow = sheetId ? (list.find((row) => row.id === sheetId) ?? null) : null;
+
+  const chips: ChipItem<StatusChip>[] = [
+    { value: "all", label: t.chipAll },
+    { value: "draft", label: t.chipDraft, count: s ? s.draftSettlements : null, tone: "attention" },
+    { value: "confirmed", label: t.chipConfirmed },
+  ];
+
+  const recordButton = (
+    <Button type="button" className="h-11 gap-2 rounded-full px-5" onClick={() => setReconcile({ carrier: null, open: true })}>
+      <IconPlus className="size-4" aria-hidden />
+      {t.record}
+    </Button>
+  );
 
   return (
     <div className="min-w-0 max-w-6xl">
       <PageHeader
         title={t.title}
-        description={t.description}
+        description={
+          phone
+            ? undefined
+            : s
+              ? s.dueFromCouriers > 0
+                ? fmt(t.answerDue, { amount: money(s.dueFromCouriers), orders: countOf("order", s.unsettledOrders) })
+                : t.answerClear
+              : t.description
+        }
         actions={
-          <StatementImport
-            workspaceId={workspaceId}
-            carriers={(unsettled.data?.carriers ?? []).map((c) => c.carrierCode)}
-            onCreated={(id) => {
-              refreshAll();
-              setOpenId(id);
-            }}
+          <HeaderMenu
+            label={t.tools}
+            items={[
+              { id: "import", label: t.importStatement, hint: t.importHint, icon: IconUpload, onSelect: () => setImporting(true) },
+              { id: "refresh", label: t.refresh, hint: t.refreshHint, icon: IconRefresh, onSelect: refreshAll, separatorBefore: true },
+            ]}
           />
         }
+        primaryAction={recordButton}
       />
 
-      {s && (
-        <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
-          <KpiCard label={t.kpiUnsettled} value={s.unsettledOrders} icon={<Truck />} />
-          <KpiCard label={t.kpiDue} value={money(s.dueFromCouriers)} icon={<Wallet />} />
-          <KpiCard label={t.kpiReceived} value={money(s.received)} icon={<Banknote />} />
-          <KpiCard label={t.kpiFees} value={money(s.courierFees)} icon={<Receipt />} />
-          <KpiCard label={t.kpiDrafts} value={s.draftSettlements} icon={<FileText />} />
-        </div>
-      )}
-
-      <HeldByCouriers workspaceId={workspaceId} refreshKey={settlements.data?.settlements.length} />
-
-      <section className="mb-8">
-        <h2 className="text-sm font-semibold text-ink">{t.unsettledTitle}</h2>
-        <p className="mb-3 mt-0.5 text-xs text-ink-soft">{t.unsettledDesc}</p>
-        <DataState
-          loading={unsettled.loading && !unsettled.data}
-          error={unsettled.error}
-          onRetry={() => unsettled.refresh()}
-        >
-          {carriers.length === 0 ? (
-            <EmptyState icon={<Truck />} title={t.noUnsettled} description={t.noUnsettledDesc} />
-          ) : (
-            <div className="space-y-4">
-              {carriers.map((c) => {
-                const group = byCarrier[c.carrierCode] ?? [];
-                const selected = group.filter((o) => rowOf(o).checked);
-                const allChecked = group.length > 0 && selected.length === group.length;
-                return (
-                  <Card key={c.carrierCode} className="gap-0 p-0">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
-                      <div>
-                        <p className="font-medium text-ink" dir="auto">
-                          {c.carrierCode}
-                        </p>
-                        <p className="text-xs text-ink-soft">
-                          {fmt(t.carrierOrders, {
-                            n: c.orders,
-                            due: formatMoney(c.dueAmount, currency),
-                          })}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Input
-                          inputMode="decimal"
-                          placeholder="0.00"
-                          value={feeByCarrier[c.carrierCode] ?? ""}
-                          onChange={(e) =>
-                            setFeeByCarrier((prev) => ({ ...prev, [c.carrierCode]: e.target.value }))
-                          }
-                          aria-label={`${t.feePerOrder} (${c.carrierCode})`}
-                          className="tabular-nums h-9 w-28"
-                        />
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={selected.length === 0}
-                          onClick={() => applyFee(c.carrierCode)}
-                        >
-                          {t.applyFee}
-                        </Button>
-                        <span className="text-xs text-ink-soft">
-                          {fmt(t.selectedCount, { n: selected.length })}
-                        </span>
-                        <Button
-                          size="sm"
-                          disabled={selected.length === 0 || creating !== null}
-                          onClick={() => createDraft(c.carrierCode)}
-                        >
-                          {creating === c.carrierCode ? t.creating : t.createDraft}
-                        </Button>
-                      </div>
-                    </div>
-                    <DataTable
-                      rows={group}
-                      rowKey={(o) => o.orderId}
-                      minWidth="52rem"
-                      columns={[
-                        {
-                          key: "select",
-                          headerClassName: "w-10",
-                          header: (
-                            <input
-                              type="checkbox"
-                              className="size-4 accent-primary"
-                              checked={allChecked}
-                              aria-label={`${t.selectAll} (${c.carrierCode})`}
-                              onChange={(e) =>
-                                setRows((prev) => {
-                                  const next = { ...prev };
-                                  for (const o of group)
-                                    next[o.orderId] = { ...rowOf(o), checked: e.target.checked };
-                                  return next;
-                                })
-                              }
-                            />
-                          ),
-                          cell: (o) => (
-                            <input
-                              type="checkbox"
-                              className="size-4 accent-primary"
-                              checked={rowOf(o).checked}
-                              aria-label={fmt(t.selectOrder, { number: o.orderNumber })}
-                              onChange={(e) => patchRow(o, { checked: e.target.checked })}
-                            />
-                          ),
-                        },
-                        {
-                          key: "order",
-                          header: t.colOrder,
-                          className: "font-medium text-ink",
-                          cell: (o) => <bdi dir="ltr">{o.orderNumber}</bdi>,
-                        },
-                        {
-                          key: "customer",
-                          header: t.colCustomer,
-                          className: "text-ink",
-                          cell: (o) => (
-                            <span className="block" dir="auto">
-                              {o.customerName ?? "—"}
-                            </span>
-                          ),
-                        },
-                        {
-                          key: "waybill",
-                          header: t.colWaybill,
-                          className: "text-ink-soft",
-                          cell: (o) => <bdi dir="ltr">{o.waybillNumber ?? "—"}</bdi>,
-                        },
-                        {
-                          key: "delivered",
-                          header: t.colDelivered,
-                          className: "text-ink-soft",
-                          cell: (o) => formatDate(o.deliveredAt),
-                        },
-                        {
-                          key: "due",
-                          header: t.colDue,
-                          align: "end",
-                          className: "tabular-nums text-ink",
-                          cell: (o) => money(o.dueAmount, o.currency),
-                        },
-                        {
-                          key: "collected",
-                          header: t.colCollected,
-                          align: "end",
-                          cell: (o) => (
-                            <Input
-                              inputMode="decimal"
-                              value={rowOf(o).collected}
-                              onChange={(e) => patchRow(o, { collected: e.target.value })}
-                              aria-label={`${t.colCollected} ${o.orderNumber}`}
-                              className="tabular-nums ms-auto h-8 w-28"
-                            />
-                          ),
-                        },
-                        {
-                          key: "fee",
-                          header: t.colFee,
-                          align: "end",
-                          cell: (o) => (
-                            <Input
-                              inputMode="decimal"
-                              placeholder="0.00"
-                              value={rowOf(o).fee}
-                              onChange={(e) => patchRow(o, { fee: e.target.value })}
-                              aria-label={`${t.colFee} ${o.orderNumber}`}
-                              className="tabular-nums ms-auto h-8 w-24"
-                            />
-                          ),
-                        },
-                      ]}
-                    />
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </DataState>
-      </section>
-
-      <Section title={t.settlementsTitle} flush>
-        <DataState
-          loading={settlements.loading && !settlements.data}
-          error={settlements.error}
-          onRetry={() => settlements.refresh()}
-        >
-          {list.length === 0 ? (
-            <div className="px-4 pb-4">
-              <EmptyState
-                icon={<FileText />}
-                title={t.noSettlements}
-                description={t.noSettlementsDesc}
-              />
-            </div>
-          ) : (
-            <DataTable
-              rows={list}
-              rowKey={(row) => row.id}
-              minWidth="48rem"
-              columns={[
-                {
-                  key: "date",
-                  header: t.colDate,
-                  className: "text-ink-soft",
-                  cell: (row) => formatDate(row.createdAt),
-                },
-                {
-                  key: "carrier",
-                  header: t.colCarrier,
-                  className: "text-ink",
-                  cell: (row) => (
-                    <span className="block" dir="auto">
-                      {row.carrierCode}
-                    </span>
-                  ),
-                },
-                {
-                  key: "reference",
-                  header: t.colReference,
-                  className: "text-ink-soft",
-                  cell: (row) => (
-                    <span className="block" dir="auto">
-                      {row.reference || "—"}
-                    </span>
-                  ),
-                },
-                {
-                  key: "status",
-                  header: t.colStatus,
-                  cell: (row) => <StatusBadge value={row.status} />,
-                },
-                {
-                  key: "collected",
-                  header: t.colCollected,
-                  align: "end",
-                  className: "tabular-nums text-ink",
-                  cell: (row) => money(row.collectedAmount, row.currency ?? currency),
-                },
-                {
-                  key: "fees",
-                  header: t.colFees,
-                  align: "end",
-                  className: "tabular-nums text-ink",
-                  cell: (row) => money(row.feesAmount, row.currency ?? currency),
-                },
-                {
-                  key: "net",
-                  header: t.colNet,
-                  align: "end",
-                  className: "tabular-nums font-medium text-ink",
-                  cell: (row) => money(row.netAmount, row.currency ?? currency),
-                },
-                {
-                  key: "view",
-                  header: "",
-                  align: "end",
-                  cell: (row) => (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setOpenId(row.id)}
-                      aria-label={`${t.view} ${row.carrierCode} ${formatDate(row.createdAt)}`}
-                    >
-                      {t.view}
-                    </Button>
-                  ),
-                },
-              ]}
+      <div className="flex min-w-0 flex-col gap-[var(--bento-gap)]">
+        {summary.loading && !s ? (
+          <ReportKpiStrip loading count={4} sparkline={false} />
+        ) : s ? (
+          <ReportKpiStrip sparkline={false}>
+            <KpiCard
+              label={t.kpiDue}
+              value={money(s.dueFromCouriers)}
+              hint={s.unsettledOrders > 0 ? fmt(t.kpiDueHint, { orders: countOf("order", s.unsettledOrders) }) : t.kpiDueNone}
+              icon={<IconWallet />}
             />
-          )}
-        </DataState>
-      </Section>
+            <KpiCard label={t.kpiReceived} value={money(s.received)} hint={t.kpiReceivedHint} icon={<IconCash />} />
+            <KpiCard label={t.kpiFees} value={money(s.courierFees)} hint={t.kpiFeesHint} icon={<IconReceipt />} />
+            <KpiCard
+              label={t.kpiDrafts}
+              value={formatCount(s.draftSettlements)}
+              hint={s.draftSettlements > 0 ? t.kpiDraftsHint : t.kpiDraftsNone}
+              icon={<IconDocument />}
+              to={s.draftSettlements > 0 ? "/settlements?tab=settlements&status=draft" : undefined}
+            />
+          </ReportKpiStrip>
+        ) : null}
 
-      <Modal
-        open={!!openId && pending === null}
-        onClose={() => setOpenId(null)}
-        title={d ? fmt(t.detailTitle, { carrier: d.carrierCode }) : t.settlementsTitle}
-        className="max-w-3xl"
-        footer={
-          d && (
-            <div className="flex flex-wrap justify-end gap-2">
-              {d.status === "draft" ? (
-                <>
-                  <Button variant="outline" onClick={() => setPending("delete")}>
-                    {t.delete}
+        <Segmented
+          value={view}
+          onChange={setView}
+          label={t.viewLabel}
+          className="w-full sm:w-auto sm:self-start"
+          options={[
+            { value: "held", label: t.viewHeld, count: s && s.unsettledOrders > 0 ? s.unsettledOrders : undefined },
+            { value: "settlements", label: t.viewSettlements, count: s && s.draftSettlements > 0 ? s.draftSettlements : undefined },
+          ]}
+        />
+
+        {view === "held" ? (
+          <DataState
+            loading={unsettled.loading && !unsettled.data}
+            error={unsettled.data ? null : unsettled.error}
+            onRetry={() => void unsettled.refresh()}
+            skeleton={<ListSkeleton variant={compact ? "card" : "table"} rows={3} />}
+          >
+            {rows.length === 0 ? (
+              <EmptyState
+                icon={<IconCourier aria-hidden />}
+                tone="success"
+                title={t.noUnsettled}
+                description={t.noUnsettledDesc}
+                action={
+                  <Button asChild variant="outline" className="min-h-11 rounded-full px-5">
+                    <ViewLink to="/orders">{t.seeOrders}</ViewLink>
                   </Button>
-                  <Button onClick={() => setPending("confirm")}>{t.confirm}</Button>
-                </>
-              ) : (
-                <Button variant="outline" onClick={() => setOpenId(null)}>
-                  {t.close}
-                </Button>
-              )}
-            </div>
-          )
-        }
-      >
-        <DataState loading={detail.loading && !d} error={detail.error} onRetry={() => detail.refresh()}>
-          {d && (
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center gap-3 text-sm">
-                <StatusBadge value={d.status} />
-                {d.reference && (
-                  <span className="text-ink-soft" dir="auto">
-                    {d.reference}
-                  </span>
-                )}
-                {(d.periodStart || d.periodEnd) && (
-                  <span className="text-ink-soft">
-                    {t.period}: {formatDate(d.periodStart)} – {formatDate(d.periodEnd)}
-                  </span>
-                )}
-                {d.confirmedAt && (
-                  <span className="text-ink-soft">
-                    {fmt(t.confirmedAt, { date: formatDate(d.confirmedAt) })}
-                  </span>
-                )}
-              </div>
-              <div className="grid grid-cols-3 gap-3 text-sm">
-                <div className="rounded-lg bg-paper p-3">
-                  <p className="text-ink-soft">{t.colCollected}</p>
-                  <p className="tabular-nums font-medium text-ink">
-                    {money(d.collectedAmount, d.currency ?? currency)}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-paper p-3">
-                  <p className="text-ink-soft">{t.colFees}</p>
-                  <p className="tabular-nums font-medium text-ink">
-                    {money(d.feesAmount, d.currency ?? currency)}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-paper p-3">
-                  <p className="text-ink-soft">{t.colNet}</p>
-                  <p className="tabular-nums font-medium text-ink">
-                    {money(d.netAmount, d.currency ?? currency)}
-                  </p>
-                </div>
-              </div>
-              <DataTable
-                rows={d.lines}
-                rowKey={(l) => l.orderId}
-                minWidth="35rem"
-                columns={[
-                  {
-                    key: "order",
-                    header: t.colOrder,
-                    className: "font-medium text-ink",
-                    cell: (l) => <bdi dir="ltr">{l.orderNumber ?? "—"}</bdi>,
-                  },
-                  {
-                    key: "customer",
-                    header: t.colCustomer,
-                    className: "text-ink",
-                    cell: (l) => (
-                      <span className="block" dir="auto">
-                        {l.customerName ?? "—"}
-                      </span>
-                    ),
-                  },
-                  {
-                    key: "status",
-                    header: t.colStatus,
-                    cell: (l) => (l.financialState ? <StatusBadge value={l.financialState} /> : "—"),
-                  },
-                  {
-                    key: "due",
-                    header: t.colDue,
-                    align: "end",
-                    className: "tabular-nums text-ink",
-                    cell: (l) =>
-                      l.orderTotal === null ? "—" : money(l.orderTotal, d.currency ?? currency),
-                  },
-                  {
-                    key: "collected",
-                    header: t.colCollected,
-                    align: "end",
-                    className: "tabular-nums text-ink",
-                    cell: (l) => money(l.collectedAmount, d.currency ?? currency),
-                  },
-                  {
-                    key: "fee",
-                    header: t.colFee,
-                    align: "end",
-                    className: "tabular-nums text-ink",
-                    cell: (l) => money(l.feeAmount, d.currency ?? currency),
-                  },
-                ]}
+                }
               />
-              {d.notes && (
-                <p className="text-sm text-ink-soft" dir="auto">
-                  <span className="font-medium text-ink">{t.notes}: </span>
-                  {d.notes}
-                </p>
+            ) : (
+              <HeldList rows={rows} currency={currency} compact={compact} onRecord={(carrier) => setReconcile({ carrier, open: true })} />
+            )}
+          </DataState>
+        ) : (
+          <div className="flex min-w-0 flex-col gap-3">
+            <ChipRow items={chips} value={status} onChange={setStatus} label={t.chipsLabel} collapseEmpty={false} />
+            <DataState
+              loading={settlements.loading && list.length === 0}
+              error={list.length === 0 ? settlements.error : null}
+              onRetry={() => void settlements.refresh()}
+              skeleton={<ListSkeleton variant={compact ? "card" : "table"} rows={5} />}
+            >
+              {list.length === 0 ? (
+                <EmptyState
+                  icon={<IconDocument aria-hidden />}
+                  title={status === "draft" ? t.noDrafts : status === "confirmed" ? t.noConfirmed : t.noSettlements}
+                  description={t.noSettlementsDesc}
+                  action={
+                    status === "all" ? (
+                      carriers.length > 0 ? (
+                        recordButton
+                      ) : undefined
+                    ) : (
+                      <Button type="button" variant="outline" className="min-h-11 rounded-full px-5" onClick={() => setStatus("all")}>
+                        {t.showAll}
+                      </Button>
+                    )
+                  }
+                />
+              ) : (
+                <>
+                  <SettlementList
+                    rows={list}
+                    currency={currency}
+                    compact={compact}
+                    openId={sheet?.open && !pending ? sheet.id : null}
+                    onOpen={openSettlement}
+                    onConfirm={(id) => setPending({ kind: "confirm", id })}
+                    onDelete={(id) => setPending({ kind: "delete", id })}
+                  />
+                  <LoadMore hasMore={Boolean(cursor)} loading={loadingMore} onClick={() => void loadMore()} />
+                </>
               )}
-            </div>
-          )}
-        </DataState>
-      </Modal>
+            </DataState>
+          </div>
+        )}
+      </div>
+
+      {/* The panel steps aside for a question: two sheets are never stacked. */}
+      <SettlementSheet
+        open={Boolean(sheet?.open) && pending === null}
+        onClose={closeSheet}
+        summary={summaryRow}
+        detail={shownDetail}
+        loading={detail.loading}
+        error={detail.error}
+        onRetry={() => void detail.refresh()}
+        currency={currency}
+        onConfirm={() => {
+          if (sheetId) setPending({ kind: "confirm", id: sheetId });
+        }}
+        onDelete={() => {
+          if (sheetId) setPending({ kind: "delete", id: sheetId });
+        }}
+      />
+
+      <ReconcileSheet
+        open={reconcile.open}
+        onClose={() => setReconcile((current) => ({ ...current, open: false }))}
+        carriers={carriers}
+        orders={orders}
+        initialCarrier={reconcile.carrier}
+        onCreate={createDraft}
+      />
+
+      <StatementImportSheet
+        open={importing}
+        onClose={() => setImporting(false)}
+        workspaceId={workspaceId}
+        carriers={carriers.map((carrier) => carrier.carrierCode)}
+        onCreated={(id) => {
+          setImporting(false);
+          refreshAll();
+          openSettlement(id);
+        }}
+      />
 
       <ConfirmDialog
-        open={pending === "confirm"}
+        open={pending?.kind === "confirm"}
         title={t.confirmTitle}
         description={t.confirmDesc}
         confirmLabel={t.confirm}
         onCancel={() => setPending(null)}
         onConfirm={async () => {
-          if (!openId) return;
+          if (!pending) return;
           try {
-            await apiClient.confirmSettlement(workspaceId, openId);
+            await apiClient.confirmSettlement(workspaceId, pending.id);
           } catch (err) {
             // Thrown so ConfirmDialog shows it inline and stays open.
-            throw new Error(errorText(err));
+            throw new Error(settlementErrorText(err, t));
           }
           toast.success(t.confirmed);
           setPending(null);
-          detail.refresh({ silent: true });
+          void detail.refresh({ silent: true });
           refreshAll();
         }}
       />
       <ConfirmDialog
-        open={pending === "delete"}
+        open={pending?.kind === "delete"}
         title={t.deleteTitle}
         description={t.deleteDesc}
         confirmLabel={t.delete}
         destructive
         onCancel={() => setPending(null)}
         onConfirm={async () => {
-          if (!openId) return;
+          if (!pending) return;
           try {
-            await apiClient.deleteSettlement(workspaceId, openId);
+            await apiClient.deleteSettlement(workspaceId, pending.id);
           } catch (err) {
-            throw new Error(errorText(err));
+            throw new Error(settlementErrorText(err, t));
           }
           toast.success(t.deleted);
+          if (sheet?.id === pending.id) closeSheet();
           setPending(null);
-          setOpenId(null);
           refreshAll();
         }}
       />
