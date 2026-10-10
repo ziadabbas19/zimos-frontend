@@ -20,6 +20,7 @@ import { apiClient } from "@/lib/apiClient";
 import { useErrorMessage } from "@/lib/errorMessages";
 import { countOf, pluralOf } from "@/lib/plural";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
+import { useIsDesktop } from "@/pages/orders/list/useIsDesktop";
 import { BulkOutcomeDialog, type BulkOutcomeKind, type BulkOutcomeResult } from "./BulkOutcomeDialog";
 import { DoneCard } from "./cards/DoneCard";
 import { OpenCard } from "./cards/OpenCard";
@@ -40,7 +41,7 @@ export interface QueueListSource {
 
 /** What the viewer may do to several orders at once; with neither, the cards carry no tick box. */
 export interface QueueBulkAbilities {
-  /** Hand the selected orders to an agent, or take the assignment off them: a manager with a team. */
+  /** Hand the selected orders to an agent, or take the assignment off them: a role that manages orders. */
   assign: boolean;
   /** Accept or cancel every selected order: a role that both takes calls and manages orders. */
   outcome: boolean;
@@ -61,6 +62,7 @@ export function QueueList({
   tab,
   now,
   team,
+  assignees,
   bulk,
   onChanged,
   onResolved,
@@ -72,6 +74,8 @@ export function QueueList({
   now: number;
   /** Members a task may be handed to; empty unless the viewer manages a team. */
   team: ConfirmationAssignee[];
+  /** Whom a selection may be handed to: every member who takes calls, the viewer included. */
+  assignees: ConfirmationAssignee[];
   bulk: QueueBulkAbilities;
   onChanged: (task: ConfirmationTask) => void;
   onResolved: (task: ConfirmationTask, saved: ConfirmationTask, outcome: ConfirmationOutcome) => void;
@@ -89,6 +93,7 @@ export function QueueList({
   const [bulkError, setBulkError] = useState<string | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
   const [outcomeKind, setOutcomeKind] = useState<BulkOutcomeKind | null>(null);
+  const desktop = useIsDesktop();
 
   const selectable = (bulk.assign || bulk.outcome) && tab !== "done";
   // The cards that carry a tick box: open ones the viewer could act on. An order still in its funnel's
@@ -101,7 +106,6 @@ export function QueueList({
   const selectedTasks = useMemo(() => tickable.filter((task) => selected.has(task.id)), [tickable, selected]);
   const selectedIds = useMemo(() => selectedTasks.map((task) => task.id), [selectedTasks]);
   const allShownSelected = tickable.length > 0 && selectedIds.length === tickable.length;
-  const assignedCount = selectedTasks.filter((task) => task.assignedTo).length;
 
   function toggle(taskId: string) {
     setSelected((prev) => {
@@ -124,14 +128,7 @@ export function QueueList({
     try {
       const result = await apiClient.assignConfirmationTasks(workspaceId, selectedIds, userId);
       onBulkAssigned(result);
-      if (userId) {
-        toast.success(
-          fmt(t.bulkAssigned, { count: countOf("order", result.tasks.length), name: result.assignedTo?.fullName ?? "" })
-        );
-      } else {
-        // The server answers with every open task it was sent, changed or not: say how many had an assignment to lose.
-        toast.success(fmt(t.bulkUnassigned, { count: countOf("order", assignedCount) }));
-      }
+      toast.success(fmt(t.bulkDone, { n: result.tasks.length }));
       const finished = result.skipped.filter((s) => s.code === "TASK_ALREADY_DONE").length;
       if (finished > 0) toast.success(fmt(t.bulkSkipped, { n: finished }));
       setSelected(new Set());
@@ -149,7 +146,15 @@ export function QueueList({
   }
 
   const showBulk = selectable && tickable.length > 0;
+  // In the order the bar draws them: the assignment a manager always had here, then the two results.
   const actions: BulkAction[] = [];
+  if (bulk.assign) {
+    actions.push(
+      // Nobody to hand them to (the team is still loading, or could not be read): nothing to open.
+      { id: "assign", label: t.bulkAssign, icon: IconUserAdd, onSelect: () => setAssignOpen(true), disabled: assignees.length === 0 },
+      { id: "unassign", label: t.bulkUnassign, onSelect: () => void assignSelected(null) }
+    );
+  }
   if (bulk.outcome) {
     actions.push(
       { id: "accept", label: t.bulkAccept, icon: OUTCOME_ICON.confirmed, onSelect: () => setOutcomeKind("accept") },
@@ -159,19 +164,6 @@ export function QueueList({
         icon: OUTCOME_ICON.rejected,
         destructive: true,
         onSelect: () => setOutcomeKind("cancel"),
-      }
-    );
-  }
-  if (bulk.assign) {
-    actions.push(
-      { id: "assign", label: t.bulkAssign, icon: IconUserAdd, onSelect: () => setAssignOpen(true) },
-      {
-        id: "unassign",
-        label: t.bulkUnassign,
-        onSelect: () => void assignSelected(null),
-        // Nothing to take off orders nobody was handed: pressing it would change nothing and still say "done".
-        disabled: assignedCount === 0,
-        disabledReason: t.bulkUnassignNone,
       }
     );
   }
@@ -225,6 +217,8 @@ export function QueueList({
             onClear={clearSelection}
             busy={bulkBusy}
             actions={actions}
+            // Four fit the bar from md up (it wraps under its count if it must); on a phone two, the rest in "More".
+            maxInline={desktop ? 4 : 2}
             extra={
               <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 {allShownSelected ? (
@@ -293,7 +287,7 @@ export function QueueList({
               </Alert>
             )}
             <ul aria-label={t.bulkAgent} className="-mx-2 flex flex-col gap-1">
-              {team.map((agent) => (
+              {assignees.map((agent) => (
                 <li key={agent.id}>
                   <button
                     type="button"

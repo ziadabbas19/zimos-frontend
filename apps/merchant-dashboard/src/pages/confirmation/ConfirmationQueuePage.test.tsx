@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
 import {
   ApiError,
@@ -81,6 +81,26 @@ function queueOf(tasks: ConfirmationTask[], team: ConfirmationAssignee[] = [me])
 const NOTE = "Recorded for several orders at once from the confirmation queue.";
 const bar = () => screen.getByRole("toolbar", { name: "Actions for what you selected" });
 
+/** From md up the bar draws its four actions side by side; a phone keeps two and folds the rest into "More". */
+const realMatchMedia = window.matchMedia;
+function screenIs(width: "wide" | "phone") {
+  window.matchMedia = ((query: string) => ({
+    matches: width === "wide" && query.includes("min-width"),
+    media: query,
+    onchange: null,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    dispatchEvent: () => false,
+  })) as typeof window.matchMedia;
+}
+
+beforeEach(() => screenIs("wide"));
+afterEach(() => {
+  window.matchMedia = realMatchMedia;
+});
+
 describe("ConfirmationQueuePage assignment", () => {
   it("shows who a task is assigned to, and keeps an agent off another agent's task", async () => {
     asRole("confirmation_agent");
@@ -130,37 +150,25 @@ describe("ConfirmationQueuePage assignment", () => {
     await user.click(screen.getByRole("checkbox", { name: "Select ORD-1001" }));
     // A role that manages orders but takes no calls gets the assignment actions only.
     expect(within(bar()).queryByRole("button", { name: "Accept all selected" })).not.toBeInTheDocument();
-    await user.click(within(bar()).getByRole("button", { name: "Assign to…" }));
+    await user.click(within(bar()).getByRole("button", { name: "Assign" }));
     await user.click(await screen.findByRole("button", { name: /Bassem/ }));
     await waitFor(() => expect(api.assignConfirmationTasks).toHaveBeenCalledWith("ws_1", ["task_1"], "agent_2"));
-    expect(await screen.findByText("1 order assigned to Bassem.")).toBeInTheDocument();
+    expect(await screen.findByText("1 tasks updated.")).toBeInTheDocument();
   });
 
-  it("offers Remove assignment only for orders that are assigned, and says how many it was taken off", async () => {
+  it("takes the assignment off a selection with the one request it always made, whoever had the orders", async () => {
     asRole("order_operator");
-    const mine = task({ id: "t1" });
-    queueOf([mine, free("t2")], [agent("agent_1", "Amal"), agent("agent_2", "Bassem")]);
-    api.assignConfirmationTasks.mockResolvedValue({
-      assignedTo: null,
-      // The server answers with every open task it was sent, changed or not.
-      tasks: [free("t1"), free("t2")],
-      skipped: [],
-    });
+    queueOf([task({ id: "t1" }), free("t2")], [agent("agent_1", "Amal"), agent("agent_2", "Bassem")]);
+    api.assignConfirmationTasks.mockResolvedValue({ assignedTo: null, tasks: [free("t1"), free("t2")], skipped: [] });
     const { user } = renderWithProviders(<ConfirmationQueuePage />);
 
-    // Nobody was handed this order: there is nothing to remove, and the button says so instead of "updating" it.
-    await user.click(await screen.findByRole("checkbox", { name: "Select ORD-t2" }));
-    const off = within(bar()).getByRole("button", { name: "Remove assignment" });
-    expect(off).toHaveAttribute("aria-disabled", "true");
-    expect(off).toHaveAttribute("title", "None of the selected orders is assigned to anyone, so there is nothing to remove.");
-    await user.click(off);
-    expect(api.assignConfirmationTasks).not.toHaveBeenCalled();
-
-    await user.click(screen.getByRole("checkbox", { name: "Select ORD-t1" }));
+    await user.click(await screen.findByRole("checkbox", { name: "Select ORD-t1" }));
+    await user.click(screen.getByRole("checkbox", { name: "Select ORD-t2" }));
     await user.click(within(bar()).getByRole("button", { name: "Remove assignment" }));
+
     await waitFor(() => expect(api.assignConfirmationTasks).toHaveBeenCalledWith("ws_1", ["t1", "t2"], null));
-    // One of the two had an assignment to lose.
-    expect(await screen.findByText("Assignment removed from 1 order. Any agent can take them now.")).toBeInTheDocument();
+    expect(await screen.findByText("2 tasks updated.")).toBeInTheDocument();
+    // The selection is let go; both orders stay in the list.
     await waitFor(() => expect(screen.getByRole("checkbox", { name: "Select ORD-t1" })).not.toBeChecked());
     expect(screen.getByText("ORD-t1")).toBeInTheDocument();
     expect(screen.getByText("ORD-t2")).toBeInTheDocument();
@@ -207,18 +215,55 @@ describe("ConfirmationQueuePage selection", () => {
     expect(within(bar()).getByText("1 selected")).toBeInTheDocument();
   });
 
-  it("gives a store with one person the two results for a selection, and no assignment", async () => {
+  it("shows every control when orders are selected: clear, the count, assign, remove assignment, accept, cancel", async () => {
+    asRole("owner");
+    // One person on the store: a manager still gets the assignment controls, and is the one member to hand to.
+    queueOf([free("t1")]);
+    api.assignConfirmationTasks.mockResolvedValue({
+      assignedTo: { id: testUser.id, fullName: testUser.fullName },
+      tasks: [free("t1")],
+      skipped: [],
+    });
+    const { user } = renderWithProviders(<ConfirmationQueuePage />);
+
+    await user.click(await screen.findByRole("checkbox", { name: "Select ORD-t1" }));
+    expect(within(bar()).getByText("1 selected")).toBeInTheDocument();
+    const names = within(bar())
+      .getAllByRole("button")
+      .map((button) => button.getAttribute("aria-label") ?? button.textContent);
+    expect(names).toEqual(["Clear selection", "Assign", "Remove assignment", "Accept all selected", "Cancel all selected"]);
+
+    // Assign asks whom to, then sends the request it always sent.
+    const assign = within(bar()).getByRole("button", { name: "Assign" });
+    await waitFor(() => expect(assign).not.toHaveAttribute("aria-disabled", "true"));
+    await user.click(assign);
+    await user.click(await screen.findByRole("button", { name: new RegExp(testUser.fullName) }));
+    await waitFor(() => expect(api.assignConfirmationTasks).toHaveBeenCalledWith("ws_1", ["t1"], testUser.id));
+    // The station stays behind its switch: no way to it here.
+    expect(screen.queryByText("One by one")).not.toBeInTheDocument();
+  });
+
+  it("on a phone keeps two of them in the bar and the rest one press away, under More", async () => {
+    screenIs("phone");
     asRole("owner");
     queueOf([free("t1")]);
     const { user } = renderWithProviders(<ConfirmationQueuePage />);
 
     await user.click(await screen.findByRole("checkbox", { name: "Select ORD-t1" }));
-    expect(within(bar()).getByRole("button", { name: "Accept all selected" })).toBeInTheDocument();
-    expect(within(bar()).getByRole("button", { name: "Cancel all selected" })).toBeInTheDocument();
-    expect(within(bar()).queryByRole("button", { name: "Assign to…" })).not.toBeInTheDocument();
-    expect(screen.queryByText("Remove assignment")).not.toBeInTheDocument();
-    // The station stays behind its switch: no way to it here.
-    expect(screen.queryByText("One by one")).not.toBeInTheDocument();
+    expect(within(bar()).getByRole("button", { name: "Clear selection" })).toBeInTheDocument();
+    expect(within(bar()).getByRole("button", { name: "Assign" })).toBeInTheDocument();
+    expect(within(bar()).getByRole("button", { name: "Remove assignment" })).toBeInTheDocument();
+    expect(within(bar()).queryByRole("button", { name: "Accept all selected" })).not.toBeInTheDocument();
+
+    await user.click(within(bar()).getByRole("button", { name: "More" }));
+    const menu = await screen.findByRole("menu");
+    expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
+      "Accept all selected",
+      "Cancel all selected",
+    ]);
+    // They work from there: the first question opens.
+    await user.click(within(menu).getByRole("menuitem", { name: "Cancel all selected" }));
+    expect(await screen.findByRole("dialog", { name: "Cancel 1 order?" })).toBeInTheDocument();
   });
 
   it("accepts every selected order only after the question was answered twice", async () => {
