@@ -77,7 +77,8 @@ describe("the store's site", () => {
     expect((await screen.findAllByText("Published")).length).toBeGreaterThan(0);
     const edit = screen.getAllByText("Edit the store")[0].closest("a");
     expect(edit?.getAttribute("href")).toBe("/website/w1/edit");
-    expect(screen.getByText("1 page")).toBeTruthy();
+    // The page count comes with the site's own read, a moment after the list.
+    expect(await screen.findByText("1 page")).toBeTruthy();
   });
 
   it("says when saved edits are not published yet", async () => {

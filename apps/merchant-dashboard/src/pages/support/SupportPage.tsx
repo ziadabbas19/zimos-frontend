@@ -1,285 +1,470 @@
-import { useState, type FormEvent } from "react";
-import { Link, useParams } from "react-router-dom";
-import { Alert, Button, Card, cn } from "@store-builder/ui";
+import { useLayoutEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
+import { Button, cn } from "@store-builder/ui";
+import type { SupportTicket, SupportTicketStatus, SupportTicketThread } from "@store-builder/api-client";
+import { ContextMenu, type ContextMenuItem } from "@/components/ContextMenu";
+import { DataState } from "@/components/DataState";
+import { EmptyState } from "@/components/EmptyState";
+import { IconEye, IconLock, IconPlus, IconSearch, IconSend, IconSpinner, IconSuccess, IconSupport, IconTicket } from "@/components/icons";
+import { ChipRow, ListRowCard, ListSkeleton, ListToolbar, type ChipItem } from "@/components/list";
+import { PageHeader } from "@/components/PageHeader";
+import { useMediaQuery } from "@/components/report/useMediaQuery";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Textarea } from "@/components/Textarea";
+import { useToast } from "@/components/Toast";
+import { ViewLink } from "@/components/ViewLink";
+import { fmt, useT, type Messages, useLocale } from "@/i18n/LocaleContext";
 import { SocialLinks } from "@store-builder/ui/social-links";
-import type {
-  SupportTicket,
-  SupportTicketCategory,
-  SupportTicketStatus,
-  SupportTicketThread,
-} from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
-import { useWorkspaceId } from "@/lib/useWorkspaceId";
-import { useAsync } from "@/lib/useAsync";
+import { isPermissionError } from "@/lib/errors";
 import { useErrorMessage } from "@/lib/errorMessages";
 import { formatDateTime } from "@/lib/format";
-import { useT, useLocale, fmt, type Messages } from "@/i18n/LocaleContext";
-import { PageHeader } from "@/components/PageHeader";
-import { DataState } from "@/components/DataState";
-import { Field, TextField } from "@/components/Field";
-import { Select } from "@/components/Select";
-import { Textarea } from "@/components/Textarea";
-import { StatusBadge } from "@/components/StatusBadge";
-import { useToast } from "@/components/Toast";
-
-const CATEGORIES: SupportTicketCategory[] = ["general", "billing", "orders", "shipping", "payments", "technical", "account"];
+import { formatRelativeTime } from "@/lib/relativeTime";
+import { useCachedAsync } from "@/lib/useCachedAsync";
+import { useViewNavigate } from "@/lib/viewTransition";
+import { useWorkspaceId } from "@/lib/useWorkspaceId";
+import { DeskList, DeskRow } from "@/pages/returns/rowkit/DeskList";
+import { rowKeyProps } from "@/pages/returns/rowkit/RowBits";
+import { NewTicketSheet } from "./NewTicketSheet";
+import { SUPPORT_STATUSES, SUPPORT_STATUS_TONE, ticketCacheKey, ticketsCacheKey, useSupportLabels, waitsOnYou } from "./supportLabels";
+import { TicketQuickLook } from "./TicketQuickLook";
+import { TicketMessages, TicketThreadSkeleton } from "./TicketThread";
 
 const STRINGS = {
   en: {
+    socialHeading: "Other ways to reach us",
     title: "Contact support",
     description: "Ask the Zimos team for help. We reply here, in the ticket.",
-    newHeading: "New request",
-    subject: "Subject",
-    subjectPlaceholder: "What do you need help with?",
-    category: "Topic",
-    message: "Message",
-    messagePlaceholder: "Describe the problem. Include order numbers or links if they help.",
-    send: "Send request",
-    sending: "Sending…",
-    sent: "Your request was sent. We'll reply here.",
-    subjectTooShort: "Enter a subject of at least 3 characters.",
-    messageRequired: "Write a message.",
-    listHeading: "Your requests",
-    empty: "You haven't contacted support yet.",
-    messages: "{n} messages",
+    newTicket: "New ticket",
+    searchLabel: "Search your tickets",
+    searchPlaceholder: "Subject or topic",
+    chipsLabel: "Tickets by status",
+    tabAll: "All",
+    listLabel: "Your tickets",
+    colSubject: "Subject",
+    colStatus: "Status",
+    colMessages: "Messages",
+    colUpdated: "Last update",
     updated: "Last update {date}",
+    peek: "Preview the ticket: {subject}",
+    openTicket: "Open the ticket: {subject}",
+    menuLabel: "Actions for this ticket",
+    menuOpen: "Open the ticket",
+    menuPeek: "Quick look",
+    empty: "You haven't contacted support yet",
+    emptyHint: "Write your question or your problem, and the Zimos team answers you here.",
+    emptyFiltered: "No ticket matches this search",
+    clearSearch: "Clear the search",
+    emptyPending: "No ticket is waiting for your reply",
+    emptyTab: "No tickets with this status",
+    showAll: "Show all tickets",
+    sent: "Your ticket was sent. We'll reply here.",
+    openIt: "Open it",
     back: "Contact support",
-    you: "You",
-    reply: "Reply",
+    opened: "Opened {date} by {name}",
+    thread: "Messages of this ticket",
+    reply: "Your reply",
     replyPlaceholder: "Write a reply…",
     sendReply: "Send reply",
+    sending: "Sending…",
     replySent: "Reply sent.",
-    closedNotice: "This request is closed. Open a new request if you still need help.",
-    opened: "Opened {date} by {name}",
-    someone: "a team member",
-    cat_general: "General question",
-    cat_billing: "Billing & subscription",
-    cat_orders: "Orders",
-    cat_shipping: "Shipping",
-    cat_payments: "Payments",
-    cat_technical: "Technical problem",
-    cat_account: "Account",
-    st_open: "Waiting on Zimos",
-    st_pending: "Waiting on you",
-    st_resolved: "Resolved",
-    st_closed: "Closed",
-    socialHeading: "Other ways to reach us",
+    messageRequired: "Write your reply first.",
+    closedNotice: "This ticket is closed. Open a new one if you still need help.",
+    noAccessTitle: "Support is for the owner and managers",
+    noAccess: "Only the store owner or a manager can talk to support. Ask them to open the ticket, or to give you access from Settings → Team.",
   },
   ar: {
+    socialHeading: "طرق أخرى للتواصل معنا",
     title: "تواصل مع الدعم",
-    description: "اطلب المساعدة من فريق زيموس. سنرد عليك هنا داخل الطلب.",
-    newHeading: "طلب جديد",
-    subject: "الموضوع",
-    subjectPlaceholder: "ما الذي تحتاج المساعدة فيه؟",
-    category: "النوع",
-    message: "الرسالة",
-    messagePlaceholder: "اشرح المشكلة. أضف أرقام الأوردرات أو الروابط إن كانت تساعد.",
-    send: "إرسال الطلب",
-    sending: "جارٍ الإرسال…",
-    sent: "تم إرسال طلبك. سنرد عليك هنا.",
-    subjectTooShort: "أدخل موضوعًا من 3 أحرف على الأقل.",
-    messageRequired: "اكتب رسالة.",
-    listHeading: "طلباتك",
-    empty: "لم تتواصل مع الدعم بعد.",
-    messages: "{n} رسائل",
+    description: "اطلب المساعدة من فريق زيموس. سنرد عليك هنا داخل التذكرة.",
+    newTicket: "تذكرة جديدة",
+    searchLabel: "ابحث في تذاكرك",
+    searchPlaceholder: "الموضوع أو النوع",
+    chipsLabel: "التذاكر حسب الحالة",
+    tabAll: "الكل",
+    listLabel: "تذاكرك",
+    colSubject: "الموضوع",
+    colStatus: "الحالة",
+    colMessages: "الرسائل",
+    colUpdated: "آخر تحديث",
     updated: "آخر تحديث {date}",
+    peek: "معاينة التذكرة: {subject}",
+    openTicket: "فتح التذكرة: {subject}",
+    menuLabel: "إجراءات التذكرة",
+    menuOpen: "فتح التذكرة",
+    menuPeek: "معاينة سريعة",
+    empty: "لم تتواصل مع الدعم بعد",
+    emptyHint: "اكتب سؤالك أو مشكلتك، وسيرد عليك فريق زيموس هنا.",
+    emptyFiltered: "لا توجد تذكرة مطابقة لهذا البحث",
+    clearSearch: "مسح البحث",
+    emptyPending: "لا توجد تذكرة تنتظر ردك",
+    emptyTab: "لا توجد تذاكر بهذه الحالة",
+    showAll: "عرض كل التذاكر",
+    sent: "تم إرسال تذكرتك. سنرد عليك هنا.",
+    openIt: "فتحها",
     back: "تواصل مع الدعم",
-    you: "أنت",
-    reply: "رد",
+    opened: "فُتح في {date} بواسطة {name}",
+    thread: "رسائل هذه التذكرة",
+    reply: "ردّك",
     replyPlaceholder: "اكتب ردًا…",
     sendReply: "إرسال الرد",
+    sending: "جارٍ الإرسال…",
     replySent: "تم إرسال الرد.",
-    closedNotice: "هذا الطلب مغلق. افتح طلبًا جديدًا إذا كنت ما زلت تحتاج المساعدة.",
-    opened: "فُتح في {date} بواسطة {name}",
-    someone: "أحد أعضاء الفريق",
-    cat_general: "استفسار عام",
-    cat_billing: "الفوترة والاشتراك",
-    cat_orders: "الطلبات",
-    cat_shipping: "الشحن",
-    cat_payments: "المدفوعات",
-    cat_technical: "مشكلة تقنية",
-    cat_account: "الحساب",
-    st_open: "بانتظار رد زيموس",
-    st_pending: "بانتظار ردك",
-    st_resolved: "تم الحل",
-    st_closed: "مغلق",
-    socialHeading: "طرق أخرى للتواصل معنا",
+    messageRequired: "اكتب ردّك أولًا.",
+    closedNotice: "هذه التذكرة مغلقة. افتح تذكرة جديدة إذا كنت ما زلت تحتاج المساعدة.",
+    noAccessTitle: "الدعم متاح لمالك المتجر والمدير",
+    noAccess: "مالك المتجر أو المدير فقط يمكنه مراسلة الدعم. اطلب منه فتح التذكرة، أو منحك الصلاحية من الإعدادات ← الفريق.",
   },
 } satisfies Messages;
 
-type T = (typeof STRINGS)["en"];
+type Strings = (typeof STRINGS)["en"];
 
-const STATUS_TONE: Record<SupportTicketStatus, "info" | "warning" | "success" | "neutral"> = {
-  open: "info",
-  pending: "warning",
-  resolved: "success",
-  closed: "neutral",
-};
+/** "all" is every ticket; the others are the statuses a ticket moves through. */
+type StatusTab = "all" | SupportTicketStatus;
+const TABS: readonly StatusTab[] = ["all", ...SUPPORT_STATUSES];
 
-function statusText(t: T, status: SupportTicketStatus): string {
-  return t[`st_${status}`];
+function isTab(value: string | null): value is StatusTab {
+  return value !== null && (TABS as readonly string[]).includes(value);
 }
 
-function categoryText(t: T, category: SupportTicketCategory): string {
-  return t[`cat_${category}`];
+/** Lower case, and Arabic-Indic digits as Latin ones, so «١٠٢٤» finds 1024. */
+function fold(text: string): string {
+  return text.toLowerCase().replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
 }
+
+/** Below md a ticket is a card; from md it is a line of the sheet. */
+const COMPACT_QUERY = "(max-width: 47.99rem)";
+/** The columns of the sheet: the subject, where it stands, how long the thread is, since when. */
+const TICKET_COLUMNS = "grid-cols-[minmax(0,1fr)_max-content_max-content_max-content]";
 
 /**
- * /support — the workspace's requests, a form to open a new one, and ZIMOS's
- * social accounts and email (packages/ui/src/social-links).
+ * /support — the store's tickets with the Zimos team. The list is read whole
+ * and filtered here, so the chips can say how many each status holds; a row
+ * opens Quick Look (the thread, without leaving the list), its subject and
+ * Enter open the ticket's page, where the reply is written. A new ticket is
+ * written in a sheet over the list.
+ *
+ * `?status=` keeps the chosen chip, and `?new=1` opens the sheet (the closed
+ * notice of a ticket links here).
  */
 export function SupportPage() {
   const t = useT(STRINGS);
   const { locale } = useLocale();
+  const labels = useSupportLabels();
   const workspaceId = useWorkspaceId();
-  const list = useAsync(() => apiClient.listSupportTickets(workspaceId), [workspaceId]);
-  const tickets = list.data ?? [];
+  const toast = useToast();
+  const navigate = useViewNavigate();
+  const compact = useMediaQuery(COMPACT_QUERY);
+  const [params, setParams] = useSearchParams();
+  const rawTab = params.get("status");
+  const tab: StatusTab = isTab(rawTab) ? rawTab : "all";
+  const creating = params.get("new") === "1";
+
+  function patchParams(change: (next: URLSearchParams) => void) {
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        change(next);
+        return next;
+      },
+      { replace: true }
+    );
+  }
+  function selectTab(next: StatusTab) {
+    patchParams((out) => {
+      if (next === "all") out.delete("status");
+      else out.set("status", next);
+    });
+  }
+  function setCreating(open: boolean) {
+    patchParams((out) => {
+      if (open) out.set("new", "1");
+      else out.delete("new");
+    });
+  }
+
+  const list = useCachedAsync(ticketsCacheKey(workspaceId), () => apiClient.listSupportTickets(workspaceId), [workspaceId]);
+  const tickets = useMemo(() => list.data ?? [], [list.data]);
+  const [search, setSearch] = useState("");
+  // The ticket being looked at stays here while its preview closes, so the sheet does not empty on its way out.
+  const [peek, setPeek] = useState<{ id: string; open: boolean } | null>(null);
+
+  const counts = useMemo(() => {
+    const tally: Record<SupportTicketStatus, number> = { open: 0, pending: 0, resolved: 0, closed: 0 };
+    for (const ticket of tickets) if (ticket.status in tally) tally[ticket.status] += 1;
+    return tally;
+  }, [tickets]);
+
+  const query = fold(search.trim());
+  const visible = tickets.filter((ticket) => {
+    if (tab !== "all" && ticket.status !== tab) return false;
+    if (!query) return true;
+    return [ticket.subject, labels.category(ticket.category)].some((part) => fold(part).includes(query));
+  });
+
+  // While the list is on its way a chip holds its place with a dash (null), instead of folding behind «كمان» as an empty one.
+  const figure = (count: number) => (list.loading ? null : count);
+  const chips: ChipItem<StatusTab>[] = [
+    { value: "all", label: t.tabAll, count: figure(tickets.length) },
+    ...SUPPORT_STATUSES.map((status): ChipItem<StatusTab> => ({
+      value: status,
+      label: labels.status(status),
+      count: figure(counts[status]),
+      tone: status === "pending" ? "attention" : "default",
+    })),
+  ];
+
+  const peeked = peek ? (tickets.find((ticket) => ticket.id === peek.id) ?? null) : null;
+  const noAccess = !list.data && isPermissionError(list.error);
+
+  const newTicketButton = (
+    <Button className="gap-1.5 rounded-full px-5" aria-haspopup="dialog" onClick={() => setCreating(true)}>
+      <IconPlus className="size-4" aria-hidden />
+      {t.newTicket}
+    </Button>
+  );
+
+  const empty = query ? (
+    <EmptyState
+      icon={<IconSearch aria-hidden />}
+      title={t.emptyFiltered}
+      action={
+        <Button variant="outline" className="rounded-full px-5" onClick={() => setSearch("")}>
+          {t.clearSearch}
+        </Button>
+      }
+    />
+  ) : tab !== "all" ? (
+    <EmptyState
+      icon={tab === "pending" ? <IconSuccess aria-hidden /> : <IconTicket aria-hidden />}
+      tone={tab === "pending" ? "success" : "default"}
+      title={tab === "pending" ? t.emptyPending : t.emptyTab}
+      action={
+        <Button variant="outline" className="rounded-full px-5" onClick={() => selectTab("all")}>
+          {t.showAll}
+        </Button>
+      }
+    />
+  ) : (
+    <EmptyState icon={<IconSupport aria-hidden />} title={t.empty} description={t.emptyHint} action={newTicketButton} />
+  );
+
+  const rows = visible.map((ticket) => (
+    <TicketRow
+      key={ticket.id}
+      ticket={ticket}
+      compact={compact}
+      current={peek?.open === true && peek.id === ticket.id}
+      onPeek={() => setPeek({ id: ticket.id, open: true })}
+      onOpen={() => navigate(`/support/${ticket.id}`)}
+      t={t}
+    />
+  ));
 
   return (
-    <div className="max-w-3xl">
-      <PageHeader title={t.title} description={t.description} />
-      <div className="space-y-6">
-        <NewTicketForm key={workspaceId} onOpened={() => void list.refresh({ silent: true })} />
+    <div className="max-w-4xl">
+      <PageHeader
+        title={t.title}
+        // A phone keeps the first screen for the tickets: the sentence is for wider screens.
+        description={compact ? undefined : t.description}
+        primaryAction={noAccess ? undefined : newTicketButton}
+      />
 
-        <section className="space-y-3">
-          <h2 className="font-display text-lg font-medium text-ink">{t.listHeading}</h2>
+      <div className="flex flex-col gap-3">
+        {!noAccess && (
+          <>
+            <ListToolbar search={{ value: search, onChange: setSearch, placeholder: t.searchPlaceholder, label: t.searchLabel }} />
+            <ChipRow items={chips} value={tab} onChange={selectTab} label={t.chipsLabel} countsLoading={list.loading} />
+          </>
+        )}
+
+        {noAccess ? (
+          <EmptyState icon={<IconLock aria-hidden />} tone="attention" title={t.noAccessTitle} description={t.noAccess} />
+        ) : (
           <DataState
             loading={list.loading}
-            error={list.error}
-            empty={tickets.length === 0}
-            emptyMessage={t.empty}
+            // A refresh that failed behind tickets already on screen leaves them there.
+            error={list.data ? null : list.error}
             onRetry={() => void list.refresh()}
+            skeleton={<ListSkeleton variant={compact ? "card" : "table"} rows={4} />}
           >
-            <ul className="divide-y divide-line overflow-hidden rounded-[var(--radius-card)] border border-line bg-paper-raised">
-              {tickets.map((ticket) => (
-                <TicketRow key={ticket.id} ticket={ticket} t={t} />
-              ))}
-            </ul>
+            {visible.length === 0 ? (
+              empty
+            ) : compact ? (
+              <ul aria-label={t.listLabel} className="flex flex-col gap-2.5">
+                {rows}
+              </ul>
+            ) : (
+              <DeskList
+                columns={TICKET_COLUMNS}
+                label={t.listLabel}
+                head={[{ label: t.colSubject }, { label: t.colStatus }, { label: t.colMessages, end: true }, { label: t.colUpdated, end: true }]}
+              >
+                {rows}
+              </DeskList>
+            )}
           </DataState>
-        </section>
-
-        <SocialLinks locale={locale} heading={t.socialHeading} headingClassName="font-display text-lg font-medium text-ink" />
+        )}
       </div>
+
+      {/* ZIMOS's own social accounts and email (packages/ui/src/social-links): the other ways to reach us. */}
+      <SocialLinks locale={locale} heading={t.socialHeading} headingClassName="mt-8 font-display text-lg font-medium text-ink" />
+
+      <TicketQuickLook
+        ticket={peeked}
+        open={Boolean(peek?.open)}
+        onOpenChange={(open) => setPeek((current) => (current ? { ...current, open } : current))}
+      />
+
+      <NewTicketSheet
+        open={creating}
+        onClose={() => setCreating(false)}
+        onOpened={(ticket) => {
+          setCreating(false);
+          toast.notify("success", t.sent, { action: { label: t.openIt, onClick: () => navigate(`/support/${ticket.id}`) } });
+          void list.refresh({ silent: true });
+        }}
+      />
     </div>
   );
 }
 
-function TicketRow({ ticket, t }: { ticket: SupportTicket; t: T }) {
-  return (
-    <li>
-      <Link
-        to={`/support/${ticket.id}`}
-        className="flex min-h-11 flex-wrap items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-primary-soft/40"
-      >
-        <div className="min-w-0">
-          <p className="truncate font-medium text-ink">{ticket.subject}</p>
-          <p className="text-xs text-ink-soft">
-            {categoryText(t, ticket.category)} · {fmt(t.messages, { n: ticket.messageCount ?? 1 })} ·{" "}
-            {fmt(t.updated, { date: formatDateTime(ticket.lastMessageAt) })}
-          </p>
-        </div>
-        <StatusBadge value={ticket.status} tone={STATUS_TONE[ticket.status]} text={statusText(t, ticket.status)} />
-      </Link>
-    </li>
+/**
+ * One ticket in the list: its subject and topic, where it stands, how long
+ * the thread is and when it last moved. A press opens Quick Look (Space too);
+ * the subject, Enter and the row's menu open the ticket's page. A ticket that
+ * waits for the store's reply carries the dot of something new.
+ */
+function TicketRow({
+  ticket,
+  compact,
+  current,
+  onPeek,
+  onOpen,
+  t,
+}: {
+  ticket: SupportTicket;
+  compact: boolean;
+  current: boolean;
+  onPeek: () => void;
+  onOpen: () => void;
+  t: Strings;
+}) {
+  const labels = useSupportLabels();
+  const to = `/support/${ticket.id}`;
+  const keys = rowKeyProps(onPeek, onOpen);
+  const peekLabel = fmt(t.peek, { subject: ticket.subject });
+  const waiting = waitsOnYou(ticket);
+  const status = <StatusBadge value={ticket.status} tone={SUPPORT_STATUS_TONE[ticket.status]} text={labels.status(ticket.status)} />;
+  const messages = labels.messages(ticket.messageCount ?? 1);
+  const when = (
+    <time dateTime={ticket.lastMessageAt} title={fmt(t.updated, { date: formatDateTime(ticket.lastMessageAt) })}>
+      {formatRelativeTime(ticket.lastMessageAt)}
+    </time>
   );
-}
+  const menu: ContextMenuItem[] = [
+    { id: "open", label: t.menuOpen, icon: IconTicket, onSelect: onOpen },
+    { id: "peek", label: t.menuPeek, icon: IconEye, onSelect: onPeek },
+  ];
 
-function NewTicketForm({ onOpened }: { onOpened: () => void }) {
-  const t = useT(STRINGS);
-  const workspaceId = useWorkspaceId();
-  const toast = useToast();
-  const errorMessage = useErrorMessage();
-  const [subject, setSubject] = useState("");
-  const [category, setCategory] = useState<SupportTicketCategory>("general");
-  const [body, setBody] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    if (subject.trim().length < 3) return setError(t.subjectTooShort);
-    if (!body.trim()) return setError(t.messageRequired);
-    setBusy(true);
-    setError(null);
-    try {
-      await apiClient.openSupportTicket(workspaceId, { subject: subject.trim(), body: body.trim(), category });
-      setSubject("");
-      setBody("");
-      setCategory("general");
-      toast.success(t.sent);
-      onOpened();
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setBusy(false);
-    }
+  if (compact) {
+    return (
+      <li>
+        <ContextMenu items={menu} label={t.menuLabel}>
+          <ListRowCard
+            title={
+              <bdi data-vt-part="title" dir="auto">
+                {ticket.subject}
+              </bdi>
+            }
+            amount={<span className="text-xs font-normal text-ink-soft">{when}</span>}
+            status={status}
+            meta={
+              <>
+                {labels.category(ticket.category)}
+                <span aria-hidden> · </span>
+                {messages}
+              </>
+            }
+            unread={waiting}
+            onOpen={onPeek}
+            openLabel={peekLabel}
+            aria-haspopup="dialog"
+            {...keys}
+          />
+        </ContextMenu>
+      </li>
+    );
   }
 
   return (
-    <Card className="p-5">
-      <form onSubmit={submit} className="space-y-4">
-        <h2 className="font-display text-lg font-medium text-ink">{t.newHeading}</h2>
-        {error && <Alert variant="danger">{error}</Alert>}
-        <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_14rem]">
-          <TextField
-            label={t.subject}
-            required
-            maxLength={200}
-            placeholder={t.subjectPlaceholder}
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-          />
-          <Field label={t.category}>
-            {({ id }) => (
-              <Select id={id} value={category} onChange={(e) => setCategory(e.target.value as SupportTicketCategory)}>
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {categoryText(t, c)}
-                  </option>
-                ))}
-              </Select>
+    <DeskRow onOpen={onPeek} openLabel={peekLabel} keyProps={keys} current={current} menu={menu} menuLabel={t.menuLabel}>
+      <div className="min-w-0">
+        <p className="flex min-w-0 items-center gap-2 text-[15px] leading-6 text-ink">
+          {waiting && <span aria-hidden className="zimos-row-dot size-2 shrink-0 rounded-full bg-primary" />}
+          {/* The subject is the way to the ticket's page; the row itself opens the preview. */}
+          <ViewLink
+            to={to}
+            aria-label={fmt(t.openTicket, { subject: ticket.subject })}
+            className={cn(
+              "min-w-0 truncate rounded-sm hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+              waiting ? "font-semibold" : "font-medium"
             )}
-          </Field>
-        </div>
-        <Field label={t.message} required>
-          {({ id }) => (
-            <Textarea
-              id={id}
-              rows={5}
-              maxLength={5000}
-              placeholder={t.messagePlaceholder}
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-            />
-          )}
-        </Field>
-        <div className="flex justify-end">
-          <Button type="submit" disabled={busy} className="min-h-11">
-            {busy ? t.sending : t.send}
-          </Button>
-        </div>
-      </form>
-    </Card>
+          >
+            <bdi data-vt-part="title" dir="auto">
+              {ticket.subject}
+            </bdi>
+          </ViewLink>
+        </p>
+        <p className="truncate text-xs leading-5 text-ink-soft">{labels.category(ticket.category)}</p>
+      </div>
+      <div className="flex items-center">{status}</div>
+      <div className="text-end text-[13px] whitespace-nowrap text-ink-soft tabular-nums">{messages}</div>
+      <div className="text-end text-xs whitespace-nowrap text-ink-soft">{when}</div>
+    </DeskRow>
   );
 }
 
-/** /support/:ticketId — one request's thread, and a reply box while it is open. */
+/** /support/:ticketId — one ticket's thread, and a reply box while it is open. */
 export function SupportTicketPage() {
-  const t = useT(STRINGS);
   const { ticketId = "" } = useParams();
+  // Keyed by the ticket: a link from one ticket to another starts clean.
+  return <TicketView key={ticketId} ticketId={ticketId} />;
+}
+
+/** The reply box grows with what is typed, up to about six lines. */
+const REPLY_MAX = 168;
+
+function TicketView({ ticketId }: { ticketId: string }) {
+  const t = useT(STRINGS);
+  const labels = useSupportLabels();
   const workspaceId = useWorkspaceId();
   const toast = useToast();
   const errorMessage = useErrorMessage();
-  const thread = useAsync(() => apiClient.getSupportTicket(workspaceId, ticketId), [workspaceId, ticketId]);
+  const thread = useCachedAsync(ticketCacheKey(workspaceId, ticketId), () => apiClient.getSupportTicket(workspaceId, ticketId), [workspaceId, ticketId]);
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const boxRef = useRef<HTMLTextAreaElement>(null);
 
   const ticket = thread.data?.ticket;
 
+  // The box is as tall as what is in it, up to a few lines; after that it scrolls.
+  useLayoutEffect(() => {
+    const box = boxRef.current;
+    if (!box) return;
+    box.style.height = "auto";
+    box.style.height = `${Math.min(box.scrollHeight, REPLY_MAX)}px`;
+  }, [reply, ticket?.status]);
+
   async function send(e: FormEvent) {
     e.preventDefault();
-    if (!reply.trim()) return setError(t.messageRequired);
+    if (busy) return;
+    if (!reply.trim()) {
+      setError(t.messageRequired);
+      boxRef.current?.focus();
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -292,6 +477,7 @@ export function SupportTicketPage() {
       toast.success(t.replySent);
     } catch (err) {
       setError(errorMessage(err));
+      boxRef.current?.focus();
     } finally {
       setBusy(false);
     }
@@ -302,68 +488,92 @@ export function SupportTicketPage() {
       <PageHeader
         title={ticket?.subject ?? t.title}
         titleBadge={
-          ticket ? (
-            <StatusBadge value={ticket.status} tone={STATUS_TONE[ticket.status]} text={statusText(t, ticket.status)} />
-          ) : undefined
+          ticket ? <StatusBadge value={ticket.status} tone={SUPPORT_STATUS_TONE[ticket.status]} text={labels.status(ticket.status)} /> : undefined
         }
         description={
           ticket
-            ? `${categoryText(t, ticket.category)} · ${fmt(t.opened, {
+            ? `${labels.category(ticket.category)} · ${fmt(t.opened, {
                 date: formatDateTime(ticket.createdAt),
-                name: ticket.createdBy ?? t.someone,
+                name: ticket.createdBy ?? labels.someone,
               })}`
             : undefined
         }
         back={{ to: "/support", label: t.back }}
       />
-      <DataState loading={thread.loading} error={thread.error} onRetry={() => void thread.refresh()}>
+      <DataState
+        loading={thread.loading}
+        error={thread.data ? null : thread.error}
+        onRetry={() => void thread.refresh()}
+        skeleton={<TicketThreadSkeleton />}
+      >
         {thread.data && ticket && (
-          <div className="space-y-4">
-            <ol className="space-y-3">
-              {thread.data.messages.map((m) => (
-                <li
-                  key={m.id}
-                  className={cn(
-                    "rounded-[var(--radius-card)] border px-4 py-3",
-                    m.authorType === "admin" ? "border-primary/30 bg-primary-soft/40" : "border-line bg-paper-raised"
-                  )}
-                >
-                  <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2 text-xs text-ink-soft">
-                    <span className="font-semibold text-ink">
-                      {m.authorType === "admin" ? m.authorName : (m.authorName ?? t.you)}
-                    </span>
-                    <span>{formatDateTime(m.createdAt)}</span>
-                  </div>
-                  <p className="whitespace-pre-wrap wrap-break-word text-sm text-ink">{m.body}</p>
-                </li>
-              ))}
-            </ol>
+          <div className="flex flex-col gap-4">
+            <TicketMessages messages={thread.data.messages} label={t.thread} />
 
             {ticket.status === "closed" ? (
-              <Alert>{t.closedNotice}</Alert>
+              <div data-slot="support-closed" className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-card)] bg-paper-raised px-4 py-3.5 shadow-[var(--shadow-card)] ring-1 ring-line">
+                <p className="flex min-w-0 flex-1 items-start gap-2 text-sm leading-6 text-ink-soft">
+                  <IconLock className="mt-1 size-4 shrink-0" aria-hidden />
+                  <span>{t.closedNotice}</span>
+                </p>
+                <Button variant="outline" asChild className="h-11 shrink-0 gap-1.5 rounded-full px-5">
+                  <ViewLink to="/support?new=1">
+                    <IconPlus className="size-4" aria-hidden />
+                    {t.newTicket}
+                  </ViewLink>
+                </Button>
+              </div>
             ) : (
-              <Card className="p-4">
-                <form onSubmit={send} className="space-y-3">
-                  {error && <Alert variant="danger">{error}</Alert>}
-                  <Field label={t.reply}>
-                    {({ id }) => (
-                      <Textarea
-                        id={id}
-                        rows={4}
-                        maxLength={5000}
-                        placeholder={t.replyPlaceholder}
-                        value={reply}
-                        onChange={(e) => setReply(e.target.value)}
-                      />
+              // Pinned above the dock (at the bottom edge from md up), so the answer is always one reach away.
+              <form
+                onSubmit={send}
+                noValidate
+                data-slot="support-reply"
+                className="sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 rounded-[1.75rem] bg-paper-raised p-2 shadow-[var(--shadow-raised)] ring-1 ring-line md:bottom-4"
+              >
+                <div className="flex items-end gap-2">
+                  <Textarea
+                    ref={boxRef}
+                    rows={1}
+                    maxLength={5000}
+                    dir="auto"
+                    aria-label={t.reply}
+                    aria-invalid={error ? true : undefined}
+                    placeholder={t.replyPlaceholder}
+                    value={reply}
+                    onChange={(e) => {
+                      setReply(e.target.value);
+                      if (error) setError(null);
+                    }}
+                    onKeyDown={(e) => {
+                      // Enter is a new line here; Ctrl or ⌘ with it sends.
+                      if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !e.nativeEvent.isComposing) {
+                        e.preventDefault();
+                        e.currentTarget.form?.requestSubmit();
+                      }
+                    }}
+                    className="max-h-[10.5rem] min-h-11 flex-1 resize-none rounded-[1.375rem] px-4 py-2.5 text-base leading-6 md:text-[15px]"
+                  />
+                  <Button
+                    type="submit"
+                    aria-busy={busy || undefined}
+                    disabled={busy || !reply.trim()}
+                    className="h-11 shrink-0 gap-1.5 rounded-full px-4 max-sm:w-11 max-sm:px-0"
+                  >
+                    {busy ? (
+                      <IconSpinner className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+                    ) : (
+                      <IconSend className="size-[18px] rtl:-scale-x-100" aria-hidden />
                     )}
-                  </Field>
-                  <div className="flex justify-end">
-                    <Button type="submit" disabled={busy || !reply.trim()} className="min-h-11">
-                      {busy ? t.sending : t.sendReply}
-                    </Button>
-                  </div>
-                </form>
-              </Card>
+                    <span className="max-sm:sr-only">{busy ? t.sending : t.sendReply}</span>
+                  </Button>
+                </div>
+                {error && (
+                  <p role="alert" className="px-3 pt-2 pb-1 text-xs leading-5 font-medium text-danger">
+                    {error}
+                  </p>
+                )}
+              </form>
             )}
           </div>
         )}

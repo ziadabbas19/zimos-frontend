@@ -19,7 +19,6 @@ import {
   minorToMajorInput,
   percentToBasisPoints,
 } from "@/lib/format";
-import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Modal } from "@/components/Modal";
@@ -27,6 +26,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { TextField, Field } from "@/components/Field";
 import { MoneyInput } from "@/components/MoneyInput";
 import { Select } from "@/components/Select";
+import { SettingsLayout, SettingsPane, useSettingsSection } from "@/components/settings";
 import { useToast } from "@/components/Toast";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { CarrierConnectionsSection } from "./CarrierConnectionsSection";
@@ -36,7 +36,7 @@ import { DeliveryZonesSection } from "./DeliveryZonesSection";
 import { StoreHoursSection } from "./StoreHoursSection";
 import { ShippingProfilesSection } from "./ShippingProfilesSection";
 import { ShippingOptionsSection } from "./ShippingOptionsSection";
-import { ShippingTabsBar, useShippingTab } from "./ShippingTabs";
+import { shippingTabOf, useShippingSections } from "./ShippingTabs";
 import { WeightTiersSection } from "./WeightTiersSection";
 import { TRACKING_PROVIDERS_ENABLED } from "@/lib/features";
 import { ManualTrackingCard } from "./ManualTrackingCard";
@@ -406,16 +406,16 @@ function ShippingTaxBody() {
     reloadTax();
   }
 
-  const [tab, setTab] = useShippingTab();
+  const { sections, searchPlaceholder } = useShippingSections();
+  const { current, select } = useSettingsSection(sections);
+  // What the pane holds: the section in the address, or the first.
+  const tab = shippingTabOf(current);
+  const shown = sections.find((section) => section.id === tab) ?? sections[0];
 
   return (
-    <div className="max-w-5xl space-y-12">
-      <PageHeader
-        title={tr.title}
-        description={tr.description}
-      />
-
-      <ShippingTabsBar value={tab} onChange={setTab} />
+    <SettingsLayout title={tr.title} sections={sections} current={current} onSelect={select} searchPlaceholder={searchPlaceholder}>
+      <SettingsPane title={shown.label} description={shown.description} icon={shown.icon} tone={shown.tone}>
+        <div className="space-y-12">
 
       {tab === "rates" && <ShippingSettingsSection onSaved={refreshWorkspace} />}
 
@@ -638,7 +638,9 @@ function ShippingTaxBody() {
         onCancel={() => setDeletingTax(null)}
         onConfirm={confirmDeleteTax}
       />
-    </div>
+        </div>
+      </SettingsPane>
+    </SettingsLayout>
   );
 }
 

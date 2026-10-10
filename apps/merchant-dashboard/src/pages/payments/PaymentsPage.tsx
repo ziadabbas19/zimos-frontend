@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from "react";
+import { useId, useMemo, useState, type FormEvent } from "react";
 import { ArrowDown, ArrowUp, ExternalLink } from "lucide-react";
 import { Alert, Button, Input, Label, cn } from "@store-builder/ui";
 import {
@@ -14,7 +14,9 @@ import { formatDateTime } from "@/lib/format";
 import { STOREFRONT_URL } from "@/lib/storefrontUrl";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { fmt, useCommon, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
+import { IconCard, IconSliders, IconWallet } from "@/components/icons";
 import { PageHeader } from "@/components/PageHeader";
+import { SettingsLayout, SettingsPane, useSettingsSection, type SettingsSectionDef } from "@/components/settings";
 import { DataState } from "@/components/DataState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -42,6 +44,11 @@ const STRINGS = {
     offlineNotice:
       "Online checkout isn't live on the platform yet, so shoppers only see cash on delivery for now. You can connect and test your gateway already; nothing changes for shoppers until it goes live.",
     gatewaysTitle: "Gateways",
+    secManual: "InstaPay and wallets",
+    secManualHint: "Your own InstaPay address and wallet numbers, paid to directly.",
+    secGatewaysHint: "The payment gateways connected to this store, and their keys.",
+    secMethodsHint: "Which ways to pay shoppers see at checkout, and in which order.",
+    search: "Search the payment settings…",
     notConnected: "Not connected",
     connected: "Connected",
     invalid: "Keys rejected",
@@ -107,6 +114,11 @@ const STRINGS = {
     offlineNotice:
       "الدفع الإلكتروني لم يُفعَّل على المنصة بعد، لذلك يرى العملاء الدفع عند الاستلام فقط حاليًا. يمكنك ربط البوابة وتجربتها من الآن، ولن يتغير شيء للعملاء قبل التفعيل.",
     gatewaysTitle: "البوابات",
+    secManual: "إنستاباي والمحافظ",
+    secManualHint: "عنوان إنستاباي وأرقام المحافظ الخاصة بك، ويُدفع إليها مباشرة.",
+    secGatewaysHint: "بوابات الدفع المربوطة بهذا المتجر ومفاتيحها.",
+    secMethodsHint: "طرق الدفع التي يراها العملاء عند إتمام الشراء وترتيبها.",
+    search: "ابحث في إعدادات الدفع…",
     notConnected: "غير مربوطة",
     connected: "مربوطة",
     invalid: "المفاتيح مرفوضة",
@@ -188,52 +200,73 @@ export function PaymentsPage() {
     void methods.refresh({ silent: true });
   }
 
-  return (
-    <div className="max-w-3xl space-y-8">
-      <PageHeader
-        title={t.title} description={t.description} />
-      {/* The store's own InstaPay / wallet numbers: no gateway, and not behind the online-payments switch. */}
-      {roleAllows && <ManualMethodsSection workspaceId={workspaceId} />}
-      {!roleAllows ? (
+  const sections = useMemo<SettingsSectionDef[]>(
+    () => [
+      { id: "manual", label: t.secManual, description: t.secManualHint, icon: IconWallet, tone: "green" },
+      { id: "gateways", label: t.gatewaysTitle, description: t.secGatewaysHint, icon: IconCard, tone: "blue" },
+      { id: "methods", label: t.methodListTitle, description: t.secMethodsHint, icon: IconSliders, tone: "purple" },
+    ],
+    [t]
+  );
+  const { current, select } = useSettingsSection(sections);
+  // What the pane holds: the section in the address, or the first.
+  const shown = sections.find((section) => section.id === current) ?? sections[0];
+
+  // A role with no payment access gets the one line it always got, in the same frame as the page.
+  if (!roleAllows) {
+    return (
+      <div className="max-w-3xl space-y-8">
+        <PageHeader title={t.title} description={t.description} />
         <Alert>{t.viewOnly}</Alert>
-      ) : (
-        <DataState loading={gateways.loading} error={gateways.error} onRetry={() => gateways.refresh()}>
-          {list && !list.configured ? (
-            <div className="rounded-[0.5rem] border border-dashed border-line px-4 py-5">
-              <p className="text-sm font-medium text-ink">{t.notAvailableTitle}</p>
-              <p className="mt-1 text-sm text-ink-soft">{t.notAvailable}</p>
-            </div>
-          ) : (
-            <div className="space-y-8">
-              {forbidden && <Alert>{t.viewOnlyForbidden}</Alert>}
-              {list && !list.onlineEnabled && <Alert>{t.offlineNotice}</Alert>}
-              <section className="space-y-4">
-                <h2 className="font-display text-lg font-medium text-ink">{t.gatewaysTitle}</h2>
-                {list?.gateways.map((gateway) => (
-                  <GatewayCard
-                    key={gateway.code}
-                    gateway={gateway}
+      </div>
+    );
+  }
+
+  return (
+    <SettingsLayout title={t.title} sections={sections} current={current} onSelect={select} searchPlaceholder={t.search}>
+      <SettingsPane title={shown.label} description={shown.description} icon={shown.icon} tone={shown.tone}>
+        {/* The store's own InstaPay / wallet numbers: no gateway, and not behind the online-payments switch. */}
+        {shown.id === "manual" && <ManualMethodsSection workspaceId={workspaceId} />}
+        {shown.id !== "manual" && (
+          <DataState loading={gateways.loading} error={gateways.error} onRetry={() => gateways.refresh()}>
+            {list && !list.configured ? (
+              <div className="rounded-[0.5rem] border border-dashed border-line px-4 py-5">
+                <p className="text-sm font-medium text-ink">{t.notAvailableTitle}</p>
+                <p className="mt-1 text-sm text-ink-soft">{t.notAvailable}</p>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {forbidden && <Alert>{t.viewOnlyForbidden}</Alert>}
+                {list && !list.onlineEnabled && <Alert>{t.offlineNotice}</Alert>}
+                {shown.id === "gateways" && (
+                  <section className="space-y-4">
+                    {list?.gateways.map((gateway) => (
+                      <GatewayCard
+                        key={gateway.code}
+                        gateway={gateway}
+                        canManage={canManage}
+                        onForbidden={() => setForbidden(true)}
+                        onChanged={refreshAll}
+                      />
+                    ))}
+                  </section>
+                )}
+                {shown.id === "methods" && methods.data && list && (
+                  <MethodList
+                    key={JSON.stringify(methods.data.methods.map((m) => [m.id, m.enabled, m.available]))}
+                    methods={methods.data.methods}
+                    gateways={list.gateways}
                     canManage={canManage}
                     onForbidden={() => setForbidden(true)}
-                    onChanged={refreshAll}
+                    onSaved={(next) => methods.setData({ ...methods.data!, methods: next })}
                   />
-                ))}
-              </section>
-              {methods.data && list && (
-                <MethodList
-                  key={JSON.stringify(methods.data.methods.map((m) => [m.id, m.enabled, m.available]))}
-                  methods={methods.data.methods}
-                  gateways={list.gateways}
-                  canManage={canManage}
-                  onForbidden={() => setForbidden(true)}
-                  onSaved={(next) => methods.setData({ ...methods.data!, methods: next })}
-                />
-              )}
-            </div>
-          )}
-        </DataState>
-      )}
-    </div>
+                )}
+              </div>
+            )}
+          </DataState>
+        )}
+      </SettingsPane>
+    </SettingsLayout>
   );
 }
 
