@@ -49,6 +49,7 @@ import {
   type LogoAlign,
   type LogoSize,
   type ShellLink,
+  submenuCount,
   type ShellPart,
 } from "./storeShell";
 
@@ -476,6 +477,7 @@ function SortableLinkRow({
   });
   const builtin = builtinHref(link.kind) !== null;
   const unlabelled = !builtin && link.label.trim() === "" && link.href.trim() !== "";
+  const submenu = submenuCount(link);
 
   return (
     <li
@@ -513,6 +515,7 @@ function SortableLinkRow({
       </div>
       <LinkTargetField link={link} pages={pages} index={index} onPatch={onPatch} />
       {unlabelled && <p className="text-xs font-medium text-danger">{ui.linkLabelRequired}</p>}
+      {submenu > 0 && <p className="text-xs text-ink-soft">{ui.submenuKept(submenu)}</p>}
     </li>
   );
 }
