@@ -1,20 +1,23 @@
-import { useState } from "react";
-import { Alert, Button, Card, Label } from "@store-builder/ui";
+import { useId, useState } from "react";
+import { Input } from "@store-builder/ui";
 import { offersGetExitDownsell, offersSaveExitDownsell, type ExitDownsellSettings } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
 import { useErrorMessage } from "@/lib/errorMessages";
+import { useReportDirty } from "@/lib/useUnsavedGuard";
 import { useT, type Messages } from "@/i18n/LocaleContext";
-import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
+import { SaveBar } from "@/components/SaveBar";
 import { Select } from "@/components/Select";
-import { TextField } from "@/components/Field";
+import { SettingsGroup, SettingsRow, SettingsSwitch } from "@/components/settings";
+import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
 import { OfferNumbers, useOfferStats } from "./OfferNumbers";
+import { FormProblem, OfferPage, OfferPreview, TOUCH_FIELD } from "./OfferKit";
 
 /**
- * The exit popup (SPEC §10.4): a message and a real coupon shown once to a
+ * The exit popup: a message and a real coupon shown once to a
  * visitor who is about to leave, or after a delay. No countdown, no "only
  * today": the coupon is one of the store's own discounts and works as long as
  * that discount does.
@@ -22,19 +25,25 @@ import { OfferNumbers, useOfferStats } from "./OfferNumbers";
 
 const STRINGS = {
   en: {
-    back: "Offers",
     title: "Exit popup",
     description: "One last offer to a visitor who is leaving without ordering. Each visitor sees it once.",
+    stateOn: "On",
+    stateOff: "Off",
     enabled: "Show the exit popup",
+    enabledHintOn: "Each visitor sees it once.",
+    enabledHintOff: "Nobody sees it. What you wrote is kept.",
+    whenGroup: "When and where",
     trigger: "When",
     trigger_exit_intent: "The visitor is about to leave",
     trigger_delay: "After a delay",
     triggerHint: "“About to leave”: the mouse leaves the page on a computer, or the back button on a phone.",
     delay: "Delay in seconds",
+    delayHint: "From 3 to 600.",
     pages: "On",
     pages_all: "Every page",
     pages_product: "Product pages",
     pages_cart: "The cart",
+    wordsGroup: "What it says",
     popupTitle: "Title",
     popupTitlePlaceholder: "Before you go…",
     message: "Message",
@@ -42,63 +51,78 @@ const STRINGS = {
     coupon: "Coupon",
     couponNone: "No coupon — message only",
     couponHint: "One of your discount codes. If it expires or is switched off, the popup stops showing until you choose another.",
-    save: "Save",
-    saving: "Saving…",
+    previewCode: "Code",
     saved: "Exit popup saved.",
   },
   ar: {
-    back: "العروض",
     title: "نافذة الخروج",
     description: "عرض أخير لزائر يغادر بدون أن يطلب. كل زائر يراها مرة واحدة.",
+    stateOn: "مفعّلة",
+    stateOff: "متوقفة",
     enabled: "إظهار نافذة الخروج",
+    enabledHintOn: "يراها كل زائر مرة واحدة.",
+    enabledHintOff: "لا يراها أحد. ما كتبته محفوظ.",
+    whenGroup: "متى وأين",
     trigger: "متى",
     trigger_exit_intent: "عندما يهمّ الزائر بالمغادرة",
     trigger_delay: "بعد مدة",
-    triggerHint: "«يهمّ بالمغادرة»: خروج الماوس من الصفحة على الكمبيوتر، أو زر الرجوع على الموبايل.",
+    triggerHint: "«يهمّ بالمغادرة»: خروج الماوس من الصفحة على الكمبيوتر، أو زر الرجوع على الهاتف.",
     delay: "المدة بالثواني",
+    delayHint: "من 3 إلى 600.",
     pages: "في",
     pages_all: "كل الصفحات",
     pages_product: "صفحات المنتجات",
     pages_cart: "السلة",
+    wordsGroup: "ما المكتوب فيها",
     popupTitle: "العنوان",
     popupTitlePlaceholder: "قبل ما تمشي…",
     message: "الرسالة",
-    messagePlaceholder: "خصم 10% على أول أوردر.",
+    messagePlaceholder: "خصم 10% على أول طلب.",
     coupon: "الكوبون",
     couponNone: "بدون كوبون — رسالة فقط",
     couponHint: "أحد أكواد الخصم عندك. لو انتهى أو توقف، النافذة تتوقف عن الظهور حتى تختار غيره.",
-    save: "حفظ",
-    saving: "جارٍ الحفظ…",
+    previewCode: "الكود",
     saved: "تم حفظ نافذة الخروج.",
   },
 } satisfies Messages;
 
 export function ExitDownsellPage() {
-  // Each offer's views, acceptances and added revenue (SPEC §10.11).
+  // Each offer's views, acceptances and added revenue.
   const stats = useOfferStats();
   const t = useT(STRINGS);
   const workspaceId = useWorkspaceId();
   const toast = useToast();
   const errorMessage = useErrorMessage();
+  const ids = useId();
   const [draft, setDraft] = useState<ExitDownsellSettings | null>(null);
+  /** What the server holds: the form is dirty once the draft differs from it. */
+  const [saved, setSaved] = useState<ExitDownsellSettings | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const data = useAsync(async () => {
     const [settings, discounts] = await Promise.all([offersGetExitDownsell(apiClient, workspaceId), apiClient.listDiscounts(workspaceId)]);
     setDraft(settings);
+    setSaved(settings);
     return discounts.filter((d) => d.code);
   }, [workspaceId]);
 
-  const set = <K extends keyof ExitDownsellSettings>(key: K, value: ExitDownsellSettings[K]) =>
+  const set = <K extends keyof ExitDownsellSettings>(key: K, value: ExitDownsellSettings[K]) => {
     setDraft((current) => (current ? { ...current, [key]: value } : current));
+    setError(null);
+  };
+
+  const dirty = Boolean(draft && saved && JSON.stringify(draft) !== JSON.stringify(saved));
+  useReportDirty(dirty);
 
   async function save() {
     if (!draft) return;
     setBusy(true);
     setError(null);
     try {
-      setDraft(await offersSaveExitDownsell(apiClient, workspaceId, draft));
+      const next = await offersSaveExitDownsell(apiClient, workspaceId, draft);
+      setDraft(next);
+      setSaved(next);
       toast.success(t.saved);
     } catch (err) {
       setError(errorMessage(err));
@@ -107,104 +131,174 @@ export function ExitDownsellPage() {
     }
   }
 
+  const off = busy || !draft?.enabled;
+  const coupon = (data.data ?? []).find((d) => d.id === draft?.discountId);
+
   return (
-    <div className="max-w-2xl">
-      <PageHeader title={t.title} description={t.description} back={{ to: "/offers", label: t.back }} />
-      <div className="mb-3">
-        <OfferNumbers stat={stats?.exitDownsell} />
-      </div>
+    <OfferPage
+      title={t.title}
+      description={t.description}
+      width="form"
+      titleBadge={
+        saved ? (
+          <StatusBadge value={saved.enabled ? "active" : "disabled"} tone={saved.enabled ? "success" : "neutral"} text={saved.enabled ? t.stateOn : t.stateOff} />
+        ) : undefined
+      }
+    >
       <DataState loading={data.loading} error={data.error} onRetry={() => data.refresh()}>
         {draft && (
-          <Card className="space-y-4 p-5">
-            <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-medium text-ink">
-              <input
-                type="checkbox"
-                className="size-4 accent-primary"
-                checked={draft.enabled}
-                disabled={busy}
-                onChange={(e) => set("enabled", e.target.checked)}
-              />
-              {t.enabled}
-            </label>
+          <div className="space-y-4">
+            <OfferNumbers stat={stats?.exitDownsell} />
 
-            <fieldset disabled={busy || !draft.enabled} className="space-y-4 disabled:opacity-60">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="exit-trigger">{t.trigger}</Label>
-                  <Select id="exit-trigger" value={draft.trigger} onChange={(e) => set("trigger", e.target.value as ExitDownsellSettings["trigger"])}>
+            <SettingsGroup>
+              <SettingsSwitch
+                checked={draft.enabled}
+                onChange={(next) => set("enabled", next)}
+                label={t.enabled}
+                hint={draft.enabled ? t.enabledHintOn : t.enabledHintOff}
+                disabled={busy}
+              />
+            </SettingsGroup>
+
+            <SettingsGroup title={t.whenGroup}>
+              <SettingsRow
+                label={t.trigger}
+                hint={t.triggerHint}
+                htmlFor={`${ids}-trigger`}
+                control={
+                  <Select
+                    id={`${ids}-trigger`}
+                    className={TOUCH_FIELD}
+                    value={draft.trigger}
+                    disabled={off}
+                    onChange={(e) => set("trigger", e.target.value as ExitDownsellSettings["trigger"])}
+                  >
                     <option value="exit_intent">{t.trigger_exit_intent}</option>
                     <option value="delay">{t.trigger_delay}</option>
                   </Select>
-                  <p className="text-xs text-ink-soft">{t.triggerHint}</p>
-                </div>
-                {draft.trigger === "delay" ? (
-                  <TextField
-                    label={t.delay}
-                    type="number"
-                    inputMode="numeric"
-                    min={3}
-                    max={600}
-                    value={String(draft.delaySeconds)}
-                    onChange={(e) => set("delaySeconds", Math.min(600, Math.max(3, Number.parseInt(e.target.value, 10) || 3)))}
-                  />
-                ) : (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="exit-pages">{t.pages}</Label>
-                    <Select id="exit-pages" value={draft.pages} onChange={(e) => set("pages", e.target.value as ExitDownsellSettings["pages"])}>
-                      <option value="all">{t.pages_all}</option>
-                      <option value="product">{t.pages_product}</option>
-                      <option value="cart">{t.pages_cart}</option>
-                    </Select>
-                  </div>
-                )}
-              </div>
+                }
+              />
               {draft.trigger === "delay" && (
-                <div className="space-y-1.5 sm:max-w-[calc(50%-0.5rem)]">
-                  <Label htmlFor="exit-pages-2">{t.pages}</Label>
-                  <Select id="exit-pages-2" value={draft.pages} onChange={(e) => set("pages", e.target.value as ExitDownsellSettings["pages"])}>
+                <SettingsRow
+                  label={t.delay}
+                  hint={t.delayHint}
+                  htmlFor={`${ids}-delay`}
+                  control={
+                    <Input
+                      id={`${ids}-delay`}
+                      type="number"
+                      inputMode="numeric"
+                      min={3}
+                      max={600}
+                      dir="ltr"
+                      value={String(draft.delaySeconds)}
+                      disabled={off}
+                      onChange={(e) => set("delaySeconds", Math.min(600, Math.max(3, Number.parseInt(e.target.value, 10) || 3)))}
+                      className="h-11 w-28 text-center text-base tabular-nums md:h-10 md:text-sm"
+                    />
+                  }
+                />
+              )}
+              <SettingsRow
+                label={t.pages}
+                htmlFor={`${ids}-pages`}
+                control={
+                  <Select
+                    id={`${ids}-pages`}
+                    className={TOUCH_FIELD}
+                    value={draft.pages}
+                    disabled={off}
+                    onChange={(e) => set("pages", e.target.value as ExitDownsellSettings["pages"])}
+                  >
                     <option value="all">{t.pages_all}</option>
                     <option value="product">{t.pages_product}</option>
                     <option value="cart">{t.pages_cart}</option>
                   </Select>
-                </div>
-              )}
-              <TextField
-                label={t.popupTitle}
-                maxLength={120}
-                placeholder={t.popupTitlePlaceholder}
-                value={draft.title ?? ""}
-                onChange={(e) => set("title", e.target.value)}
+                }
               />
-              <TextField
-                label={t.message}
-                maxLength={300}
-                placeholder={t.messagePlaceholder}
-                value={draft.message ?? ""}
-                onChange={(e) => set("message", e.target.value)}
-              />
-              <div className="space-y-1.5">
-                <Label htmlFor="exit-coupon">{t.coupon}</Label>
-                <Select id="exit-coupon" value={draft.discountId ?? ""} onChange={(e) => set("discountId", e.target.value || null)}>
-                  <option value="">{t.couponNone}</option>
-                  {(data.data ?? []).map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.code}
-                    </option>
-                  ))}
-                </Select>
-                <p className="text-xs text-ink-soft">{t.couponHint}</p>
-              </div>
-            </fieldset>
+            </SettingsGroup>
 
-            {error && <Alert variant="danger">{error}</Alert>}
-            <div className="flex justify-end">
-              <Button type="button" disabled={busy} onClick={() => void save()}>
-                {busy ? t.saving : t.save}
-              </Button>
-            </div>
-          </Card>
+            <SettingsGroup title={t.wordsGroup}>
+              <SettingsRow
+                stacked
+                label={t.popupTitle}
+                htmlFor={`${ids}-title`}
+                control={
+                  <Input
+                    id={`${ids}-title`}
+                    maxLength={120}
+                    placeholder={t.popupTitlePlaceholder}
+                    value={draft.title ?? ""}
+                    disabled={off}
+                    onChange={(e) => set("title", e.target.value)}
+                    className={TOUCH_FIELD}
+                  />
+                }
+              />
+              <SettingsRow
+                stacked
+                label={t.message}
+                htmlFor={`${ids}-message`}
+                control={
+                  <Input
+                    id={`${ids}-message`}
+                    maxLength={300}
+                    placeholder={t.messagePlaceholder}
+                    value={draft.message ?? ""}
+                    disabled={off}
+                    onChange={(e) => set("message", e.target.value)}
+                    className={TOUCH_FIELD}
+                  />
+                }
+              />
+              <SettingsRow
+                stacked
+                label={t.coupon}
+                hint={t.couponHint}
+                htmlFor={`${ids}-coupon`}
+                control={
+                  <Select
+                    id={`${ids}-coupon`}
+                    className={TOUCH_FIELD}
+                    value={draft.discountId ?? ""}
+                    disabled={off}
+                    onChange={(e) => set("discountId", e.target.value || null)}
+                  >
+                    <option value="">{t.couponNone}</option>
+                    {(data.data ?? []).map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.code}
+                      </option>
+                    ))}
+                  </Select>
+                }
+              />
+            </SettingsGroup>
+
+            {draft.enabled && (
+              <OfferPreview>
+                <p className="font-display text-base font-semibold text-ink">
+                  <bdi>{draft.title?.trim() || t.popupTitlePlaceholder}</bdi>
+                </p>
+                <p className="text-ink-soft">
+                  <bdi>{draft.message?.trim() || t.messagePlaceholder}</bdi>
+                </p>
+                {coupon?.code && (
+                  <p className="pt-1">
+                    <span className="inline-flex min-h-9 items-center gap-2 rounded-full bg-primary-soft px-3.5 text-[13px] font-semibold text-primary-dark dark:text-primary">
+                      {t.previewCode}
+                      <bdi dir="ltr">{coupon.code}</bdi>
+                    </span>
+                  </p>
+                )}
+              </OfferPreview>
+            )}
+
+            <FormProblem>{error}</FormProblem>
+            <SaveBar dirty={dirty} saving={busy} onSave={() => void save()} onDiscard={() => setDraft(saved)} />
+          </div>
         )}
       </DataState>
-    </div>
+    </OfferPage>
   );
 }

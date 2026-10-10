@@ -1,54 +1,54 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Alert, Button, Card } from "@store-builder/ui";
 import { couponsGetOrderRules, couponsSaveOrderRules } from "@store-builder/api-client";
+import { IconCourier } from "@/components/icons";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
 import { useErrorMessage } from "@/lib/errorMessages";
-import { majorToMinor, minorToMajorInput } from "@/lib/format";
-import { useT, type Messages } from "@/i18n/LocaleContext";
-import { PageHeader } from "@/components/PageHeader";
+import { useReportDirty } from "@/lib/useUnsavedGuard";
+import { formatMoney, majorToMinor, minorToMajorInput } from "@/lib/format";
+import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { DataState } from "@/components/DataState";
 import { MoneyInput } from "@/components/MoneyInput";
+import { SaveBar } from "@/components/SaveBar";
+import { SettingsGroup, SettingsLinkRow } from "@/components/settings";
 import { useToast } from "@/components/Toast";
+import { FormProblem, OfferPage, OfferPreview } from "./OfferKit";
 
 /**
- * Minimum order and free shipping (SPEC §10.6). The minimum is set here; the
+ * Minimum order and free shipping. The minimum is set here; the
  * free-shipping threshold belongs to the shipping settings, and the store
  * shows the customer how far they are from it.
  */
 
 const STRINGS = {
   en: {
-    back: "Offers",
     title: "Minimum order and free shipping",
     description: "A floor under small orders, and a reason to add one more thing.",
+    minimumGroup: "Minimum order",
     minimum: "Minimum order amount",
-    minimumHint:
-      "An order below this is not accepted; the customer is told how much more to add. Leave blank for no minimum. It does not apply to orders your team enters.",
-    invalid: "Enter a valid amount, or leave it blank.",
-    save: "Save",
-    saving: "Saving…",
+    minimumHint: "Leave blank for no minimum. It does not apply to orders your team enters.",
+    invalid: "Write an amount in numbers, like 150 — or leave it blank for no minimum.",
+    previewWith: "An order under {amount} is not accepted: the shopper is told how much more to add.",
+    previewNone: "No minimum: every order is accepted, whatever its amount.",
     saved: "Minimum order saved.",
+    freeGroup: "Free shipping",
     freeTitle: "Free shipping from an amount",
-    freeHint:
-      "Set the amount in the shipping settings. In the cart and at checkout the customer sees a bar showing how much is left to reach it.",
-    freeLink: "Open shipping settings",
+    freeHint: "Set in the shipping settings. The cart shows the shopper how much is left to reach it.",
   },
   ar: {
-    back: "العروض",
     title: "الحد الأدنى للطلب والشحن المجاني",
-    description: "حد أدنى للأوردرات الصغيرة، وسبب لإضافة منتج آخر.",
+    description: "حد أدنى للطلبات الصغيرة، وسبب لإضافة منتج آخر.",
+    minimumGroup: "الحد الأدنى للطلب",
     minimum: "الحد الأدنى للطلب",
-    minimumHint: "الأوردر الأقل من هذا المبلغ لا يُقبل، ويُخبَر العميل بالمبلغ المتبقي. اتركه فارغًا لعدم وضع حد. لا يُطبَّق على الأوردرات التي يُدخلها فريقك.",
-    invalid: "أدخل مبلغًا صحيحًا، أو اتركه فارغًا.",
-    save: "حفظ",
-    saving: "جارٍ الحفظ…",
+    minimumHint: "اتركه فارغًا لعدم وضع حد أدنى. لا يُطبَّق على الطلبات التي يُدخلها فريقك.",
+    invalid: "اكتب مبلغًا بالأرقام، مثل 150 — أو اتركه فارغًا لعدم وضع حد أدنى.",
+    previewWith: "الطلب الأقل من {amount} لا يُقبل: يُخبَر العميل بالمبلغ المتبقي ليكمل.",
+    previewNone: "لا يوجد حد أدنى: يُقبل أي طلب مهما كان مبلغه.",
     saved: "تم حفظ الحد الأدنى للطلب.",
+    freeGroup: "الشحن المجاني",
     freeTitle: "شحن مجاني من مبلغ معين",
-    freeHint: "حدّد المبلغ من إعدادات الشحن. في السلة وعند إتمام الطلب يرى العميل شريطًا يوضح المتبقي للوصول إليه.",
-    freeLink: "فتح إعدادات الشحن",
+    freeHint: "يُحدَّد من إعدادات الشحن. تعرض السلة للعميل المبلغ المتبقي للوصول إليه.",
   },
 } satisfies Messages;
 
@@ -58,26 +58,36 @@ export function OrderRulesPage() {
   const toast = useToast();
   const errorMessage = useErrorMessage();
   const [minimum, setMinimum] = useState("");
+  /** The amount as the server holds it, in the form's own text: the form is dirty once the field differs. */
+  const [savedMinimum, setSavedMinimum] = useState("");
   const [busy, setBusy] = useState(false);
+  const [invalid, setInvalid] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const rules = useAsync(async () => {
     const loaded = await couponsGetOrderRules(apiClient, workspaceId);
-    setMinimum(minorToMajorInput(loaded.minOrderAmount));
+    const text = minorToMajorInput(loaded.minOrderAmount);
+    setMinimum(text);
+    setSavedMinimum(text);
     return loaded;
   }, [workspaceId]);
+
+  const dirty = minimum.trim() !== savedMinimum.trim();
+  useReportDirty(dirty);
 
   async function save() {
     const amount = minimum.trim() === "" ? null : majorToMinor(minimum);
     if (amount !== null && (!Number.isFinite(amount) || amount < 0)) {
-      setError(t.invalid);
+      setInvalid(true);
       return;
     }
     setBusy(true);
     setError(null);
     try {
       const saved = await couponsSaveOrderRules(apiClient, workspaceId, { minOrderAmount: amount || null });
-      setMinimum(minorToMajorInput(saved.minOrderAmount));
+      const text = minorToMajorInput(saved.minOrderAmount);
+      setMinimum(text);
+      setSavedMinimum(text);
       toast.success(t.saved);
     } catch (err) {
       setError(errorMessage(err));
@@ -86,27 +96,45 @@ export function OrderRulesPage() {
     }
   }
 
+  // The sentence the rule comes to, on the number being typed.
+  const typed = minimum.trim() === "" ? null : majorToMinor(minimum);
+  const live = typed !== null && Number.isFinite(typed) && typed > 0 ? typed : null;
+
   return (
-    <div className="max-w-2xl space-y-4">
-      <PageHeader title={t.title} description={t.description} back={{ to: "/offers", label: t.back }} />
+    <OfferPage title={t.title} description={t.description} width="form">
       <DataState loading={rules.loading} error={rules.error} onRetry={() => rules.refresh()}>
-        <Card className="space-y-4 p-5">
-          <MoneyInput label={t.minimum} hint={t.minimumHint} value={minimum} onChange={setMinimum} />
-          {error && <Alert variant="danger">{error}</Alert>}
-          <div className="flex justify-end">
-            <Button type="button" disabled={busy} onClick={() => void save()}>
-              {busy ? t.saving : t.save}
-            </Button>
-          </div>
-        </Card>
-        <Card className="space-y-2 p-5">
-          <h2 className="font-medium text-ink">{t.freeTitle}</h2>
-          <p className="text-sm text-ink-soft">{t.freeHint}</p>
-          <Link to="/shipping" className="inline-block text-sm font-medium text-primary hover:underline">
-            {t.freeLink}
-          </Link>
-        </Card>
+        <div className="space-y-4">
+          <SettingsGroup title={t.minimumGroup}>
+            <div className="space-y-3 px-4 py-4">
+              <MoneyInput
+                label={t.minimum}
+                hint={t.minimumHint}
+                error={invalid ? t.invalid : undefined}
+                value={minimum}
+                disabled={busy}
+                onChange={(value) => {
+                  setMinimum(value);
+                  setInvalid(false);
+                  setError(null);
+                }}
+                className="[&_input]:h-11 [&_input]:text-base md:[&_input]:h-10 md:[&_input]:text-sm"
+              />
+              <OfferPreview>
+                <p>
+                  <bdi>{live !== null ? fmt(t.previewWith, { amount: formatMoney(live) }) : t.previewNone}</bdi>
+                </p>
+              </OfferPreview>
+            </div>
+          </SettingsGroup>
+
+          <SettingsGroup title={t.freeGroup}>
+            <SettingsLinkRow to="/shipping" icon={IconCourier} tone="green" label={t.freeTitle} hint={t.freeHint} />
+          </SettingsGroup>
+
+          <FormProblem>{error}</FormProblem>
+          <SaveBar dirty={dirty} saving={busy} onSave={() => void save()} onDiscard={() => { setMinimum(savedMinimum); setInvalid(false); }} />
+        </div>
       </DataState>
-    </div>
+    </OfferPage>
   );
 }
