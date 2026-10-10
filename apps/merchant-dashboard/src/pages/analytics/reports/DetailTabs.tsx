@@ -134,7 +134,7 @@ export function ProductsTab({ workspaceId, range, onError }: TabProps) {
             flush
             actions={<ExportButton workspaceId={workspaceId} report="products" range={range} onError={onError} />}
           >
-            <DataTable columns={productColumns} rows={data.products} rowKey={(row) => row.productId} minWidth="62rem" empty={empty} />
+            <DataTable phoneCards={false} columns={productColumns} rows={data.products} rowKey={(row) => row.productId} minWidth="62rem" empty={empty} />
           </Section>
           <Section
             title={t.landing}
@@ -142,7 +142,7 @@ export function ProductsTab({ workspaceId, range, onError }: TabProps) {
             flush
             actions={<ExportButton workspaceId={workspaceId} report="landing_pages" range={range} onError={onError} />}
           >
-            <DataTable columns={landingColumns} rows={data.landingPages} rowKey={(row) => row.path} minWidth="38rem" empty={empty} />
+            <DataTable phoneCards={false} columns={landingColumns} rows={data.landingPages} rowKey={(row) => row.path} minWidth="38rem" empty={empty} />
           </Section>
         </div>
       )}
@@ -343,7 +343,7 @@ export function DeliveryTab({ workspaceId, range, onError }: TabProps) {
             flush
             actions={<ExportButton workspaceId={workspaceId} report="governorates" range={range} onError={onError} />}
           >
-            <DataTable columns={placeColumns} rows={data.governorates} rowKey={(row) => row.name} minWidth="58rem" empty={empty} />
+            <DataTable phoneCards={false} columns={placeColumns} rows={data.governorates} rowKey={(row) => row.name} minWidth="58rem" empty={empty} />
           </Section>
 
           <Section
@@ -352,7 +352,7 @@ export function DeliveryTab({ workspaceId, range, onError }: TabProps) {
             flush
             actions={<ExportButton workspaceId={workspaceId} report="carriers" range={range} onError={onError} />}
           >
-            <DataTable columns={carrierColumns} rows={data.carriers} rowKey={(row) => row.name} minWidth="50rem" empty={empty} />
+            <DataTable phoneCards={false} columns={carrierColumns} rows={data.carriers} rowKey={(row) => row.name} minWidth="50rem" empty={empty} />
           </Section>
         </div>
       )}
@@ -542,6 +542,7 @@ export function CustomersTab({ workspaceId, range, onError }: TabProps) {
             actions={<ExportButton workspaceId={workspaceId} report="customers" range={range} onError={onError} />}
           >
             <DataTable
+              phoneCards={false}
               columns={topColumns}
               rows={data.topCustomers}
               rowKey={(row) => row.customerId}

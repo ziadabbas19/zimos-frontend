@@ -283,6 +283,7 @@ export function OverviewTab({ workspaceId, range }: { workspaceId: string; range
 
           <Section title={t.channels} description={t.channelsHint} flush>
             <DataTable
+              phoneCards={false}
               columns={channelColumns}
               rows={data.channels}
               rowKey={(row) => `${row.source}/${row.medium ?? ""}`}
