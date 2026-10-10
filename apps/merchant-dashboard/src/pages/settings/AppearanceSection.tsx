@@ -3,6 +3,7 @@ import { IconContrast, IconMoon, IconSun } from "@/components/icons";
 import { Segmented } from "@/components/Segmented";
 import { SettingsGroup, SettingsRow, SettingsSwitch } from "@/components/settings";
 import { setGlass, setLook, setTone, useAppearance } from "@/lib/appearance";
+import { useAppearanceSaved } from "@/lib/appearanceSync";
 import { GlowColours } from "./GlowColours";
 import { ToneSlider } from "./ToneSlider";
 
@@ -26,6 +27,7 @@ const STRINGS = {
     glow: "Glow colours",
     glowHint: "The coloured light behind the glass, on each side of the screen.",
     deviceNote: "These choices are kept on this device.",
+    savedToAccount: "Saved to your account",
   },
   ar: {
     language: "اللغة",
@@ -46,6 +48,7 @@ const STRINGS = {
     glow: "ألوان التوهّج",
     glowHint: "الضوء الملوّن خلف الزجاج، على كل جانب من الشاشة.",
     deviceNote: "هذه الخيارات محفوظة على هذا الجهاز.",
+    savedToAccount: "محفوظ على حسابك",
   },
 } satisfies Messages;
 
@@ -54,15 +57,29 @@ const STRINGS = {
  * Black, Dark), the tone of the dark one, the glass switch and the colours
  * the glass glows in. All of it is kept on this device and changes at once —
  * nothing to save. The look itself is lib/appearance.ts, the same store the
- * toolbar's sun / moon switch uses.
+ * toolbar's sun / moon switch uses. The look (not the language) is also kept
+ * on the account (lib/appearanceSync): one more line under the card says so
+ * once it is there, and nothing is shown when it could not be saved.
  */
 export function AppearanceSection() {
   const t = useT(STRINGS);
   const { locale, setLocale } = useLocale();
   const { look, tone, glass } = useAppearance();
+  const saved = useAppearanceSaved();
 
   return (
-    <SettingsGroup footer={t.deviceNote}>
+    <SettingsGroup
+      footer={
+        saved ? (
+          <>
+            {t.deviceNote}
+            <span className="block">{t.savedToAccount}</span>
+          </>
+        ) : (
+          t.deviceNote
+        )
+      }
+    >
       <SettingsRow
         label={t.language}
         hint={t.languageHint}
