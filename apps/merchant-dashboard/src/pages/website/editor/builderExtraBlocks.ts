@@ -12,7 +12,7 @@ import type { BlockPreset, FieldSpec, SectionSettingSpec } from "./blocks";
 
 type Spec = { label: string; icon: LucideIcon; defaultProps: Record<string, unknown>; fields: FieldSpec[] };
 
-const PRODUCT_FIELD: FieldSpec = { key: "productId", label: "Product ID", kind: "text", hint: "Leave empty to use the page's product (else the newest)." };
+const PRODUCT_FIELD: FieldSpec = { key: "productId", label: "Product", kind: "product", hint: "Leave empty to use the page's product (else the newest)." };
 
 export const EXTRA_ELEMENT_SPECS: Record<string, Spec> = {
   image_gallery: {
@@ -263,7 +263,7 @@ export const EXTRA_AR = {
     "masonry_grid.items": "الصور",
     "masonry_grid.columns": "الأعمدة على الكمبيوتر",
     "button.action": "لما يتضغط",
-    "button.productId": "معرّف المنتج",
+    "button.productId": "المنتج",
     "button.variantId": "معرّف النوع",
     "form.ratingLabel": "تقييم بالنجوم — عنوانه",
     "form.fileLabel": "رفع صورة — عنوانه",

@@ -44,6 +44,7 @@ import {
   type EditorUi,
 } from "./editorLocale";
 import { ImageField, ImageListField } from "./ImageField";
+import { ProductPickerField } from "./ProductPickerField";
 import { ItemListField } from "./ItemListField";
 import { MAX_SECTION_HEIGHT_PX } from "@/lib/canvasDrag";
 import { sectionMinHeight, setSectionMinHeight } from "./canvasEdits";
@@ -590,6 +591,18 @@ function ElementField({
             </Select>
           )}
         </Field>
+      );
+
+    case "product":
+    case "collection":
+      return (
+        <ProductPickerField
+          kind={spec.kind}
+          label={label}
+          hint={hint}
+          value={asString(raw)}
+          onChange={(v) => onChange(spec.key, v)}
+        />
       );
 
     case "image":

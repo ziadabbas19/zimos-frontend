@@ -126,7 +126,7 @@ const FIELD_LABEL_AR: Record<string, string> = {
   "map.address": "العنوان على الخريطة",
   zoom: "درجة التكبير",
   links: "الروابط",
-  productId: "معرّف المنتج",
+  productId: "المنتج",
   showPrice: "إظهار السعر",
   showBuyButton: "إظهار زرار الشراء",
   source: "المعروض",
