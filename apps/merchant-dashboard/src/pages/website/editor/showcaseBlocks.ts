@@ -1,16 +1,4 @@
-import {
-  GalleryHorizontalEnd,
-  Grid3x3,
-  ImagePlay,
-  LayoutGrid,
-  MousePointerClick,
-  PanelTop,
-  PlaySquare,
-  Rows3,
-  ShieldCheck,
-  ShoppingBag,
-  type LucideIcon,
-} from "lucide-react";
+import { IconCarousel, IconClick, IconFilm, IconGridDense, IconGridView, IconOrders, IconPanelTop, IconRows, IconShield, IconVideoBlock, type IconComponent } from "@/components/icons";
 import type { PageElementType } from "@store-builder/api-client";
 import type { BlockPreset, FieldSpec } from "./blocks";
 
@@ -41,7 +29,7 @@ type ShowcaseType = (typeof SHOWCASE_TYPES)[number];
 
 interface ShowcaseSpec {
   label: string;
-  icon: LucideIcon;
+  icon: IconComponent;
   defaultProps: Record<string, unknown>;
   fields: FieldSpec[];
 }
@@ -82,7 +70,7 @@ const productBand = (limit: number): FieldSpec[] => [
 export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
   hero_slider: {
     label: "Picture slider",
-    icon: GalleryHorizontalEnd,
+    icon: IconCarousel,
     defaultProps: { slides: [], autoplay: true, seconds: 5, startDelay: 5, arrows: true, dots: true, wave: true, height: 620, heightTablet: 520 },
     fields: [
       {
@@ -134,7 +122,7 @@ export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
   },
   category_tiles: {
     label: "Category tiles",
-    icon: Grid3x3,
+    icon: IconGridDense,
     defaultProps: { heading: "", items: [], columns: 3, columnsMobile: 3, tone: "plain" },
     fields: [
       { key: "heading", label: "Heading", kind: "text" },
@@ -160,7 +148,7 @@ export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
   },
   trust_strip: {
     label: "Trust cards",
-    icon: ShieldCheck,
+    icon: IconShield,
     defaultProps: { items: [], tone: "plain" },
     fields: [
       {
@@ -184,7 +172,7 @@ export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
   },
   bundle_cards: {
     label: "Bundle cards",
-    icon: ShoppingBag,
+    icon: IconOrders,
     defaultProps: { heading: "", subheading: "", badge: "", collection: "", limit: 4, mobileOnly: false, tone: "plain" },
     fields: [
       ...productBand(4).filter((f) => !["showDiscount", "buttonLabel", "buttonHref"].includes(f.key)),
@@ -194,7 +182,7 @@ export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
   },
   need_picker: {
     label: "Need picker",
-    icon: MousePointerClick,
+    icon: IconClick,
     defaultProps: { kicker: "", heading: "", sub: "", ctaLabel: "", moreLabel: "", saveLabel: "", stages: [], tone: "cool" },
     fields: [
       { key: "kicker", label: "Small line above", kind: "text" },
@@ -221,8 +209,8 @@ export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
           { key: "descEn", label: "Description (English)", labelAr: "الوصف (إنجليزي)", kind: "textarea" },
           { key: "items", label: "Points, one per line", labelAr: "النقاط، كل نقطة في سطر", kind: "lines" },
           { key: "itemsEn", label: "Points (English)", labelAr: "النقاط (إنجليزي)", kind: "lines" },
-          { key: "productId", label: "Product (address name)", labelAr: "المنتج (اسم الرابط)", kind: "text", ltr: true },
-          { key: "altProductId", label: "Second product", labelAr: "منتج تاني", kind: "text", ltr: true },
+          { key: "productId", label: "Product", labelAr: "المنتج", kind: "product" },
+          { key: "altProductId", label: "Second product", labelAr: "منتج ثانٍ", kind: "product" },
           { key: "image", label: "Picture instead of the product's", labelAr: "صورة بدل صورة المنتج", kind: "image" },
         ],
       },
@@ -231,7 +219,7 @@ export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
   },
   product_rail: {
     label: "Sliding products",
-    icon: Rows3,
+    icon: IconRows,
     defaultProps: { heading: "", collection: "", limit: 8, showDiscount: true, imageFit: "contain", autoplay: true, speed: "normal", buttonLabel: "", buttonHref: "/products", tone: "plain" },
     fields: [
       ...productBand(8).filter((f) => f.key !== "subheading"),
@@ -250,7 +238,7 @@ export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
   },
   video_reels: {
     label: "Video shelf",
-    icon: PlaySquare,
+    icon: IconVideoBlock,
     defaultProps: { heading: "", subheading: "", items: [], tone: "primary" },
     fields: [
       { key: "heading", label: "Heading", kind: "text" },
@@ -266,7 +254,7 @@ export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
         fields: [
           { key: "video", label: "Video address (mp4)", labelAr: "رابط الفيديو (mp4)", kind: "text", ltr: true },
           { key: "poster", label: "Still picture", labelAr: "صورة الغلاف", kind: "image" },
-          { key: "productId", label: "Product (address name)", labelAr: "المنتج (اسم الرابط)", kind: "text", ltr: true },
+          { key: "productId", label: "Product", labelAr: "المنتج", kind: "product" },
         ],
       },
       TONE,
@@ -274,19 +262,19 @@ export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
   },
   product_shelf: {
     label: "Product shelf",
-    icon: PanelTop,
+    icon: IconPanelTop,
     defaultProps: { heading: "", subheading: "", collection: "", limit: 8, showDiscount: true, showSoldOut: true, imageFit: "contain", buttonLabel: "", buttonHref: "/products", tone: "secondary" },
     fields: [...productBand(8), { key: "showSoldOut", label: "Keep sold-out products", kind: "boolean" }],
   },
   product_cards: {
     label: "Product cards",
-    icon: LayoutGrid,
+    icon: IconGridView,
     defaultProps: { heading: "", subheading: "", collection: "", limit: 8, columns: 4, showDiscount: true, buttonLabel: "", buttonHref: "/products", tone: "plain" },
     fields: [...productBand(8), { key: "columns", label: "Columns on a computer", kind: "number", min: 2, max: 6 }],
   },
   image_banner: {
     label: "Picture banner",
-    icon: ImagePlay,
+    icon: IconFilm,
     defaultProps: { image: "", mobileImage: "", alt: "", heading: "", text: "", buttonLabel: "", buttonHref: "/products", height: 490, heightTablet: 430, heightMobile: 390, wave: true },
     fields: [
       { key: "image", label: "Picture", kind: "image" },

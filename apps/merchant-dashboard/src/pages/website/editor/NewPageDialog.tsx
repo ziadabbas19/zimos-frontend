@@ -6,16 +6,62 @@ import { Field, TextField } from "@/components/Field";
 import { Select } from "@/components/Select";
 import { getErrorMessage, getFieldErrors } from "@/lib/errors";
 import { useErrorMessage } from "@/lib/errorMessages";
+import { useT, type Messages } from "@/i18n/LocaleContext";
+
+const STRINGS = {
+  en: {
+    title: "New page",
+    description: "Adds a page to this site with a few example blocks — a title, some text, a picture and a button — for you to edit or remove.",
+    cancel: "Cancel",
+    create: "Create page",
+    creating: "Creating…",
+    pageTitle: "Title",
+    pageTitleHint: "Shown in the editor's page list.",
+    path: "Address",
+    pathHint: "Where the page lives on your store, e.g. /about. English letters, numbers and dashes.",
+    pathInvalid: "Use an address like /about — English letters, numbers and dashes.",
+    pageType: "Page type",
+    typeCustom: "Custom",
+    typeStatic: "Static (About, Contact…)",
+    typeProduct: "Product",
+    typeCollection: "Collection",
+    typeBlogPost: "Blog post",
+    typeCart: "Cart",
+    typeHome: "Home",
+  },
+  ar: {
+    title: "صفحة جديدة",
+    description: "سنضيف إلى الموقع صفحة فيها بعض العناصر كمثال — عنوان ونص وصورة وزر — تعدّلها أو تحذفها كما تريد.",
+    cancel: "إلغاء",
+    create: "إنشاء الصفحة",
+    creating: "جارٍ الإنشاء…",
+    pageTitle: "اسم الصفحة",
+    pageTitleHint: "يظهر في قائمة الصفحات داخل المحرر.",
+    path: "عنوان الصفحة",
+    pathHint: "مكان الصفحة في متجرك، مثل /about. حروف إنجليزية وأرقام وشرطة.",
+    pathInvalid: "اكتب عنوانًا مثل /about — حروف إنجليزية وأرقام وشرطة.",
+    pageType: "نوع الصفحة",
+    typeCustom: "صفحة حرة",
+    typeStatic: "ثابتة (من نحن، اتصل بنا…)",
+    typeProduct: "منتج",
+    typeCollection: "مجموعة",
+    typeBlogPost: "مقال",
+    typeCart: "السلة",
+    typeHome: "الرئيسية",
+  },
+} satisfies Messages;
+
+type PageTypeLabel = "typeCustom" | "typeStatic" | "typeProduct" | "typeCollection" | "typeBlogPost" | "typeCart" | "typeHome";
 
 /** The backend's pageType enum, minus nothing — all seven are selectable. */
-const PAGE_TYPES: { value: WebsitePage["pageType"]; label: string }[] = [
-  { value: "custom", label: "Custom" },
-  { value: "static", label: "Static (About, Contact…)" },
-  { value: "product", label: "Product" },
-  { value: "collection", label: "Collection" },
-  { value: "blog_post", label: "Blog post" },
-  { value: "cart", label: "Cart" },
-  { value: "home", label: "Home" },
+const PAGE_TYPES: { value: WebsitePage["pageType"]; label: PageTypeLabel }[] = [
+  { value: "custom", label: "typeCustom" },
+  { value: "static", label: "typeStatic" },
+  { value: "product", label: "typeProduct" },
+  { value: "collection", label: "typeCollection" },
+  { value: "blog_post", label: "typeBlogPost" },
+  { value: "cart", label: "typeCart" },
+  { value: "home", label: "typeHome" },
 ];
 
 /** "Our Story" -> "/our-story". Leading slash, lowercase, no double dashes. */
@@ -39,6 +85,7 @@ export function NewPageDialog({
   /** Throw to keep the dialog open with the error shown inline. */
   onCreate: (payload: CreateWebsitePagePayload) => Promise<void>;
 }) {
+  const t = useT(STRINGS);
   const [title, setTitle] = useState("");
   const [path, setPath] = useState("");
   // Once the merchant edits the path themselves, stop overwriting it from the title.
@@ -64,6 +111,7 @@ export function NewPageDialog({
     onClose();
   }
 
+  // An Arabic title gives no address by itself (addresses are English letters): the merchant types one.
   const effectivePath = pathTouched ? path : slugifyPath(title);
   const pathValid = /^\/[a-z0-9\-/]*$/i.test(effectivePath);
   const canSubmit = title.trim().length > 0 && effectivePath.length > 0 && pathValid && !busy;
@@ -80,7 +128,7 @@ export function NewPageDialog({
     } catch (err) {
       // A reserved path (/cart, /checkout…) belongs under the path field, in
       // our own words rather than the server's.
-      if (isApiErrorCode(err, "PAGE_PATH_RESERVED")) {
+      if (isApiErrorCode(err, "PAGE_PATH_RESERVED") || isApiErrorCode(err, "PAGE_PATH_IN_TRASH")) {
         setFieldErrors({ path: errorMessage(err) });
         return;
       }
@@ -96,15 +144,15 @@ export function NewPageDialog({
     <Modal
       open={open}
       onClose={close}
-      title="New page"
-      description="Adds a page to this site with a few example blocks — a title, some text, a picture and a button — for you to edit or remove."
+      title={t.title}
+      description={t.description}
       footer={
         <>
           <Button variant="outline" onClick={close} disabled={busy}>
-            Cancel
+            {t.cancel}
           </Button>
           <Button onClick={(e) => void submit(e)} disabled={!canSubmit}>
-            {busy ? "Creating…" : "Create page"}
+            {busy ? t.creating : t.create}
           </Button>
         </>
       }
@@ -113,31 +161,30 @@ export function NewPageDialog({
         {error && <Alert variant="danger">{error}</Alert>}
 
         <TextField
-          label="Title"
+          label={t.pageTitle}
           required
           autoFocus
+          dir="auto"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           error={fieldErrors.title}
-          hint="Shown in the editor's page switcher."
+          hint={t.pageTitleHint}
         />
 
         <TextField
-          label="Path"
+          label={t.path}
           required
+          dir="ltr"
           value={effectivePath}
           onChange={(e) => {
             setPathTouched(true);
             setPath(e.target.value);
           }}
-          error={
-            fieldErrors.path ??
-            (effectivePath && !pathValid ? "Use a path like /about — letters, numbers and dashes." : undefined)
-          }
-          hint="The URL this page lives at, e.g. /about."
+          error={fieldErrors.path ?? (effectivePath && !pathValid ? t.pathInvalid : undefined)}
+          hint={t.pathHint}
         />
 
-        <Field label="Page type" error={fieldErrors.pageType}>
+        <Field label={t.pageType} error={fieldErrors.pageType}>
           {({ id, ...aria }) => (
             <Select
               id={id}
@@ -145,9 +192,9 @@ export function NewPageDialog({
               value={pageType}
               onChange={(e) => setPageType(e.target.value as WebsitePage["pageType"])}
             >
-              {PAGE_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
+              {PAGE_TYPES.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {t[type.label]}
                 </option>
               ))}
             </Select>

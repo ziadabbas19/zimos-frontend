@@ -7,12 +7,15 @@ import { BLOCK_PRESETS, createSection, normalizeTree } from "./blocks";
 import { WebsiteEditorPage } from "./WebsiteEditorPage";
 
 // The preview is the real storefront in a frame: nothing for jsdom to draw.
-vi.mock("@/components/StorefrontPreview", () => ({ StorefrontPreview: () => null }));
+vi.mock("@/components/StorefrontPreview", async (original) => ({
+  ...(await original<typeof import("@/components/StorefrontPreview")>()),
+  StorefrontPreview: () => null,
+}));
 
 /**
- * The editor page with the features it gained: the draft saves by itself,
- * Publish asks first in a sheet, and the published versions are one button
- * away. The page and its panes are otherwise the ones they were.
+ * The editor page: the draft saves by itself and the toolbar says where that
+ * stands, Publish asks first in a sheet, and the published versions are in
+ * the toolbar's menu.
  */
 
 const liveTree: PageTree = { version: 1, sections: [createSection(BLOCK_PRESETS[0], "en")] };
@@ -48,24 +51,16 @@ function serve() {
 
 const renderEditor = () => renderWithProviders(<WebsiteEditorPage />, { route: "/website/w1/edit", path: "/website/:websiteId/edit" });
 
-/** The toolbar's line about the draft (other things on the page are a "status" too: a toast, a spinner). */
-const draftStatus = () => document.querySelector<HTMLElement>("[data-save-state]")!;
-const saveStatus = () =>
-  waitFor(() => {
-    const found = document.querySelector<HTMLElement>("[data-save-state]");
-    if (!found) throw new Error("the editor has not drawn yet");
-    return found;
-  });
+/** What the toolbar says about the draft. */
+const draftSays = (words: string | RegExp) => screen.findByText(words, undefined, { timeout: 4000 });
 
 /** Adds the first block of the library to the page: the smallest edit there is. */
 async function addBlock(user: ReturnType<typeof renderEditor>["user"]) {
-  // A library card is the one draggable button on the screen.
-  const card = await waitFor(() => {
-    const found = document.querySelector<HTMLButtonElement>('button[draggable="true"]');
-    if (!found) throw new Error("the block library has not drawn yet");
-    return found;
-  });
-  await user.click(card);
+  // The test screen has no width, so the editor draws its phone dock: "Add section" there, "Add a section" in the side panel.
+  await user.click((await screen.findAllByRole("button", { name: /^Add (a )?section$/ }))[0]);
+  const library = await screen.findByRole("dialog", { name: "Add a section" });
+  // A card is named after its block; "Add <block>" is its tooltip.
+  await user.click((await within(library).findAllByTitle(/^Add /))[0]);
 }
 
 afterEach(() => {
@@ -79,45 +74,42 @@ describe("the website editor", () => {
   it("opens saved, and says so", async () => {
     serve();
     renderEditor();
-    const status = await saveStatus();
-    expect(status.getAttribute("data-save-state")).toBe("idle");
-    expect(status.textContent).toContain("All saved");
+    expect(await draftSays("All saved")).toBeTruthy();
     expect(api.updateWebsitePage).not.toHaveBeenCalled();
   });
 
-  it("saves the draft by itself after an edit, without Save being pressed", async () => {
+  it("saves the draft by itself after an edit, without anything being pressed", async () => {
     serve();
     const { user } = renderEditor();
-    await saveStatus();
+    await draftSays("All saved");
     await addBlock(user);
-    await waitFor(() => expect(draftStatus().getAttribute("data-save-state")).toBe("saving"));
     await waitFor(() => expect(api.updateWebsitePage).toHaveBeenCalledTimes(1), { timeout: 4000 });
     const [ws, websiteId, pageId, body] = api.updateWebsitePage.mock.calls[0];
     expect([ws, websiteId, pageId]).toEqual(["ws_1", "w1", "p_home"]);
     // The whole draft, with the new section in it; nothing else is written.
     expect(Object.keys(body as object)).toEqual(["draftData"]);
     expect(normalizeTree((body as { draftData: PageTree }).draftData).sections).toHaveLength(2);
-    await waitFor(() => expect(draftStatus().getAttribute("data-save-state")).toBe("saved"));
-    expect(draftStatus().textContent).toContain("Saved just now");
+    expect(await draftSays("Saved just now")).toBeTruthy();
   });
 
   it("says a save failed, keeps the edit, and tries again when asked", async () => {
     serve();
     api.updateWebsitePage.mockRejectedValueOnce(new Error("offline"));
     const { user } = renderEditor();
-    await saveStatus();
+    await draftSays("All saved");
     await addBlock(user);
-    await waitFor(() => expect(draftStatus().getAttribute("data-save-state")).toBe("failed"), { timeout: 4000 });
-    expect(screen.getByText("Your last changes aren't saved yet.")).toBeTruthy();
+    expect(await draftSays("Your last changes aren't saved yet.")).toBeTruthy();
+    expect(api.updateWebsitePage).toHaveBeenCalledTimes(1);
     await user.click(screen.getByRole("button", { name: "Try again" }));
     await waitFor(() => expect(api.updateWebsitePage).toHaveBeenCalledTimes(2));
-    await waitFor(() => expect(draftStatus().getAttribute("data-save-state")).toBe("saved"));
+    expect(await draftSays("Saved just now")).toBeTruthy();
+    expect(screen.queryByText("Your last changes aren't saved yet.")).toBeNull();
   });
 
   it("asks before publishing: the sheet first, the publish only on its button", async () => {
     serve();
     const { user } = renderEditor();
-    await saveStatus();
+    await draftSays("All saved");
     await user.click(screen.getByRole("button", { name: "Publish" }));
     const sheet = await screen.findByRole("dialog", { name: "Publish your site" });
     expect(api.publishWebsite).not.toHaveBeenCalled();
@@ -130,7 +122,7 @@ describe("the website editor", () => {
   it("stores an edit that is still waiting before it publishes", async () => {
     serve();
     const { user } = renderEditor();
-    await saveStatus();
+    await draftSays("All saved");
     await addBlock(user);
     // Publish at once, before the pause is over.
     await user.click(screen.getByRole("button", { name: "Publish" }));
@@ -144,13 +136,24 @@ describe("the website editor", () => {
     expect(saved).toBeLessThan(api.publishWebsite.mock.invocationCallOrder[0]);
   });
 
-  it("opens the published versions from the toolbar", async () => {
+  it("keeps the published versions in the toolbar's menu", async () => {
     serve();
     const { user } = renderEditor();
-    await saveStatus();
-    await user.click(screen.getByRole("button", { name: "Published versions" }));
+    await draftSays("All saved");
+    await user.click(screen.getByRole("button", { name: "More" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Published versions" }));
     const sheet = await screen.findByRole("dialog", { name: "Published versions" });
     expect(await within(sheet).findByText("Version 3")).toBeTruthy();
     expect(within(sheet).getByText("Live now")).toBeTruthy();
+  });
+
+  it("offers nothing that has no place here: no page scripts, no trash, no store texts", async () => {
+    serve();
+    const { user } = renderEditor();
+    await draftSays("All saved");
+    await user.click(screen.getByRole("button", { name: "More" }));
+    const items = (await screen.findAllByRole("menuitem")).map((item) => item.textContent ?? "");
+    expect(items).toContain("Page settings (SEO)");
+    expect(items.join(" | ")).not.toMatch(/script|trash|texts|email/i);
   });
 });

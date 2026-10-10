@@ -1,7 +1,7 @@
 import type { PageElement, PageSection } from "@store-builder/api-client";
 
 /**
- * Item 95 (SPEC §9.3), shared by the website and funnel page editors:
+ * Item 95, shared by the website and funnel page editors:
  * duplicating a section or an element, and the text a double-click on the
  * canvas edits in place (the storefront's PreviewBridge posts
  * `zimos:edit-text`).
@@ -113,4 +113,92 @@ export function setElementText(sections: PageSection[], elementId: string, text:
     return { ...section, rows };
   });
   return changed ? next : sections;
+}
+
+// --- hiding a whole section ---------------------------------------------------
+//
+// The page tree has no "hidden" flag on a section, and the storefront reads
+// none. What it does read is each element's own `settings.style.<device>.hidden`
+// (the Style tab's "Hide on this device", ElementStylePanel.tsx): on `base` it
+// hides the element at every width unless a device turns it back on. So a
+// section is hidden by hiding every element in it on `base`, and shown again
+// by taking that off. Its band (background and spacing) stays where it was.
+
+const isPlain = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
+const STYLE_DEVICES = ["base", "tablet", "mobile"] as const;
+
+function deviceStyles(element: PageElement): Record<string, unknown> {
+  const settings = isPlain(element.settings) ? element.settings : null;
+  return settings && isPlain(settings.style) ? settings.style : {};
+}
+
+function hiddenOnBase(element: PageElement): boolean {
+  const base = deviceStyles(element).base;
+  return isPlain(base) && base.hidden === true;
+}
+
+/** Hidden at every width: on the base, and no device turns it back on. */
+function hiddenEverywhere(element: PageElement): boolean {
+  if (!hiddenOnBase(element)) return false;
+  const styles = deviceStyles(element);
+  return !(["tablet", "mobile"] as const).some((device) => {
+    const own = styles[device];
+    return isPlain(own) && own.hidden === false;
+  });
+}
+
+function setElementHidden(element: PageElement, hidden: boolean): PageElement {
+  if (hidden ? hiddenEverywhere(element) : !hiddenOnBase(element)) return element;
+  const styles = deviceStyles(element);
+  const nextStyle: Record<string, unknown> = {};
+  for (const device of STYLE_DEVICES) {
+    const raw = styles[device];
+    const own: Record<string, unknown> = isPlain(raw) ? { ...raw } : {};
+    if (hidden) {
+      if (device === "base") own.hidden = true;
+      else if (own.hidden === false) delete own.hidden;
+    } else if (device === "base") {
+      delete own.hidden;
+    }
+    if (Object.keys(own).length > 0) nextStyle[device] = own;
+  }
+  const current: Record<string, unknown> = isPlain(element.settings) ? element.settings : {};
+  const { style: _style, ...rest } = current;
+  void _style;
+  const settings: Record<string, unknown> = { ...rest };
+  if (Object.keys(nextStyle).length > 0) settings.style = nextStyle;
+  const { settings: _settings, ...bare } = element;
+  void _settings;
+  return Object.keys(settings).length > 0 ? { ...bare, settings } : bare;
+}
+
+function elementsOf(section: PageSection): PageElement[] {
+  return (section.rows ?? []).flatMap((row) => (row.columns ?? []).flatMap((column) => column.elements ?? []));
+}
+
+/** Whether the section is hidden from the store: it has elements and every one of them is hidden at every width. */
+export function sectionHidden(section: PageSection): boolean {
+  const elements = elementsOf(section);
+  return elements.length > 0 && elements.every(hiddenEverywhere);
+}
+
+/**
+ * Hides the section from the store, or shows it again: every element in it
+ * gets (or loses) "hidden" on the base device. Showing it leaves a per-device
+ * "hide on phone / tablet" where it was. The same section back when nothing changes.
+ */
+export function setSectionHidden(section: PageSection, hidden: boolean): PageSection {
+  let changed = false;
+  const rows = (section.rows ?? []).map((row) => ({
+    ...row,
+    columns: (row.columns ?? []).map((column) => ({
+      ...column,
+      elements: (column.elements ?? []).map((element) => {
+        const next = setElementHidden(element, hidden);
+        if (next !== element) changed = true;
+        return next;
+      }),
+    })),
+  }));
+  return changed ? { ...section, rows } : section;
 }

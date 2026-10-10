@@ -1,16 +1,24 @@
-import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
-import { Button, Input, Label } from "@store-builder/ui";
+import { useId, useState, type ReactNode } from "react";
+import { IconArrowDown, IconArrowUp, IconCaretDown, IconDelete, IconPlus } from "@/components/icons";
+import { Button, Input, Label, cn } from "@store-builder/ui";
 import { Select } from "@/components/Select";
 import { Textarea } from "@/components/Textarea";
 import { ImageField } from "./ImageField";
 import { useEditorLocale } from "./editorLocale";
+import { ProductPickerField } from "./ProductPickerField";
+import { BilingualField, LinkTargetNote, isLinkKey, pairByLanguage, type LanguageSlot } from "./inspector/fields";
+import { inspectorNumber, inspectorUi } from "./inspector/strings";
 
 /**
  * The inspector's editor for a list of objects — a slider's slides, a row of
  * category tiles, a need picker's needs, a shelf of videos. Each entry is a
- * small card of the fields its spec names; entries can be added, removed and
- * moved up or down. A long list stays readable because every card after the
- * first folds shut under its own title.
+ * card that folds under its own title (and its picture, when it has one);
+ * one is open at a time. An open card starts with its own actions — move up,
+ * move down, remove — and then the fields its spec names.
+ *
+ * A sub-field with an English twin (`title` + `titleEn`) is drawn once, as a
+ * two-language field (inspector/fields.tsx); both keys are stored exactly as
+ * before.
  *
  * Sub-fields carry both wordings (`label` / `labelAr`) so this file needs no
  * entry in editorLocale's tables.
@@ -18,6 +26,8 @@ import { useEditorLocale } from "./editorLocale";
 
 export type ItemSubField =
   | { key: string; label: string; labelAr: string; kind: "text" | "textarea" | "image" | "lines"; ltr?: boolean }
+  // Picked from the catalogue, stored as the product's id (ProductPickerField.tsx).
+  | { key: string; label: string; labelAr: string; kind: "product" }
   | {
       key: string;
       label: string;
@@ -28,6 +38,9 @@ export type ItemSubField =
 
 type Item = Record<string, unknown>;
 
+/** The kinds a second language makes sense for. */
+const PAIRABLE = ["text", "textarea", "lines", "image"] as const;
+
 function asItems(raw: unknown): Item[] {
   return Array.isArray(raw)
     ? raw.filter((entry): entry is Item => !!entry && typeof entry === "object" && !Array.isArray(entry))
@@ -36,6 +49,8 @@ function asItems(raw: unknown): Item[] {
 
 const str = (v: unknown) => (typeof v === "string" ? v : typeof v === "number" ? String(v) : "");
 const lines = (v: unknown) => (Array.isArray(v) ? v.filter((x) => typeof x === "string").join("\n") : "");
+/** Whether a value holds anything a shopper would see. */
+const filled = (v: unknown) => (Array.isArray(v) ? v.some((x) => typeof x === "string" && x.trim() !== "") : str(v).trim() !== "");
 
 export function ItemListField({
   label,
@@ -59,9 +74,16 @@ export function ItemListField({
   max: number;
   onChange: (next: Item[]) => void;
 }) {
-  const ar = useEditorLocale() === "ar";
+  const locale = useEditorLocale();
+  const ar = locale === "ar";
+  const t = inspectorUi(locale);
+  const uid = useId();
   const items = asItems(value);
   const noun = ar ? itemLabelAr : itemLabel;
+  const [open, setOpen] = useState<number | null>(() => (asItems(value).length === 1 ? 0 : null));
+
+  const paired = pairByLanguage(fields, PAIRABLE);
+  const pictureKey = fields.find((f) => f.kind === "image")?.key;
 
   const patch = (i: number, key: string, v: unknown) => onChange(items.map((item, j) => (j === i ? { ...item, [key]: v } : item)));
   const move = (i: number, delta: -1 | 1) => {
@@ -70,87 +92,187 @@ export function ItemListField({
     const next = [...items];
     [next[i], next[j]] = [next[j], next[i]];
     onChange(next);
+    // The open card travels with its entry.
+    setOpen(j);
   };
 
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <div className="space-y-2">
-        {items.map((item, i) => (
-          <details key={i} open={i === 0 && items.length === 1} className="rounded-[0.5rem] border border-line">
-            <summary className="flex min-h-11 cursor-pointer items-center gap-2 px-3 text-sm font-medium text-ink">
-              <span className="min-w-0 flex-1 truncate" dir="auto">
-                {str(item[titleKey]).trim() || `${noun} ${i + 1}`}
-              </span>
-              <Button type="button" size="icon" variant="ghost" aria-label={ar ? `تحريك ${noun} ${i + 1} لأعلى` : `Move ${noun} ${i + 1} up`} disabled={i === 0} onClick={(e) => { e.preventDefault(); move(i, -1); }}>
-                <ChevronUp className="size-4" aria-hidden />
-              </Button>
-              <Button type="button" size="icon" variant="ghost" aria-label={ar ? `تحريك ${noun} ${i + 1} لأسفل` : `Move ${noun} ${i + 1} down`} disabled={i === items.length - 1} onClick={(e) => { e.preventDefault(); move(i, 1); }}>
-                <ChevronDown className="size-4" aria-hidden />
-              </Button>
-              <Button type="button" size="icon" variant="ghost" aria-label={ar ? `حذف ${noun} ${i + 1}` : `Remove ${noun} ${i + 1}`} onClick={(e) => { e.preventDefault(); onChange(items.filter((_, j) => j !== i)); }}>
-                <Trash2 className="size-4" aria-hidden />
-              </Button>
-            </summary>
-            <div className="space-y-3 border-t border-line p-3">
-              {fields.map((field) => {
-                const fieldLabel = ar ? field.labelAr : field.label;
-                const id = `item-${i}-${field.key}`;
-                if (field.kind === "image") {
-                  return <ImageField key={field.key} label={fieldLabel} value={str(item[field.key])} onChange={(url) => patch(i, field.key, url)} />;
-                }
-                if (field.kind === "select") {
-                  return (
-                    <div key={field.key} className="space-y-1.5">
-                      <Label htmlFor={id}>{fieldLabel}</Label>
-                      <Select id={id} value={str(item[field.key])} onChange={(e) => patch(i, field.key, e.target.value)}>
-                        <option value="">—</option>
-                        {field.options.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {ar ? option.labelAr : option.label}
-                          </option>
-                        ))}
-                      </Select>
-                    </div>
-                  );
-                }
-                if (field.kind === "textarea" || field.kind === "lines") {
-                  return (
-                    <div key={field.key} className="space-y-1.5">
-                      <Label htmlFor={id}>{fieldLabel}</Label>
-                      <Textarea
-                        id={id}
-                        rows={3}
-                        dir="auto"
-                        value={field.kind === "lines" ? lines(item[field.key]) : str(item[field.key])}
-                        onChange={(e) =>
-                          patch(
-                            i,
-                            field.key,
-                            // One line per entry; blank lines are kept while typing and dropped by the storefront.
-                            field.kind === "lines" ? e.target.value.split("\n") : e.target.value
-                          )
-                        }
-                      />
-                    </div>
-                  );
-                }
-                return (
-                  <div key={field.key} className="space-y-1.5">
-                    <Label htmlFor={id}>{fieldLabel}</Label>
-                    <Input id={id} dir={field.ltr ? "ltr" : "auto"} value={str(item[field.key])} onChange={(e) => patch(i, field.key, e.target.value)} />
-                  </div>
-                );
-              })}
-            </div>
-          </details>
-        ))}
+  /** One sub-field of one entry. `slot` is given for one language of a two-language field. */
+  function control(i: number, item: Item, field: ItemSubField, slot?: LanguageSlot): ReactNode {
+    const id = `${uid}-${i}-${field.key}`;
+    const name = slot?.label ?? (ar ? field.labelAr : field.label);
+    const hidden = slot?.labelHidden ?? false;
+
+    if (field.kind === "product") {
+      return <ProductPickerField key={field.key} kind="product" label={name} value={str(item[field.key])} onChange={(v) => patch(i, field.key, v)} />;
+    }
+    if (field.kind === "image") {
+      return <ImageField key={field.key} label={name} labelHidden={hidden} value={str(item[field.key])} onChange={(url) => patch(i, field.key, url)} />;
+    }
+    if (field.kind === "select") {
+      return (
+        <div key={field.key} className="space-y-1.5">
+          <Label htmlFor={id}>{name}</Label>
+          <Select id={id} value={str(item[field.key])} onChange={(e) => patch(i, field.key, e.target.value)}>
+            <option value="">—</option>
+            {field.options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {ar ? option.labelAr : option.label}
+              </option>
+            ))}
+          </Select>
+        </div>
+      );
+    }
+    const dir = slot?.dir ?? (field.ltr ? "ltr" : "auto");
+    if (field.kind === "textarea" || field.kind === "lines") {
+      return (
+        <div key={field.key} className="space-y-1.5">
+          <Label htmlFor={id} className={hidden ? "sr-only" : undefined}>
+            {name}
+          </Label>
+          <Textarea
+            id={id}
+            rows={3}
+            dir={dir}
+            value={field.kind === "lines" ? lines(item[field.key]) : str(item[field.key])}
+            onChange={(e) =>
+              patch(
+                i,
+                field.key,
+                // One line per entry; blank lines are kept while typing and dropped by the storefront.
+                field.kind === "lines" ? e.target.value.split("\n") : e.target.value
+              )
+            }
+          />
+        </div>
+      );
+    }
+    const link = isLinkKey(field.key);
+    return (
+      <div key={field.key} className="space-y-1.5">
+        <Label htmlFor={id} className={hidden ? "sr-only" : undefined}>
+          {name}
+        </Label>
+        <Input id={id} dir={dir} value={str(item[field.key])} onChange={(e) => patch(i, field.key, e.target.value)} />
+        {link && <LinkTargetNote href={str(item[field.key])} onPick={(href) => patch(i, field.key, href)} />}
       </div>
-      <Button type="button" size="sm" variant="outline" disabled={items.length >= max} onClick={() => onChange([...items, {}])}>
-        <Plus className="size-4" aria-hidden />
-        {ar ? `إضافة ${noun}` : `Add ${noun.toLowerCase()}`}
+    );
+  }
+
+  return (
+    <div data-slot="inspector-items" className="space-y-2">
+      <Label>{label}</Label>
+      {items.length === 0 ? (
+        <p className="text-xs leading-5 text-ink-soft">{t.itemsEmpty}</p>
+      ) : (
+        <ul className="space-y-2">
+          {items.map((item, i) => {
+            const isOpen = open === i;
+            const title = str(item[titleKey]).trim() || `${noun} ${inspectorNumber(i + 1, locale)}`;
+            const picture = pictureKey ? str(item[pictureKey]) : "";
+            const bodyId = `${uid}-${i}`;
+            return (
+              <li key={i} data-slot="inspector-item" data-open={isOpen ? "" : undefined} className="overflow-hidden rounded-[1rem] bg-paper-raised ring-1 ring-line">
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  aria-controls={bodyId}
+                  onClick={() => setOpen(isOpen ? null : i)}
+                  className="flex min-h-12 w-full cursor-pointer items-center gap-2.5 px-3 py-1.5 text-start focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+                >
+                  {picture && (
+                    <img
+                      src={picture}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="size-8 shrink-0 rounded-[0.5rem] bg-paper-sunken object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.visibility = "hidden";
+                      }}
+                    />
+                  )}
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink" dir="auto">
+                    {title}
+                  </span>
+                  <IconCaretDown
+                    className={cn(
+                      "size-4 shrink-0 text-ink-soft transition-transform duration-[var(--dur-fade)] ease-[var(--ease-out)] motion-reduce:transition-none",
+                      !isOpen && "-rotate-90 rtl:rotate-90"
+                    )}
+                    aria-hidden
+                  />
+                </button>
+                {isOpen && (
+                  <div id={bodyId} className="zimos-inspector-reveal space-y-3 border-t border-line p-3">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Button type="button" size="sm" variant="outline" aria-label={t.itemMoveUp(title)} disabled={i === 0} onClick={() => move(i, -1)}>
+                        <IconArrowUp className="size-4" aria-hidden />
+                        {t.itemUp}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        aria-label={t.itemMoveDown(title)}
+                        disabled={i === items.length - 1}
+                        onClick={() => move(i, 1)}
+                      >
+                        <IconArrowDown className="size-4" aria-hidden />
+                        {t.itemDown}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        aria-label={t.itemRemove(title)}
+                        className="ms-auto text-danger hover:bg-danger-soft hover:text-danger"
+                        onClick={() => {
+                          onChange(items.filter((_, j) => j !== i));
+                          setOpen(null);
+                        }}
+                      >
+                        <IconDelete className="size-4" aria-hidden />
+                        {t.itemDelete}
+                      </Button>
+                    </div>
+                    {paired.map(({ field, english }) =>
+                      english ? (
+                        <BilingualField
+                          key={field.key}
+                          label={ar ? field.labelAr : field.label}
+                          images={field.kind === "image"}
+                          filled={{ ar: filled(item[field.key]), en: filled(item[english.key]) }}
+                        >
+                          {(language, slot) => control(i, item, language === "ar" ? field : english, slot)}
+                        </BilingualField>
+                      ) : (
+                        control(i, item, field)
+                      )
+                    )}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="w-full"
+        disabled={items.length >= max}
+        onClick={() => {
+          onChange([...items, {}]);
+          setOpen(items.length);
+        }}
+      >
+        <IconPlus className="size-4" aria-hidden />
+        {t.itemAdd(noun)}
       </Button>
-      {hint && <p className="text-xs text-ink-soft">{hint}</p>}
+      {items.length >= max && <p className="text-xs leading-5 text-ink-soft">{t.itemsFull(inspectorNumber(max, locale))}</p>}
+      {hint && <p className="text-xs leading-5 text-ink-soft">{hint}</p>}
     </div>
   );
 }

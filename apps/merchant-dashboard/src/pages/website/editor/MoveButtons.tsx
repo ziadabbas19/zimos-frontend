@@ -1,11 +1,12 @@
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { IconArrowDown, IconArrowUp } from "@/components/icons";
 
 const BUTTON_CLASS =
-  "cursor-pointer rounded-[0.375rem] p-1 text-ink-soft transition-colors hover:bg-paper hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent";
+  "inline-flex cursor-pointer items-center justify-center rounded-full p-1 text-ink-soft transition-colors duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent motion-reduce:transition-none pointer-coarse:min-h-11 pointer-coarse:min-w-11";
 
 /**
  * Up / down buttons for reordering a section or an element — the plain-click
  * (and plain-keyboard) alternative to dragging. Disabled at either end.
+ * Small under a mouse; a full 44px target each under a finger.
  */
 export function MoveButtons({
   canMoveUp,
@@ -32,7 +33,7 @@ export function MoveButtons({
         title={upLabel}
         className={BUTTON_CLASS}
       >
-        <ArrowUp className="size-3.5" aria-hidden />
+        <IconArrowUp className="size-3.5" aria-hidden />
       </button>
       <button
         type="button"
@@ -42,7 +43,7 @@ export function MoveButtons({
         title={downLabel}
         className={BUTTON_CLASS}
       >
-        <ArrowDown className="size-3.5" aria-hidden />
+        <IconArrowDown className="size-3.5" aria-hidden />
       </button>
     </span>
   );

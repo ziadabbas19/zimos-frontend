@@ -1,0 +1,221 @@
+/* The website page: the site hero, the templates gallery, the template sheet, first run, the store
+   looks and the store texts — pages/website/WebsitePage.tsx, StoreTextsPage.tsx, ThemeGallery.tsx
+   and pages/website/gallery/*.
+   Part of the liquid-glass layer (../liquid-glass.css): everything here is under the
+   same switch, so with data-glass="off" none of it applies and the component stands
+   on its own solid Tailwind classes. Fills, blur and rims come from the --lg-* variables.
+
+   Nothing here is blurred: every piece lies in the page flow or inside a sheet that is already
+   frosted. The hero, the store-look row and the first-run steps are ordinary page panes
+   (liquid-glass.css makes a raised box with the card radius a pane of glass by itself); what
+   this file adds to them is their own — the wash of the brand in the hero's leading corner,
+   its picture, the quiet links. The template and theme cards take their whole material here:
+   they are smaller panes with a radius of their own, and the theme cards live in a sheet,
+   outside `.glass-app main`.
+
+   The lift of a card (2px under a pointer, 97% while pressed) is transform and sits on the
+   component, so it is there with the glass off as well; here the pane answers it — lit under
+   the pointer, a deeper shadow while it is up. Nothing changes size or animates a shadow.
+
+   The store inside a device frame or a thumbnail is never glass: it looks the way its theme
+   says. The stage behind the device is a flat, quiet ground.
+
+   Text: the tinted chips («متغيّر», the count of reworded texts) are mixed over a near-solid
+   fill (--lg-control-lit) with the deeper brand ink (--lg-text-primary) — the recipe of the
+   figures on the list kit's chips (glass/list.css), which holds 4.5:1 in both themes. «الحالي»
+   is the shared selection fill: --lg-on-brand on --lg-brand-solid. */
+:root:not([data-glass="off"]) {
+  /* The wash of the brand in a pane's leading corner, and the tint of a small brand chip. */
+  --site-wash: color-mix(in srgb, var(--lg-brand-solid) 10%, transparent);
+  --site-tint: color-mix(in srgb, var(--color-primary) 13%, var(--lg-control-lit));
+  --site-tint-edge: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  /* A reworded text: a breath of the brand across its row. */
+  --site-row-wash: color-mix(in srgb, var(--lg-brand-solid) 5%, transparent);
+
+  &.dark {
+    --site-wash: color-mix(in srgb, var(--lg-brand-solid) 17%, transparent);
+    --site-tint: color-mix(in srgb, var(--color-primary) 22%, var(--lg-control-lit));
+    --site-tint-edge: color-mix(in srgb, var(--color-primary) 34%, transparent);
+    --site-row-wash: color-mix(in srgb, var(--lg-brand-solid) 9%, transparent);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * The hero: the store's site, first thing on the page. The pane is
+   * the page's own glass; it stands one step higher than the cards
+   * under it and carries the brand, faintly, in its leading top corner
+   * — where the picture of the store is.
+   * (`.glass-app main` on purpose: these two properties are the ones
+   * liquid-glass.css sets on every page pane, with that weight.)
+   * ---------------------------------------------------------------- */
+  .glass-app main .zimos-site-hero,
+  .glass-app main .zimos-start-steps {
+    background-image: radial-gradient(120% 95% at 0% 0%, var(--site-wash) 0%, transparent 60%), var(--lg-sheen);
+  }
+  &[dir="rtl"] .glass-app main .zimos-site-hero,
+  &[dir="rtl"] .glass-app main .zimos-start-steps {
+    background-image: radial-gradient(120% 95% at 100% 0%, var(--site-wash) 0%, transparent 60%), var(--lg-sheen);
+  }
+  .glass-app main .zimos-site-hero {
+    --tw-shadow: var(--shadow-raised);
+  }
+
+  /* The picture of the store: a small solid object on the pane — a hairline and a soft shadow under it
+     (the component's ring utility composes them: only the two variables are set here). */
+  .zimos-site-thumb {
+    --tw-ring-color: var(--lg-edge);
+    --tw-shadow: 0 10px 22px -14px rgb(16 24 64 / 0.45), 0 1px 2px rgb(16 24 64 / 0.08);
+  }
+  &.dark .zimos-site-thumb {
+    --tw-shadow: 0 12px 24px -14px rgb(0 0 0 / 0.8), 0 1px 2px rgb(0 0 0 / 0.4);
+  }
+
+  /* The hairline over the hero's quiet links, and over a card's words. */
+  .zimos-site-hero > nav,
+  .zimos-template-card > div:last-child,
+  .zimos-theme-card > div:last-child {
+    border-color: var(--lg-hairline);
+  }
+
+  /* A quiet link, «…» in the hero: nothing at rest, a small lit pane under the pointer or the finger. */
+  @media (hover: hover) {
+    .zimos-site-link:hover,
+    .zimos-site-more:hover {
+      background-color: var(--lg-control-lit);
+      box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge);
+    }
+  }
+  .zimos-site-link:active,
+  .zimos-site-more:is(:active, [aria-expanded="true"]) {
+    background-color: var(--lg-control-lit);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge);
+  }
+  /* «…» in the page header (first run): a small pane, like the tools of every page. */
+  .zimos-site-tool {
+    background-color: var(--lg-control);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge);
+  }
+  @media (hover: hover) {
+    .zimos-site-tool:hover {
+      background-color: var(--lg-control-lit);
+    }
+  }
+  .zimos-site-tool:is(:active, [aria-expanded="true"]) {
+    background-color: var(--lg-control-lit);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Template cards (the page) and theme cards (the store-look sheet).
+   * A small pane: the glass fill, the sheen, the rim. Under a pointer
+   * it lights up and its shadow deepens while the component lifts it;
+   * pressed, it comes back down. The one in use wears the brand: its
+   * hairline, a glow under it, and the «الحالي» chip.
+   * ---------------------------------------------------------------- */
+  .zimos-template-card,
+  .zimos-theme-card {
+    background-color: var(--lg-fill);
+    background-image: var(--lg-sheen);
+    --tw-ring-color: var(--lg-edge);
+    --tw-inset-shadow: var(--lg-rim);
+  }
+  /* In a sheet the pane sits on frost, not on the backdrop: one step more solid. */
+  .zimos-theme-card {
+    background-color: var(--lg-control);
+  }
+  @media (hover: hover) {
+    .zimos-template-card:hover,
+    .zimos-theme-card:hover {
+      background-color: var(--lg-control-lit);
+      --tw-shadow: var(--shadow-raised);
+    }
+  }
+  .zimos-template-card:active,
+  .zimos-theme-card:has([data-theme-open]:active) {
+    background-color: var(--lg-control-lit);
+    --tw-shadow: var(--shadow-card);
+  }
+  .zimos-template-card[data-current],
+  .zimos-theme-card[data-current] {
+    --tw-ring-color: color-mix(in srgb, var(--lg-brand-solid) 72%, transparent);
+    --tw-shadow: var(--shadow-card), var(--lg-brand-glow);
+  }
+  @media (hover: hover) {
+    .zimos-template-card[data-current]:hover,
+    .zimos-theme-card[data-current]:hover {
+      --tw-shadow: var(--shadow-raised), var(--lg-brand-glow);
+    }
+  }
+  /* «الحالي»: the shared selection fill, with a shadow of its own — it lies on a picture. */
+  .zimos-template-current {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.28), 0 6px 14px -6px rgb(10 16 78 / 0.55);
+  }
+  /* A card's second line, one step deeper than the token: the pane lets the backdrop through. */
+  .zimos-template-card [data-slot="template-kind"],
+  .zimos-theme-card .text-ink-soft {
+    color: var(--lg-ink-soft);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * First run: three pills joined by a line. The current one is the
+   * shared selection fill (the main button, the current menu row, the
+   * chosen segment) with its glow; the two still to come are quiet.
+   * ---------------------------------------------------------------- */
+  [data-slot="start-step"][data-state="current"] {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.28), var(--lg-brand-glow);
+  }
+  /* Its number: the fill turned inside out, so it reads as a bead set into the pill. */
+  [data-slot="start-step"][data-state="current"] [data-slot="start-step-bead"] {
+    background-color: var(--lg-on-brand);
+    color: var(--lg-brand-solid);
+    box-shadow: 0 1px 2px rgb(10 16 78 / 0.22);
+  }
+  [data-slot="start-step"][data-state="todo"],
+  [data-slot="start-steps-note"] {
+    color: var(--lg-ink-soft);
+  }
+  [data-slot="start-step"][data-state="todo"] [data-slot="start-step-bead"] {
+    background-color: var(--lg-control);
+    color: var(--lg-ink-soft);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge);
+  }
+  [data-slot="start-step-line"] {
+    background-color: color-mix(in srgb, var(--color-ink) 12%, transparent);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * The device in a sheet (a template, a theme). The stage is a flat
+   * ground with a hairline — no sheen, no rim: nothing competes with
+   * the store inside the frame, and the store itself is never glass.
+   * ---------------------------------------------------------------- */
+  .zimos-device-stage {
+    box-shadow: inset 0 0 0 1px var(--lg-hairline);
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Store texts. A reworded text: a breath of the brand across its
+   * row and the brand on its leading edge (the component draws the
+   * bar; here it takes the gradient). The chip that says «متغيّر» and
+   * the count on a section's row are small tinted panes.
+   * ---------------------------------------------------------------- */
+  .zimos-text-row[data-changed] {
+    background-color: var(--site-row-wash);
+  }
+  .zimos-text-row[data-changed]::before {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+  }
+  .zimos-text-row {
+    border-color: var(--lg-hairline);
+  }
+  .zimos-text-changed,
+  .zimos-texts-count {
+    background-color: var(--site-tint);
+    color: var(--lg-text-primary);
+    box-shadow: inset 0 0 0 1px var(--site-tint-edge);
+  }
+}

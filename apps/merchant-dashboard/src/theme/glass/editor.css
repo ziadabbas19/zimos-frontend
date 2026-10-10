@@ -1,0 +1,447 @@
+/* The store editor: toolbar, side panels, stage, inspector, library — pages/website/editor/*.
+   Part of the liquid-glass layer (../liquid-glass.css): everything here is under the
+   same switch, so with data-glass="off" none of it applies and the component stands
+   on its own solid Tailwind classes. Fills, blur and rims come from the --lg-* variables. */
+:root:not([data-glass="off"]) {
+  /* [left] ---------------------------------------------------------- *
+   * The section list (LayerList, SectionCard) and the library of
+   * sections (BlockLibrary, SavedSections). Rows and cards lie in the
+   * flow of a pane, so they are never blurred: a row at rest has no
+   * fill at all, the selected one takes the shared selection fill.
+   * ---------------------------------------------------------------- */
+  @media (hover: hover) {
+    .zimos-section-pill:not([data-selected]):not([data-dragging]):hover {
+      background-color: color-mix(in srgb, var(--color-ink) 7%, transparent);
+    }
+  }
+  &.dark .zimos-section-pill:not([data-selected]):not([data-dragging]):hover {
+    background-color: rgb(255 255 255 / 0.09);
+  }
+  /* The selected row: the fill the main button and the current side-menu row have. */
+  .zimos-section-pill[data-selected] {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.28), var(--lg-brand-glow);
+  }
+  /* A row being carried is a small lit pane over the others. */
+  .zimos-section-pill[data-dragging]:not([data-selected]) {
+    background-color: var(--lg-control-lit);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge), var(--shadow-raised);
+  }
+  .zimos-section-pill[data-dragging][data-selected] {
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.28), var(--shadow-raised);
+  }
+  /* The "+" between two rows glows in the brand colour like the main action. */
+  .zimos-insert-slot > span:last-child {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.28), var(--lg-brand-glow);
+  }
+
+  /* Cards of the library, a saved section, and the funnel editor's section card: small panes. */
+  .zimos-library-card,
+  .zimos-saved-card,
+  .zimos-section-card {
+    background-color: var(--lg-control);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px var(--lg-edge);
+  }
+  @media (hover: hover) {
+    .zimos-library-card:hover {
+      background-color: var(--lg-control-lit);
+      box-shadow: var(--lg-rim-line), 0 0 0 1.5px var(--color-primary), var(--shadow-raised);
+    }
+  }
+  .zimos-section-card[data-selected] {
+    background-color: var(--lg-control-lit);
+    box-shadow: var(--lg-rim-line), 0 0 0 2px var(--color-primary);
+  }
+  /* The drawing inside a card keeps its own ground; only its edge joins the glass. */
+  .zimos-block-thumb {
+    box-shadow: inset 0 0 0 1px var(--lg-edge);
+  }
+  /* [inspector] ----------------------------------------------------- *
+   * The end panel (SectionInspector and pages/website/editor/inspector)
+   * and the media picker (components/MediaPicker.tsx). The panel's own
+   * pane belongs to the shell; in here, fields are lit wells, small
+   * cards are panes in the flow (no blur), and only the tab bar — which
+   * the page scrolls under — is frosted.
+   * ---------------------------------------------------------------- */
+  .zimos-inspector [data-slot="inspector-header"],
+  .zimos-inspector [data-slot="inspector-group"],
+  .zimos-inspector [data-slot="inspector-style"] > div {
+    border-color: var(--lg-hairline, var(--lg-edge));
+  }
+  .zimos-inspector [data-slot="inspector-tabs"] {
+    background-color: var(--lg-overlay);
+    -webkit-backdrop-filter: var(--lg-blur-overlay);
+    backdrop-filter: var(--lg-blur-overlay);
+    border-color: var(--lg-hairline, var(--lg-edge));
+  }
+  /* Fields: the 0.875rem corner and the lit well of a field on a card. */
+  .zimos-inspector :where([data-slot="input"], textarea, select),
+  [data-slot="media-picker"] [data-slot="input"] {
+    border-radius: 0.875rem;
+    background-color: var(--lg-control-lit);
+  }
+  .zimos-inspector :where([data-slot="input"], textarea, select):focus-visible,
+  [data-slot="media-picker"] [data-slot="input"]:focus-visible {
+    background-color: var(--color-paper-raised);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 14%, transparent);
+  }
+  .zimos-inspector [data-slot="inspector-stepper"] {
+    background-color: var(--lg-control-lit);
+    box-shadow: var(--lg-rim-line);
+  }
+  .zimos-inspector [data-slot="inspector-stepper"]:focus-within {
+    background-color: var(--color-paper-raised);
+  }
+  /* Buttons are pills here too; the quiet one is a small lit pane. */
+  .zimos-inspector [data-slot="button"] {
+    border-radius: 9999px;
+  }
+  .zimos-inspector [data-slot="button"][data-variant="outline"] {
+    background-color: var(--lg-control);
+    box-shadow: var(--lg-rim-line), 0 1px 2px rgb(20 22 26 / 0.05);
+  }
+  .zimos-inspector [data-slot="button"][data-variant="outline"]:hover:not(:disabled) {
+    background-color: var(--lg-control-lit);
+  }
+  /* The header's tile and a row's tile: small panes of glass. */
+  .zimos-inspector [data-slot="inspector-header"] > span:first-child {
+    background-image: var(--lg-sheen);
+    box-shadow: var(--lg-rim-line);
+  }
+  .zimos-inspector [data-slot="inspector-row"] > span:first-child {
+    background-color: var(--lg-control);
+    box-shadow: var(--lg-rim-line);
+  }
+  @media (hover: hover) {
+    .zimos-inspector [data-slot="inspector-row"]:hover {
+      background-color: var(--lg-control);
+    }
+  }
+  /* Cards in the flow: a list entry, a column, a colour well. */
+  .zimos-inspector :where([data-slot="inspector-item"], [data-slot="inspector-column"], [data-slot="inspector-colour"]) {
+    background-color: var(--lg-fill);
+    --tw-ring-color: var(--lg-edge);
+    --tw-inset-shadow: var(--lg-rim-line);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+  /* The switch: on, it takes the fill that marks selection everywhere. */
+  .zimos-inspector [data-slot="inspector-switch"] {
+    background-color: var(--lg-control);
+    --tw-ring-color: var(--lg-edge);
+  }
+  .zimos-inspector [data-slot="inspector-switch"][data-on] {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+    --tw-ring-color: transparent;
+    --tw-shadow: var(--lg-brand-glow);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+  /* The «…» menu's rows, inside the popover pane. */
+  [data-slot="inspector-menu-item"]:hover:not(:disabled):not(.text-danger) {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+  }
+  /* What a fold reveals settles in. */
+  @media (prefers-reduced-motion: no-preference) {
+    .zimos-inspector-reveal {
+      animation: inspector-reveal var(--dur-fade) var(--ease-out) both;
+    }
+    .zimos-media-picked > span:first-child {
+      animation: inspector-pop var(--dur-pop) var(--ease-pop) both;
+    }
+  }
+  /* The media picker: its bar is frosted over the grid (solid on a phone, as the sheet is). */
+  [data-slot="media-picker-bar"] {
+    background-color: var(--lg-overlay);
+    -webkit-backdrop-filter: var(--lg-blur-overlay);
+    backdrop-filter: var(--lg-blur-overlay);
+  }
+  @media (max-width: 39.99rem) {
+    [data-slot="media-picker-bar"] {
+      background-color: var(--color-paper-raised);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+  [data-slot="media-tile"] {
+    --tw-ring-color: var(--lg-edge);
+  }
+  [data-slot="media-tile"][data-picked] {
+    --tw-ring-color: var(--color-primary);
+    --tw-ring-shadow: 0 0 0 2px var(--color-primary);
+    --tw-shadow: var(--lg-brand-glow);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+  [data-slot="media-picker-progress"] > div {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+  }
+
+  /* [theme] --------------------------------------------------------- *
+   * The theme panel and the header / footer / announcement panels
+   * (StoreLookPanel, ShellPanels, theme/*). They lie in the flow of the
+   * inspector pane or of a sheet, so nothing here is blurred but the two
+   * arrows that float over the shelf of ready styles. Every card keeps
+   * its Tailwind ring: only the ring's colour and the shadow under it
+   * are swapped for the glass ones, so the chosen card's brand ring
+   * still shows.
+   * ---------------------------------------------------------------- */
+  .zimos-look [data-slot="look-block"] {
+    border-color: var(--lg-edge);
+  }
+  /* A choice card (a ready style, a theme, a font pair): a small lit pane. */
+  .zimos-look-card {
+    background-color: var(--lg-control);
+    --tw-ring-color: var(--lg-edge);
+    --tw-shadow: var(--lg-rim-line);
+  }
+  @media (hover: hover) {
+    .zimos-look-card:not([aria-disabled="true"]):hover {
+      background-color: var(--lg-control-lit);
+    }
+  }
+  .zimos-look-card:is([aria-checked="true"], [aria-pressed="true"]) {
+    background-color: var(--lg-control-lit);
+    --tw-ring-color: var(--color-primary);
+    --tw-shadow: var(--lg-rim-line), 0 8px 20px -10px color-mix(in srgb, var(--color-primary) 60%, transparent);
+  }
+  /* The mark on the chosen card and the switch that is on: the shared selection fill. */
+  .zimos-look-check,
+  .zimos-look-switch:checked {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.28);
+  }
+  .zimos-look-switch:not(:checked) {
+    background-color: color-mix(in srgb, var(--color-ink) 18%, transparent);
+    box-shadow: inset 0 1px 2px 0 rgb(0 0 0 / 0.14);
+  }
+  &.dark .zimos-look-switch:not(:checked) {
+    background-color: rgb(255 255 255 / 0.2);
+  }
+  /* Rows that hold a control (a colour, a link, the upload box): small panes. */
+  .zimos-look-row,
+  .zimos-look-link {
+    background-color: var(--lg-control);
+    --tw-ring-color: var(--lg-edge);
+    --tw-shadow: var(--lg-rim-line);
+  }
+  /* A link being carried is lit and lifted over its neighbours. */
+  .zimos-look-link[data-dragging] {
+    background-color: var(--lg-control-lit);
+    --tw-shadow: var(--lg-rim-line), var(--shadow-raised);
+  }
+  /* A footer group is a well its links sit in. */
+  .zimos-look-group {
+    background-color: color-mix(in srgb, var(--color-ink) 4%, transparent);
+    --tw-ring-color: var(--lg-edge);
+  }
+  &.dark .zimos-look-group {
+    background-color: rgb(255 255 255 / 0.04);
+  }
+  /* "Where the link goes": a quiet field-like pill. */
+  .zimos-look-target {
+    background-color: color-mix(in srgb, var(--color-ink) 5%, transparent);
+    --tw-ring-color: var(--lg-edge);
+  }
+  &.dark .zimos-look-target {
+    background-color: rgb(255 255 255 / 0.06);
+  }
+  .zimos-look-option[aria-current="true"] {
+    background-color: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  }
+  /* The panel's own badge (header / footer / announcement) and the colour well. */
+  .zimos-look-badge {
+    background-color: color-mix(in srgb, var(--color-primary) 16%, transparent);
+    box-shadow: var(--lg-rim-line);
+  }
+  .zimos-look-well {
+    --tw-ring-color: var(--lg-edge);
+    --tw-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.35), 0 2px 6px -2px rgb(0 0 0 / 0.3);
+  }
+  /* The shelf's arrows float over the cards: frosted, like any small overlay. */
+  .zimos-look-nudge,
+  .zimos-look-nudge:hover {
+    background-color: var(--lg-overlay);
+    -webkit-backdrop-filter: var(--lg-blur-overlay);
+    backdrop-filter: var(--lg-blur-overlay);
+    --tw-ring-color: var(--lg-edge);
+  }
+
+  /* [shell] --------------------------------------------------------- *
+   * The editor's frame (pages/website/editor/shell/*): the toolbar, the
+   * two side panels and the phone's bottom bar are overlay panes — near
+   * solid, a hairline outside and a bright line inside. They lie in the
+   * flow beside the stage, so none of them is blurred. The stage is a
+   * flat, quiet ground in both themes: no aurora and no glass, so
+   * nothing competes with the merchant's store, which is never glass.
+   * ---------------------------------------------------------------- */
+  [data-slot="editor-toolbar"] {
+    background-color: var(--lg-overlay);
+    border-color: var(--lg-edge);
+    box-shadow: var(--lg-rim-line), var(--shadow-card);
+  }
+  [data-slot="editor-panel"] {
+    background-color: var(--lg-overlay);
+    border-color: var(--lg-edge);
+    box-shadow: var(--lg-rim-line);
+  }
+  /* Hairlines inside a panel take the pane's colour. */
+  [data-slot="editor-panel"] > .border-t {
+    border-color: var(--lg-hairline);
+  }
+  [data-slot="editor-stage"] {
+    background-color: var(--color-paper-sunken);
+    background-image: none;
+  }
+  /* The phone's bottom bar: lit from above, its shadow falls up the stage. */
+  [data-slot="editor-dock"] {
+    background-color: var(--lg-overlay);
+    border-color: var(--lg-edge);
+    box-shadow: var(--lg-rim-line), 0 -12px 28px -18px rgb(20 22 26 / 0.3);
+  }
+  &.dark [data-slot="editor-dock"] {
+    box-shadow: var(--lg-rim-line), 0 -12px 28px -18px rgb(0 0 0 / 0.7);
+  }
+  /* «عدّل: …» floats over the store and names what is selected: the shared selection fill. */
+  [data-slot="editor-dock-edit"] {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.28), var(--lg-brand-glow), var(--shadow-raised);
+    animation: shell-rise var(--dur-move) var(--ease-spring) both;
+  }
+  /* The middle button's bead. */
+  [data-slot="editor-dock"] [data-lead] > span:first-child {
+    background-color: color-mix(in srgb, var(--color-primary) 16%, transparent);
+    box-shadow: var(--lg-rim-line);
+  }
+
+  /* The page switcher's pill and the bar's round buttons: small panes. */
+  [data-slot="editor-page-pill"] {
+    background-color: var(--lg-control);
+    --tw-ring-color: var(--lg-edge);
+    box-shadow: var(--lg-rim-line), inset 0 0 0 1px var(--lg-edge);
+  }
+  @media (hover: hover) {
+    [data-slot="editor-page-pill"]:hover {
+      background-color: var(--lg-control-lit);
+    }
+  }
+  [data-slot="editor-page-pill"][aria-expanded="true"] {
+    background-color: var(--lg-control-lit);
+  }
+  .zimos-editor-tool:is(:hover, [aria-pressed="true"], [aria-expanded="true"]) {
+    background-color: color-mix(in srgb, var(--color-ink) 7%, transparent);
+  }
+  &.dark .zimos-editor-tool:is(:hover, [aria-pressed="true"], [aria-expanded="true"]) {
+    background-color: rgb(255 255 255 / 0.1);
+  }
+  /* The open page in the list: a tinted row, its bead in the selection fill. */
+  [data-slot="editor-pages"] li[data-active] {
+    background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  }
+  [data-slot="editor-pages"] li[data-active] button > span:first-child {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 0.28);
+  }
+
+  /* The strips that come and go under the toolbar: tinted panes in the flow. */
+  [data-slot="editor-guide"] {
+    background-color: color-mix(in srgb, var(--color-primary) 9%, var(--lg-overlay));
+    border-color: var(--lg-edge);
+    box-shadow: var(--lg-rim-line);
+    animation: shell-drop var(--dur-move) var(--ease-spring) both;
+  }
+  [data-slot="editor-guide"] li > button {
+    background-color: var(--lg-control-lit);
+    --tw-ring-color: var(--lg-edge);
+    box-shadow: var(--lg-rim-line), inset 0 0 0 1px var(--lg-edge);
+  }
+  [data-slot="editor-guide"] li > button > span:first-child:not(.bg-success) {
+    background-color: var(--lg-brand-solid);
+    background-image: var(--lg-brand-grad);
+    color: var(--lg-on-brand);
+  }
+  [data-slot="editor-lookbar"] {
+    background-color: color-mix(in srgb, var(--color-accent) 13%, var(--lg-overlay));
+    border-color: var(--lg-edge);
+    box-shadow: var(--lg-rim-line);
+    animation: shell-drop var(--dur-move) var(--ease-spring) both;
+  }
+  [data-slot="editor-alert"] {
+    background-color: color-mix(in srgb, var(--color-danger) 11%, var(--lg-overlay));
+    border-color: var(--lg-edge);
+    box-shadow: var(--lg-rim-line);
+  }
+  /* Their buttons, and «ضيف قسم» under the section list: small lit panes. */
+  :is([data-slot="editor-lookbar"], [data-slot="editor-alert"]) [data-slot="button"]:is([data-variant="secondary"], [data-variant="outline"]):not(:disabled),
+  .zimos-editor-soft[data-slot="button"]:not(:disabled) {
+    background-color: var(--lg-control-lit);
+    border-color: var(--lg-edge);
+    box-shadow: var(--lg-rim-line), var(--shadow-card);
+  }
+
+  /* The first-run «لوّنه بهويتك» sheet is tried on against the store: a breath of dimming above it, not a curtain.
+     (The phone's inspector is no dialog at all and has no backdrop; it takes its pane from glass/sheet.css.) */
+  [data-slot="sheet-backdrop"]:has(~ * .zimos-editor-peek) {
+    background-color: color-mix(in srgb, var(--color-ink) 8%, transparent);
+  }
+  &.dark [data-slot="sheet-backdrop"]:has(~ * .zimos-editor-peek) {
+    background-color: rgb(0 0 0 / 0.2);
+  }
+  [data-slot="editor-peek-body"] {
+    border-color: var(--lg-hairline);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-slot="editor-dock-edit"],
+    [data-slot="editor-guide"],
+    [data-slot="editor-lookbar"] {
+      animation: none;
+    }
+  }
+}
+
+/* [inspector] keyframes */
+@keyframes inspector-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@keyframes inspector-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+/* [shell] keyframes */
+@keyframes shell-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes shell-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+/* The phone's inspector rising (PhoneBars.tsx names it in a class, so it moves with the glass off too). */
+@keyframes shell-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
