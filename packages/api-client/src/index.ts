@@ -218,6 +218,8 @@ export * from "./endpoints/domainRedirect";
 // Two-step sign-in: the code step, its settings, backup codes, the console reset.
 // The dashboard shows none of it unless VITE_TWO_FACTOR_ENABLED is "true".
 export * from "./endpoints/twoFactor";
+// The look of the dashboard, kept on the account so it follows its owner across devices.
+export * from "./endpoints/uiPreferences";
 // AI module: generation jobs, usage, apply as draft; the WhatsApp reply bot.
 // The dashboard shows none of it unless VITE_AI_ENABLED is "true".
 export * from "./endpoints/ai";
