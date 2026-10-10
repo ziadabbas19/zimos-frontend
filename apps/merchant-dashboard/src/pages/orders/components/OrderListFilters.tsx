@@ -1,53 +1,56 @@
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ArrowDown, ArrowUp, Columns3, Filter, X } from "lucide-react";
+import { IconArrowDown, IconArrowUp } from "@/components/icons";
 import { Button, Input, cn } from "@store-builder/ui";
-import { ORDER_SOURCES, funnelsList, ordersListTags, type OrderListFilters, type OrderSource } from "@store-builder/api-client";
+import {
+  ORDER_SOURCES,
+  funnelsList,
+  ordersListTags,
+  ordersManualOptions,
+  type OrderListFilters,
+  type OrderSource,
+  type OrderTagCount,
+} from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
-import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
+import { fmt, getLocale, useT, type Messages } from "@/i18n/LocaleContext";
 import { Select } from "@/components/Select";
-import { Modal } from "@/components/Modal";
+import { FilterChoice, FilterGroup } from "@/components/list";
 import { useOrderLabels } from "../orderLabels";
-import { useSavedOrderViews } from "./useSavedOrderViews";
+import { placeName } from "@/lib/format";
 
 const STRINGS = {
   en: {
-    filters: "Filters",
-    filtersCount: "Filters ({count})",
-    clearAll: "Clear filters",
     any: "Any",
+    pair: "{name}: {value}",
     tag: "Tag",
+    tagOption: "{tag} ({count})",
     source: "Source",
     payment: "Payment method",
     governorate: "Governorate",
     governoratePlaceholder: "e.g. Cairo",
     carrier: "Courier",
     carrierPlaceholder: "Courier name",
-    seen: "Seen",
-    seen_true: "Seen",
-    seen_false: "Not seen yet",
+    seen: "Opened or not",
+    seen_true: "Opened",
+    seen_false: "Not opened yet",
     test: "Test orders",
     test_true: "Only test orders",
-    test_false: "Hide test orders",
+    test_false: "Without test orders",
     archived: "Archive",
-    archived_exclude: "Hide archived",
+    archived_exclude: "Without archived",
     archived_only: "Archived only",
-    archived_include: "Include archived",
+    archived_include: "With archived",
     source_store: "Store",
     source_funnel: "Funnel",
     source_manual: "Manual",
     source_api: "API",
     source_import: "Import",
     source_upsell: "Upsell",
-    remove: "Remove filter {name}",
-    perPage: "Per page",
-    columns: "Columns",
-    columnsTitle: "Choose columns",
-    columnsHint: "Tick the columns to show and move them into the order you want. Saved on this device for your account.",
-    done: "Done",
+    columnsHint: "Tick the columns to show after the fixed ones and put them in your order. Kept on this device.",
     col_customer: "Customer",
+    col_products: "Products",
     col_total: "Total",
     col_payment: "Payment",
     col_stage: "Stage",
@@ -61,16 +64,6 @@ const STRINGS = {
     col_dataQuality: "Data quality",
     moveUp: "Move {name} up",
     moveDown: "Move {name} down",
-    views: "Saved views",
-    viewsNone: "Saved views",
-    saveView: "Save this view…",
-    saveTitle: "Save this view",
-    saveHint: "Keeps the current tab, search, dates, filters and sort under a name.",
-    viewName: "Name",
-    viewNamePlaceholder: "e.g. Cairo, not seen",
-    save: "Save",
-    cancel: "Cancel",
-    deleteView: "Delete “{name}”",
     product: "Product",
     funnel: "Funnel",
     dataQuality: "Data quality",
@@ -84,13 +77,22 @@ const STRINGS = {
     utmSourcePlaceholder: "e.g. facebook",
     utmCampaign: "UTM campaign",
     utmCampaignPlaceholder: "Campaign name",
+    groupOrder: "The order",
+    groupOrderHint: "Tag, opened or not, test orders, archive",
+    groupPayment: "Payment",
+    groupPaymentHint: "Payment method, discount code",
+    groupShipping: "Shipping and place",
+    groupShippingHint: "Governorate, courier",
+    groupProduct: "Product and source",
+    groupProductHint: "Product, where the order came from, funnel",
+    groupMarketing: "Marketing and data",
+    groupMarketingHint: "UTM source and campaign, IP country, data quality",
   },
   ar: {
-    filters: "الفلاتر",
-    filtersCount: "الفلاتر ({count})",
-    clearAll: "مسح الفلاتر",
     any: "الكل",
+    pair: "{name}: {value}",
     tag: "التاج",
+    tagOption: "{tag} ({count})",
     source: "المصدر",
     payment: "طريقة الدفع",
     governorate: "المحافظة",
@@ -98,28 +100,24 @@ const STRINGS = {
     carrier: "شركة الشحن",
     carrierPlaceholder: "اسم شركة الشحن",
     seen: "المشاهدة",
-    seen_true: "تمت مشاهدته",
-    seen_false: "لم يُشاهد بعد",
-    test: "الأوردرات التجريبية",
+    seen_true: "تم فتحه",
+    seen_false: "لم يُفتح بعد",
+    test: "الطلبات التجريبية",
     test_true: "التجريبية فقط",
-    test_false: "إخفاء التجريبية",
+    test_false: "بدون التجريبية",
     archived: "الأرشيف",
-    archived_exclude: "إخفاء المؤرشفة",
+    archived_exclude: "بدون المؤرشفة",
     archived_only: "المؤرشفة فقط",
-    archived_include: "إظهار المؤرشفة أيضًا",
+    archived_include: "مع المؤرشفة",
     source_store: "المتجر",
     source_funnel: "فانل",
     source_manual: "يدوي",
     source_api: "API",
     source_import: "استيراد",
     source_upsell: "عرض إضافي",
-    remove: "إزالة فلتر {name}",
-    perPage: "في الصفحة",
-    columns: "الأعمدة",
-    columnsTitle: "اختيار الأعمدة",
-    columnsHint: "اختر الأعمدة الظاهرة ورتّبها كما تريد. تُحفظ على هذا الجهاز لحسابك.",
-    done: "تم",
+    columnsHint: "اختر الأعمدة التي تظهر بعد الأعمدة الثابتة ورتّبها كما تريد. تُحفظ على هذا الجهاز.",
     col_customer: "العميل",
+    col_products: "المنتجات",
     col_total: "الإجمالي",
     col_payment: "الدفع",
     col_stage: "المرحلة",
@@ -133,16 +131,6 @@ const STRINGS = {
     col_dataQuality: "جودة البيانات",
     moveUp: "تحريك {name} لأعلى",
     moveDown: "تحريك {name} لأسفل",
-    views: "العروض المحفوظة",
-    viewsNone: "العروض المحفوظة",
-    saveView: "حفظ هذا العرض…",
-    saveTitle: "حفظ هذا العرض",
-    saveHint: "يحفظ التبويب والبحث والتواريخ والفلاتر والترتيب الحالية باسم.",
-    viewName: "الاسم",
-    viewNamePlaceholder: "مثلًا: القاهرة، غير مشاهَد",
-    save: "حفظ",
-    cancel: "إلغاء",
-    deleteView: "حذف «{name}»",
     product: "المنتج",
     funnel: "الفانل",
     dataQuality: "جودة البيانات",
@@ -156,12 +144,23 @@ const STRINGS = {
     utmSourcePlaceholder: "مثلًا facebook",
     utmCampaign: "حملة UTM",
     utmCampaignPlaceholder: "اسم الحملة",
+    groupOrder: "الطلب نفسه",
+    groupOrderHint: "التاج، الفتح، التجريبي، الأرشيف",
+    groupPayment: "الدفع",
+    groupPaymentHint: "طريقة الدفع، كود الخصم",
+    groupShipping: "الشحن والمكان",
+    groupShippingHint: "المحافظة، شركة الشحن",
+    groupProduct: "المنتج والمصدر",
+    groupProductHint: "المنتج، مصدر الطلب، مسار البيع",
+    groupMarketing: "التسويق والبيانات",
+    groupMarketingHint: "مصدر وحملة UTM، دولة عنوان IP، جودة البيانات",
   },
 } satisfies Messages;
 
 // ---------------------------------------------------------------- filters --
 
-const FILTER_KEYS = [
+/** The fifteen filters of the Filters sheet, by their name in the URL. */
+export const ORDER_FILTER_KEYS = [
   "tag",
   "source",
   "paymentMethod",
@@ -178,12 +177,12 @@ const FILTER_KEYS = [
   "utmSource",
   "utmCampaign",
 ] as const;
-type FilterKey = (typeof FILTER_KEYS)[number];
+export type OrderFilterKey = (typeof ORDER_FILTER_KEYS)[number];
 const PAYMENT_METHODS = ["cod", "card", "wallet", "valu", "kiosk", "bank_transfer"] as const;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * The list's SPEC §4.3 filters, kept in the URL next to stage / q / from / to
+ * The list's extra filters, kept in the URL next to stage / q / from / to
  * so a filtered list can be shared, saved as a view and survives a refresh.
  * Anything malformed in a hand-edited URL is dropped, never sent.
  */
@@ -223,7 +222,7 @@ export function useOrderExtraFilters() {
     () => ({
       tag: values.tag || undefined,
       source: (values.source || undefined) as OrderSource | undefined,
-      paymentMethod: values.paymentMethod || undefined,
+      paymentMethod: (values.paymentMethod || undefined) as OrderListFilters["paymentMethod"],
       governorate: values.governorate || undefined,
       carrier: values.carrier || undefined,
       seen: values.seen ? values.seen === "true" : undefined,
@@ -240,7 +239,7 @@ export function useOrderExtraFilters() {
     [values]
   );
 
-  function update(patch: Partial<Record<FilterKey, string | null>>) {
+  function update(patch: Partial<Record<OrderFilterKey, string | null>>) {
     setParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -254,7 +253,7 @@ export function useOrderExtraFilters() {
     );
   }
 
-  const active = FILTER_KEYS.filter((key) => values[key]);
+  const active = ORDER_FILTER_KEYS.filter((key) => values[key]);
   return {
     values,
     query,
@@ -262,7 +261,7 @@ export function useOrderExtraFilters() {
     key: active.map((k) => `${k}=${values[k]}`).join("&"),
     active,
     update,
-    clear: () => update(Object.fromEntries(FILTER_KEYS.map((k) => [k, null]))),
+    clear: () => update(Object.fromEntries(ORDER_FILTER_KEYS.map((k) => [k, null]))),
   };
 }
 
@@ -272,6 +271,7 @@ export type OrderExtraFilters = ReturnType<typeof useOrderExtraFilters>;
 
 export const OPTIONAL_COLUMNS = [
   "customer",
+  "products",
   "total",
   "payment",
   "stage",
@@ -285,8 +285,21 @@ export const OPTIONAL_COLUMNS = [
   "dataQuality",
 ] as const;
 export type OrderColumn = (typeof OPTIONAL_COLUMNS)[number];
-const DEFAULT_COLUMNS: OrderColumn[] = ["customer", "total", "payment", "stage", "timeline"];
+/**
+ * What the table always shows now, in its fixed leading columns (customer,
+ * amount, status, place): choosing one of these again would only print it
+ * twice, so the chooser no longer offers them and the table skips them.
+ */
+const ALWAYS_SHOWN: readonly OrderColumn[] = ["customer", "total", "stage", "governorate"];
+/** The columns a merchant can add after the fixed ones, in the chooser's order. */
+export const CHOOSABLE_COLUMNS: readonly OrderColumn[] = OPTIONAL_COLUMNS.filter((c) => !ALWAYS_SHOWN.includes(c));
+const DEFAULT_COLUMNS: OrderColumn[] = ["products"];
 export const PAGE_SIZES = [25, 50, 100] as const;
+
+/** The merchant's optional columns as the table draws them: theirs, in their order, without the fixed ones. */
+export function shownOrderColumns(columns: readonly OrderColumn[]): OrderColumn[] {
+  return columns.filter((c) => !ALWAYS_SHOWN.includes(c));
+}
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -309,9 +322,11 @@ export function useOrderListPrefs() {
   const workspaceId = useWorkspaceId();
   const columnsKey = `zimos.orders.columns.${workspaceId}`;
   const sizeKey = `zimos.orders.pageSize.${workspaceId}`;
-  const [columns, setColumnsState] = useState<OrderColumn[]>(() =>
-    readJson<OrderColumn[]>(columnsKey, DEFAULT_COLUMNS).filter((c) => OPTIONAL_COLUMNS.includes(c))
-  );
+  const [columns, setColumnsState] = useState<OrderColumn[]>(() => {
+    const stored = readJson<unknown>(columnsKey, DEFAULT_COLUMNS);
+    const list: OrderColumn[] = Array.isArray(stored) ? (stored as OrderColumn[]) : DEFAULT_COLUMNS;
+    return list.filter((c) => OPTIONAL_COLUMNS.includes(c));
+  });
   const [pageSize, setPageSizeState] = useState<number>(() => {
     const stored = readJson<number>(sizeKey, 50);
     return (PAGE_SIZES as readonly number[]).includes(stored) ? stored : 50;
@@ -334,13 +349,6 @@ export function useOrderListPrefs() {
 
 export type OrderListPrefs = ReturnType<typeof useOrderListPrefs>;
 
-// ------------------------------------------------------------ saved views --
-
-// Per teammate, on the server (useSavedOrderViews.ts).
-const useSavedViews = useSavedOrderViews;
-
-// -------------------------------------------------------------------- bar --
-
 export function useColumnLabel() {
   const t = useT(STRINGS);
   return (column: OrderColumn) => t[`col_${column}`];
@@ -351,439 +359,435 @@ export function useSourceLabel() {
   return (source: OrderSource) => t[`source_${source}`];
 }
 
+// ------------------------------------------------- what the pickers offer --
+
+interface NamedOption {
+  id: string;
+  name: string;
+}
+
 /**
- * The row under the search box: Filters (a panel of the SPEC §4.3 filters),
- * the active filters as removable chips, saved views, the column chooser and
- * the page size.
+ * The lists the pickers choose from: the store's tags, its governorates, its
+ * first hundred products and its funnels. Asked for only once `enabled` (the
+ * Filters sheet was opened, or the link already filters by a product or a
+ * funnel whose name the chip has to say), not on every visit to the list.
+ * A list this role may not read comes back empty — or, for governorates, null:
+ * the field is then typed, not picked.
  */
-export function OrderFilterBar({ filters, prefs }: { filters: OrderExtraFilters; prefs: OrderListPrefs }) {
+export function useOrderFilterOptions(enabled: boolean) {
+  const workspaceId = useWorkspaceId();
+  const loaded = useAsync(async () => {
+    if (!enabled) return null;
+    const [tags, governorates, products, funnels] = await Promise.all([
+      ordersListTags(apiClient, workspaceId).catch(() => [] as OrderTagCount[]),
+      ordersManualOptions(apiClient, workspaceId)
+        .then((o) => o.governorates)
+        .catch(() => null),
+      apiClient
+        .listProducts(workspaceId, { limit: 100 })
+        .then((r): NamedOption[] => r.products.map((p) => ({ id: p.id, name: p.name })))
+        .catch(() => [] as NamedOption[]),
+      funnelsList(apiClient, workspaceId)
+        .then((list): NamedOption[] => list.map((f) => ({ id: f.id, name: f.name })))
+        .catch(() => [] as NamedOption[]),
+    ]);
+    return { tags, governorates, products, funnels };
+  }, [workspaceId, enabled]);
+  return loaded.data;
+}
+
+export type OrderFilterOptions = NonNullable<ReturnType<typeof useOrderFilterOptions>>;
+
+// ------------------------------------------------------------------ chips --
+
+/** The filters in effect, each as the words of its chip under the toolbar. */
+export function useOrderFilterChips(
+  filters: OrderExtraFilters,
+  options: OrderFilterOptions | null
+): Array<{ key: OrderFilterKey; label: string }> {
   const t = useT(STRINGS);
   const labels = useOrderLabels();
-  const workspaceId = useWorkspaceId();
-  const [params, setParams] = useSearchParams();
-  const [open, setOpen] = useState(filters.active.length > 0);
-  const [choosingColumns, setChoosingColumns] = useState(false);
-  const [savingView, setSavingView] = useState(false);
-  const [viewName, setViewName] = useState("");
-  const saved = useSavedViews();
-  const tags = useAsync(() => ordersListTags(apiClient, workspaceId), [workspaceId]);
-  // For the product and funnel pickers and their chips; a failure leaves the picker with what is in the URL.
-  const products = useAsync(
-    () => apiClient.listProducts(workspaceId, { limit: 100 }).then((r) => r.products.map((p) => ({ id: p.id, name: p.name }))),
-    [workspaceId]
-  );
-  const funnels = useAsync(() => funnelsList(apiClient, workspaceId).then((list) => list.map((f) => ({ id: f.id, name: f.name }))), [workspaceId]);
-  const productName = (id: string) => (products.data ?? []).find((p) => p.id === id)?.name ?? id.slice(0, 8);
-  const funnelName = (id: string) => (funnels.data ?? []).find((f) => f.id === id)?.name ?? id.slice(0, 8);
-  const ids = { size: useId(), views: useId(), tag: useId(), source: useId(), pay: useId(), gov: useId(), carrier: useId(), seen: useId(), test: useId(), arch: useId(), name: useId(), product: useId(), funnel: useId(), dq: useId(), ip: useId(), code: useId(), utmS: useId(), utmC: useId() };
-  const { values, update } = filters;
+  const { values } = filters;
+  const pair = (name: string, value: string) => fmt(t.pair, { name, value });
+  const productName = (id: string) => options?.products.find((p) => p.id === id)?.name ?? id.slice(0, 8);
+  const funnelName = (id: string) => options?.funnels.find((f) => f.id === id)?.name ?? id.slice(0, 8);
 
-  const chipText: Record<FilterKey, () => string> = {
-    tag: () => `${t.tag}: ${values.tag}`,
-    source: () => `${t.source}: ${values.source ? t[`source_${values.source}`] : ""}`,
-    paymentMethod: () => `${t.payment}: ${values.paymentMethod ? labels.paymentMethod(values.paymentMethod) : ""}`,
-    governorate: () => `${t.governorate}: ${values.governorate}`,
-    carrier: () => `${t.carrier}: ${values.carrier}`,
+  const text: Record<OrderFilterKey, () => string> = {
+    tag: () => pair(t.tag, values.tag),
+    source: () => pair(t.source, values.source ? t[`source_${values.source}`] : ""),
+    paymentMethod: () => pair(t.payment, values.paymentMethod ? labels.paymentMethod(values.paymentMethod) : ""),
+    governorate: () => pair(t.governorate, placeName(values.governorate)),
+    carrier: () => pair(t.carrier, values.carrier),
     seen: () => (values.seen === "true" ? t.seen_true : t.seen_false),
     test: () => (values.test === "true" ? t.test_true : t.test_false),
     archived: () => (values.archived === "only" ? t.archived_only : t.archived_include),
-    productId: () => `${t.product}: ${productName(values.productId)}`,
-    funnelId: () => `${t.funnel}: ${funnelName(values.funnelId)}`,
-    dataQuality: () => `${t.dataQuality}: ${values.dataQuality === "low" ? t.dq_low : t.dq_good}`,
-    ipCountry: () => `${t.ipCountry}: ${values.ipCountry}`,
-    discountCode: () => `${t.discountCode}: ${values.discountCode}`,
-    utmSource: () => `${t.utmSource}: ${values.utmSource}`,
-    utmCampaign: () => `${t.utmCampaign}: ${values.utmCampaign}`,
+    productId: () => pair(t.product, productName(values.productId)),
+    funnelId: () => pair(t.funnel, funnelName(values.funnelId)),
+    dataQuality: () => pair(t.dataQuality, values.dataQuality === "low" ? t.dq_low : t.dq_good),
+    ipCountry: () => pair(t.ipCountry, values.ipCountry),
+    discountCode: () => pair(t.discountCode, values.discountCode),
+    utmSource: () => pair(t.utmSource, values.utmSource),
+    utmCampaign: () => pair(t.utmCampaign, values.utmCampaign),
   };
+  return filters.active.map((key) => ({ key, label: text[key]() }));
+}
 
-  const currentQuery = params.toString();
-  const currentView = saved.views.find((v) => v.query === currentQuery)?.name ?? "";
-  const label = "mb-1 block text-xs text-ink-soft";
+// ------------------------------------------------ the groups in the sheet --
+
+const FIELD_LABEL = "mb-1.5 block text-xs leading-4 font-medium text-ink-soft";
+
+/** A field of a filter group under its small name. `htmlFor` for a real field; a row of pills names itself. */
+function Labelled({ label, htmlFor, wide, children }: { label: string; htmlFor?: string; wide?: boolean; children: ReactNode }) {
+  return (
+    <div className={cn("min-w-0", wide && "sm:col-span-2")}>
+      {htmlFor ? (
+        <label htmlFor={htmlFor} data-slot="filter-hint" className={FIELD_LABEL}>
+          {label}
+        </label>
+      ) : (
+        <p data-slot="filter-hint" className={FIELD_LABEL}>
+          {label}
+        </p>
+      )}
+      {children}
+    </div>
+  );
+}
+
+/**
+ * The fifteen filters as five folding groups of the Filters sheet (FilterSheet
+ * of the list kit). Each takes effect as it changes — a pill or a select at
+ * once, a typed field when the merchant leaves it or presses Enter — and a
+ * group that already filters the list arrives open.
+ */
+export function OrderExtraFilterGroups({
+  filters,
+  options,
+  onChange,
+}: {
+  filters: OrderExtraFilters;
+  options: OrderFilterOptions | null;
+  /** One write to the URL per change. */
+  onChange: (patch: Partial<Record<OrderFilterKey, string | null>>) => void;
+}) {
+  const t = useT(STRINGS);
+  const labels = useOrderLabels();
+  const { values } = filters;
+  const ids = {
+    tag: useId(),
+    gov: useId(),
+    carrier: useId(),
+    product: useId(),
+    funnel: useId(),
+    ip: useId(),
+    code: useId(),
+    utmS: useId(),
+    utmC: useId(),
+  };
+  const tags = options?.tags ?? [];
+  const governorates = options?.governorates ?? null;
+  const products = options?.products ?? [];
+  const funnels = options?.funnels ?? [];
+  const productName = (id: string) => products.find((p) => p.id === id)?.name ?? id.slice(0, 8);
+  const funnelName = (id: string) => funnels.find((f) => f.id === id)?.name ?? id.slice(0, 8);
+  const on = (...keys: OrderFilterKey[]) => keys.some((key) => Boolean(values[key]));
+  const fields = "grid gap-4 sm:grid-cols-2";
 
   return (
-    <div className="mb-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="min-h-11 gap-1.5"
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-        >
-          <Filter className="size-4" aria-hidden />
-          {filters.active.length ? fmt(t.filtersCount, { count: filters.active.length }) : t.filters}
-        </Button>
-
-        {filters.active.map((key) => (
-          <span
-            key={key}
-            className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary-soft py-0.5 ps-2.5 pe-1 text-sm text-primary-dark dark:text-primary"
-          >
-            {chipText[key]()}
-            <button
-              type="button"
-              onClick={() => update({ [key]: null })}
-              aria-label={fmt(t.remove, { name: chipText[key]() })}
-              className="inline-flex size-6 cursor-pointer items-center justify-center rounded-full hover:bg-paper-raised focus-visible:outline-2 focus-visible:outline-primary"
-            >
-              <X className="size-3.5" aria-hidden />
-            </button>
-          </span>
-        ))}
-        {filters.active.length > 0 && (
-          <Button variant="ghost" size="sm" className="min-h-11" onClick={filters.clear}>
-            {t.clearAll}
-          </Button>
-        )}
-
-        <div className="ms-auto flex flex-wrap items-center gap-2">
-          <label htmlFor={ids.views} className="sr-only">
-            {t.views}
-          </label>
-          <Select
-            id={ids.views}
-            value={currentView}
-            className="h-11 w-auto min-w-40"
-            onChange={(e) => {
-              const choice = e.target.value;
-              if (choice === "__save") {
-                setViewName("");
-                setSavingView(true);
-                return;
-              }
-              const view = saved.views.find((v) => v.name === choice);
-              if (view) setParams(new URLSearchParams(view.query), { replace: true });
-            }}
-          >
-            <option value="">{t.viewsNone}</option>
-            {saved.views.map((v) => (
-              <option key={v.name} value={v.name}>
-                {v.name}
-              </option>
-            ))}
-            <option value="__save">{t.saveView}</option>
-          </Select>
-          {currentView && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="min-h-11"
-              aria-label={fmt(t.deleteView, { name: currentView })}
-              title={fmt(t.deleteView, { name: currentView })}
-              onClick={() => saved.remove(currentView)}
-            >
-              <X className="size-4" aria-hidden />
-            </Button>
-          )}
-
-          <Button variant="outline" size="sm" className="min-h-11 gap-1.5" onClick={() => setChoosingColumns(true)}>
-            <Columns3 className="size-4" aria-hidden />
-            {t.columns}
-          </Button>
-
-          <label htmlFor={ids.size} className="text-sm text-ink-soft">
-            {t.perPage}
-          </label>
-          <Select
-            id={ids.size}
-            value={prefs.pageSize}
-            onChange={(e) => prefs.setPageSize(Number(e.target.value))}
-            className="h-11 w-auto"
-          >
-            {PAGE_SIZES.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </Select>
-        </div>
-      </div>
-
-      {open && (
-        <div className="mt-3 grid gap-3 rounded-[var(--radius-card)] border border-line bg-paper-raised p-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label htmlFor={ids.tag} className={label}>
-              {t.tag}
-            </label>
-            <Select id={ids.tag} value={values.tag} onChange={(e) => update({ tag: e.target.value || null })} className="h-11">
+    <>
+      <FilterGroup collapsible defaultOpen={on("tag", "seen", "test", "archived")} label={t.groupOrder} hint={t.groupOrderHint}>
+        <div className={fields}>
+          <Labelled label={t.tag} htmlFor={ids.tag} wide>
+            <Select id={ids.tag} value={values.tag} onChange={(e) => onChange({ tag: e.target.value || null })} className="h-11">
               <option value="">{t.any}</option>
-              {values.tag && !(tags.data ?? []).some((x) => x.tag === values.tag) && <option value={values.tag}>{values.tag}</option>}
-              {(tags.data ?? []).map((x) => (
+              {values.tag && !tags.some((x) => x.tag === values.tag) && <option value={values.tag}>{values.tag}</option>}
+              {tags.map((x) => (
                 <option key={x.tag} value={x.tag}>
-                  {x.tag} ({x.count})
+                  {fmt(t.tagOption, { tag: x.tag, count: x.count })}
                 </option>
               ))}
             </Select>
-          </div>
-          <div>
-            <label htmlFor={ids.source} className={label}>
-              {t.source}
-            </label>
-            <Select id={ids.source} value={values.source} onChange={(e) => update({ source: e.target.value || null })} className="h-11">
-              <option value="">{t.any}</option>
-              {ORDER_SOURCES.map((s) => (
-                <option key={s} value={s}>
-                  {t[`source_${s}`]}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div>
-            <label htmlFor={ids.pay} className={label}>
-              {t.payment}
-            </label>
-            <Select
-              id={ids.pay}
-              value={values.paymentMethod}
-              onChange={(e) => update({ paymentMethod: e.target.value || null })}
-              className="h-11"
-            >
-              <option value="">{t.any}</option>
-              {PAYMENT_METHODS.map((m) => (
-                <option key={m} value={m}>
-                  {labels.paymentMethod(m)}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <DebouncedText
-            id={ids.gov}
-            label={t.governorate}
-            placeholder={t.governoratePlaceholder}
-            value={values.governorate}
-            onCommit={(v) => update({ governorate: v || null })}
-          />
-          <DebouncedText
-            id={ids.carrier}
-            label={t.carrier}
-            placeholder={t.carrierPlaceholder}
-            value={values.carrier}
-            onCommit={(v) => update({ carrier: v || null })}
-          />
-          <div>
-            <label htmlFor={ids.seen} className={label}>
-              {t.seen}
-            </label>
-            <Select id={ids.seen} value={values.seen} onChange={(e) => update({ seen: e.target.value || null })} className="h-11">
-              <option value="">{t.any}</option>
-              <option value="false">{t.seen_false}</option>
-              <option value="true">{t.seen_true}</option>
-            </Select>
-          </div>
-          <div>
-            <label htmlFor={ids.test} className={label}>
-              {t.test}
-            </label>
-            <Select id={ids.test} value={values.test} onChange={(e) => update({ test: e.target.value || null })} className="h-11">
-              <option value="">{t.any}</option>
-              <option value="false">{t.test_false}</option>
-              <option value="true">{t.test_true}</option>
-            </Select>
-          </div>
-          <div>
-            <label htmlFor={ids.arch} className={label}>
-              {t.archived}
-            </label>
-            <Select
-              id={ids.arch}
-              value={values.archived}
-              onChange={(e) => update({ archived: e.target.value || null })}
-              className="h-11"
-            >
-              <option value="">{t.archived_exclude}</option>
-              <option value="only">{t.archived_only}</option>
-              <option value="include">{t.archived_include}</option>
-            </Select>
-          </div>
-          <div>
-            <label htmlFor={ids.product} className={label}>
-              {t.product}
-            </label>
-            <Select id={ids.product} value={values.productId} onChange={(e) => update({ productId: e.target.value || null })} className="h-11">
-              <option value="">{t.any}</option>
-              {values.productId && !(products.data ?? []).some((p) => p.id === values.productId) && (
-                <option value={values.productId}>{productName(values.productId)}</option>
-              )}
-              {(products.data ?? []).map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div>
-            <label htmlFor={ids.funnel} className={label}>
-              {t.funnel}
-            </label>
-            <Select id={ids.funnel} value={values.funnelId} onChange={(e) => update({ funnelId: e.target.value || null })} className="h-11">
-              <option value="">{t.any}</option>
-              {values.funnelId && !(funnels.data ?? []).some((f) => f.id === values.funnelId) && (
-                <option value={values.funnelId}>{funnelName(values.funnelId)}</option>
-              )}
-              {(funnels.data ?? []).map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div>
-            <label htmlFor={ids.dq} className={label}>
-              {t.dataQuality}
-            </label>
-            <Select id={ids.dq} value={values.dataQuality} onChange={(e) => update({ dataQuality: e.target.value || null })} className="h-11">
-              <option value="">{t.any}</option>
-              <option value="good">{t.dq_good}</option>
-              <option value="low">{t.dq_low}</option>
-            </Select>
-          </div>
-          <DebouncedText
-            id={ids.ip}
-            label={t.ipCountry}
-            placeholder={t.ipCountryPlaceholder}
-            value={values.ipCountry}
-            onCommit={(v) => update({ ipCountry: /^[A-Za-z]{2}$/.test(v) ? v.toUpperCase() : null })}
-          />
+          </Labelled>
+          <Labelled label={t.seen} wide>
+            <FilterChoice
+              label={t.seen}
+              allowClear
+              value={values.seen || null}
+              onChange={(next) => onChange({ seen: next })}
+              options={[
+                { value: "false", label: t.seen_false },
+                { value: "true", label: t.seen_true },
+              ]}
+            />
+          </Labelled>
+          <Labelled label={t.test} wide>
+            <FilterChoice
+              label={t.test}
+              allowClear
+              value={values.test || null}
+              onChange={(next) => onChange({ test: next })}
+              options={[
+                { value: "false", label: t.test_false },
+                { value: "true", label: t.test_true },
+              ]}
+            />
+          </Labelled>
+          <Labelled label={t.archived} wide>
+            <FilterChoice
+              label={t.archived}
+              value={values.archived || "exclude"}
+              onChange={(next) => onChange({ archived: next === null || next === "exclude" ? null : next })}
+              options={[
+                { value: "exclude", label: t.archived_exclude },
+                { value: "only", label: t.archived_only },
+                { value: "include", label: t.archived_include },
+              ]}
+            />
+          </Labelled>
+        </div>
+      </FilterGroup>
+
+      <FilterGroup collapsible defaultOpen={on("paymentMethod", "discountCode")} label={t.groupPayment} hint={t.groupPaymentHint}>
+        <div className={fields}>
+          <Labelled label={t.payment} wide>
+            <FilterChoice
+              label={t.payment}
+              allowClear
+              value={values.paymentMethod || null}
+              onChange={(next) => onChange({ paymentMethod: next })}
+              options={PAYMENT_METHODS.map((method) => ({ value: method, label: labels.paymentMethod(method) }))}
+            />
+          </Labelled>
           <DebouncedText
             id={ids.code}
             label={t.discountCode}
             placeholder={t.discountCodePlaceholder}
             value={values.discountCode}
-            onCommit={(v) => update({ discountCode: v || null })}
+            onCommit={(v) => onChange({ discountCode: v || null })}
           />
+        </div>
+      </FilterGroup>
+
+      <FilterGroup collapsible defaultOpen={on("governorate", "carrier")} label={t.groupShipping} hint={t.groupShippingHint}>
+        <div className={fields}>
+          {/* The governorate filter matches the saved value exactly ("القاهرة (Cairo)"), so it is picked
+              from the list, not typed; a role that can't read the list types it as before. */}
+          {governorates && governorates.length > 0 ? (
+            <Labelled label={t.governorate} htmlFor={ids.gov}>
+              <Select
+                id={ids.gov}
+                value={values.governorate}
+                onChange={(e) => onChange({ governorate: e.target.value || null })}
+                className="h-11"
+              >
+                <option value="">{t.any}</option>
+                {values.governorate && !governorates.some((g) => `${g.ar} (${g.en})` === values.governorate) && (
+                  <option value={values.governorate}>{placeName(values.governorate)}</option>
+                )}
+                {governorates.map((g) => (
+                  <option key={g.code} value={`${g.ar} (${g.en})`}>
+                    {getLocale() === "ar" ? g.ar : g.en}
+                  </option>
+                ))}
+              </Select>
+            </Labelled>
+          ) : (
+            <DebouncedText
+              id={ids.gov}
+              label={t.governorate}
+              placeholder={t.governoratePlaceholder}
+              value={values.governorate}
+              onCommit={(v) => onChange({ governorate: v || null })}
+            />
+          )}
+          <DebouncedText
+            id={ids.carrier}
+            label={t.carrier}
+            placeholder={t.carrierPlaceholder}
+            value={values.carrier}
+            onCommit={(v) => onChange({ carrier: v || null })}
+          />
+        </div>
+      </FilterGroup>
+
+      <FilterGroup collapsible defaultOpen={on("productId", "source", "funnelId")} label={t.groupProduct} hint={t.groupProductHint}>
+        <div className={fields}>
+          <Labelled label={t.product} htmlFor={ids.product}>
+            <Select
+              id={ids.product}
+              value={values.productId}
+              onChange={(e) => onChange({ productId: e.target.value || null })}
+              className="h-11"
+            >
+              <option value="">{t.any}</option>
+              {values.productId && !products.some((p) => p.id === values.productId) && (
+                <option value={values.productId}>{productName(values.productId)}</option>
+              )}
+              {products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </Select>
+          </Labelled>
+          <Labelled label={t.funnel} htmlFor={ids.funnel}>
+            <Select id={ids.funnel} value={values.funnelId} onChange={(e) => onChange({ funnelId: e.target.value || null })} className="h-11">
+              <option value="">{t.any}</option>
+              {values.funnelId && !funnels.some((f) => f.id === values.funnelId) && (
+                <option value={values.funnelId}>{funnelName(values.funnelId)}</option>
+              )}
+              {funnels.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
+              ))}
+            </Select>
+          </Labelled>
+          <Labelled label={t.source} wide>
+            <FilterChoice
+              label={t.source}
+              allowClear
+              value={values.source || null}
+              onChange={(next) => onChange({ source: next })}
+              options={ORDER_SOURCES.map((source) => ({ value: source, label: t[`source_${source}`] }))}
+            />
+          </Labelled>
+        </div>
+      </FilterGroup>
+
+      <FilterGroup
+        collapsible
+        defaultOpen={on("utmSource", "utmCampaign", "ipCountry", "dataQuality")}
+        label={t.groupMarketing}
+        hint={t.groupMarketingHint}
+      >
+        <div className={fields}>
           <DebouncedText
             id={ids.utmS}
             label={t.utmSource}
             placeholder={t.utmSourcePlaceholder}
             value={values.utmSource}
-            onCommit={(v) => update({ utmSource: v || null })}
+            onCommit={(v) => onChange({ utmSource: v || null })}
           />
           <DebouncedText
             id={ids.utmC}
             label={t.utmCampaign}
             placeholder={t.utmCampaignPlaceholder}
             value={values.utmCampaign}
-            onCommit={(v) => update({ utmCampaign: v || null })}
+            maxLength={200}
+            onCommit={(v) => onChange({ utmCampaign: v || null })}
           />
-        </div>
-      )}
-
-      <Modal
-        open={choosingColumns}
-        onClose={() => setChoosingColumns(false)}
-        title={t.columnsTitle}
-        description={t.columnsHint}
-        footer={
-          <Button className="min-h-11" onClick={() => setChoosingColumns(false)}>
-            {t.done}
-          </Button>
-        }
-      >
-        <ul className="grid gap-1">
-          {/* Shown ones first, in table order (movable), then the rest. */}
-          {[...prefs.columns, ...OPTIONAL_COLUMNS.filter((c) => !prefs.columns.includes(c))].map((column) => {
-            const checked = prefs.columns.includes(column);
-            const at = prefs.columns.indexOf(column);
-            const move = (by: number) => {
-              const next = [...prefs.columns];
-              next.splice(at, 1);
-              next.splice(at + by, 0, column);
-              prefs.setColumns(next);
-            };
-            return (
-              <li key={column} className="flex items-center gap-1">
-                {checked && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      className="size-11"
-                      disabled={at === 0}
-                      aria-label={fmt(t.moveUp, { name: t[`col_${column}`] })}
-                      onClick={() => move(-1)}
-                    >
-                      <ArrowUp className="size-4" aria-hidden />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      className="size-11"
-                      disabled={at === prefs.columns.length - 1}
-                      aria-label={fmt(t.moveDown, { name: t[`col_${column}`] })}
-                      onClick={() => move(1)}
-                    >
-                      <ArrowDown className="size-4" aria-hidden />
-                    </Button>
-                  </>
-                )}
-                <label className={cn("flex min-h-11 flex-1 cursor-pointer items-center gap-2 text-sm text-ink", !checked && "ps-[5.75rem]")}>
-                  <input
-                    type="checkbox"
-                    className="size-4 accent-primary"
-                    checked={checked}
-                    onChange={() =>
-                      prefs.setColumns(checked ? prefs.columns.filter((c) => c !== column) : [...prefs.columns, column])
-                    }
-                  />
-                  {t[`col_${column}`]}
-                </label>
-              </li>
-            );
-          })}
-        </ul>
-      </Modal>
-
-      <Modal open={savingView} onClose={() => setSavingView(false)} title={t.saveTitle} description={t.saveHint}>
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const name = viewName.trim();
-            if (!name) return;
-            saved.save(name, currentQuery);
-            setSavingView(false);
-          }}
-        >
-          <div>
-            <label htmlFor={ids.name} className={label}>
-              {t.viewName}
-            </label>
-            <Input
-              id={ids.name}
-              value={viewName}
-              maxLength={40}
-              autoFocus
-              placeholder={t.viewNamePlaceholder}
-              onChange={(e) => setViewName(e.target.value)}
-              className="h-11"
+          <DebouncedText
+            id={ids.ip}
+            label={t.ipCountry}
+            placeholder={t.ipCountryPlaceholder}
+            value={values.ipCountry}
+            maxLength={2}
+            onCommit={(v) => onChange({ ipCountry: /^[A-Za-z]{2}$/.test(v) ? v.toUpperCase() : null })}
+          />
+          <Labelled label={t.dataQuality}>
+            <FilterChoice
+              label={t.dataQuality}
+              allowClear
+              value={values.dataQuality || null}
+              onChange={(next) => onChange({ dataQuality: next })}
+              options={[
+                { value: "good", label: t.dq_good },
+                { value: "low", label: t.dq_low },
+              ]}
             />
-          </div>
-          <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" className="min-h-11" onClick={() => setSavingView(false)}>
-              {t.cancel}
-            </Button>
-            <Button type="submit" className="min-h-11" disabled={!viewName.trim()}>
-              {t.save}
-            </Button>
-          </div>
-        </form>
-      </Modal>
-    </div>
+          </Labelled>
+        </div>
+      </FilterGroup>
+    </>
   );
 }
 
-/** A text filter that reaches the URL when the merchant stops typing or leaves the field. */
+// --------------------------------------------------------- column chooser --
+
+/**
+ * The table's optional columns: the shown ones first, in the table's order
+ * (each can be moved up or down), then the rest. Ticking adds a column at the
+ * end, un-ticking removes it; the choice is saved at once, per store, on this
+ * device (`zimos.orders.columns.<store>`).
+ */
+export function OrderColumnChooser({ prefs }: { prefs: OrderListPrefs }) {
+  const t = useT(STRINGS);
+  const shown = shownOrderColumns(prefs.columns);
+  return (
+    <>
+      <p data-slot="filter-hint" className="mb-2 text-xs leading-4 text-ink-soft">
+        {t.columnsHint}
+      </p>
+      <ul className="grid gap-1">
+        {[...shown, ...CHOOSABLE_COLUMNS.filter((c) => !shown.includes(c))].map((column) => {
+          const checked = shown.includes(column);
+          const at = shown.indexOf(column);
+          const move = (by: number) => {
+            const next = [...shown];
+            next.splice(at, 1);
+            next.splice(at + by, 0, column);
+            prefs.setColumns(next);
+          };
+          return (
+            <li key={column} className="flex items-center gap-1">
+              {checked && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="size-11 rounded-full"
+                    disabled={at === 0}
+                    aria-label={fmt(t.moveUp, { name: t[`col_${column}`] })}
+                    onClick={() => move(-1)}
+                  >
+                    <IconArrowUp className="size-4" aria-hidden />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="size-11 rounded-full"
+                    disabled={at === shown.length - 1}
+                    aria-label={fmt(t.moveDown, { name: t[`col_${column}`] })}
+                    onClick={() => move(1)}
+                  >
+                    <IconArrowDown className="size-4" aria-hidden />
+                  </Button>
+                </>
+              )}
+              <label className={cn("flex min-h-11 flex-1 cursor-pointer items-center gap-2 text-sm text-ink", !checked && "ps-[5.75rem]")}>
+                <input
+                  type="checkbox"
+                  className="size-4 accent-primary"
+                  checked={checked}
+                  onChange={() => prefs.setColumns(checked ? shown.filter((c) => c !== column) : [...shown, column])}
+                />
+                {t[`col_${column}`]}
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+    </>
+  );
+}
+
+// ------------------------------------------------------------- text field --
+
+/** A text filter that reaches the URL when the merchant leaves the field or presses Enter. */
 function DebouncedText({
   id,
   label,
   placeholder,
   value,
+  maxLength = 100,
   onCommit,
 }: {
   id: string;
   label: string;
   placeholder: string;
   value: string;
+  maxLength?: number;
   onCommit: (value: string) => void;
 }) {
   const [draft, setDraft] = useState(value);
@@ -796,15 +800,13 @@ function DebouncedText({
     if (draft.trim() !== value) onCommit(draft.trim());
   };
   return (
-    <div>
-      <label htmlFor={id} className={cn("mb-1 block text-xs text-ink-soft")}>
-        {label}
-      </label>
+    <Labelled label={label} htmlFor={id}>
       <Input
         id={id}
         value={draft}
-        maxLength={100}
+        maxLength={maxLength}
         placeholder={placeholder}
+        enterKeyHint="done"
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
         onKeyDown={(e) => {
@@ -812,6 +814,6 @@ function DebouncedText({
         }}
         className="h-11"
       />
-    </div>
+    </Labelled>
   );
 }

@@ -1,0 +1,149 @@
+/* The orders list — pages/orders/OrdersListPage.tsx and pages/orders/list/*.
+   Part of the liquid-glass layer (../liquid-glass.css): everything here is under the
+   same switch, so with data-glass="off" none of it applies and the component stands
+   on its own solid Tailwind classes. Fills, blur and rims come from the --lg-* variables.
+
+   Nothing here is blurred: the table is a sheet in the page flow (liquid-glass.css already
+   makes the card that holds a table one pane of glass with a tinted head), and the chips
+   lie on it. What this file adds is what is the orders list's own: the row under the
+   pointer and the selected row, the small chips beside a customer's name, and the chips
+   of the filters in effect.
+
+   Text: every tint below is mixed over a near-solid fill (--lg-control-lit), the same
+   recipe as the figures on the list kit's chips (glass/list.css, 5.0:1 or better for each
+   tone in both themes), with the deeper inks the glass layer keeps for tinted panes:
+   --lg-text-danger, --lg-text-primary, --color-accent-dark, --lg-ink-soft. A selected
+   row is a wash of the store's colour over that same fill, so the ink and the soft ink
+   written on it keep their contrast. */
+:root:not([data-glass="off"]) {
+  /* The store's colour as a quiet tint: «عميل جديد» beside a name, a filter in effect. */
+  --orders-tint-brand: color-mix(in srgb, var(--color-primary) 14%, var(--lg-control-lit));
+  --orders-tint-brand-lit: color-mix(in srgb, var(--color-primary) 20%, var(--lg-control-lit));
+  /* A chip that only counts ("+3"): the neutral bead. */
+  --orders-tint-neutral: color-mix(in srgb, var(--color-ink) 7%, var(--lg-control-lit));
+  /* A selected row under the pointer: one step deeper than at rest (--list-selected). */
+  --orders-selected-lit: color-mix(in srgb, var(--color-primary) 15%, var(--lg-control-lit));
+
+  &.dark {
+    --orders-tint-brand: color-mix(in srgb, var(--color-primary) 18%, var(--lg-control-lit));
+    --orders-tint-brand-lit: color-mix(in srgb, var(--color-primary) 26%, var(--lg-control-lit));
+    --orders-tint-neutral: color-mix(in srgb, #fff 9%, var(--lg-control-lit));
+    --orders-selected-lit: color-mix(in srgb, var(--color-primary) 24%, var(--lg-control-lit));
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Rows of the table. A row has no fill of its own: the sheet is the
+   * pane. Under the pointer or the keyboard it lights up (the tint
+   * every table row takes); selected, it is washed with the store's
+   * colour and its start edge carries the brand — the wash stays under
+   * the pointer, one step deeper, so pointing at a selected row never
+   * makes it look unselected.
+   * ---------------------------------------------------------------- */
+  .zimos-orders-table tbody tr.zimos-orders-row {
+    transition: background-color var(--dur-fade) var(--ease-out);
+  }
+  @media (hover: hover) {
+    .zimos-orders-table tbody tr.zimos-orders-row:hover {
+      background: var(--lg-row-lit);
+    }
+  }
+  .zimos-orders-table tbody tr.zimos-orders-row:focus-visible {
+    background: var(--lg-row-lit);
+  }
+  .zimos-orders-table tbody tr.zimos-orders-row[data-selected] {
+    background: var(--list-selected);
+  }
+  .zimos-orders-table tbody tr.zimos-orders-row[data-selected]:is(:hover, :focus-visible) {
+    background: var(--orders-selected-lit);
+  }
+  .zimos-orders-table tbody tr.zimos-orders-row[data-selected] > td:first-child {
+    border-inline-start-color: var(--lg-brand-solid);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .zimos-orders-table tbody tr.zimos-orders-row {
+      transition: none;
+    }
+  }
+
+  /* The order number under the name: ink at rest, the deeper brand shade when pointed at. */
+  @media (hover: hover) {
+    .zimos-order-number:hover {
+      color: var(--lg-text-primary);
+    }
+  }
+
+  /* ---------------------------------------------------------------- *
+   * The small chips beside a customer's name (and under a phone card):
+   * flagged and high risk in the danger tone, moderate risk, poor data
+   * and test in the attention tone, a new customer in the brand's. The
+   * word carries the meaning; the tint only helps. With no tone it is
+   * the neutral bead of the card's "+n".
+   * ---------------------------------------------------------------- */
+  .zimos-order-flag {
+    background-color: var(--orders-tint-neutral);
+    color: var(--lg-ink-soft);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 16%, transparent);
+    /* a white veil under the tint: on a board column the chip sits over the wallpaper, and the tint alone lets it through */
+    background-image: linear-gradient(rgb(255 255 255 / 0.6), rgb(255 255 255 / 0.6));
+  }
+  &.dark .zimos-order-flag {
+    background-image: none;
+  }
+  .zimos-order-flag[data-tone="danger"] {
+    background-color: var(--list-count-danger);
+    color: var(--lg-text-danger);
+  }
+  .zimos-order-flag[data-tone="attention"] {
+    background-color: var(--list-count-attention);
+    color: var(--color-accent-dark);
+  }
+  .zimos-order-flag[data-tone="info"] {
+    background-color: var(--orders-tint-brand);
+    /* a shade deeper than the link colour: the chip also sits on a board column, over the wallpaper */
+    color: color-mix(in srgb, var(--lg-text-primary) 72%, var(--color-ink));
+  }
+
+  /* ---------------------------------------------------------------- *
+   * A filter in effect, under the toolbar: a small pane tinted with
+   * the store's colour — set apart from the stage chips beside it,
+   * which are plain glass until chosen. Pressing it takes the filter
+   * off, so it gives under the pointer like any pressable pane.
+   * ---------------------------------------------------------------- */
+  .zimos-filter-chip {
+    background-color: var(--orders-tint-brand);
+    color: var(--lg-text-primary);
+    box-shadow: var(--lg-rim-line), 0 0 0 1px color-mix(in srgb, var(--color-primary) 24%, transparent);
+  }
+  @media (hover: hover) {
+    .zimos-filter-chip:hover {
+      background-color: var(--orders-tint-brand-lit);
+    }
+  }
+  .zimos-filter-chip:active {
+    background-color: var(--orders-tint-brand-lit);
+  }
+
+  /* If forced colours are on while this layer still is: system colours, no tints. */
+  @media (forced-colors: active) {
+    .zimos-orders-table tbody tr.zimos-orders-row[data-selected] {
+      background: Highlight;
+      color: HighlightText;
+    }
+    .zimos-order-flag,
+    .zimos-filter-chip {
+      background-color: Canvas;
+      color: CanvasText;
+      box-shadow: inset 0 0 0 1px CanvasText;
+    }
+  }
+}
+
+/* Layout, not material, so it holds with the glass layer off too. The dashboard gives every
+   table tall cells (index.css, "Comfort"); a row of this table already holds two lines and a
+   44px tick box, so its cells take less air: a row is about 62px, the head about 48px. */
+.glass-app main table.zimos-orders-grid td {
+  padding-block: 0.5rem;
+}
+.glass-app main table.zimos-orders-grid th {
+  padding-block: 0.125rem;
+}
