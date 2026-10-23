@@ -4,7 +4,7 @@ export const en: Dictionary = {
   meta: {
     title: "ZIMOS — Build. Sell. Grow.",
     description:
-      "ZIMOS is the commerce platform for cash-on-delivery brands in Egypt and the Arab world: your store and funnels, every order confirmed before it ships, shipping with your courier, and the real profit of each delivered order — on one screen.",
+      "ZIMOS is the commerce platform for cash-on-delivery brands in Egypt and the Arab world: your store and funnels, order confirmation by call or WhatsApp before shipping, shipping with your courier, and the real profit of each delivered order — on one screen.",
   },
 
   brand: {
@@ -49,19 +49,21 @@ export const en: Dictionary = {
     chips: {
       template: { title: "Template applied", detail: "Every word editable" },
       published: { title: "Store published", detail: "yourstore.zimos.co" },
-      order: { title: "New order", detail: "Confirmed on WhatsApp" },
+      order: { title: "Order confirmed", detail: "By call or WhatsApp" },
     },
   },
 
   integrations: {
     label: "Connects with",
     note: "Trademarks and logos belong to their owners.",
+    soon: "Soon",
+    manualTransfer: "Manual transfer via {name}",
   },
 
   templates: {
     kicker: "Store templates",
     heading: "Ready store designs. Pick one and make it yours.",
-    intro: "Real stores built on ZIMOS from its template library — each with its own phone layout, and every section, word, colour and picture yours to change.",
+    intro: "Stores built on ZIMOS from its template library — each with its own phone layout, and every section, word, colour and picture yours to change.",
     templateLabel: "Template {n}",
     categories: {
       "13": "Smart watches",
@@ -106,12 +108,12 @@ export const en: Dictionary = {
       {
         id: "confirmation",
         title: "Confirmed before it ships",
-        body: "An automatic WhatsApp message or your call team confirms every order, so you stop paying to ship orders nobody wants.",
+        body: "Your team confirms orders by call or WhatsApp from one queue before they ship, so you stop paying to ship orders nobody wants.",
       },
       {
         id: "shipping",
         title: "Delivered by your courier",
-        body: "Confirmed orders go to carriers such as Bosta, J&T and Aramex with a tracking code, and the cash collected is reconciled.",
+        body: "Confirmed orders go to Bosta, J&T or Mylerz with a tracking code, and the cash the courier collects is reconciled.",
       },
       {
         id: "analytics",
@@ -125,7 +127,7 @@ export const en: Dictionary = {
       feed: [
         { title: "New order", detail: "Checked for repeat and fake numbers" },
         { title: "Order confirmed", detail: "Tracking code issued" },
-        { title: "Delivered and collected", detail: "Closed on its own" },
+        { title: "Delivered", detail: "Status updated by the courier" },
       ],
     },
   },
@@ -133,7 +135,7 @@ export const en: Dictionary = {
   journey: {
     kicker: "How it works",
     heading: "From template to first order in five steps",
-    intro: "Three steps to build your store, and two that run on their own for every order after it.",
+    intro: "Three steps to build your store, then two for every order: confirm it, then ship it and see what it earned.",
     by: { you: "On you", auto: "Automatic", zimos: "On ZIMOS" },
     steps: [
       {
@@ -156,15 +158,15 @@ export const en: Dictionary = {
       },
       {
         id: "confirm",
-        by: "zimos",
-        title: "Orders confirmed",
-        body: "Every order is confirmed on WhatsApp before it ships.",
+        by: "you",
+        title: "Confirm orders",
+        body: "Your team confirms orders by call or WhatsApp before they ship.",
       },
       {
         id: "ship",
         by: "zimos",
         title: "Shipped and counted",
-        body: "It goes to your courier with a tracking code and lands in your real profit.",
+        body: "Booked with your courier — by you, or automatically once it's confirmed — with a tracking code, and counted in your real profit.",
       },
     ],
   },
@@ -300,17 +302,17 @@ export const en: Dictionary = {
       {
         question: "How does order confirmation work?",
         answer:
-          "Every new order passes a confirmation step before it ships: an automatic WhatsApp message the customer answers with 1 to confirm or 2 to cancel, or your team working through a call queue. Only confirmed orders ship.",
+          "New cash-on-delivery orders wait in a confirmation queue, and your team confirms them by call or WhatsApp before shipping. A cash-on-delivery order can't be booked with a courier until it's confirmed, and an order paid in advance ships once its payment is in.",
       },
       {
         question: "Which couriers can I ship with?",
         answer:
-          "ZIMOS is built to work with local carriers such as Bosta, J&T and Aramex. The carriers available to you depend on your country and account — the current list is in your dashboard.",
+          "Bosta, J&T Express and Mylerz: connect your own account with each from the dashboard and book shipments with a tracking code. Aramex and Turbo are coming soon. A shipment you booked another way can still be added to the order by its waybill number.",
       },
       {
         question: "Do I have to sell with cash on delivery?",
         answer:
-          "No. Cash on delivery is fully supported, and you can also take online payments through providers such as Paymob and InstaPay where they're available to your business.",
+          "No. Cash on delivery is fully supported. You can also take card and wallet payments online through Paymob or Kashier, once you connect your own account with them under Payments in the dashboard, and accept InstaPay as a manual transfer: the customer sends proof of the transfer and your team approves it.",
       },
       {
         question: "Can I use my own domain?",
@@ -325,7 +327,7 @@ export const en: Dictionary = {
       {
         question: "Can my team work in the same account?",
         answer:
-          "Yes. Invite teammates and give each one a role — confirmation agents, for example, see only the order queue.",
+          "Yes. Invite teammates and give each one a role — a confirmation agent, for example, sees orders and customers and confirms orders, without your settings, products or finances.",
       },
     ],
   },

@@ -1285,7 +1285,7 @@ html {
   block-size: 100%;
 }
 
-/* Brands whose logo is the name itself (Aramex, InstaPay). */
+/* Brands whose logo is the name itself (Aramex, Turbo, InstaPay). */
 .lz-logo--word {
   inline-size: auto;
   padding: 6px 10px;
@@ -1295,6 +1295,26 @@ html {
   block-size: 16px;
   inline-size: auto;
   max-inline-size: none;
+}
+
+/* A mark drawn white for a dark ground (Turbo). */
+.lz-logo--dark {
+  background: #0b1220;
+  box-shadow: none;
+}
+
+/* Not connected yet: the mark dimmed, and "Soon" after it. */
+.lz-marquee__track li.is-soon .lz-logo {
+  opacity: 0.6;
+}
+
+.lz-soon {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: var(--lz-soft);
+  color: var(--lz-accent-deep);
 }
 
 /* Track = the list twice, so moving it by half lands on the same picture. */

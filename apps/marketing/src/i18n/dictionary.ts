@@ -99,6 +99,10 @@ export interface Dictionary {
   integrations: {
     label: string;
     note: string;
+    /** Beside a platform not connected yet. */
+    soon: string;
+    /** Instead of InstaPay's name: "Manual transfer via {name}". */
+    manualTransfer: string;
   };
 
   benefits: {
