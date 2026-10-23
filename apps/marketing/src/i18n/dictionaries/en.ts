@@ -77,6 +77,7 @@ export const en: Dictionary = {
     swipeHint: "Swipe to see more stores",
     cta: "Pick your template",
     caption: "Real screenshots of the ZIMOS storefront — demo products and pictures.",
+    creditsLead: "The store designs on this page are adapted from free templates:",
   },
 
   benefits: {

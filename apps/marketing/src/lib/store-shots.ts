@@ -13,6 +13,21 @@ export const STORE_SHOTS: Record<string, { desk: string; phone: string }> = Obje
   LOOKS.map((look) => [look, { desk: `/stores/look-${look}-desk.webp`, phone: `/stores/look-${look}-phone.webp` }]),
 );
 
+/**
+ * The credit each look's licence asks for wherever its design is shown,
+ * copied from the storefront's XS_CREDITS (apps/storefront/src/lib/xsShell.ts;
+ * store-shots.test.ts keeps the two equal), with a link to the licence where
+ * it has one. Written under the gallery, it covers the hero's looks too.
+ */
+export const SHOT_CREDITS: Record<string, { name: string; author: string; href: string; licence: string; licenceHref?: string }> = {
+  "04": { name: "Ashion", author: "Colorlib", href: "https://colorlib.com", licence: "CC BY 3.0", licenceHref: "https://creativecommons.org/licenses/by/3.0/" },
+  "07": { name: "Fruitables", author: "HTML Codex", href: "https://htmlcodex.com", licence: "CC BY 4.0", licenceHref: "https://creativecommons.org/licenses/by/4.0/" },
+  "08": { name: "Karma", author: "Colorlib", href: "https://colorlib.com", licence: "CC BY 3.0", licenceHref: "https://creativecommons.org/licenses/by/3.0/" },
+  "10": { name: "Estore", author: "Colorlib", href: "https://colorlib.com", licence: "CC BY 3.0", licenceHref: "https://creativecommons.org/licenses/by/3.0/" },
+  "11": { name: "Swanky", author: "TemplatesJungle", href: "https://templatesjungle.com", licence: "free with attribution" },
+  "13": { name: "Watch", author: "Colorlib", href: "https://colorlib.com", licence: "CC BY 3.0", licenceHref: "https://creativecommons.org/licenses/by/3.0/" },
+};
+
 /** The stores the hero cycles through, one after the other. */
 export const HERO_LOOKS = ["13", "08", "11"] as const;
 

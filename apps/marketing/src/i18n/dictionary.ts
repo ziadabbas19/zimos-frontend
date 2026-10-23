@@ -93,6 +93,8 @@ export interface Dictionary {
     swipeHint: string;
     cta: string;
     caption: string;
+    /** Before the list of the designs' credits (lib/store-shots.ts SHOT_CREDITS). */
+    creditsLead: string;
   };
 
   /** The strip of platforms under the hero; their names are not translated. */

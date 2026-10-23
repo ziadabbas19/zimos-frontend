@@ -1,11 +1,11 @@
 /* eslint-disable @next/next/no-img-element -- the captures are already sized and compressed for the page. */
 import type { Dictionary } from "@/i18n/dictionary";
 import { REGISTER_URL } from "@/lib/urls";
-import { GALLERY_LOOKS, STORE_SHOTS } from "@/lib/store-shots";
+import { GALLERY_LOOKS, SHOT_CREDITS, STORE_SHOTS } from "@/lib/store-shots";
 import { Arrow } from "./duo-icons";
 
 /**
- * Real stores built from the template library. On a computer each card is
+ * Stores built from the template library. On a computer each card is
  * the store's home page in a browser frame — pointing at it scrolls the page
  * — with the same store on a phone at its corner. On a phone screen the
  * cards become a row you swipe through, each one a phone showing the store
@@ -63,6 +63,34 @@ export function TemplatesGallery({ copy }: { copy: Dictionary["templates"] }) {
           </a>
         </p>
         <p className="lz-show__cap lz-tpl__cap">{copy.caption}</p>
+        {/* The designs' licences ask for this credit wherever they are shown, the hero included. */}
+        <p className="lz-tpl__credits">
+          {copy.creditsLead}{" "}
+          {GALLERY_LOOKS.map((look, i) => {
+            const { name, author, href, licence, licenceHref } = SHOT_CREDITS[look];
+            return (
+              <span key={look}>
+                {i > 0 ? " · " : null}
+                {copy.templateLabel.replace("{n}", look)}:{" "}
+                <bdi lang="en" dir="ltr">
+                  {name} by{" "}
+                  <a href={href} target="_blank" rel="noopener noreferrer">
+                    {author}
+                  </a>{" "}
+                  (
+                  {licenceHref ? (
+                    <a href={licenceHref} target="_blank" rel="noopener noreferrer">
+                      {licence}
+                    </a>
+                  ) : (
+                    licence
+                  )}
+                  )
+                </bdi>
+              </span>
+            );
+          })}
+        </p>
       </div>
     </section>
   );
