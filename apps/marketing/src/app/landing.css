@@ -430,6 +430,23 @@ html {
   pointer-events: auto;
 }
 
+/* The footer is on screen (it has both switches): the corner steps aside
+   rather than cover the footer's links. */
+.lz-corner {
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s;
+}
+
+.lz-corner.is-away {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.lz-corner.is-away > * {
+  pointer-events: none;
+}
+
 .lz-lang-pill {
   display: inline-flex;
   align-items: center;

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { createElement } from "react";
 import type { MouseEvent, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -164,6 +164,34 @@ describe("the bottom corner", () => {
     fireEvent.click(pill);
     expect(followed).toEqual(["/ar/pricing"]);
     expect(JSON.parse(sessionStorage.getItem("lz-place") ?? "null")).toMatchObject({ to: "/ar/pricing" });
+  });
+
+  it("steps aside while the footer, which has both switches, is on screen", () => {
+    let report: (entries: Array<{ isIntersecting: boolean }>) => void = () => {};
+    const observed: Element[] = [];
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(callback: typeof report) {
+          report = callback;
+        }
+        observe(el: Element) {
+          observed.push(el);
+        }
+        disconnect() {}
+      },
+    );
+    const foot = document.body.appendChild(document.createElement("footer"));
+    pathname = "/en";
+    const { container } = renderHeader();
+    const corner = container.querySelector(".lz-corner")!;
+    expect(observed).toEqual([foot]);
+    expect(corner.classList.contains("is-away")).toBe(false);
+    act(() => report([{ isIntersecting: true }]));
+    expect(corner.classList.contains("is-away")).toBe(true);
+    act(() => report([{ isIntersecting: false }]));
+    expect(corner.classList.contains("is-away")).toBe(false);
+    foot.remove();
   });
 
   it("switching the theme there moves nothing", () => {

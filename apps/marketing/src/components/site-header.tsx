@@ -35,6 +35,7 @@ export function SiteHeader() {
   const home = `/${locale}`;
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [footerShown, setFooterShown] = useState(false);
   const bar = useRef<HTMLElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
   const sheetId = useId();
@@ -67,6 +68,17 @@ export function SiteHeader() {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // From 601px to 1080px the footer's row wraps under the corner buttons,
+  // which would cover its links. The footer has both switches, so while it
+  // is on screen the corner steps aside.
+  useEffect(() => {
+    const foot = document.querySelector("footer");
+    if (!foot || !("IntersectionObserver" in window)) return;
+    const io = new IntersectionObserver(([entry]) => setFooterShown(entry.isIntersecting));
+    io.observe(foot);
+    return () => io.disconnect();
   }, []);
 
   useEffect(() => {
@@ -171,7 +183,7 @@ export function SiteHeader() {
           </div>
         </div>
       </header>
-      <div className="lz-corner">
+      <div className={`lz-corner${footerShown ? " is-away" : ""}`}>
         <LocalePill />
         <ThemeToggle className="lz-corner__theme" />
       </div>
