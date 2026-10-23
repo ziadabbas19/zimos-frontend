@@ -1231,7 +1231,9 @@ html {
   list-style: none;
   margin: 0;
   padding: 0;
-  animation: lz-marquee 38s linear infinite;
+  /* 38s for the first ten platforms; the list grew by about half (2026-10-23),
+     so the time did too and the strip keeps its pace. */
+  animation: lz-marquee 56s linear infinite;
 }
 
 [dir="rtl"] .lz-marquee__track {
