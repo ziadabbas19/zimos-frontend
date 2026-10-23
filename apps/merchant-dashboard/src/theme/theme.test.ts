@@ -405,3 +405,37 @@ describe("the glow colours of the glass backdrop", () => {
     }
   });
 });
+
+describe("the side menu's group headings", () => {
+  const tokens = read("ui/theme/tokens.css");
+  const menuCss = read("ui/theme/glass/menu.css");
+
+  it("are drawn in the brand, in the side menu, the pinned group and the phone menu", () => {
+    const heading = /className="zimos-menu-heading [^"]*"/.exec(read("components/shell/SidebarNav.tsx"))?.[0] ?? "";
+    expect(heading).toContain("text-[12px] font-semibold text-primary");
+    expect(heading).not.toContain("text-ink-soft");
+    expect(read("components/SidebarShortcuts.tsx")).toContain('"min-w-0 flex-1 truncate font-semibold text-primary", sheet ? "text-[13px]" : "text-[12px]"');
+    expect(read("components/shell/PhoneMenu.tsx")).toMatch(/<h3 id=\{headingId\} className="[^"]*text-\[13px\] font-semibold tracking-normal text-primary"/);
+  });
+
+  it("take the brand's pane shade with glass on, and full ink when pointed at", () => {
+    const brandRule = menuCss.indexOf(".glass-app .zimos-menu-heading.text-primary {");
+    const hoverRule = menuCss.indexOf(".glass-app .zimos-menu-heading:is(:hover, :focus-visible) {");
+    expect(brandRule).toBeGreaterThan(0);
+    expect(menuCss.slice(brandRule, menuCss.indexOf("}", brandRule))).toContain("color: var(--lg-text-primary);");
+    // Same weight of selector: the pointed-at rule comes after, so it still wins.
+    expect(hoverRule).toBeGreaterThan(brandRule);
+  });
+
+  it("hold 4.5:1 on the light side menu and phone menu without glass; Dark, Black, the tone and the glass panes are held above", () => {
+    // Without glass both menus are the raised surface. The dark looks and every tone hold `primary`
+    // in "keeps text and the accents at 4.5:1 or better on every surface", and the glass pane holds
+    // --lg-text-primary in "keeps text at 4.5:1 over the brightest palette".
+    const light = tokens.slice(0, tokens.indexOf("\n.dark {"));
+    const brand = colour(tokens, "--brand");
+    expect(contrast(brand, colour(light, "--color-paper-raised"))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(brand, colour(light, "--color-paper"))).toBeGreaterThanOrEqual(4.5);
+    const dark = rule(tokens, "\n.dark");
+    expect(contrast(mix(brand, share(dark, "--color-primary"), WHITE), colour(dark, "--color-paper-raised"))).toBeGreaterThanOrEqual(4.5);
+  });
+});

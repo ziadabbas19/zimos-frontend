@@ -123,7 +123,7 @@ export function SidebarShortcuts({ onNavigate, variant = "rail" }: SidebarShortc
   return (
     <div data-slot="menu-shortcuts">
       <div className={cn("flex items-center gap-1", sheet ? "min-h-8 ps-1 pb-1" : "h-7 ps-3 pe-0.5 pointer-coarse:h-11")}>
-        <span className={cn("min-w-0 flex-1 truncate font-semibold text-ink-soft", sheet ? "text-[13px]" : "text-[11px]")}>{t.heading}</span>
+        <span className={cn("min-w-0 flex-1 truncate font-semibold text-primary", sheet ? "text-[13px]" : "text-[12px]")}>{t.heading}</span>
         {current && current.to !== "/" && (
           <button
             type="button"

@@ -240,7 +240,7 @@ export function SidebarNav({ shortcuts }: { shortcuts?: ReactNode }) {
                     aria-expanded={!isClosed}
                     aria-controls={rowsId}
                     aria-label={fmt(isClosed ? t.expandGroup : t.collapseGroup, { group: heading })}
-                    className="zimos-menu-heading group/heading flex h-7 w-full cursor-pointer items-center gap-1 rounded-full ps-3 pe-2 text-start text-[11px] font-semibold text-ink-soft transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none pointer-coarse:h-11"
+                    className="zimos-menu-heading group/heading flex h-7 w-full cursor-pointer items-center gap-1 rounded-full ps-3 pe-2 text-start text-[12px] font-semibold text-primary transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none pointer-coarse:h-11"
                   >
                     <span className="min-w-0 flex-1 truncate">{heading}</span>
                     {/* The caret shows when the heading is pointed at or focused. A finger has

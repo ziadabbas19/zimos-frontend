@@ -52,9 +52,15 @@
   }
 
   /* A group's heading (and the pinned group's): secondary ink, one step deeper
-     on the tinted pane; full ink while it is pointed at or focused. */
+     on the tinted pane; full ink while it is pointed at or focused. A heading
+     drawn in the brand (text-primary: the dashboard's side menu) takes the
+     brand's text shade for a pane instead, which holds 4.5:1 over the
+     backdrop like the other coloured text (theme.test.ts). */
   .glass-app .zimos-menu-heading {
     color: var(--lg-ink-soft);
+  }
+  .glass-app .zimos-menu-heading.text-primary {
+    color: var(--lg-text-primary);
   }
   .glass-app .zimos-menu-heading:is(:hover, :focus-visible) {
     color: var(--color-ink);
