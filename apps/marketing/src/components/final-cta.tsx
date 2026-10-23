@@ -1,12 +1,9 @@
 /* eslint-disable @next/next/no-img-element -- the captures are already sized and compressed for the page. */
 import type { Dictionary } from "@/i18n/dictionary";
-import { STORE_SHOTS } from "@/lib/store-shots";
+import { END_LOOKS, STORE_SHOTS } from "@/lib/store-shots";
 import { LOGIN_URL, REGISTER_URL } from "@/lib/urls";
 import { Backdrop } from "./backdrop";
 import { Arrow } from "./duo-icons";
-
-/** Three stores on phones, rising from the bottom of the band, the middle one in front. */
-const END_LOOKS = ["11", "10", "13"];
 
 /**
  * The navy closing band: the last push, the way in and the way back for

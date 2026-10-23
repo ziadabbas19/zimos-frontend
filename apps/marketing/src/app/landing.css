@@ -1473,12 +1473,15 @@ html {
 }
 
 /* ══ 2b) Templates — real stores, scroll on hover ═════════════════════ */
+/* Four stores (lib/store-shots.ts): two by two, in a row narrower than the
+   page so the cards don't grow too large. */
 .lz-tpl {
   display: grid;
-  gap: 28px 20px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px 24px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-inline-size: 60rem;
   list-style: none;
-  margin: 0;
+  margin: 0 auto;
   padding: 0;
 }
 
@@ -1630,12 +1633,6 @@ html {
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 2px;
-}
-
-@media (max-width: 1000px) {
-  .lz-tpl {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 /* Phones: a row to swipe through, each card a phone showing the store as a

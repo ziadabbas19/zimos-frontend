@@ -68,8 +68,6 @@ export const en: Dictionary = {
     categories: {
       "13": "Smart watches",
       "08": "Shoes and sportswear",
-      "11": "Fashion",
-      "07": "Food and groceries",
       "04": "Fashion and beauty",
       "10": "Winter wear",
     },

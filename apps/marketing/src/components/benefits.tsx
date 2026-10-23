@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- the captures are already sized and compressed for the page. */
 import type { CSSProperties } from "react";
 import type { Capability, Dictionary } from "@/i18n/dictionary";
-import { STORE_SHOTS } from "@/lib/store-shots";
+import { FAN_LOOKS, STORE_SHOTS } from "@/lib/store-shots";
 import { ColorIcon, type ColorIconName } from "./color-icon";
 import { Check } from "./duo-icons";
 
@@ -17,9 +17,6 @@ const ITEM_ICON: Record<Capability["id"], ColorIconName> = {
 /** Templates, editor, phone layout, two languages, your domain — the big card's chips. */
 const CHIP_ICON: ColorIconName[] = ["brush", "edit", "phone", "globe", "link"];
 const FEED_ICON: ColorIconName[] = ["shield", "tracking", "check"];
-
-/** Three templates fanned out in the big card, the middle one in front. */
-const FAN_LOOKS = ["04", "07", "08"];
 
 const delay = (i: number) => ({ "--i": i }) as CSSProperties;
 
