@@ -4,7 +4,7 @@ export const en: Dictionary = {
   meta: {
     title: "ZIMOS — Build. Sell. Grow.",
     description:
-      "ZIMOS is the commerce platform for cash-on-delivery brands in Egypt and the Arab world: your store and funnels, order confirmation by call or WhatsApp before shipping, shipping with your courier, and the real profit of each delivered order — on one screen.",
+      "ZIMOS is the commerce platform for cash-on-delivery brands in Egypt and the Arab world: your store and funnels, order confirmation before shipping, shipping with your courier, and the real profit of each delivered order — on one screen.",
   },
 
   brand: {
@@ -49,7 +49,7 @@ export const en: Dictionary = {
     chips: {
       template: { title: "Template applied", detail: "Every word editable" },
       published: { title: "Store published", detail: "yourstore.zimos.co" },
-      order: { title: "Order confirmed", detail: "By call or WhatsApp" },
+      order: { title: "Order confirmed", detail: "Ready to ship" },
     },
   },
 
@@ -109,7 +109,7 @@ export const en: Dictionary = {
       {
         id: "confirmation",
         title: "Confirmed before it ships",
-        body: "Your team confirms orders by call or WhatsApp from one queue before they ship, so you stop paying to ship orders nobody wants.",
+        body: "Your team confirms orders from one queue before they ship — by call, and by WhatsApp message on the plans that include it — so you stop paying to ship orders nobody wants.",
       },
       {
         id: "shipping",
@@ -161,7 +161,7 @@ export const en: Dictionary = {
         id: "confirm",
         by: "you",
         title: "Confirm orders",
-        body: "Your team confirms orders by call or WhatsApp before they ship.",
+        body: "Your team confirms orders before they ship: by call, and by WhatsApp message on the plans that include it.",
       },
       {
         id: "ship",
@@ -303,7 +303,7 @@ export const en: Dictionary = {
       {
         question: "How does order confirmation work?",
         answer:
-          "New cash-on-delivery orders wait in a confirmation queue, and your team confirms them by call or WhatsApp before shipping. A cash-on-delivery order can't be booked with a courier until it's confirmed, and an order paid in advance ships once its payment is in.",
+          "New cash-on-delivery orders wait in a confirmation queue, and your team confirms them before shipping: by call, and by WhatsApp message on the plans that include it. A cash-on-delivery order can't be booked with a courier until it's confirmed, and an order paid in advance ships once its payment is in.",
       },
       {
         question: "Which couriers can I ship with?",
