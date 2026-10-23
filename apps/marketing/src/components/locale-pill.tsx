@@ -4,23 +4,28 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { locales, otherLocale } from "@/i18n/config";
 import { useI18n } from "@/i18n/provider";
+import { keepPlaceOnClick } from "@/lib/keep-place";
 
 const localePrefix = new RegExp(`^/(${locales.join("|")})(?=/|$)`);
 
 /**
  * The language switch, floating at the bottom corner of the screen (as on
  * lightfunnels.com) with the theme switch beside it (`.lz-corner`, in
- * SiteHeader): the other language's name, to the same page in it. Hidden
- * on phones, where the language sits in the header's sheet.
+ * SiteHeader): the other language's name, to the same page in it, at the
+ * same place (lib/keep-place.ts). Hidden on phones, where the language
+ * sits in the header's sheet.
  */
 export function LocalePill() {
   const { locale, dict } = useI18n();
   const pathname = usePathname() || `/${locale}`;
   const target = otherLocale(locale);
+  const href = `/${target}${pathname.replace(localePrefix, "")}`;
 
   return (
     <Link
-      href={`/${target}${pathname.replace(localePrefix, "")}`}
+      href={href}
+      scroll={false}
+      onClick={(event) => keepPlaceOnClick(event, href)}
       hrefLang={target}
       lang={target}
       // The visible name first, so what is read out contains what is shown.

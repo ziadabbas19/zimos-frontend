@@ -110,6 +110,20 @@ describe("the logo", () => {
   });
 });
 
+describe("the phone sheet's AR | EN", () => {
+  it("keeps the place for the other language only; neither link scrolls", () => {
+    pathname = "/en";
+    renderHeader();
+    const group = screen.getByRole("group", { name: dict.nav.languageLabel, hidden: true });
+    const [ar, en] = Array.from(group.querySelectorAll("a"));
+    expect([ar.getAttribute("data-scroll"), en.getAttribute("data-scroll")]).toEqual(["false", "false"]);
+    fireEvent.click(en);
+    expect(sessionStorage.getItem("lz-place")).toBeNull();
+    fireEvent.click(ar);
+    expect(JSON.parse(sessionStorage.getItem("lz-place") ?? "null")).toMatchObject({ to: "/ar" });
+  });
+});
+
 describe("the bottom corner", () => {
   it("holds the language switch and the light/dark switch, side by side", () => {
     pathname = "/en/pricing";
@@ -120,6 +134,16 @@ describe("the bottom corner", () => {
     expect(first?.getAttribute("href")).toBe("/ar/pricing");
     expect(second?.matches("button.lz-corner__theme")).toBe(true);
     expect(second?.getAttribute("aria-label")).toBe(dict.nav.switchToDark);
+  });
+
+  it("the language switch opens the other language without Next's scroll, keeping the place for it", () => {
+    pathname = "/en/pricing";
+    const { container } = renderHeader();
+    const pill = container.querySelector<HTMLAnchorElement>(".lz-corner a.lz-lang-pill")!;
+    expect(pill.getAttribute("data-scroll")).toBe("false");
+    fireEvent.click(pill);
+    expect(followed).toEqual(["/ar/pricing"]);
+    expect(JSON.parse(sessionStorage.getItem("lz-place") ?? "null")).toMatchObject({ to: "/ar/pricing" });
   });
 
   it("switching the theme there moves nothing", () => {

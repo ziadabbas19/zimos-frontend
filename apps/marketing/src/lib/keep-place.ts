@@ -136,6 +136,11 @@ export function keepPlace(to: string): void {
   write({ to, at, root: root.id ? `#${root.id}` : root.localName, trail: trailTo(el, root), fraction });
 }
 
+/** A language link's onClick: a plain click keeps the place for the page it opens. */
+export function keepPlaceOnClick(event: Parameters<typeof isPlainClick>[0], to: string): void {
+  if (isPlainClick(event)) keepPlace(to);
+}
+
 /** Open the page at `to` at its top (the logo, from another page). */
 export function keepTop(to: string): void {
   write({ to, at: Date.now(), top: true });

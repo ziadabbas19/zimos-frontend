@@ -4,9 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { locales, otherLocale } from "@/i18n/config";
 import { useI18n } from "@/i18n/provider";
+import { keepPlaceOnClick } from "@/lib/keep-place";
 
 const localePrefix = new RegExp(`^/(${locales.join("|")})(?=/|$)`);
 
+/** The footer's language switch: the same page in the other language, at the same place (lib/keep-place.ts). */
 export function LocaleSwitcher({ className = "" }: { className?: string }) {
   const { locale, dict } = useI18n();
   const pathname = usePathname() || `/${locale}`;
@@ -18,6 +20,8 @@ export function LocaleSwitcher({ className = "" }: { className?: string }) {
   return (
     <Link
       href={href}
+      scroll={false}
+      onClick={(event) => keepPlaceOnClick(event, href)}
       hrefLang={target}
       lang={target}
       // The visible name first, so what is read out contains what is shown.
