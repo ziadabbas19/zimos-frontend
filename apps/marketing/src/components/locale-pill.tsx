@@ -9,8 +9,9 @@ const localePrefix = new RegExp(`^/(${locales.join("|")})(?=/|$)`);
 
 /**
  * The language switch, floating at the bottom corner of the screen (as on
- * lightfunnels.com): the other language's name, to the same page in it.
- * Hidden on phones, where the language sits in the header's sheet.
+ * lightfunnels.com) with the theme switch beside it (`.lz-corner`, in
+ * SiteHeader): the other language's name, to the same page in it. Hidden
+ * on phones, where the language sits in the header's sheet.
  */
 export function LocalePill() {
   const { locale, dict } = useI18n();

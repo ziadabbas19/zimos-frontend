@@ -15,10 +15,10 @@ import { ZimosLogo } from "./zimos-logo";
  * window (owner, 2026-10-22, after lightfunnels.com) — logo, the section links
  * in the middle, sign in outlined and the way in in the brand blue. It keeps
  * floating as the page scrolls, with a deeper shadow. The language switch
- * waits in a pill at the bottom corner of the screen, and the theme switch
- * sits in the footer. Below 1081px the links, the language and the theme
- * move into a sheet that opens inside the card, from the menu button, and
- * closes on a choice, Esc, a click outside, or the screen growing back.
+ * and the theme switch wait side by side at the bottom corner of the screen
+ * (the footer has both too). Below 1081px the links, the language and the
+ * theme move into a sheet that opens inside the card, from the menu button,
+ * and closes on a choice, Esc, a click outside, or the screen growing back.
  */
 export function SiteHeader() {
   const { locale, dict } = useI18n();
@@ -134,7 +134,10 @@ export function SiteHeader() {
           </div>
         </div>
       </header>
-      <LocalePill />
+      <div className="lz-corner">
+        <LocalePill />
+        <ThemeToggle className="lz-corner__theme" />
+      </div>
     </>
   );
 }

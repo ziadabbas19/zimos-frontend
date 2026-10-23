@@ -413,12 +413,24 @@ html {
   text-decoration: none;
 }
 
-/* The language, floating at the bottom corner of the screen. */
-.lz-lang-pill {
+/* The language and the theme, side by side at the bottom corner of the
+   screen. Only the two buttons take clicks, not the gap between them. */
+.lz-corner {
   position: fixed;
   z-index: 60;
   inset-block-end: 18px;
   inset-inline-start: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.lz-corner > * {
+  pointer-events: auto;
+}
+
+.lz-lang-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -444,6 +456,35 @@ html {
 }
 
 .lz-lang-pill:focus-visible {
+  outline: 2px solid var(--lz-accent);
+  outline-offset: 3px;
+}
+
+/* The light/dark switch beside it: the pill's height, frame and shadow. */
+.lz-corner__theme {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  inline-size: 44px;
+  block-size: 44px;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid var(--lz-line);
+  background: var(--lz-card);
+  color: var(--lz-ink);
+  box-shadow: 0 12px 30px -14px rgb(var(--lz-sh) / 0.4);
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.lz-corner__theme:hover {
+  border-color: var(--lz-pin);
+  color: var(--lz-accent);
+}
+
+.lz-corner__theme:focus-visible {
   outline: 2px solid var(--lz-accent);
   outline-offset: 3px;
 }
@@ -503,8 +544,8 @@ html {
     block-size: 40px;
   }
 
-  /* On a phone the language sits in the sheet. */
-  .lz-lang-pill {
+  /* On a phone the language and the theme sit in the sheet. */
+  .lz-corner {
     display: none;
   }
 }
