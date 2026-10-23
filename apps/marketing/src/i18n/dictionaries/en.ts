@@ -57,7 +57,7 @@ export const en: Dictionary = {
     label: "Connects with",
     note: "Trademarks and logos belong to their owners.",
     soon: "Soon",
-    manualTransfer: "Manual transfer via {name}",
+    manualTransfer: "Manual transfer",
   },
 
   templates: {
@@ -308,7 +308,7 @@ export const en: Dictionary = {
       {
         question: "Which couriers can I ship with?",
         answer:
-          "Bosta, J&T Express and Mylerz: connect your own account with each from the dashboard and book shipments with a tracking code. Aramex and Turbo are coming soon. A shipment you booked another way can still be added to the order by its waybill number.",
+          "Bosta, J&T Express and Mylerz: connect your own account with each from the dashboard and book shipments with a tracking code. Turbo is coming soon. A shipment you booked another way can still be added to the order by its waybill number.",
       },
       {
         question: "Do I have to sell with cash on delivery?",

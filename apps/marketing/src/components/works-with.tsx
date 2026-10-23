@@ -16,7 +16,9 @@ type Platform = {
  * from each company's site, Wikimedia Commons for the Aramex and J&T
  * wordmarks, and Simple Icons (CC0) for WhatsApp, Facebook, TikTok and
  * Snapchat. `full` marks are a filled square already; `word` marks are the
- * name itself, so no name is written beside them.
+ * name itself, so no name is written beside them. Aramex is off the strip
+ * until there is an Aramex courier to connect (the owner, 2026-10-23); its
+ * file stays in public/integrations.
  *
  * Added 2026-10-23 from each company's own site, resized only (none of the
  * three is on Wikimedia Commons or Simple Icons, and the sites state no
@@ -39,7 +41,6 @@ const PLATFORMS: Platform[] = [
   { name: "Bosta", src: "bosta.png", kind: "full" },
   { name: "J&T Express", src: "jt-express.png", kind: "full" },
   { name: "Mylerz", src: "mylerz.png" },
-  { name: "Aramex", src: "aramex.svg", kind: "word", tag: "soon" },
   { name: "Turbo", src: "turbo.png", kind: "word", dark: true, tag: "soon" },
   { name: "Paymob", src: "paymob.png" },
   { name: "Kashier", src: "kashier.png" },
@@ -55,16 +56,14 @@ const PLATFORMS: Platform[] = [
 export function WorksWith({ copy }: { copy: Dictionary["integrations"] }) {
   const items = (duplicate: boolean) =>
     PLATFORMS.map(({ name, src, kind, dark, tag }) => {
-      const manual = tag === "manual" ? copy.manualTransfer.replace("{name}", name) : null;
       const logo = ["lz-logo", kind && `lz-logo--${kind}`, dark && "lz-logo--dark"].filter(Boolean).join(" ");
       return (
         <li key={`${name}-${duplicate}`} aria-hidden={duplicate || undefined} className={tag === "soon" ? "is-soon" : undefined}>
           <span className={logo}>
-            {/* The name is read from the mark only when no text beside it says it. */}
-            <img src={`/integrations/${src}`} alt={kind === "word" && !manual ? name : ""} loading="lazy" decoding="async" />
+            <img src={`/integrations/${src}`} alt={kind === "word" ? name : ""} loading="lazy" decoding="async" />
           </span>
-          {manual ? (
-            <span>{manual}</span>
+          {tag === "manual" ? (
+            <span>{copy.manualTransfer}</span>
           ) : kind === "word" ? null : (
             <span lang="en" dir="ltr">
               {name}

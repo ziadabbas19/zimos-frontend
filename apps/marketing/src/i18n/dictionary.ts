@@ -103,7 +103,7 @@ export interface Dictionary {
     note: string;
     /** Beside a platform not connected yet. */
     soon: string;
-    /** Instead of InstaPay's name: "Manual transfer via {name}". */
+    /** Beside InstaPay's mark: it is a manual transfer, not a connection. */
     manualTransfer: string;
   };
 
