@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useI18n } from "@/i18n/provider";
+import { isPlainClick, keepTop, restorePlace } from "@/lib/keep-place";
 import { LOGIN_URL, REGISTER_URL } from "@/lib/urls";
 import { List, X } from "./duo-icons";
 import { LocalePill } from "./locale-pill";
@@ -19,15 +22,42 @@ import { ZimosLogo } from "./zimos-logo";
  * (the footer has both too). Below 1081px the links, the language and the
  * theme move into a sheet that opens inside the card, from the menu button,
  * and closes on a choice, Esc, a click outside, or the screen growing back.
+ *
+ * The logo goes to the top of the home page: on the home page it scrolls
+ * up; from another page it opens the home page at its top. The page this
+ * header mounts on puts back a place kept by the logo or the language
+ * switch (lib/keep-place.ts) before it is painted.
  */
 export function SiteHeader() {
   const { locale, dict } = useI18n();
   const { nav } = dict;
+  const pathname = usePathname();
+  const home = `/${locale}`;
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const bar = useRef<HTMLElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
   const sheetId = useId();
+
+  useLayoutEffect(() => {
+    if (pathname) restorePlace(pathname);
+  }, [pathname]);
+
+  // Next's own scroll on these links lands the page in the middle (the
+  // sticky header sits above `scroll-padding-top`, so Next scrolls each part
+  // of the page into view in turn, smoothly, and the header's turn wins), and
+  // the home page's own address does not scroll at all. The logo does it.
+  const onLogo = (event: ReactMouseEvent<HTMLAnchorElement>) => {
+    setOpen(false);
+    if (!isPlainClick(event)) return;
+    if (pathname === home) {
+      event.preventDefault();
+      if (window.location.hash) window.history.replaceState(null, "", home);
+      window.scrollTo({ top: 0 });
+    } else {
+      keepTop(home);
+    }
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -78,7 +108,7 @@ export function SiteHeader() {
 
         <div className="lz-top__card">
           <div className="lz-top__in">
-            <Link href={`/${locale}`} aria-label={nav.homeAria} className="lz-top__brand" onClick={() => setOpen(false)}>
+            <Link href={home} scroll={false} aria-label={nav.homeAria} className="lz-top__brand" onClick={onLogo}>
               <ZimosLogo height={36} />
             </Link>
 
