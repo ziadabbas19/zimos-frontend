@@ -10,7 +10,7 @@ import { LOGIN_URL, REGISTER_URL } from "@/lib/urls";
 import { List, X } from "./duo-icons";
 import { LocalePill } from "./locale-pill";
 import { LocaleSegment } from "./locale-segment";
-import { ThemeToggle } from "./theme-toggle";
+import { ThemeToggle, restoreTheme } from "./theme-toggle";
 import { ZimosLogo } from "./zimos-logo";
 
 /**
@@ -25,8 +25,8 @@ import { ZimosLogo } from "./zimos-logo";
  *
  * The logo goes to the top of the home page: on the home page it scrolls
  * up; from another page it opens the home page at its top. The page this
- * header mounts on puts back a place kept by the logo or the language
- * switch (lib/keep-place.ts) before it is painted.
+ * header mounts on puts back, before it is painted, the light/dark theme
+ * and a place kept by the logo or the language switch (lib/keep-place.ts).
  */
 export function SiteHeader() {
   const { locale, dict } = useI18n();
@@ -39,7 +39,10 @@ export function SiteHeader() {
   const menuButton = useRef<HTMLButtonElement>(null);
   const sheetId = useId();
 
+  // The theme first: measuring the page for the place would otherwise draw
+  // it once in the wrong theme, and the colour transitions would show.
   useLayoutEffect(() => {
+    restoreTheme();
     if (pathname) restorePlace(pathname);
   }, [pathname]);
 

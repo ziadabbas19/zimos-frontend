@@ -110,6 +110,26 @@ describe("the logo", () => {
   });
 });
 
+describe("the theme after a language switch", () => {
+  it("the dark theme the reader chose is back on the page the switch opened", () => {
+    // The switch mounts the other language's <html> attributes: no `dark`.
+    document.documentElement.className = "lang-ar";
+    localStorage.setItem("theme", "dark");
+    pathname = "/ar";
+    renderHeader();
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    expect(document.documentElement.style.colorScheme).toBe("dark");
+    expect(document.documentElement.classList.contains("lang-ar")).toBe(true);
+  });
+
+  it("without a stored choice the system's theme holds", () => {
+    document.documentElement.className = "lang-en dark";
+    pathname = "/en";
+    renderHeader();
+    expect(document.documentElement.classList.contains("dark")).toBe(false);
+  });
+});
+
 describe("the phone sheet's AR | EN", () => {
   it("keeps the place for the other language only; neither link scrolls", () => {
     pathname = "/en";

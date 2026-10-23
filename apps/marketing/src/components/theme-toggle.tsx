@@ -53,6 +53,17 @@ function subscribe(onStoreChange: () => void): () => void {
   };
 }
 
+/**
+ * Put the theme back on <html>. Switching the language mounts the other
+ * language's root layout, and React rebuilds <html>'s attributes from its
+ * props — the class the pre-paint script set is gone. Same choice as that
+ * script: the stored one, else the system's.
+ */
+export function restoreTheme(): void {
+  apply(storedTheme() ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+  emit();
+}
+
 /** The round light/dark switch of the header (`lz-top__icon` in landing.css). */
 export function ThemeToggle({ className = "lz-top__icon" }: { className?: string }) {
   const { dict } = useI18n();
