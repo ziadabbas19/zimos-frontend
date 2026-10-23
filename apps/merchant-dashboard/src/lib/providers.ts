@@ -30,6 +30,8 @@ const KNOWN_NAMES: Record<string, string> = {
   mylerz: "Mylerz",
   paymob: "Paymob",
   kashier: "Kashier",
+  // No logo file until Fawaterak allows its use: ProviderLogo shows "FA".
+  fawaterak: "Fawaterak",
   // The test courier and the test payment gateway share the code.
   sandbox: "Sandbox (test)",
 };
