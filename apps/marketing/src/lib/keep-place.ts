@@ -24,10 +24,18 @@ const ROOTS = "section[id], main, footer";
 /** The header and the corner buttons float over the page; never anchors. */
 const FLOATING = ".lz-top, .lz-corner";
 
-type Place =
-  | { to: string; at: number; top: true }
-  | { to: string; at: number; end: true }
-  | { to: string; at: number; root: string; trail: number[]; fraction: number };
+type Spot = { top: true } | { end: true } | { root: string; trail: number[]; fraction: number };
+
+type Place = Spot & { to: string; at: number };
+
+/**
+ * The place as it was when the phone menu opened. The header is sticky but
+ * still in the flow, so the open sheet pushes the page down by its height —
+ * or not, when the browser's scroll anchoring makes up for it — and the
+ * place under the line is no longer the reader's. Each opening replaces it;
+ * it is only used while the sheet is open.
+ */
+let beforeMenu: Spot | null = null;
 
 /** A plain left click that the link itself will follow, in this tab. */
 export function isPlainClick(event: {
@@ -48,7 +56,7 @@ export function isPlainClick(event: {
   );
 }
 
-/** The line just below the header's bar (the phone sheet, open or not, is not counted). */
+/** The line just below the header's bar. */
 function lineY(): number {
   const bar = document.querySelector(".lz-top__in");
   const y = bar ? bar.getBoundingClientRect().bottom + 8 : 0;
@@ -92,6 +100,25 @@ function atEnd(): boolean {
   return foot !== null && foot.getBoundingClientRect().bottom <= window.innerHeight + 1;
 }
 
+function sheetOpen(): boolean {
+  const sheet = document.querySelector(".lz-sheet");
+  return sheet !== null && !sheet.hasAttribute("hidden");
+}
+
+/** Where the reader is now. */
+function spotNow(): Spot {
+  if (window.scrollY <= 1) return { top: true };
+  if (atEnd()) return { end: true };
+
+  const y = lineY();
+  const el = anchorAt(y);
+  const root = el?.closest(ROOTS);
+  if (!el || !root) return { top: true };
+  const rect = el.getBoundingClientRect();
+  const fraction = rect.height > 0 ? Math.min(Math.max((y - rect.top) / rect.height, 0), 1) : 0;
+  return { root: root.id ? `#${root.id}` : root.localName, trail: trailTo(el, root), fraction };
+}
+
 function write(place: Place): void {
   try {
     sessionStorage.setItem(KEY, JSON.stringify(place));
@@ -112,28 +139,15 @@ function take(): Place | null {
   }
 }
 
+/** The phone menu is about to open: note the place before the sheet moves the page. */
+export function notePlaceBeforeMenu(): void {
+  beforeMenu = spotNow();
+}
+
 /** Remember where the reader is, for the page at `to`. */
 export function keepPlace(to: string): void {
-  const at = Date.now();
-  if (window.scrollY <= 1) {
-    write({ to, at, top: true });
-    return;
-  }
-  if (atEnd()) {
-    write({ to, at, end: true });
-    return;
-  }
-
-  const y = lineY();
-  const el = anchorAt(y);
-  const root = el?.closest(ROOTS);
-  if (!el || !root) {
-    write({ to, at, top: true });
-    return;
-  }
-  const rect = el.getBoundingClientRect();
-  const fraction = rect.height > 0 ? Math.min(Math.max((y - rect.top) / rect.height, 0), 1) : 0;
-  write({ to, at, root: root.id ? `#${root.id}` : root.localName, trail: trailTo(el, root), fraction });
+  const spot = sheetOpen() && beforeMenu ? beforeMenu : spotNow();
+  write({ ...spot, to, at: Date.now() });
 }
 
 /** A language link's onClick: a plain click keeps the place for the page it opens. */
@@ -143,7 +157,7 @@ export function keepPlaceOnClick(event: Parameters<typeof isPlainClick>[0], to: 
 
 /** Open the page at `to` at its top (the logo, from another page). */
 export function keepTop(to: string): void {
-  write({ to, at: Date.now(), top: true });
+  write({ top: true, to, at: Date.now() });
 }
 
 /**

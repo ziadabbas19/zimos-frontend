@@ -5,7 +5,7 @@ import type { MouseEvent as ReactMouseEvent } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useI18n } from "@/i18n/provider";
-import { isPlainClick, keepTop, restorePlace } from "@/lib/keep-place";
+import { isPlainClick, keepTop, notePlaceBeforeMenu, restorePlace } from "@/lib/keep-place";
 import { LOGIN_URL, REGISTER_URL } from "@/lib/urls";
 import { List, X } from "./duo-icons";
 import { LocalePill } from "./locale-pill";
@@ -137,7 +137,11 @@ export function SiteHeader() {
                 aria-expanded={open}
                 aria-controls={sheetId}
                 aria-label={open ? nav.closeMenu : nav.openMenu}
-                onClick={() => setOpen((v) => !v)}
+                onClick={() => {
+                  // The sheet moves the page; a language picked in it keeps this place.
+                  if (!open) notePlaceBeforeMenu();
+                  setOpen((v) => !v);
+                }}
               >
                 <List size={22} className="lz-menu-open" />
                 <X size={22} className="lz-menu-close" />

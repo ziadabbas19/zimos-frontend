@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { keepPlace, keepTop, restorePlace } from "./keep-place";
+import { keepPlace, keepTop, notePlaceBeforeMenu, restorePlace } from "./keep-place";
 
 /**
  * The place kept across a language switch (lib/keep-place.ts), on a page
@@ -24,11 +24,17 @@ function page(html: string, layout: Record<string, Box>) {
   for (const [selector, box] of Object.entries(layout)) boxes.set(document.querySelector(selector)!, box);
 }
 
+const SHEET = 420; // the phone sheet, open under the bar
+
+/** An open sheet grows the sticky header, which pushes the whole page down. */
+const pushed = () => (document.querySelector(".lz-sheet")?.hasAttribute("hidden") === false ? SHEET : 0);
+
 function rectOf(el: Element): DOMRect {
   if (el.classList.contains("lz-top__in")) return new DOMRect(0, 16, viewport.width, BAR);
+  if (el.classList.contains("lz-sheet")) return new DOMRect(0, 16 + BAR, viewport.width, pushed());
   const box = boxes.get(el);
   if (!box) return new DOMRect(0, 0, 0, 0);
-  return new DOMRect(0, box.y - scroll, viewport.width, box.h);
+  return new DOMRect(0, box.y + pushed() - scroll, viewport.width, box.h);
 }
 
 function depth(el: Element): number {
@@ -68,7 +74,7 @@ afterEach(() => {
 });
 
 const HTML = `
-  <header class="lz-top"><div class="lz-top__in"></div></header>
+  <header class="lz-top"><div class="lz-top__in"></div><div class="lz-sheet" hidden></div></header>
   <main id="main">
     <section id="intro"><p>intro</p></section>
     <section id="how"><h2>how</h2><ol><li>one</li><li>two</li><li>three</li></ol></section>
@@ -137,6 +143,34 @@ describe("keepPlace / restorePlace", () => {
 
     const third = rectOf(document.querySelector("#how li:nth-child(3)")!);
     expect(Math.abs(third.top + 0.2 * third.height - LINE)).toBeLessThan(1);
+  });
+
+  for (const anchored of [false, true]) {
+    it(`on a phone, a language picked in the menu keeps the place from before the menu opened (${anchored ? "the browser makes up for the sheet" : "the sheet pushes the page down"})`, () => {
+      Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 }); // a phone held upright
+      arabic();
+      scroll = 1600 + 250 - LINE; // reading the second step, halfway in
+      notePlaceBeforeMenu(); // the menu button, before the sheet opens
+      document.querySelector(".lz-sheet")!.removeAttribute("hidden");
+      if (anchored) scroll += SHEET; // scroll anchoring keeps the page still under the sheet
+      keepPlace("/en");
+
+      english(); // the new page opens with the sheet closed
+      scroll = 1600 + 250 - LINE;
+      restorePlace("/en");
+
+      const second = rectOf(document.querySelector("#how li:nth-child(2)")!);
+      expect(second.top + 0.5 * second.height).toBeCloseTo(LINE, 0);
+    });
+  }
+
+  it("the place noted for the menu is not used once the sheet is closed again", () => {
+    arabic();
+    scroll = 0;
+    notePlaceBeforeMenu(); // opened at the top, then closed
+    scroll = 1600 + 250 - LINE;
+    keepPlace("/en");
+    expect(JSON.parse(sessionStorage.getItem("lz-place") ?? "null")).toMatchObject({ root: "#how", trail: [1, 1] });
   });
 
   it("keeps the top of the page as the top", () => {
