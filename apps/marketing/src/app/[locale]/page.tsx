@@ -20,6 +20,12 @@ import { WorksWith } from "@/components/works-with";
  * should reassure you, the questions and the closing band — laid out like
  * the Zemam landing. Plans and prices live on /pricing.
  */
+
+// Rebuilt at most every 5 minutes, as before the landing: the footer reads the
+// platform's details from the API (lib/platform-settings.ts), whose own
+// shorter window wins while they are on.
+export const revalidate = 300;
+
 export default async function MarketingHome({
   params,
 }: {
