@@ -52,6 +52,8 @@ const STRINGS = {
     refundTitle: "Refund this order",
     refundGateway: "The money goes back to the shopper's card or wallet through the gateway.",
     refundManual: "This records a refund you hand back yourself (cash, transfer). Nothing is sent to a gateway.",
+    refundInDashboard: "{gateway} payments are refunded in your {gateway} dashboard. Refund it there: nothing is refunded from here.",
+    refundInDashboardButton: "Refund in the {gateway} dashboard",
     amount: "Amount",
     amountHint: "At most {max}.",
     fromPayment: "Refund from",
@@ -113,6 +115,8 @@ const STRINGS = {
     refundTitle: "استرداد مبلغ من هذا الأوردر",
     refundGateway: "المبلغ يرجع لكارت أو محفظة العميل عن طريق البوابة.",
     refundManual: "هذا يسجل استردادًا ترجّعه بنفسك (كاش أو تحويل). لا يُرسل شيء لأي بوابة.",
+    refundInDashboard: "مدفوعات {gateway} تُسترد من لوحة تحكم {gateway}. نفّذ الاسترداد هناك، فلا يُسترد شيء من هنا.",
+    refundInDashboardButton: "الاسترداد من لوحة {gateway}",
     amount: "المبلغ",
     amountHint: "بحد أقصى {max}.",
     fromPayment: "الاسترداد من",
@@ -453,6 +457,11 @@ function RefundDialog({
 
   const minor = majorToMinor(amount);
   const valid = Number.isFinite(minor) && minor >= 1 && minor <= max;
+  // Money back from a payment refunded in its gateway's own dashboard (Fawaterak): nothing to send from here.
+  const dashboardGateway =
+    destination.isMoney && viaGateway && perPayment?.refundInGatewayDashboard
+      ? providerName(timeline.attempts.find((p) => p.id === paymentId)?.providerCode ?? "")
+      : null;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -493,7 +502,7 @@ function RefundDialog({
       open
       onClose={onClose}
       title={t.refundTitle}
-      description={destinations ? undefined : viaGateway ? t.refundGateway : t.refundManual}
+      description={destinations || dashboardGateway ? undefined : viaGateway ? t.refundGateway : t.refundManual}
     >
       <form onSubmit={submit} className="space-y-4 p-5">
         <RefundDestinationField
@@ -544,13 +553,18 @@ function RefundDialog({
           )}
         </Field>
         {destination.notifiable && <NotifyCustomerToggle checked={notify} onChange={setNotify} />}
+        {dashboardGateway && <Alert>{fmt(t.refundInDashboard, { gateway: dashboardGateway })}</Alert>}
         {error && <Alert variant="danger">{error}</Alert>}
         <div className="flex flex-wrap justify-end gap-2">
           <Button type="button" variant="outline" className="min-h-11" disabled={busy} onClick={onClose}>
             {common.cancel}
           </Button>
-          <Button type="submit" className="min-h-11" disabled={busy || !valid}>
-            {busy ? t.refunding : fmt(t.confirmRefund, { amount: valid ? money(minor) : "" })}
+          <Button type="submit" className="min-h-11" disabled={busy || !valid || Boolean(dashboardGateway)}>
+            {dashboardGateway
+              ? fmt(t.refundInDashboardButton, { gateway: dashboardGateway })
+              : busy
+                ? t.refunding
+                : fmt(t.confirmRefund, { amount: valid ? money(minor) : "" })}
           </Button>
         </div>
       </form>
