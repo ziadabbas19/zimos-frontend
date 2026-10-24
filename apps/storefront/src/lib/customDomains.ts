@@ -1,4 +1,5 @@
 import { hostnameOf, isRootDomainHost, storeSlugFromHost } from "./domains";
+import { serverApiBase, serverApiFetch } from "./serverApiBase";
 
 /**
  * Merchant-owned domains (`shop.example.com`). The proxy cannot tell from the
@@ -16,7 +17,6 @@ export interface ResolvedHost {
   primaryHost: string | null;
 }
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api/v1").replace(/\/$/, "");
 const TTL_MS = 60_000;
 const MAX_ENTRIES = 5_000;
 const cache = new Map<string, { at: number; value: ResolvedHost | null }>();
@@ -58,11 +58,14 @@ async function lookup(hostname: string): Promise<ResolvedHost | null> {
 
   let value: ResolvedHost | null = null;
   try {
-    const res = await fetch(`${API_BASE}/store/resolve-host?host=${encodeURIComponent(hostname)}`, {
-      headers: { accept: "application/json" },
+    const res = await serverApiFetch(
+      `${serverApiBase()}/store/resolve-host?host=${encodeURIComponent(hostname)}`,
+      { headers: { accept: "application/json" } },
       // The proxy stops waiting at 1.5 s (proxy.ts); the request stops with it.
-      signal: AbortSignal.timeout(1500),
-    });
+      // One sent again on the public address gets its own 1.5 s, and its
+      // answer is remembered for the requests after.
+      { timeoutMs: 1500 }
+    );
     if (res.ok) {
       const body = (await res.json()) as { store?: { slug?: unknown; homeFunnel?: { ref?: unknown } | null; primaryHost?: unknown } };
       const slug = body.store?.slug;

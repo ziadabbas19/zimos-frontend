@@ -5,6 +5,7 @@ import { previewOwner, putPreview, type PreviewOptions } from "@/lib/previewStor
 import { readShellOverride, type ShellOverride } from "@/lib/storeShell";
 import { STORE_PREVIEW_COOKIE, storePreviewCookieOptions } from "@/lib/storePreview";
 import { EDITOR_VIEW_PARAM } from "@/lib/editorView";
+import { serverApiBase, serverApiFetch } from "@/lib/serverApiBase";
 
 /**
  * Receives a draft page tree from the dashboard's live preview (a form post
@@ -14,10 +15,10 @@ import { EDITOR_VIEW_PARAM } from "@/lib/editorView";
  * Only staff get to put content on a store's domain this way: the posted
  * access token must be accepted by the API for this workspace, where listing
  * websites needs WEBSITE_EDIT and listing funnels FUNNELS_MANAGE. The token is
- * used for that one check and never stored.
+ * used for that one check and never stored. The calls take the API's
+ * private address when INTERNAL_API_BASE_URL is set (lib/serverApiBase).
  */
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api/v1").replace(/\/$/, "");
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // Trees are a few KB; the backend caps them at 10 000 nodes.
 const MAX_TREE_CHARS = 1_000_000;
@@ -65,7 +66,7 @@ function readStorePath(value: FormDataEntryValue | null): string | null {
 /** The store's first product, for the editor's "a product" view; the catalogue when it has none. */
 async function firstProductPath(workspaceId: string): Promise<string> {
   try {
-    const res = await fetch(`${API_BASE}/store/${workspaceId}/products?limit=1`, { cache: "no-store" });
+    const res = await serverApiFetch(`${serverApiBase()}/store/${workspaceId}/products?limit=1`, { cache: "no-store" });
     const body = (await res.json()) as { data?: { products?: Array<{ slug?: string }> }; products?: Array<{ slug?: string }> };
     const slug = (body.data?.products ?? body.products ?? [])[0]?.slug;
     return slug ? `/products/${encodeURIComponent(slug)}` : "/products";
@@ -114,7 +115,7 @@ function readOptions(form: FormData): PreviewOptions | undefined {
  */
 async function storePreviewToken(workspaceId: string, accessToken: string): Promise<string | null> {
   try {
-    const res = await fetch(`${API_BASE}/workspaces/${workspaceId}/store-preview-token`, {
+    const res = await serverApiFetch(`${serverApiBase()}/workspaces/${workspaceId}/store-preview-token`, {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store",
@@ -130,7 +131,7 @@ async function storePreviewToken(workspaceId: string, accessToken: string): Prom
 async function canEditWorkspace(workspaceId: string, accessToken: string): Promise<boolean> {
   const headers = { Authorization: `Bearer ${accessToken}` };
   for (const resource of ["websites", "funnels"]) {
-    const res = await fetch(`${API_BASE}/workspaces/${workspaceId}/${resource}`, {
+    const res = await serverApiFetch(`${serverApiBase()}/workspaces/${workspaceId}/${resource}`, {
       headers,
       cache: "no-store",
     });
