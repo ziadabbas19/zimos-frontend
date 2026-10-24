@@ -190,3 +190,14 @@ export const PLATFORM_SETTINGS_ENABLED = import.meta.env.VITE_PLATFORM_SETTINGS_
  * NEXT_PUBLIC_DWELL_TRACKING_ENABLED.
  */
 export const VISITORS_ENABLED = import.meta.env.VITE_VISITORS_ENABLED === "true";
+
+/**
+ * Live updates: one connection to the API's live updates (its REALTIME_ENABLED)
+ * for the whole dashboard. A new, paid or moved order refreshes the orders
+ * list, the counts and the Confirmation queue badge at once, with a toast and
+ * the new-order sound when the teammate turned it on (Settings → My
+ * notifications). While the connection is down they are read every 30
+ * seconds instead. Off: no connection, and every screen polls as it always
+ * has. Turn on only once the API runs with REALTIME_ENABLED.
+ */
+export const REALTIME_ENABLED = import.meta.env.VITE_REALTIME_ENABLED === "true";
