@@ -35,7 +35,7 @@ import { DataState } from "@/components/DataState";
 import { PlanFeatureNotice } from "@/components/PlanFeatureNotice";
 import { WebhookDeliveryLog, WebhookEndpointNotes, WebhookFilterField } from "./WebhookExtras";
 import { EditWebhookEndpointModal, WebhookHeadersField, WebhookHeadersNote, useWebhookHeaders } from "./WebhookEndpointFields";
-import { WEBHOOK_HEADERS_ENABLED } from "@/lib/features";
+import { PUBLIC_API_ACK_ENABLED, WEBHOOK_HEADERS_ENABLED } from "@/lib/features";
 import { ApiKeyAccessPicker, EMPTY_ACCESS, countExtraResources, scopesForAccess, type AccessMap } from "./ApiKeyAccessPicker";
 import { TextField } from "@/components/Field";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -80,6 +80,8 @@ const STRINGS = {
     readOnlyAccessHint: "See orders and their shipments. Changes nothing.",
     readWriteAccess: "Read and update orders",
     readWriteAccessHint: "Also confirm, cancel, ship, deliver and mark COD cash collected.",
+    posAccess: "Kitchen status (till system)",
+    posAccessHint: "Lets a till mark an order received, preparing, ready or completed. It never moves the order's stage.",
     create: "Create",
     creating: "Creating…",
     cancel: "Cancel",
@@ -174,6 +176,8 @@ const STRINGS = {
     readOnlyAccessHint: "يشوف الأوردرات وشحناتها. مابيغيّرش حاجة.",
     readWriteAccess: "قراءة وتحديث الأوردرات",
     readWriteAccessHint: "وكمان يأكد ويلغي ويشحن ويسلّم ويسجل تحصيل الكاش.",
+    posAccess: "حالة المطبخ (نظام الكاشير)",
+    posAccessHint: "يخلّي الكاشير يعلّم الأوردر اتستلم أو بيتحضّر أو جاهز أو خلص. مابيغيّرش مرحلة الأوردر.",
     create: "إنشاء",
     creating: "بيتعمل…",
     cancel: "إلغاء",
@@ -367,7 +371,8 @@ function ApiKeysPanel({ t, onForbidden }: { t: T; onForbidden: () => void }) {
                       {key.keyPrefix}…
                     </code>
                     {" · "}
-                    {key.scopes.some((s) => s.startsWith("orders:") && s !== "orders:read") ? `${t.scopeRead} + ${t.scopeWrite}` : t.scopeRead}
+                    {key.scopes.some((s) => s.startsWith("orders:") && s !== "orders:read" && s !== "orders:pos_status") ? `${t.scopeRead} + ${t.scopeWrite}` : t.scopeRead}
+                    {key.scopes.includes("orders:pos_status") ? ` + ${t.posAccess}` : ""}
                     {countExtraResources(key.scopes) > 0 && (
                       <span title={key.scopes.join(", ")}> {fmt(t.scopeMore, { count: countExtraResources(key.scopes) })}</span>
                     )}
@@ -426,6 +431,8 @@ function NewKeyModal({ t, open, onClose, onCreated }: { t: T; open: boolean; onC
   const errorMessage = useErrorMessage();
   const [name, setName] = useState("");
   const [write, setWrite] = useState(true);
+  // orders:pos_status, offered while PUBLIC_API_ACK_ENABLED (VITE_PUBLIC_API_ACK_ENABLED).
+  const [pos, setPos] = useState(false);
   const [access, setAccess] = useState<AccessMap>(EMPTY_ACCESS);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -434,6 +441,7 @@ function NewKeyModal({ t, open, onClose, onCreated }: { t: T; open: boolean; onC
   function close() {
     setName("");
     setWrite(true);
+    setPos(false);
     setAccess(EMPTY_ACCESS);
     setError(null);
     setSecret(null);
@@ -445,7 +453,11 @@ function NewKeyModal({ t, open, onClose, onCreated }: { t: T; open: boolean; onC
     setBusy(true);
     setError(null);
     try {
-      const scopes: ApiKeyScope[] = [...(write ? (["orders:read", "orders:write"] as ApiKeyScope[]) : (["orders:read"] as ApiKeyScope[])), ...scopesForAccess(access)];
+      const scopes: ApiKeyScope[] = [
+        ...(write ? (["orders:read", "orders:write"] as ApiKeyScope[]) : (["orders:read"] as ApiKeyScope[])),
+        ...(PUBLIC_API_ACK_ENABLED && pos ? (["orders:pos_status"] as ApiKeyScope[]) : []),
+        ...scopesForAccess(access),
+      ];
       const created = await developersCreateApiKey(apiClient, workspaceId, { name: name.trim(), scopes });
       setSecret(created.secret);
       onCreated();
@@ -496,6 +508,15 @@ function NewKeyModal({ t, open, onClose, onCreated }: { t: T; open: boolean; onC
               </span>
             </label>
           ))}
+          {PUBLIC_API_ACK_ENABLED && (
+            <label className="flex cursor-pointer items-start gap-2 rounded-md border border-line p-3">
+              <input type="checkbox" className="mt-1" checked={pos} onChange={(e) => setPos(e.target.checked)} />
+              <span>
+                <span className="block text-sm font-medium text-ink">{t.posAccess}</span>
+                <span className="block text-xs text-ink-soft">{t.posAccessHint}</span>
+              </span>
+            </label>
+          )}
         </fieldset>
         <ApiKeyAccessPicker value={access} onChange={setAccess} />
         {error && <Alert variant="danger">{error}</Alert>}

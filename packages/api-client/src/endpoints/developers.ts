@@ -22,7 +22,10 @@ import type { ApiClient } from "../client";
 // ------------------------------------------------------------------ types --
 
 export type ApiKeyScope =
+  // Also the accepted-orders feed and this key's receipts of it (PUBLIC_API_ACK_ENABLED).
   | "orders:read"
+  // A till / kitchen system's status for an order: a note, never the order's stage.
+  | "orders:pos_status"
   // Create + update + delete in one, from before the three were told apart.
   | "orders:write"
   | "orders:create"
