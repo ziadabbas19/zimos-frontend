@@ -159,6 +159,16 @@ export function StoreLookPanel({
     <div data-slot="store-look" data-variant={variant} style={gutters} className="zimos-look">
       <p className="px-[var(--look-gutter)] pt-3 text-xs text-ink-soft">{ui.lookHint}</p>
 
+      {/* The store's identity first: its logo (the same one the header's panel changes), then its colour and type. */}
+      <LookBlock>
+        <ImageField
+          label={ui.logo}
+          hint={ui.logoHint}
+          value={look.logoUrl ?? ""}
+          onChange={(url) => onChange({ ...look, logoUrl: url || null })}
+        />
+      </LookBlock>
+
       {/* Zimos's own ready styles and themes: not offered while the editor offers only the imported templates (XS_ONLY). */}
       {!XS_ONLY && (
       <LookBlock title={t.presets} hint={t.presetsHint}>
@@ -309,15 +319,6 @@ export function StoreLookPanel({
           // A theme owns its corners and its buttons: nothing here would reach the store.
           <p className="text-xs text-ink-soft">{t.cornersFromTheme(catalog.name(theme, locale))}</p>
         )}
-      </LookBlock>
-
-      <LookBlock>
-        <ImageField
-          label={ui.logo}
-          hint={ui.logoHint}
-          value={look.logoUrl ?? ""}
-          onChange={(url) => onChange({ ...look, logoUrl: url || null })}
-        />
       </LookBlock>
 
       {!XS_ONLY && (

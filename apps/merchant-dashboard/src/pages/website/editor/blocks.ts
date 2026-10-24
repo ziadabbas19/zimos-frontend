@@ -8,7 +8,7 @@ import type {
   PageTree,
 } from "@store-builder/api-client";
 import { PICTURE_SHAPE_DEFAULT_ENABLED } from "@/lib/features";
-import { editorUi, elementLabel, presetText, type EditorLocale } from "./editorLocale";
+import { editorUi, elementName, presetText, type EditorLocale } from "./editorLocale";
 import { localizePresetContent } from "./presetCopy";
 import { SHOWCASE_ELEMENT_SPECS, SHOWCASE_PRESETS } from "./showcaseBlocks";
 import { XS_ELEMENT_SPECS, XS_PRESETS } from "./xsBlocks";
@@ -3355,6 +3355,15 @@ export function sectionElements(section: PageSection): PageElement[] {
 }
 
 /**
+ * The element a section holds when it holds just one — every imported template's band is one. Picking
+ * such a section opens that element's settings at once; its breadcrumb still steps back to the section.
+ */
+export function soleElementId(section: PageSection | null | undefined): string | null {
+  const elements = section ? sectionElements(section) : [];
+  return elements.length === 1 ? elements[0].id : null;
+}
+
+/**
  * The layout of a section as a string — each row's column spans and element
  * types — so two sections (or a section and a preset) with the same shape
  * compare equal. "12:heading,text|4:image/8:text" reads: row of one span-12
@@ -3423,8 +3432,13 @@ export function sectionLabel(section: PageSection, locale: EditorLocale = "en"):
   const ui = editorUi(locale);
   if (types.length === 0) return ui.emptySection;
   const match = matchPreset(section);
-  if (match) return presetText(match.key, match, locale).label;
-  const first = elementLabel(types[0], ELEMENT_SPECS[types[0]].label, locale);
+  if (match) {
+    const label = presetText(match.key, match, locale).label;
+    // An imported template's band is named after its template in the library ("Slider 01",
+    // «مقالات 03»); on the merchant's own page that number says nothing.
+    return match.key.startsWith("xs-") ? label.replace(/\s+(?:[0-9]{2}|[٠-٩]{2})$/u, "") : label;
+  }
+  const first = elementName(types[0], ELEMENT_SPECS[types[0]].label, locale);
   return types.length === 1 ? first : ui.andMore(first, types.length - 1);
 }
 

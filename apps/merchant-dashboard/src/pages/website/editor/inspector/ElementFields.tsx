@@ -1,4 +1,4 @@
-import type { FocusEvent, ReactNode } from "react";
+import { useMemo, type FocusEvent, type ReactNode } from "react";
 import { IconClick, IconClose, IconContrast, IconHeading, IconImage, IconLayout, IconMessage, IconParagraph, IconPlus, type IconComponent } from "@/components/icons";
 import { Button, Input, Label } from "@store-builder/ui";
 import type { PageElement, PageElementType } from "@store-builder/api-client";
@@ -14,6 +14,7 @@ import { ProductPickerField } from "../ProductPickerField";
 import { locateOnCanvas } from "@/lib/previewBridge";
 import { XS_FIELD_GROUPS, isXsType, xsFieldGroup, type XsFieldGroup } from "../xsBlocks";
 import { Group, NumberField, SwitchRow } from "./controls";
+import { InspectorEnvProvider, useInspectorEnv } from "./env";
 import { deviceParts, valueOnDevice, withDeviceValue } from "@/lib/deviceValue";
 import type { ScreenDevice } from "@/lib/canvasDrag";
 import { useEditorScreen } from "../editorScreen";
@@ -611,6 +612,7 @@ export function ElementField({
           max={spec.max}
           onChange={(next) => onChange(spec.key, next)}
           arrange={isXsType(elementType)}
+          listKey={spec.key}
         />
       );
 
@@ -661,6 +663,14 @@ function locateField(elementId: string, event: FocusEvent<HTMLElement>) {
  * its look), so its fields come in titled groups that fold — Content open,
  * the rest showing how many of their choices are set (xsBlocks.ts).
  */
+/** Narrows the list entry the preview pressed (InspectorEnv.focusItem) to this band, so only its lists open one. */
+function XsFocus({ elementId, children }: { elementId: string; children: ReactNode }) {
+  const env = useInspectorEnv();
+  const focusItem = env.focusItem?.elementId === elementId ? env.focusItem : null;
+  const value = useMemo(() => ({ ...env, focusItem }), [env, focusItem]);
+  return <InspectorEnvProvider value={value}>{children}</InspectorEnvProvider>;
+}
+
 export function ElementFields({
   element,
   onPropChange,
@@ -674,6 +684,7 @@ export function ElementFields({
 
   if (isXsType(element.type)) {
     return (
+      <XsFocus elementId={element.id}>
       <div className="-mx-4 -my-4" onFocusCapture={(event) => locateField(element.id, event)}>
         {XS_FIELD_GROUPS.map((group) => {
           const fields = spec.fields.filter((field) => xsFieldGroup(field.key) === group.id);
@@ -696,6 +707,7 @@ export function ElementFields({
           );
         })}
       </div>
+      </XsFocus>
     );
   }
 

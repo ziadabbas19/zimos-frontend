@@ -1,5 +1,6 @@
 import type { PageElement } from "@store-builder/api-client";
 import { optionLabel, type EditorLocale } from "../editorLocale";
+import { XS_CONTENT_AR, XS_ELEMENT_SPECS, isXsType } from "../xsBlocks";
 import { leftUi } from "./strings";
 
 /**
@@ -30,6 +31,17 @@ export function elementSummary(element: PageElement, locale: EditorLocale): stri
   const limit = numberOf(props.limit);
   // The extra builder elements are outside the api-client's element union.
   const type = element.type as string;
+
+  // An imported template's band (xsBlocks.ts): its heading, else its first item's title, and how
+  // many items its list holds — under the list's own name, so a slider says its slides.
+  if (isXsType(type)) {
+    const list = XS_ELEMENT_SPECS[type].fields.find((field) => field.kind === "itemList");
+    const items = list && Array.isArray(props[list.key]) ? (props[list.key] as Array<Record<string, unknown>>) : [];
+    const titleKey = list && list.kind === "itemList" ? list.titleKey : "title";
+    const firstTitle = items.map((item) => (typeof item?.[titleKey] === "string" ? (item[titleKey] as string) : "")).find((text) => text.trim()) ?? "";
+    const listName = list ? (locale === "ar" ? (XS_CONTENT_AR[`${type}.${list.key}`] ?? XS_CONTENT_AR[list.key] ?? list.label) : list.label) : "";
+    return join([str("heading") || firstTitle || str("title"), items.length > 0 && listName && t.listOf(listName, items.length)]);
+  }
 
   switch (type) {
     case "heading":

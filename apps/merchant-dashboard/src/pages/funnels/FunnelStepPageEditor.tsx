@@ -26,7 +26,7 @@ import { namedStylesOf } from "../website/editor/ElementStylePanel";
 import { LayerList } from "../website/editor/LayerList";
 import { PageSettingsDialog } from "../website/editor/PageSettingsDialog";
 import { SectionInspector, type InspectorTab } from "../website/editor/SectionInspector";
-import { sectionElements, sectionLabel, type BlockPreset } from "../website/editor/blocks";
+import { sectionElements, sectionLabel, soleElementId, type BlockPreset } from "../website/editor/blocks";
 import { inlineTextIds, sectionHidden } from "../website/editor/canvasTools";
 import { EditorLocaleContext, editorUi, useEditorLocale } from "../website/editor/editorLocale";
 import type { ColorMode } from "../website/editor/storeThemes";
@@ -254,7 +254,8 @@ function StepPageEditor({
   /** Selecting from the editor side also brings the section into view in the preview. */
   function selectSection(sectionId: string, { scroll, reveal = true }: { scroll: boolean; reveal?: boolean }) {
     setSelectedSectionId(sectionId);
-    setSelectedElementId(null);
+    // A section holding one element opens that element at once: no second click to reach its settings.
+    setSelectedElementId(soleElementId(sections.find((s) => s.id === sectionId)));
     setSectionsOpen(false);
     if (reveal) revealInspector();
     if (scroll) setScrollRequest((prev) => ({ sectionId, nonce: (prev?.nonce ?? 0) + 1 }));

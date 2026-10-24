@@ -63,7 +63,11 @@ export function XsFooter({ store, locale, year, look }: { store: StorefrontMeta;
       ({credit.licence})
     </p>
   ) : null;
-  const footerLogo = footer.logoAsName ? null : (footer.logoImage ?? XS_LOGOS[look]?.footer ?? null);
+  // The footer's logo: its own picture, else the store's logo (the one the header shows too), else the template's
+  // light one, else the name. Where it came from tells the editor's preview whether a new store logo shows here.
+  const templateFooterLogo = XS_LOGOS[look]?.footer ?? null;
+  const footerLogo = footer.logoAsName ? null : (footer.logoImage ?? store.logoUrl ?? templateFooterLogo);
+  const footerLogoSource = footer.logoAsName ? "name" : footer.logoImage ? "own" : store.logoUrl ? "store" : templateFooterLogo ? "template" : "none";
   // The footer's own colours (the editor's Footer panel), as properties app/xs-shell.css reads.
   const own: Record<string, string> = {};
   if (footer.colors?.background) own["--xs-own-foot"] = footer.colors.background;
@@ -121,11 +125,17 @@ export function XsFooter({ store, locale, year, look }: { store: StorefrontMeta;
       case "brand":
         return (
           <div key={col.id} className="xs-footer__col" data-xs-col={col.id} style={style}>
-            <h4 className="xs-footer__title">
+            <h4
+              className="xs-footer__title"
+              data-store-logo=""
+              data-logo-source={footerLogoSource}
+              data-logo-class="xs-footer__logo"
+              data-template-logo={templateFooterLogo ?? undefined}
+            >
               {footerLogo ? (
-                // The footer's logo (its own, else the template's light one): a picture on this storefront or the store's media.
+                // A picture on this storefront or the store's media.
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={footerLogo} alt={store.name} className="xs-footer__logo" data-xs-logo={footer.logoImage ? undefined : "template"} data-xs-pic="logo" />
+                <img src={footerLogo} alt={store.name} className="xs-footer__logo" data-xs-logo={footerLogoSource === "template" ? "template" : undefined} data-xs-pic="logo" />
               ) : (
                 <span className="xs-footer__name" data-xs-pic="logo">
                   {store.name}

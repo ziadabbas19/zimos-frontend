@@ -236,35 +236,8 @@ function HeaderFields({ look, onChange, pages }: { look: StoreLook; onChange: On
 
   return (
     <>
-      <LookBlock title={ui.menuLinks} hint={header.menu === null ? ui.menuDefaultNote : ui.menuLinksHint}>
-        {header.menu === null ? (
-          <Button type="button" size="sm" variant="outline" onClick={() => set({ menu: starterMenu() })}>
-            {ui.customiseLinks}
-          </Button>
-        ) : (
-          <>
-            <ShellLinksEditor
-              links={header.menu}
-              max={MAX_MENU_LINKS}
-              pages={pages}
-              historyKey="shell:header:menu"
-              onChange={(menu, key) => set({ menu }, key)}
-            />
-            <button type="button" onClick={() => set({ menu: null })} className={lookTextButtonClass}>
-              {ui.useStandardLinks}
-            </button>
-          </>
-        )}
-      </LookBlock>
-
       <LookBlock title={ui.logo}>
-        <ShellLogo
-          value={header.logoImage}
-          onChange={(logoImage) => set({ logoImage }, "shell:header:logo")}
-          part="header"
-          asName={header.logoAsName === true}
-          onAsName={(logoAsName) => set({ logoAsName })}
-        />
+        <HeaderLogo look={look} onChange={onChange} />
         <div className="space-y-1.5">
           <ControlLabel>{ui.logoSize}</ControlLabel>
           <Segmented<LogoSize>
@@ -287,6 +260,27 @@ function HeaderFields({ look, onChange, pages }: { look: StoreLook; onChange: On
             className="w-full"
           />
         </div>
+      </LookBlock>
+
+      <LookBlock title={ui.menuLinks} hint={header.menu === null ? ui.menuDefaultNote : ui.menuLinksHint}>
+        {header.menu === null ? (
+          <Button type="button" size="sm" variant="outline" onClick={() => set({ menu: starterMenu() })}>
+            {ui.customiseLinks}
+          </Button>
+        ) : (
+          <>
+            <ShellLinksEditor
+              links={header.menu}
+              max={MAX_MENU_LINKS}
+              pages={pages}
+              historyKey="shell:header:menu"
+              onChange={(menu, key) => set({ menu }, key)}
+            />
+            <button type="button" onClick={() => set({ menu: null })} className={lookTextButtonClass}>
+              {ui.useStandardLinks}
+            </button>
+          </>
+        )}
       </LookBlock>
 
       <LookBlock title={ui.showInHeader} className="space-y-1">
@@ -323,7 +317,7 @@ function HeaderFields({ look, onChange, pages }: { look: StoreLook; onChange: On
         ranges={HEADER_SIZES}
         onChange={(sizes) => set({ sizes }, "shell:header:sizes")}
         fields={[
-          ["logo", "Height of the logo", "ارتفاع اللوجو"],
+          ["logo", "Height of the logo", "ارتفاع الشعار"],
           ["bar", "Height of the bar (wide screens)", "ارتفاع الشريط (الشاشات العريضة)"],
           ["menu", "Size of the menu's words", "حجم كلام القايمة"],
           ["strip", "Size of the top strip's words", "حجم كلام الشريط العلوي"],
@@ -378,6 +372,61 @@ function ShellColours({
 }
 
 /**
+ * The logo, first in the header's panel where a merchant looks for it. It is the store's own logo
+ * (`logoUrl`, the same picture the look panel and Settings change), so one upload shows in the
+ * header, the footer and the phone menu, and as the browser tab icon; left empty, an imported
+ * template shows its own. A picture an older store set for this header alone still wins: it is
+ * shown here, with the way back to the store's logo.
+ */
+function HeaderLogo({ look, onChange }: { look: StoreLook; onChange: OnLookChange }) {
+  const locale = useEditorLocale();
+  const ui = lookUi(locale);
+  const ar = locale === "ar";
+  const { currentWorkspace } = useWorkspace();
+  const xsLook = currentWorkspace?.themeSettings?.xsLook;
+  const template = typeof xsLook === "string" && xsLook !== "";
+  const header = look.header;
+  const set = (patch: Partial<StoreLook["header"]>) => onChange({ ...look, header: { ...header, ...patch } }, "shell:header:logo");
+  const asName = template && header.logoAsName === true;
+
+  return (
+    <>
+      {template && (
+        <SwitchRow
+          label={ar ? "اسم المتجر بدل الشعار" : "Store name instead of a logo"}
+          checked={asName}
+          onChange={(logoAsName) => set({ logoAsName })}
+        />
+      )}
+      {asName ? null : template && header.logoImage ? (
+        <div className="space-y-2 rounded-xl bg-paper-sunken p-3">
+          <img src={header.logoImage} alt="" className="max-h-10 max-w-40 object-contain" />
+          <p className="text-xs text-ink-soft">
+            {ar ? "هذه الترويسة تعرض صورة خاصة بها بدل شعار متجرك." : "This header shows a picture of its own instead of your store's logo."}
+          </p>
+          <button type="button" onClick={() => set({ logoImage: undefined })} className={lookTextButtonClass}>
+            {ar ? "استخدم شعار متجري" : "Use my store's logo"}
+          </button>
+        </div>
+      ) : (
+        <ImageField
+          label={ar ? "شعار متجرك" : "Your store's logo"}
+          hint={
+            template
+              ? ar
+                ? "يظهر في الترويسة والتذييل وقائمة الموبايل، وكأيقونة متجرك في المتصفح. لو تركته فارغًا يظهر شعار القالب."
+                : "Shown in the header, the footer and the phone menu, and as your store's browser tab icon. Left empty, the template's own logo shows."
+              : ui.logoHint
+          }
+          value={look.logoUrl ?? ""}
+          onChange={(url) => onChange({ ...look, logoUrl: url.trim() || null }, "shell:header:logo")}
+        />
+      )}
+    </>
+  );
+}
+
+/**
  * The logo picture of an imported template's header or footer, on a store
  * that wears one (storefront components/xs). Empty, the header shows the
  * store's own logo from its settings and, without one, the template's own;
@@ -405,21 +454,21 @@ function ShellLogo({
   return (
     <>
     <SwitchRow
-      label={ar ? "اسم المتجر بدل اللوجو" : "Store name instead of a logo"}
+      label={ar ? "اسم المتجر بدل الشعار" : "Store name instead of a logo"}
       checked={asName}
       onChange={onAsName}
     />
     {asName ? null : (
     <ImageField
-      label={ar ? (part === "header" ? "صورة اللوجو" : "صورة اللوجو في الفوتر") : part === "header" ? "Logo picture" : "Footer logo picture"}
+      label={ar ? (part === "header" ? "صورة الشعار" : "صورة الشعار في التذييل") : part === "header" ? "Logo picture" : "Footer logo picture"}
       hint={
         ar
           ? part === "header"
-            ? "بتظهر مكان اسم المتجر. لو فاضية بيظهر لوجو متجرك من الإعدادات، ولو مفيش بيظهر لوجو القالب."
-            : "بتظهر مكان اسم المتجر في الفوتر. لو فاضية بيظهر لوجو القالب لو ليه لوجو فوتر، وإلا اسم المتجر."
+            ? "تظهر مكان اسم المتجر. إذا تركتها فارغة يظهر شعار متجرك، وإن لم يوجد يظهر شعار القالب."
+            : "تظهر مكان اسم المتجر في التذييل. إذا تركتها فارغة يظهر شعار متجرك، وإن لم يوجد يظهر شعار التذييل الخاص بالقالب، وإلا اسم المتجر."
           : part === "header"
             ? "Shown in place of the store's name. Empty shows your store's logo from Settings, or else the template's."
-            : "Shown in place of the store's name in the footer. Empty shows the template's footer logo, or else the name."
+            : "Shown in place of the store's name in the footer. Empty shows your store's logo, else the template's footer logo, else the name."
       }
       value={value ?? ""}
       onChange={(url) => onChange(url.trim() ? url.trim() : undefined)}
@@ -456,7 +505,7 @@ function ShellSizesBlock({
   }
 
   return (
-    <LookBlock title={ar ? "المقاسات (بالبيكسل)" : "Sizes (pixels)"} hint={ar ? "المقاس الفاضي بيفضل على مقاس القالب." : "A size you leave empty keeps the template's."}>
+    <LookBlock title={ar ? "المقاسات (بالبكسل)" : "Sizes (pixels)"} hint={ar ? "المقاس الفارغ يبقي مقاس القالب." : "A size you leave empty keeps the template's."}>
       {fields.map(([key, label, labelAr]) => (
         <NumberField
           key={key}
@@ -621,7 +670,7 @@ function FooterFields({ look, onChange, pages }: { look: StoreLook; onChange: On
         fields={[
           ["title", "Size of the column titles", "حجم عناوين الأعمدة"],
           ["text", "Size of the text and links", "حجم النص والروابط"],
-          ["logo", "Height of the logo", "ارتفاع اللوجو"],
+          ["logo", "Height of the logo", "ارتفاع الشعار"],
         ]}
       />
       <FooterLayoutBlock

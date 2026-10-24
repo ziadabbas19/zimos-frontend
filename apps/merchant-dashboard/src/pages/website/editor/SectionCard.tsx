@@ -6,7 +6,7 @@ import { cn } from "@store-builder/ui";
 import type { PageElement, PageSection } from "@store-builder/api-client";
 import { ContextMenu, type ContextMenuItem } from "@/components/ContextMenu";
 import { ELEMENT_SPECS, sectionElements, sectionIcon, sectionLabel } from "./blocks";
-import { editorUi, elementLabel, useEditorLocale, type EditorLocale } from "./editorLocale";
+import { editorUi, elementName, useEditorLocale, type EditorLocale } from "./editorLocale";
 import { RowMenu } from "./library/RowMenu";
 import { leftUi } from "./library/strings";
 import { elementSummary } from "./library/summary";
@@ -50,7 +50,7 @@ function ElementLine({ element, locale }: { element: PageElement; locale: Editor
     <>
       {spec && <NodeIcon icon={spec.icon} className="mt-0.5 size-3.5 shrink-0 text-ink-soft" />}
       <span className="min-w-0 flex-1">
-        <span className="text-ink-soft">{elementLabel(element.type, spec?.label ?? element.type, locale)}</span>
+        <span className="text-ink-soft">{elementName(element.type, spec?.label ?? element.type, locale)}</span>
         {summary && (
           <span className="ms-2 text-ink" dir="auto">
             {summary}
@@ -108,6 +108,8 @@ export function SectionCard({
 
   const elements = sectionElements(section);
   const icon = sectionIcon(section);
+  // Under the row's name: what a one-element section says (its heading, how many slides…), else how many elements it holds.
+  const detail = elements.length === 1 ? elementSummary(elements[0], locale) : elements.length > 1 ? t.elements(elements.length) : "";
   const touch = variant === "sheet";
   /** The row is drawn on the brand fill: what sits on it takes the fill's own text colour. */
   const onBrand = selected && !showSummary;
@@ -183,16 +185,18 @@ export function SectionCard({
               >
                 <NodeIcon icon={icon} className="size-4" />
               </span>
-              <span className={cn("min-w-0 flex-1 truncate text-sm font-medium", hidden && "opacity-60")}>{label}</span>
+              <span className={cn("min-w-0 flex-1", hidden && "opacity-60")}>
+                <span className="block truncate text-sm font-medium leading-5">{label}</span>
+                {detail && (
+                  <span className={cn("block truncate text-xs leading-4", selected ? "opacity-80" : "text-ink-soft")} dir="auto">
+                    {detail}
+                  </span>
+                )}
+              </span>
               {hidden && (
                 <span className="flex shrink-0 items-center" title={t.hidden}>
                   <IconEyeOff className="size-4 opacity-80" aria-hidden />
                   <span className="sr-only">{t.hidden}</span>
-                </span>
-              )}
-              {elements.length > 0 && (
-                <span className={cn("hidden shrink-0 text-xs tabular-nums @[15rem]:inline", selected ? "opacity-80" : "text-ink-soft")}>
-                  {t.elements(elements.length)}
                 </span>
               )}
             </button>
@@ -219,7 +223,8 @@ export function SectionCard({
           )}
         </div>
 
-        {outline && elements.length > 0 && (
+        {/* A one-element section opens that element straight away (WebsiteEditorPage selectSection): no list to pick from. */}
+        {outline && elements.length > 1 && (
           <ul aria-label={t.outlineOf(label)} className="ms-[1.375rem] mt-1 space-y-0.5 border-s border-line ps-2 pb-1">
             {elements.map((element) => {
               const current = element.id === selectedElementId;

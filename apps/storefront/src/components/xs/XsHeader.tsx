@@ -116,6 +116,9 @@ export function XsHeader({
   // or the name straight away, when the merchant asked for it in place of any picture.
   const ownLogo = header.logoAsName ? null : (header.logoImage ?? store.logoUrl ?? null);
   const templateLogo = ownLogo || header.logoAsName ? null : (XS_LOGOS[look]?.header ?? null);
+  // Where that came from, for the editor's preview (components/preview/PreviewBridge applyLogo): it swaps
+  // in the store's unsaved logo only where the store's logo is what shows.
+  const logoSource = header.logoAsName ? "name" : header.logoImage ? "own" : ownLogo ? "store" : templateLogo ? "template" : "none";
   const brand = ownLogo ? (
     ownLogo.startsWith("/") ? (
       // A picture on this storefront: no image optimiser needed.
@@ -170,7 +173,16 @@ export function XsHeader({
         return colorModeButton ? <ColorModeSwitch key={item.id} mode={colorMode} partId={item.id} /> : null;
       case "logo":
         return (
-          <StoreLink key={item.id} href="/" className="xs-header__logo" data-store-logo="" data-xs-part={item.id}>
+          <StoreLink
+            key={item.id}
+            href="/"
+            className="xs-header__logo"
+            data-store-logo=""
+            data-logo-source={logoSource}
+            data-logo-class="xs-header__logo-img"
+            data-template-logo={XS_LOGOS[look]?.header ?? undefined}
+            data-xs-part={item.id}
+          >
             {brand}
           </StoreLink>
         );

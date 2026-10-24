@@ -48,7 +48,7 @@ import { SaveSectionPanel } from "./SavedSections";
 import { BindingFields, boundCount, canBind } from "./DataBinding";
 import {
   editorUi,
-  elementLabel,
+  elementName,
   sectionSettingLabel,
   sectionSettingOption,
   useEditorLocale,
@@ -68,6 +68,7 @@ import {
   useElementWidth,
   useMediaQuery,
   type ContentLanguage,
+  type FocusItem,
   type InspectorEnv,
   type RequestImage,
 } from "./inspector/env";
@@ -160,7 +161,7 @@ export function ElementFieldset({
     <div className="space-y-3 border-b border-line px-4 py-4 last:border-b-0">
       <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-ink-soft uppercase">
         <Icon className="size-3.5" aria-hidden />
-        <span className="min-w-0 flex-1 truncate">{elementLabel(element.type, spec.label, locale)}</span>
+        <span className="min-w-0 flex-1 truncate">{elementName(element.type, spec.label, locale)}</span>
         {actions}
       </div>
       {onSettingsChange && <ElementTabs value={tab} onChange={setTab} />}
@@ -232,7 +233,7 @@ function ElementRow({
 }) {
   const t = inspectorUi(locale);
   const spec = ELEMENT_SPECS[element.type];
-  const name = elementLabel(element.type, spec.label, locale);
+  const name = elementName(element.type, spec.label, locale);
   const line = status ?? elementSummary(element, locale);
   const src = element.type === "image" ? (element.props as Record<string, unknown> | undefined)?.src : null;
   const [broken, setBroken] = useState(false);
@@ -306,6 +307,7 @@ export function SectionInspector({
   onDuplicate,
   funnelId,
   focusElementId,
+  focusItem = null,
   tab: tabProp,
   onTabChange,
   onRequestImage,
@@ -325,6 +327,8 @@ export function SectionInspector({
   funnelId?: string;
   /** The element picked in the preview: the panel shows it (its Content first). Null or absent: the section. */
   focusElementId?: string | null;
+  /** The entry of a list the preview pressed (a slide, a card): its card opens. */
+  focusItem?: FocusItem | null;
   /** The page shown. Left out, the panel keeps its own. */
   tab?: InspectorTab;
   onTabChange?: (tab: InspectorTab) => void;
@@ -353,8 +357,8 @@ export function SectionInspector({
   const pairImages = !compact && width !== null && width >= PAIR_IMAGES_FROM_PX;
   const [contentLanguage, setContentLanguage] = useState<ContentLanguage>("ar");
   const env = useMemo<InspectorEnv>(
-    () => ({ compact, pairImages, requestImage: onRequestImage ?? null, contentLanguage, setContentLanguage }),
-    [compact, pairImages, onRequestImage, contentLanguage]
+    () => ({ compact, pairImages, requestImage: onRequestImage ?? null, contentLanguage, setContentLanguage, focusItem }),
+    [compact, pairImages, onRequestImage, contentLanguage, focusItem]
   );
 
   // --- which page ------------------------------------------------------------
@@ -411,7 +415,7 @@ export function SectionInspector({
   // --- header ----------------------------------------------------------------
   const sectionName = sectionLabel(section, locale);
   const activeSpec = active ? ELEMENT_SPECS[active.type] : null;
-  const activeName = active && activeSpec ? elementLabel(active.type, activeSpec.label, locale) : "";
+  const activeName = active && activeSpec ? elementName(active.type, activeSpec.label, locale) : "";
   const position = active ? elementPosition(section, active.id) : null;
 
   const menu = (
@@ -670,12 +674,13 @@ export function SectionInspector({
                   type="button"
                   onClick={stepUp}
                   aria-label={t.backToSection(sectionName)}
-                  className="relative min-w-0 cursor-pointer truncate rounded-[0.375rem] font-medium text-primary before:absolute before:-inset-x-2 before:-inset-y-3.5 before:content-[''] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  className="relative max-w-[60%] shrink-0 cursor-pointer truncate rounded-[0.375rem] font-medium text-primary before:absolute before:-inset-x-2 before:-inset-y-3.5 before:content-[''] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
                   {sectionName}
                 </button>
                 <IconCaretRight className="size-3 shrink-0 rtl:-scale-x-100" aria-hidden />
-                <span aria-current="true" className="shrink-0">
+                {/* The way back keeps its name; the element's, written in full just below, gives way. */}
+                <span aria-current="true" className="min-w-0 truncate">
                   {activeName}
                 </span>
               </nav>

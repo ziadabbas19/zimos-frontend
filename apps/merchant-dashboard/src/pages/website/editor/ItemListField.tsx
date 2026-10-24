@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { IconArrowDown, IconArrowUp, IconCaretDown, IconCopy, IconDelete, IconDragHandle, IconPlus } from "@/components/icons";
 import { Button, Input, Label, cn } from "@store-builder/ui";
 import { Select } from "@/components/Select";
@@ -9,6 +9,7 @@ import { ProductPickerField } from "./ProductPickerField";
 import { VideoField } from "./VideoField";
 import { ChoiceField, NumberField } from "./inspector/controls";
 import { BilingualField, LinkTargetNote, isLinkKey, pairByLanguage, type LanguageSlot } from "./inspector/fields";
+import { useInspectorEnv } from "./inspector/env";
 import { inspectorNumber, inspectorUi } from "./inspector/strings";
 
 /**
@@ -84,6 +85,7 @@ export function ItemListField({
   max,
   onChange,
   arrange = false,
+  listKey,
 }: {
   label: string;
   hint?: string;
@@ -100,6 +102,8 @@ export function ItemListField({
    * an imported template's band (ElementFields). Off, the list is as it was.
    */
   arrange?: boolean;
+  /** The prop the list is kept in ("slides"): when the preview presses one of its entries, that card opens. */
+  listKey?: string;
 }) {
   const locale = useEditorLocale();
   const ar = locale === "ar";
@@ -107,7 +111,22 @@ export function ItemListField({
   const uid = useId();
   const items = asItems(value);
   const noun = ar ? itemLabelAr : itemLabel;
-  const [open, setOpen] = useState<number | null>(() => (asItems(value).length === 1 ? 0 : null));
+  // An entry pressed in the preview (a slide, a card) opens here, and is brought into view.
+  const pressed = useInspectorEnv().focusItem;
+  const focus = pressed && listKey && pressed.list === listKey && pressed.index < items.length ? pressed : null;
+  const [open, setOpen] = useState<number | null>(() => (focus ? focus.index : asItems(value).length === 1 ? 0 : null));
+  const [seenFocus, setSeenFocus] = useState<number | null>(focus?.nonce ?? null);
+  if (focus && focus.nonce !== seenFocus) {
+    setSeenFocus(focus.nonce);
+    setOpen(focus.index);
+  }
+  const listRef = useRef<HTMLUListElement>(null);
+  const focusNonce = focus?.nonce;
+  const focusIndex = focus?.index;
+  useEffect(() => {
+    if (focusNonce === undefined) return;
+    listRef.current?.querySelector(`[data-item-index="${focusIndex}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [focusNonce, focusIndex]);
 
   const paired = pairByLanguage(fields, PAIRABLE);
   const pictureKey = fields.find((f) => f.kind === "image")?.key;
@@ -279,7 +298,7 @@ export function ItemListField({
       {items.length === 0 ? (
         <p className="text-xs leading-5 text-ink-soft">{t.itemsEmpty}</p>
       ) : (
-        <ul className="space-y-2">
+        <ul ref={listRef} className="space-y-2">
           {items.map((item, i) => {
             const isOpen = open === i;
             const title = str(item[titleKey]).trim() || `${noun} ${inspectorNumber(i + 1, locale)}`;
@@ -289,6 +308,7 @@ export function ItemListField({
               <li
                 key={i}
                 data-slot="inspector-item"
+                data-item-index={i}
                 data-open={isOpen ? "" : undefined}
                 className={cn(
                   "overflow-hidden rounded-[1rem] bg-paper-raised ring-1 ring-line",

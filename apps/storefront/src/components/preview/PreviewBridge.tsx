@@ -37,7 +37,8 @@ import { deepTextNodes, useCanvasText } from "./useCanvasText";
  * Frame → editor
  *   { type: "zimos:preview-ready", sectionIds }        after every (re)load
  *   { type: "zimos:select-section", sectionId }        a section was clicked
- *   { type: "zimos:select-element", sectionId, elementId, elementType }
+ *   { type: "zimos:pick-logo", part }  (the logo of the picked header or footer was clicked)
+ *   { type: "zimos:select-element", sectionId, elementId, elementType, item? }  (item: "slides.2", the entry of an imported template's list that was pressed)
  *                                                       an element of the selected section was clicked
  *   { type: "zimos:select-shell", part, xsPart? }       the header, footer or announcement bar was clicked
  *                                                          (xsPart: the template header's part under the pointer)
@@ -246,6 +247,8 @@ interface Strings {
   hidden: string;
   resizePicture: string;
   resizeLogo: string;
+  /** The tooltip on the logo of the picked header or footer: a click there changes it. */
+  changeLogo: string;
   everyPicture: string;
   moveShellPart: string;
   focalPoint: string;
@@ -274,6 +277,7 @@ const DEFAULT_STRINGS: Strings = {
   hidden: "Hidden",
   resizePicture: "Drag to resize this picture",
   resizeLogo: "Drag to resize the logo",
+  changeLogo: "Click to change the logo",
   everyPicture: "Every picture",
   moveShellPart: "Drag to move this part of the header",
   focalPoint: "Drag to set what the picture centres on (or use the arrow keys)",
@@ -350,8 +354,17 @@ function applyLogo(logoUrl: string | null | undefined) {
 }
 
 function applyLogoTo(link: HTMLElement, logoUrl: string | null | undefined) {
+  // An imported template's header and footer (components/xs) say where their logo comes from. A picture
+  // of their own, or the name asked for in place of one, wins over the store's logo, as it does live;
+  // with no store logo they show the template's, never the ZIMOS fallback they don't have.
+  const source = link.getAttribute("data-logo-source");
+  const templateLogo = link.getAttribute("data-template-logo");
+  if (source === "own" || source === "name") logoUrl = undefined;
+  else if (!logoUrl && source === "template") logoUrl = undefined;
+  else if (!logoUrl && templateLogo) logoUrl = templateLogo;
+
   const savedImg = link.querySelector<HTMLElement>(":scope > img:not([data-zimos-logo])");
-  const fallback = link.querySelector<HTMLElement>(":scope > .zimos-logo");
+  const fallback = link.querySelector<HTMLElement>(":scope > .zimos-logo, :scope > .xs-header__logo-name, :scope > .xs-footer__name");
   let preview = link.querySelector<HTMLImageElement>(":scope > img[data-zimos-logo]");
   const show = (el: HTMLElement | null, visible: boolean) => {
     if (!el) return;
@@ -377,12 +390,19 @@ function applyLogoTo(link: HTMLElement, logoUrl: string | null | undefined) {
     preview.alt = "";
     link.prepend(preview);
   }
-  // Sized like the header's own logo, which the merchant may be resizing too.
-  const size = link.getAttribute("data-logo-size") ?? "md";
-  const px = size === "sm" ? 32 : size === "lg" ? 48 : 40;
-  preview.width = px;
-  preview.height = px;
-  preview.className = PREVIEW_LOGO_CLASS[size] ?? PREVIEW_LOGO_CLASS.md;
+  if (source) {
+    // A template's header and footer size their logo themselves (app/xs-shell.css), in its own proportions.
+    preview.className = link.getAttribute("data-logo-class") ?? "xs-header__logo-img";
+    if (logoUrl === templateLogo) preview.setAttribute("data-xs-logo", "template");
+    else preview.removeAttribute("data-xs-logo");
+  } else {
+    // Sized like the header's own logo, which the merchant may be resizing too.
+    const size = link.getAttribute("data-logo-size") ?? "md";
+    const px = size === "sm" ? 32 : size === "lg" ? 48 : 40;
+    preview.width = px;
+    preview.height = px;
+    preview.className = PREVIEW_LOGO_CLASS[size] ?? PREVIEW_LOGO_CLASS.md;
+  }
   if (preview.src !== logoUrl) preview.src = logoUrl;
   show(savedImg, false);
   show(fallback, false);
@@ -467,6 +487,10 @@ export function PreviewBridge({
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [hoveredShell, setHoveredShell] = useState<ShellPart | null>(null);
   const [selectedShell, setSelectedShell] = useState<ShellPart | null>(null);
+  const selectedShellRef = useRef<ShellPart | null>(null);
+  useEffect(() => {
+    selectedShellRef.current = selectedShell;
+  }, [selectedShell]);
   const [shellLabels, setShellLabels] = useState<Partial<Record<ShellPart, string>>>({});
   const [shell, setShell] = useState<ShellOverride | null>(initialShell);
   const setShellOverride = useSetShellOverride();
@@ -493,6 +517,22 @@ export function PreviewBridge({
   // written where the selection changes (a click here, a message from the editor).
   const selectedRef = useRef<string | null>(null);
   const selectedElementRef = useRef<string | null>(null);
+  // The picked header's or footer's logo says that a click there changes it.
+  useEffect(() => {
+    if (!abilities.pickImage || (selectedShell !== "header" && selectedShell !== "footer")) return;
+    const logos = Array.from(document.querySelectorAll<HTMLElement>(`[${SHELL_ATTR}="${selectedShell}"] [data-store-logo]`));
+    for (const el of logos) {
+      el.style.cursor = "pointer";
+      el.title = strings.changeLogo;
+    }
+    return () => {
+      for (const el of logos) {
+        el.style.removeProperty("cursor");
+        el.removeAttribute("title");
+      }
+    };
+  }, [selectedShell, abilities.pickImage, strings.changeLogo]);
+
   const abilitiesRef = useRef<Abilities>(LEGACY_ABILITIES);
 
   const post = useCallback(
@@ -758,6 +798,14 @@ export function PreviewBridge({
       // The header, footer and announcement bar: the innermost one wins, so a
       // click on the announcement bar (inside the header) picks the bar.
       // A template strip's links and switches are the header's parts (its layout panel); its notice stays the bar's.
+      // The logo of the header or footer that is already picked: the editor opens its media library
+      // and puts the chosen picture in (zimos:pick-logo).
+      const logo = target.closest<HTMLElement>("[data-store-logo]");
+      const logoPart = logo?.closest<HTMLElement>(`[${SHELL_ATTR}]`)?.getAttribute(SHELL_ATTR);
+      if (logo && abilitiesRef.current.pickImage && (logoPart === "header" || logoPart === "footer") && logoPart === selectedShellRef.current) {
+        post({ type: "zimos:pick-logo", part: logoPart });
+        return;
+      }
       const stripPart = target.closest<HTMLElement>('[data-zimos-shell="header"] [data-xs-part]:not([data-xs-part="notice"])');
       const part = stripPart ? "header" : target.closest<HTMLElement>(`[${SHELL_ATTR}]`)?.getAttribute(SHELL_ATTR);
       if (isShellPart(part)) {
@@ -802,11 +850,16 @@ export function PreviewBridge({
         setSelectedShell(null);
         selectedElementRef.current = elementId;
         setSelectedElement(elementId);
+        // Inside an imported template's band, the entry of its list under the pointer (a slide, a card):
+        // the inspector opens that entry's fields.
+        const entry = target.closest<HTMLElement>("[data-xs-item]");
+        const item = entry && marker.contains(entry) ? (entry.getAttribute("data-xs-item") ?? "") : "";
         post({
           type: "zimos:select-element",
           sectionId: id,
           elementId,
           elementType: marker.getAttribute(TYPE_ATTR) ?? "",
+          ...(/^[A-Za-z0-9_]{1,40}\.\d{1,3}$/.test(item) ? { item } : {}),
         });
         return;
       }

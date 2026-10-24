@@ -54,8 +54,9 @@ import type { ShellPart } from "./storeShell";
  *
  * The store's fixed parts bracket the list — the announcement bar and header
  * above it, the footer below — so the outline reads top to bottom like the
- * page does. They open their own panels, and can't be dragged or deleted:
- * they are the same on every page.
+ * page does, in three named parts: the top of every page, this page's own
+ * sections, the bottom of every page. The fixed parts open their own panels,
+ * and can't be dragged or deleted: they are the same on every page.
  *
  * `variant="sheet"` is the same list inside a sheet on a phone: 56px rows, no
  * header of its own (the sheet has the title), and nothing that waits for a
@@ -288,6 +289,7 @@ export function LayerList({
         <div className={cn("@container", sheet ? "" : "min-h-0 flex-1 overflow-y-auto px-2 pb-3", !sheet && !header && "pt-2")}>
           {onSelectShell && (
             <div className="space-y-2">
+              <GroupTitle>{t.groupTop}</GroupTitle>
               <FixedRow
                 icon={IconAnnounce}
                 label={t.announcement}
@@ -307,6 +309,7 @@ export function LayerList({
               />
             </div>
           )}
+          {onSelectShell && <GroupTitle>{t.groupContent}</GroupTitle>}
           {sections.length === 0 ? (
             <div className="my-2 flex flex-col items-center gap-3 rounded-[1.25rem] border border-dashed border-line-strong/60 px-4 py-6 text-center">
               <p className="text-sm leading-6 text-ink-soft">{t.emptyPage}</p>
@@ -355,6 +358,7 @@ export function LayerList({
               </SortableContext>
             </DndContext>
           )}
+          {onSelectShell && <GroupTitle>{t.groupBottom}</GroupTitle>}
           {onSelectShell && (
             <FixedRow
               icon={IconPanelBottom}
@@ -371,6 +375,11 @@ export function LayerList({
       <SaveSectionSheet section={saving} onClose={() => setSaving(null)} funnelId={funnelId} />
     </div>
   );
+}
+
+/** The name of one part of the list, above its rows. */
+function GroupTitle({ children }: { children: string }) {
+  return <p className="m-0 px-3 pt-3 pb-1 text-xs font-medium text-ink-soft first:pt-1">{children}</p>;
 }
 
 /**

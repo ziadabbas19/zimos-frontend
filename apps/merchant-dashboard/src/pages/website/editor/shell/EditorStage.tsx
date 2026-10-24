@@ -18,12 +18,15 @@ export function EditorStage({
   device,
   onClear,
   bar,
+  tips,
   children,
 }: {
   /** The width the stage is showing, for the glass layer to key on. */
   device: EditorDevice;
   onClear: () => void;
   bar?: ReactNode;
+  /** Floats over the bottom of the stage (CanvasTips). */
+  tips?: ReactNode;
   children: ReactNode;
 }) {
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
@@ -36,6 +39,7 @@ export function EditorStage({
       {bar}
       <div className="relative min-h-0 flex-1" onPointerDown={onPointerDown}>
         {children}
+        {tips && <div className="pointer-events-none absolute inset-x-0 bottom-3 z-[2] flex justify-center px-3">{tips}</div>}
       </div>
     </main>
   );
@@ -80,6 +84,41 @@ export function LookBar({
         </Button>
       </div>
     </div>
+  );
+}
+
+/**
+ * What can be done on the page itself, said once something is selected: a double-click types in
+ * place, a click on a picture of the selected section replaces it, the handles resize and move.
+ * Every one of those works already; without this nothing but a tooltip says so. Hidden for good
+ * with its X (the editor keeps the choice).
+ */
+export function CanvasTips({ onDismiss }: { onDismiss: () => void }) {
+  const t = useT(SHELL_STRINGS);
+  const dot = <span aria-hidden className="text-ink-soft">·</span>;
+  return (
+    <aside
+      data-slot="editor-tips"
+      aria-label={t.tips}
+      className="pointer-events-auto flex max-w-full items-center gap-1 rounded-full bg-paper-raised py-1 ps-4 pe-1 text-xs text-ink shadow-[var(--shadow-raised)] ring-1 ring-line"
+    >
+      <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 py-1">
+        <span>{t.tipText}</span>
+        {dot}
+        <span>{t.tipPicture}</span>
+        {dot}
+        <span>{t.tipHandles}</span>
+      </p>
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label={t.tipsDismiss}
+        title={t.tipsDismiss}
+        className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-soft transition-colors duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:text-ink focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none pointer-coarse:size-11"
+      >
+        <IconClose className="size-4" aria-hidden />
+      </button>
+    </aside>
   );
 }
 

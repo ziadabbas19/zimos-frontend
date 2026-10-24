@@ -19,7 +19,7 @@ import { STOREFRONT_URL } from "@/lib/storefrontUrl";
 import { useLocale, useT } from "@/i18n/LocaleContext";
 import type { CanvasEdit, CanvasStep } from "@/lib/canvasDrag";
 import { ELEMENT_SPECS } from "@/pages/website/editor/blocks";
-import { elementLabel } from "@/pages/website/editor/editorLocale";
+import { elementName } from "@/pages/website/editor/editorLocale";
 import { useCanvasDragSession } from "./useCanvasDragSession";
 import {
   PREVIEW_DEVICE_WIDTH,
@@ -123,6 +123,8 @@ export interface PreviewCanvas {
   onTextEdit?: (elementId: string, text: string, match?: DeepMatch) => void;
   /** An editor key (copy, paste, undo…) pressed while the page had the focus. */
   onCanvasKey?: (key: CanvasKey) => void;
+  /** The logo of the picked header or footer was clicked: change it. */
+  onPickLogo?: (part: "header" | "footer") => void;
   /**
    * The imported templates' tools on the page — resizing a band's pictures and
    * a logo, moving a header part, a ground picture's focus, a band's items —
@@ -217,7 +219,7 @@ function elementLabelsOf(tree: PageTree, locale: "en" | "ar"): Record<string, st
         for (const element of column.elements ?? []) {
           const type = element.type as string;
           if (type in out) continue;
-          out[type] = elementLabel(type as PageElementType, specs[type]?.label ?? type.replace(/_/g, " "), locale);
+          out[type] = elementName(type as PageElementType, specs[type]?.label ?? type.replace(/_/g, " "), locale);
         }
       }
     }
@@ -295,7 +297,7 @@ export function StorefrontPreview({
   colorMode?: ColorMode | null;
   onColorModeChange?: (mode: ColorMode) => void;
   /** With a canvas: an element of the selected section was clicked. Given, the frame selects elements. */
-  onSelectElement?: (target: { sectionId: string; elementId: string; elementType: string }) => void;
+  onSelectElement?: (target: { sectionId: string; elementId: string; elementType: string; item?: string }) => void;
   /** The element outlined inside the selected section. Left out, the preview follows the frame's own clicks. */
   selectedElementId?: string | null;
   /** The floating bar on the selected section. Left out, the bar keeps its two move buttons (`canvas.onMoveSection`). */
@@ -810,6 +812,7 @@ export function StorefrontPreview({
             sectionId: message.sectionId,
             elementId: message.elementId,
             elementType: message.elementType,
+            ...(message.item ? { item: message.item } : {}),
           });
           break;
         case "zimos:select-shell":
@@ -836,6 +839,9 @@ export function StorefrontPreview({
         case "zimos:bg-position":
           // A band's ground picture centred on the canvas: a canvas edit like the others, one undo step.
           current?.onCanvasEdit?.({ kind: "bg-position", sectionId: message.sectionId, elementId: message.elementId, path: message.path, x: message.x, y: message.y });
+          break;
+        case "zimos:pick-logo":
+          canvasRef.current?.onPickLogo?.(message.part);
           break;
         case "zimos:pick-image":
           handlers.onPickImage?.({ sectionId: message.sectionId, elementId: message.elementId, field: message.field, src: message.src, nth: message.nth });

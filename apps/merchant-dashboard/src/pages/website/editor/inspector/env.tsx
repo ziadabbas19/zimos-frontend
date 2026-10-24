@@ -16,6 +16,14 @@ export type RequestImage = (apply: (url: string) => void) => void;
 /** The two languages a store's content is written in. */
 export type ContentLanguage = "ar" | "en";
 
+/** The entry of a list the preview pressed (a slide, a card), for its card to open: `nonce` re-asks for the same one. */
+export interface FocusItem {
+  elementId: string;
+  list: string;
+  index: number;
+  nonce: number;
+}
+
 export interface InspectorEnv {
   /** One input with a language switch instead of two side by side: a panel under 20rem, or the phone sheet. */
   compact: boolean;
@@ -29,6 +37,8 @@ export interface InspectorEnv {
    */
   contentLanguage?: ContentLanguage;
   setContentLanguage?: (language: ContentLanguage) => void;
+  /** Which entry of which list to open (ItemListField), when the preview pressed one. */
+  focusItem?: FocusItem | null;
 }
 
 const DEFAULT_ENV: InspectorEnv = { compact: false, pairImages: false, requestImage: null };

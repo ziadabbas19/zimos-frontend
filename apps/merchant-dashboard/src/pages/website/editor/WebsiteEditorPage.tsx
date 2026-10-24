@@ -29,7 +29,7 @@ import { NewPageDialog } from "./NewPageDialog";
 import { PageTabs } from "./PageTabs";
 import { deepTextOf, inlineTextIds, sectionHidden } from "./canvasTools";
 import { ShellPanel } from "./ShellPanels";
-import { sectionElements, sectionLabel, type BlockPreset } from "./blocks";
+import { sectionElements, sectionLabel, soleElementId, type BlockPreset } from "./blocks";
 import { EditorLocaleContext, editorUi, useEditorLocale } from "./editorLocale";
 import { shellPartLabel, withShellSize, type ShellPart } from "./storeShell";
 import { stepEdit, type CanvasEdit } from "@/lib/canvasDrag";
@@ -40,7 +40,8 @@ import { XS_ONLY } from "./xsBlocks";
 import type { ColorMode } from "./storeThemes";
 import { EditorCanvas } from "./shell/EditorCanvas";
 import { EditorPageSettings } from "./shell/EditorPageSettings";
-import { EditorStage, GuideStrip, LookBar } from "./shell/EditorStage";
+import { CanvasTips, EditorStage, GuideStrip, LookBar } from "./shell/EditorStage";
+import type { FocusItem } from "./inspector/env";
 import { EditorToolbar, type EditorMenuItem, type SiteStatus } from "./shell/EditorToolbar";
 import { EndPanel, LookIntro } from "./shell/EndPanel";
 import { PageSwitcher } from "./shell/PageSwitcher";
@@ -160,11 +161,14 @@ function WebsiteEditor() {
   const [device, setDevice] = useStoredChoice<EditorDevice>("zimos:website-editor:device", "phone", EDITOR_DEVICES);
   const [startShown, setStartShown] = useStoredFlag("zimos:website-editor:start-panel", true);
   const [endShown, setEndShown] = useStoredFlag("zimos:website-editor:end-panel", true);
+  const [tipsShown, setTipsShown] = useStoredFlag("zimos:website-editor:canvas-tips", true);
   const [startTab, setStartTab] = useState<StartTab>("sections");
 
   // --- selection: a section, and one element inside it ----------------------
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  /** The entry of the element's list the preview pressed (a slide, a card): its card opens in the inspector. */
+  const [focusItem, setFocusItem] = useState<FocusItem | null>(null);
   /** The announcement bar, header or footer, when one of those is open instead of a section. */
   const [selectedShell, setSelectedShell] = useState<ShellPart | null>(null);
   const [shellPartFocus, setShellPartFocus] = useState<{ id: string; nonce: number } | null>(null);
@@ -238,7 +242,9 @@ function WebsiteEditor() {
   /** Selecting from the editor side also brings the section into view in the preview. */
   function selectSection(sectionId: string, { scroll, reveal = true }: { scroll: boolean; reveal?: boolean }) {
     setSelectedSectionId(sectionId);
-    setSelectedElementId(null);
+    setFocusItem(null);
+    // A section holding one element opens that element at once: no second click to reach its settings.
+    setSelectedElementId(soleElementId(sections.find((s) => s.id === sectionId)));
     setSelectedShell(null);
     setSectionsOpen(false);
     if (reveal) revealInspector();
@@ -246,9 +252,13 @@ function WebsiteEditor() {
   }
 
   /** A click on an element of the selected section — in the preview, or in the section list. */
-  function selectElement(target: { sectionId: string; elementId: string }) {
+  function selectElement(target: { sectionId: string; elementId: string; item?: string }) {
     setSelectedSectionId(target.sectionId);
     setSelectedElementId(target.elementId);
+    const [list, at] = target.item ? target.item.split(".") : [];
+    setFocusItem((prev) =>
+      list && at ? { elementId: target.elementId, list, index: Number(at), nonce: (prev?.nonce ?? 0) + 1 } : null
+    );
     setSelectedShell(null);
     setSectionsOpen(false);
     revealInspector();
@@ -591,6 +601,7 @@ function WebsiteEditor() {
       onDuplicate={() => edits.duplicate(selected.id)}
       onClose={clearSelection}
       focusElementId={elementId}
+      focusItem={focusItem}
       tab={inspectorTab}
       onTabChange={setInspectorTab}
       onRequestImage={(apply) => requestImage({ kind: "apply", apply })}
@@ -697,6 +708,7 @@ function WebsiteEditor() {
             <EditorStage
               device={roomy ? device : "phone"}
               onClear={clearSelection}
+              tips={tipsShown && (selectedSectionId || selectedShell) ? <CanvasTips onDismiss={() => setTipsShown(false)} /> : null}
               bar={
                 doc.lookDirty ? (
                   <LookBar
@@ -722,6 +734,22 @@ function WebsiteEditor() {
                 <EditorCanvas
                   storePath={shownStoreView}
                   templateTools={xsEditor}
+                  onPickLogo={(part) =>
+                    // A click on the picked header's or footer's logo: the media library, then the store's logo
+                    // (the one every part shows) — or the footer's own picture, where the footer has one.
+                    requestImage({
+                      kind: "apply",
+                      apply: (url) => {
+                        const look = doc.look;
+                        doc.updateLook(
+                          part === "footer" && look.footer.logoImage
+                            ? { ...look, footer: { ...look.footer, logoImage: url } }
+                            : { ...look, logoUrl: url, header: { ...look.header, logoImage: undefined } },
+                          "canvas:logo"
+                        );
+                      },
+                    })
+                  }
                   workspaceId={workspaceId}
                   tree={tree}
                   look={look}

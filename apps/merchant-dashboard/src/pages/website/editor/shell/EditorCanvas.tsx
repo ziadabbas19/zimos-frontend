@@ -57,7 +57,10 @@ export function EditorCanvas({
   onCanvasKey,
   storePath = null,
   templateTools = false,
+  onPickLogo,
 }: {
+  /** The logo of the picked header or footer was clicked on the page. */
+  onPickLogo?: (part: "header" | "footer") => void;
   /** One of the store's own pages to show instead of the page (StorePageList.tsx). */
   storePath?: string | null;
   /** An imported template's tools on the page (StorefrontPreview PreviewCanvas `templateTools`). */
@@ -84,7 +87,8 @@ export function EditorCanvas({
   scrollRequest: { sectionId: string; nonce: number } | null;
   shellScrollRequest: { part: ShellPart; nonce: number } | null;
   onSelectSection: (sectionId: string) => void;
-  onSelectElement: (target: { sectionId: string; elementId: string; elementType: string }) => void;
+  /** `item`: the entry of an imported template's list that was pressed ("slides.2"). */
+  onSelectElement: (target: { sectionId: string; elementId: string; elementType: string; item?: string }) => void;
   onSelectShell: (part: ShellPart, xsPart?: string) => void;
   onInsert: (index: number) => void;
   onMoveSection: (sectionId: string, direction: "up" | "down") => void;
@@ -143,6 +147,7 @@ export function EditorCanvas({
           resizeImage: ui.canvasResizeImage,
           resizePicture: ui.canvasResizePicture,
           resizeLogo: ui.canvasResizeLogo,
+          changeLogo: ui.canvasChangeLogo,
           moveShellPart: ui.canvasMoveShellPart,
           focalPoint: ui.canvasFocalPoint,
           moveItem: ui.canvasMoveItem,
@@ -173,6 +178,7 @@ export function EditorCanvas({
         deepText,
         onTextEdit,
         onCanvasKey,
+        onPickLogo,
         templateTools,
         onInsert,
         onMoveSection,

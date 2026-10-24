@@ -8,7 +8,7 @@
  * from a frame this editor owns):
  *   { type: "zimos:preview-ready", sectionIds }        after every (re)load
  *   { type: "zimos:select-section", sectionId }        a section was clicked
- *   { type: "zimos:select-element", sectionId, elementId, elementType }
+ *   { type: "zimos:select-element", sectionId, elementId, elementType, item? }
  *                                                       an element of the selected section was clicked
  *   { type: "zimos:select-shell", part, xsPart? }       the header, footer or announcement bar was clicked
  *                                                          (xsPart: the template header's part under the pointer)
@@ -138,7 +138,8 @@ export type FrameMessage =
   | { type: "zimos:patched"; seq: number }
   | { type: "zimos:color-mode"; mode: ColorMode }
   | { type: "zimos:select-section"; sectionId: string }
-  | { type: "zimos:select-element"; sectionId: string; elementId: string; elementType: string }
+  | { type: "zimos:select-element"; sectionId: string; elementId: string; elementType: string; item?: string }
+  | { type: "zimos:pick-logo"; part: "header" | "footer" }
   | { type: "zimos:select-shell"; part: ShellPart; xsPart?: string }
   | { type: "zimos:insert-section"; index: number }
   | { type: "zimos:move-section"; sectionId: string; direction: "up" | "down" }
@@ -200,6 +201,8 @@ export interface CanvasStrings {
   /** The handles on a picture of an imported template's band, and on its header's or footer's logo. */
   resizePicture?: string;
   resizeLogo?: string;
+  /** The tooltip on the picked header's or footer's logo: a click there changes it. */
+  changeLogo?: string;
   /** The grip on a part of an imported template's header. */
   moveShellPart?: string;
   /** The dot on a band's ground picture that sets the point it centres on. */
@@ -376,8 +379,12 @@ export function readFrameMessage(
             sectionId: data.sectionId,
             elementId: data.elementId,
             elementType: data.elementType,
+            // The entry of an imported template's list that was pressed: "slides.2".
+            ...(typeof data.item === "string" && /^[A-Za-z0-9_]{1,40}\.\d{1,3}$/.test(data.item) ? { item: data.item } : {}),
           }
         : null;
+    case "zimos:pick-logo":
+      return data.part === "header" || data.part === "footer" ? { type: "zimos:pick-logo", part: data.part } : null;
     case "zimos:select-shell":
       if (!isShellPart(data.part)) return null;
       return typeof data.xsPart === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(data.xsPart)
