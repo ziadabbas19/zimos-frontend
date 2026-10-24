@@ -1,7 +1,7 @@
 import type { ConfirmationChannel, ConfirmationOutcome } from "@store-builder/api-client";
 import { cn } from "@store-builder/ui";
 import { IconArrowRight, IconNote, IconPhone, IconSpinner, IconWhatsApp, type IconComponent } from "@/components/icons";
-import { ViewLink } from "@/components/ViewLink";
+import { ViewOrderButton } from "@/components/ViewOrderButton";
 import { OUTCOME_ICON } from "../queueModel";
 import { useStationStrings } from "./stationStrings";
 import { STATION_KEYCAPS } from "./useStationKeys";
@@ -85,13 +85,14 @@ function Face({
  * "WhatsApp" — the one used last carries a dot and a ring, and is the channel
  * the result is recorded with. Then the results: "Confirmed", the main action,
  * across the row; "No answer", "Call later" and "Cancelled" under it. Last, the
- * quiet line: open the order to edit it, add a note, skip.
+ * quiet line: «View order» (the same button as the list's cards), add a note, skip.
  *
  * All 56px tall; each also has a key on a desktop (useStationKeys.ts), printed
  * on it from md up. While one of them is working, the rest wait.
  */
 export function StationActions({
   orderId,
+  orderNumber,
   canCall,
   noPhoneLabel,
   whatsAppUrl,
@@ -110,6 +111,7 @@ export function StationActions({
   onSkip,
 }: {
   orderId: string;
+  orderNumber: string;
   /** The number is whole: it can be dialled. */
   canCall: boolean;
   noPhoneLabel: string;
@@ -240,9 +242,8 @@ export function StationActions({
       </div>
 
       <div className="-mx-1.5 -mb-1 flex items-center gap-1">
-        <ViewLink to={`/orders/${orderId}`} className={cn(QUIET_LINK, "min-w-0")}>
-          <span className="min-w-0 truncate">{t.openOrder}</span>
-        </ViewLink>
+        {/* ms-1.5 undoes the row's pull to the edges: the quiet links need it for their hover tint, the outline does not. */}
+        <ViewOrderButton orderId={orderId} orderNumber={orderNumber} className="ms-1.5 min-w-0" />
         <button
           type="button"
           aria-haspopup="dialog"

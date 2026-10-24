@@ -3,7 +3,7 @@ import { screen, waitFor } from "@testing-library/react";
 import type { Order, ReturnRequest } from "@store-builder/api-client";
 import { fakeBackend } from "@/test/fakeBackend";
 import { api, fake } from "@/test/mocks";
-import { renderWithProviders } from "@/test/renderWithProviders";
+import { currentPath, renderWithProviders } from "@/test/renderWithProviders";
 import { ReturnsPage } from "./ReturnsPage";
 
 // No switch is mocked here: this is the dashboard as it ships, shopper returns off.
@@ -39,5 +39,18 @@ describe("Returns while shopper returns are switched off", () => {
     expect(screen.queryByRole("button", { name: /Open photo/ })).not.toBeInTheDocument();
     // Neither the shopper-returns setting nor a decision goes to the API.
     expect(calls).toHaveLength(0);
+  });
+
+  it("has «View order» beside the return's buttons: the order's page, in the same tab", async () => {
+    api.listReturns.mockResolvedValue([ret]);
+    api.getOrder.mockResolvedValue(order);
+    const { user } = renderWithProviders(<ReturnsPage />, { route: "/returns", path: "/returns" });
+
+    const link = await screen.findByRole("link", { name: "View order #1024" });
+    expect(link).toHaveAttribute("href", "/orders/ord_1");
+    expect(link).not.toHaveAttribute("target");
+    await user.click(link);
+    expect(currentPath()).toBe("/orders/ord_1");
+    expect(api.moderateReturn).not.toHaveBeenCalled();
   });
 });

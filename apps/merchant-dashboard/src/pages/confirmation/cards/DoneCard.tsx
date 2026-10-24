@@ -3,6 +3,7 @@ import { Button } from "@store-builder/ui";
 import type { ConfirmationAttempt, ConfirmationTask } from "@store-builder/api-client";
 import { IconCaretDown } from "@/components/icons";
 import { StatusBadge } from "@/components/StatusBadge";
+import { ViewOrderButton } from "@/components/ViewOrderButton";
 import { fmt } from "@/i18n/LocaleContext";
 import { formatDateTime } from "@/lib/format";
 import { useChannelLabels } from "../confirmationChannel";
@@ -89,11 +90,14 @@ export function DoneCard({
         </details>
       )}
 
-      {task.correctable && canManage && (
-        <Button variant="outline" onClick={() => setCorrecting(true)} className="min-h-11 rounded-full px-5">
-          {t.correct}
-        </Button>
-      )}
+      <div className="flex flex-wrap items-center gap-2">
+        {task.correctable && canManage && (
+          <Button variant="outline" onClick={() => setCorrecting(true)} className="min-h-11 rounded-full px-5">
+            {t.correct}
+          </Button>
+        )}
+        <ViewOrderButton orderId={task.order.id} orderNumber={task.order.orderNumber} />
+      </div>
 
       {correcting && (
         <CorrectOutcomeModal
