@@ -10,6 +10,7 @@ import { OrderAddressTools, OrderContactTools } from "./OrderCustomerTools";
 import { ShippingOptionNote } from "./ShippingOptionNote";
 import { PreorderLineNote } from "./PreorderLineNote";
 import { PREORDERS_ENABLED } from "@/lib/features";
+import { HiddenValue, LockedOrderNotice, isHidden, isLockedOrder } from "@/components/OrdersLock";
 
 const STRINGS = {
   en: {
@@ -114,9 +115,12 @@ export function OrderSummary({ order, onChanged }: { order: Order; onChanged?: (
   const labels = useOrderLabels();
   const c = order.currency;
   const address = order.shippingAddressSnapshot;
+  // Locked (components/OrdersLock): hidden fields read as hidden; the governorate still shows.
+  const locked = isLockedOrder(order);
+  const shown = (value: string | null | undefined) => (isHidden(value) ? <HiddenValue /> : value);
   const addressText = address
     ? [address.addressLine, address.city, address.province, address.postalCode, address.country]
-        .filter(Boolean)
+        .filter((part) => Boolean(part) && !isHidden(part))
         .join(t.listSep)
     : t.noAddress;
 
@@ -244,31 +248,47 @@ export function OrderSummary({ order, onChanged }: { order: Order; onChanged?: (
 
       <Card>
         <CardContent className="space-y-4 pt-6 text-sm">
+          {locked && <LockedOrderNotice order={order} />}
           <div>
             <h3 className="mb-1 font-medium text-ink">{t.customer}</h3>
-            <p className="text-ink-soft">{order.contactSnapshot?.fullName || "—"}</p>
+            <p className="text-ink-soft">{shown(order.contactSnapshot?.fullName) || "—"}</p>
             <p className="text-ink-soft">
-              {order.contactSnapshot?.phone ? <bdi dir="ltr">{order.contactSnapshot.phone}</bdi> : "—"}
+              {isHidden(order.contactSnapshot?.phone) ? (
+                <HiddenValue />
+              ) : order.contactSnapshot?.phone ? (
+                <bdi dir="ltr">{order.contactSnapshot.phone}</bdi>
+              ) : (
+                "—"
+              )}
             </p>
             {order.contactSnapshot?.alternatePhone && (
               <p className="text-ink-soft">
-                {t.altPhone}: <bdi dir="ltr">{order.contactSnapshot.alternatePhone}</bdi>
+                {t.altPhone}: {isHidden(order.contactSnapshot.alternatePhone) ? <HiddenValue /> : <bdi dir="ltr">{order.contactSnapshot.alternatePhone}</bdi>}
               </p>
             )}
             {order.contactSnapshot?.email && (
               <p className="break-all text-ink-soft">
-                <bdi dir="ltr">{order.contactSnapshot.email}</bdi>
+                {isHidden(order.contactSnapshot.email) ? <HiddenValue /> : <bdi dir="ltr">{order.contactSnapshot.email}</bdi>}
               </p>
             )}
-            <OrderContactTools order={order} onChanged={onChanged} />
+            {/* Call, WhatsApp, edit: nothing to act on while the details are hidden. */}
+            {!locked && <OrderContactTools order={order} onChanged={onChanged} />}
           </div>
           <div>
             <h3 className="mb-1 font-medium text-ink">{t.shippingAddress}</h3>
-            <p className="text-ink-soft">{addressText}</p>
-            <OrderAddressTools order={order} />
+            <p className="text-ink-soft">
+              {addressText}
+              {locked && address && (
+                <>
+                  {addressText ? t.listSep : null}
+                  <HiddenValue />
+                </>
+              )}
+            </p>
+            {!locked && <OrderAddressTools order={order} />}
             {address?.notes && (
               <p className="text-ink-soft">
-                {t.note}: {address.notes}
+                {t.note}: {shown(address.notes)}
               </p>
             )}
           </div>
@@ -282,7 +302,7 @@ export function OrderSummary({ order, onChanged }: { order: Order; onChanged?: (
           {order.notes && (
             <div>
               <h3 className="mb-1 font-medium text-ink">{t.internalNotes}</h3>
-              <p className="whitespace-pre-wrap text-ink-soft">{order.notes}</p>
+              <p className="whitespace-pre-wrap text-ink-soft">{shown(order.notes)}</p>
             </div>
           )}
           {order.riskFlags.length > 0 && (

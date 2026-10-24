@@ -8,6 +8,7 @@ import { useWorkspace } from "@/context/WorkspaceContext";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { useT, fmt, type Messages } from "@/i18n/LocaleContext";
 import { getGoLiveState, openGoLive, subscribeGoLive } from "@/lib/goLive";
+import { publishWorkspaceAccess } from "@/lib/workspaceAccess";
 
 /**
  * The subscription / suspension banner shown above every dashboard page, from
@@ -46,6 +47,10 @@ const STRINGS = {
     walletExhausted: "Your prepaid balance has run out, so your store has stopped taking orders. Top it up to reopen it.",
     walletDebt: "Your prepaid balance is below zero. New orders keep coming until the debt limit is reached. Top it up now.",
     walletLimit: "Your prepaid balance has reached its limit, so new orders are refused. Your store stays open. Top it up to take orders again.",
+    graceLocked:
+      "Your subscription expired on {date}. If it isn't renewed by {when}, your store keeps selling but the customer details on new orders will be hidden until you renew.",
+    restrictedLocked:
+      "Your subscription has expired. Your store keeps selling, but the customer details on new orders are hidden until you renew it.",
   },
   ar: {
     expiring: "ينتهي اشتراكك في {date}. جدّده حتى يستمر متجرك في العمل.",
@@ -67,6 +72,9 @@ const STRINGS = {
     walletExhausted: "نفد رصيدك المدفوع مسبقًا، فتوقّف متجرك عن استقبال الطلبات. اشحنه لإعادة فتحه.",
     walletDebt: "رصيدك المدفوع مسبقًا أقل من صفر. تستمر الطلبات الجديدة حتى يُبلغ حد المديونية. اشحنه الآن.",
     walletLimit: "بلغ رصيدك المدفوع مسبقًا الحد، لذلك تُرفض الطلبات الجديدة. يبقى متجرك مفتوحًا. اشحنه لتعود الطلبات.",
+    graceLocked:
+      "انتهى اشتراكك في {date}. إذا لم يُجدَّد قبل {when}، سيواصل متجرك البيع لكن بيانات العملاء في الطلبات الجديدة ستُخفى حتى تجدّده.",
+    restrictedLocked: "انتهى اشتراكك. يواصل متجرك البيع، لكن بيانات العملاء في الطلبات الجديدة مخفية حتى تجدّده.",
   },
 } satisfies Messages;
 
@@ -97,8 +105,11 @@ function noticeFor(access: WorkspaceAccess, t: Record<keyof (typeof STRINGS)["en
   if (access.draft) {
     return { key: "draft", tone: "draft", text: t.draft, dismissible: false, billing: false };
   }
+  // Locked orders on: the store keeps selling whatever the balance; the
+  // toolbar's balance (BalanceWidget) and LockedOrdersBanner say the rest.
+  const locking = access.ordersLock === true;
   // The pay-per-order balance (absent from an API from before it).
-  const wallet = access.wallet;
+  const wallet = locking ? null : access.wallet;
   // A plan with its own debt limit keeps the store open: only new orders stop.
   const debtLimit = wallet?.policy === "debt_limit";
   if (wallet && wallet.phase === "exhausted") {
@@ -127,13 +138,16 @@ function noticeFor(access: WorkspaceAccess, t: Record<keyof (typeof STRINGS)["en
       return {
         key: "grace",
         tone: "danger",
-        text: b.enforced
-          ? fmt(t.grace, { date, when: b.restrictsAt ? formatDateTime(b.restrictsAt) : "" })
-          : t.notEnforced,
+        text: locking
+          ? fmt(t.graceLocked, { date, when: b.restrictsAt ? formatDateTime(b.restrictsAt) : "" })
+          : b.enforced
+            ? fmt(t.grace, { date, when: b.restrictsAt ? formatDateTime(b.restrictsAt) : "" })
+            : t.notEnforced,
         dismissible: true,
         billing: true,
       };
     case "restricted":
+      if (locking) return { key: "restricted_locked", tone: "danger", text: t.restrictedLocked, dismissible: false, billing: true };
       return b.enforced
         ? { key: "restricted", tone: "danger", text: t.restricted, dismissible: false, billing: true }
         : { key: "restricted_warn", tone: "danger", text: t.notEnforced, dismissible: true, billing: true };
@@ -159,7 +173,10 @@ export function AccessBanner() {
     apiClient
       .getWorkspaceAccess(workspaceId)
       .then((a) => {
-        if (!cancelled) setAccess(a);
+        if (cancelled) return;
+        setAccess(a);
+        // The toolbar's balance and the locked-orders banner read the same answer (lib/workspaceAccess).
+        publishWorkspaceAccess(workspaceId, a);
       })
       .catch(() => {
         // A banner that can't load is simply not shown.

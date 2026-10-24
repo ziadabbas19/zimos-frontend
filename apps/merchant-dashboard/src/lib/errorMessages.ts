@@ -36,6 +36,10 @@ const STRINGS = {
       "Your subscription has expired, so new products and funnels can't be created until it's renewed. Existing products, funnels and orders keep working — see My Plan.",
     STORE_SUSPENDED:
       "This store has been suspended by Zimos, so new products and funnels can't be created. Contact Zimos support.",
+    ORDER_LOCKED:
+      "This order's customer details are hidden because your balance can't pay its fee. Top up your balance from My Plan, then try again.",
+    orderLockedSubscription:
+      "This order's customer details are hidden because your subscription has expired. Renew it from My Plan, then try again.",
     NOT_FOUND: "We couldn't find that. It may have been deleted.",
     CONFLICT: "This changed in the meantime. Reload and try again.",
     RATE_LIMITED: "Too many requests. Wait a moment and try again.",
@@ -154,6 +158,8 @@ const STRINGS = {
     SUBSCRIPTION_REQUIRED:
       "انتهى اشتراكك، لذلك لا يمكن إنشاء منتجات أو مسارات بيع جديدة حتى يُجدَّد. المنتجات والمسارات والطلبات الحالية تعمل كالمعتاد — راجع قسم خطتي.",
     STORE_SUSPENDED: "أوقفت Zimos هذا المتجر، لذلك لا يمكن إنشاء منتجات أو مسارات بيع جديدة. تواصل مع دعم Zimos.",
+    ORDER_LOCKED: "بيانات عميل هذا الطلب مخفية لأن رصيدك لا يكفي لرسومه. اشحن رصيدك من خطتي ثم حاول مرة أخرى.",
+    orderLockedSubscription: "بيانات عميل هذا الطلب مخفية لأن اشتراكك انتهى. جدّده من خطتي ثم حاول مرة أخرى.",
     NOT_FOUND: "لم نعثر على هذا العنصر. ربما تم حذفه.",
     CONFLICT: "تغيّر هذا العنصر في الأثناء. أعد التحميل وحاول مرة أخرى.",
     RATE_LIMITED: "طلبات كثيرة جدًا. انتظر قليلًا ثم حاول مرة أخرى.",
@@ -278,6 +284,7 @@ const OWN_KEY_LIST = [
   "limitStores",
   "limitDrafts",
   "featureRequired",
+  "orderLockedSubscription",
 ] as const;
 type CodeKey = Exclude<keyof typeof STRINGS.en, (typeof OWN_KEY_LIST)[number]>;
 const OWN_KEYS: ReadonlySet<string> = new Set(OWN_KEY_LIST);
@@ -316,6 +323,8 @@ export function useErrorMessage() {
         if (VERBATIM_CODES.has(code) && err instanceof ApiError && err.message) return err.message;
         // A draft store (not subscribed yet) is not an expired one.
         if (code === "SUBSCRIPTION_REQUIRED" && apiErrorDetails<{ draft?: boolean }>(err)?.draft) return t.draftRequired;
+        // Locked orders: renewing opens it, or topping up (the code's own sentence).
+        if (code === "ORDER_LOCKED" && apiErrorDetails<{ reason?: string }>(err)?.reason === "subscription") return t.orderLockedSubscription;
         if (code === "PLAN_LIMIT_REACHED") {
           const limit = apiErrorDetails<{ limit?: string; max?: number; used?: number; resetsAt?: string }>(err);
           const counts = { max: limit?.max ?? "", used: limit?.used ?? "" };

@@ -21,6 +21,7 @@ import { StationOrder } from "./StationOrder";
 import { StationStrip, type StationProgress } from "./StationStrip";
 import { useStationStrings } from "./stationStrings";
 import { useStationKeys } from "./useStationKeys";
+import { LockedOrderNotice, isLockedOrder, useConfirmBlockedText } from "@/components/OrdersLock";
 
 /**
  * ONE order, large: the sitting's progress (StationStrip), who to call, what
@@ -79,9 +80,13 @@ export function StationCard({
 
   const { order } = task;
   const lock = lockStateOf(task, userId, now);
+  // Locked (components/OrdersLock): nothing to call or message, and not confirmed until it opens.
+  const contactLocked = isLockedOrder(order);
+  const confirmBlocked = useConfirmBlockedText();
   const name = order.contactSnapshot.fullName?.trim() || q.unnamedCustomer;
-  const phone = dialablePhone(order.contactSnapshot.phone);
-  const whatsAppUrl = useWhatsAppConfirmUrl(order);
+  const phone = contactLocked ? null : dialablePhone(order.contactSnapshot.phone);
+  const whatsAppLink = useWhatsAppConfirmUrl(order);
+  const whatsAppUrl = contactLocked ? null : whatsAppLink;
   const whatsAppLabel = useWhatsAppLabel(order);
   const who = fmt(t.sheetFor, { name, order: order.orderNumber });
   const locked = frozen || pending !== null;
@@ -139,6 +144,10 @@ export function StationCard({
     // The Enter key reaches here too, so the rule is checked where the result is saved.
     if (outcome === "confirmed" && paymentHeld) {
       setError(q.paymentFirst);
+      return;
+    }
+    if (outcome === "confirmed" && contactLocked) {
+      setError(confirmBlocked);
       return;
     }
     setPending(outcome);
@@ -250,6 +259,7 @@ export function StationCard({
       <StationStrip task={task} lock={lock} progress={progress} />
 
       <div className="zimos-station-body -mx-1 mt-2 min-h-0 flex-1 space-y-2.5 px-1 max-sm:overflow-y-auto max-sm:overscroll-contain sm:mt-3 sm:space-y-4">
+        {contactLocked && <LockedOrderNotice order={order} />}
         <StationOrder task={task} now={now} userId={userId} inProgress={lock.inProgress} onChanged={onChanged} />
       </div>
 
@@ -275,7 +285,7 @@ export function StationCard({
           pending={pending}
           locked={locked}
           hasNote={note.trim() !== ""}
-          confirmHeldReason={paymentHeld ? q.paymentFirst : null}
+          confirmHeldReason={paymentHeld ? q.paymentFirst : contactLocked ? confirmBlocked : null}
           onCall={() => void call()}
           onWhatsApp={whatsAppOpened}
           onRecord={(outcome) => void record(outcome)}

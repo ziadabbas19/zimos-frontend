@@ -18,6 +18,7 @@ import { StoreOverview } from "@/pages/home/StoreOverview";
 import { SetupGuideCard } from "@/pages/home/SetupGuideCard";
 import { SiteAnalytics } from "@/pages/home/SiteAnalytics";
 import { QuickActions } from "@/pages/home/QuickActions";
+import { LockedOrdersBanner } from "@/components/OrdersLock";
 import { fmt, useCommon, useT, type Messages } from "@/i18n/LocaleContext";
 
 const STRINGS = {
@@ -174,6 +175,8 @@ export function DashboardHomePage() {
         {currentWorkspace ? fmt(t.welcomeNamed, { name: currentWorkspace.name }) : t.welcome}
       </h1>
       <QuickActions awaiting={queue.data ?? null} />
+      {/* Orders whose customer details are hidden until the store renews or tops up. */}
+      <LockedOrdersBanner className="mt-6" />
 
       <div className="mt-8">
         {loading ? (

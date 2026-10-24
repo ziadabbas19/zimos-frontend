@@ -39,6 +39,7 @@ import {
 } from "./queueModel";
 import { useOutcomeLabels, useQueueStrings } from "./queueStrings";
 import { Station } from "./station/Station";
+import { LockedOrdersBanner } from "@/components/OrdersLock";
 
 /**
  * The confirmation queue: the calls a cash-on-delivery store makes before it
@@ -226,6 +227,8 @@ export function ConfirmationQueuePage() {
   return (
     <div className="max-w-3xl">
       <QueueHeader description={queueAnswer ?? t.description} view={canSwitch ? view : null} onViewChange={changeView} />
+      {/* Calls that can't be confirmed while their orders' customer details are hidden. */}
+      <LockedOrdersBanner />
 
       <div className="flex items-center gap-2">
         <ChipRow<ConfirmationQueueTab>
