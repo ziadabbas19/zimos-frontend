@@ -11,6 +11,12 @@ export interface MenuOptionChoice {
   name: string;
   priceDeltaAmount: number;
   active: boolean;
+  /**
+   * The choice's code in the merchant's till / kitchen system, sent to
+   * integrations with the order. Never shown to shoppers. Left out of a save:
+   * the stored one is kept; null or "" clears it.
+   */
+  externalCode?: string | null;
 }
 
 export interface MenuOptionGroup {

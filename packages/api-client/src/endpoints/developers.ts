@@ -84,8 +84,8 @@ export interface WebhookEndpointDto {
   /** Event names, or `["*"]` for every event. */
   events: string[];
   isActive: boolean;
-  /** `whsec_…abcd` — never the secret itself. */
-  secretHint: string;
+  /** `whsec_…abcd` — never the secret itself; null when the server cannot read a sealed secret. */
+  secretHint: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -94,6 +94,8 @@ export interface WebhookEndpointList {
   endpoints: WebhookEndpointDto[];
   events: WebhookEventInfo[];
   wildcard: string;
+  /** Events "*" does not bring (order.accepted): listed by name, beside "*" if wanted. Absent on older servers. */
+  explicitOnly?: string[];
 }
 
 export interface WebhookEndpointCreated {

@@ -111,6 +111,7 @@ const STRINGS = {
     events: "Events",
     allEvents: "All events",
     allEventsHint: "Including events added later.",
+    alsoExplicit: "“All events” leaves these out. Tick them to receive them too:",
     pickEvents: "Choose events",
     endpointCreatedTitle: "Copy your signing secret",
     endpointCreatedBody: "Your server uses it to check each request really came from us. It's shown only now and when you rotate it.",
@@ -203,6 +204,7 @@ const STRINGS = {
     events: "الأحداث",
     allEvents: "كل الأحداث",
     allEventsHint: "حتى اللي هتتضاف بعدين.",
+    alsoExplicit: "«كل الأحداث» ما بتشملش دول. علّم عليهم لو عايزهم يوصلوا برضه:",
     pickEvents: "اختار الأحداث",
     endpointCreatedTitle: "انسخ مفتاح التوقيع",
     endpointCreatedBody: "السيرفر بتاعك بيستخدمه عشان يتأكد إن كل طلب جاي مننا فعلاً. بيظهر دلوقتي بس، ولما تغيّره.",
@@ -536,7 +538,9 @@ function WebhooksPanel({ t, onForbidden }: { t: T; onForbidden: () => void }) {
   const [editing, setEditing] = useState<WebhookEndpointDto | null>(null);
 
   const endpoints = hooks.data?.endpoints ?? [];
-  const eventLabel = (events: string[]) => (events.includes("*") ? t.allEvents : events.join(", "));
+  // "*" may sit beside the events it leaves out (order.accepted): "All events + order.accepted".
+  const eventLabel = (events: string[]) =>
+    events.includes("*") ? [t.allEvents, ...events.filter((e) => e !== "*")].join(" + ") : events.join(", ");
 
   async function sendTest(endpoint: WebhookEndpointDto) {
     setTesting(endpoint.id);
@@ -637,6 +641,7 @@ function WebhooksPanel({ t, onForbidden }: { t: T; onForbidden: () => void }) {
           key={editing.id}
           endpoint={editing}
           events={hooks.data?.events ?? []}
+          explicitOnly={hooks.data?.explicitOnly ?? []}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
@@ -649,6 +654,7 @@ function WebhooksPanel({ t, onForbidden }: { t: T; onForbidden: () => void }) {
         t={t}
         open={adding}
         events={hooks.data?.events ?? []}
+        explicitOnly={hooks.data?.explicitOnly ?? []}
         onClose={() => setAdding(false)}
         onCreated={() => void hooks.refresh({ silent: true })}
       />
@@ -715,12 +721,15 @@ function NewEndpointModal({
   t,
   open,
   events,
+  explicitOnly = [],
   onClose,
   onCreated,
 }: {
   t: T;
   open: boolean;
   events: Array<{ name: string; description: string }>;
+  /** Events "*" leaves out: offered beside "All events" too. */
+  explicitOnly?: string[];
   onClose: () => void;
   onCreated: () => void;
 }) {
@@ -729,6 +738,8 @@ function NewEndpointModal({
   const [url, setUrl] = useState("");
   const [all, setAll] = useState(true);
   const [picked, setPicked] = useState<string[]>([]);
+  // With "All events": the events "*" leaves out that are wanted as well.
+  const [alsoPicked, setAlsoPicked] = useState<string[]>([]);
   const [filter, setFilter] = useState<WebhookFilter | null>(null);
   // Custom headers the receiver asks for; no rows and nothing sent while the feature is off.
   const headers = useWebhookHeaders();
@@ -740,6 +751,7 @@ function NewEndpointModal({
     setUrl("");
     setAll(true);
     setPicked([]);
+    setAlsoPicked([]);
     setFilter(null);
     headers.reset();
     setError(null);
@@ -755,7 +767,7 @@ function NewEndpointModal({
     setBusy(true);
     setError(null);
     try {
-      const body = { url: url.trim(), events: all ? ["*"] : picked };
+      const body = { url: url.trim(), events: all ? ["*", ...alsoPicked] : picked };
       const created =
         customHeaders.length > 0
           ? await webhooksCreateEndpoint(apiClient, workspaceId, { ...body, ...(filter ? { filter } : {}), customHeaders })
@@ -803,6 +815,31 @@ function NewEndpointModal({
               <span className="block text-xs text-ink-soft">{t.allEventsHint}</span>
             </span>
           </label>
+          {all && events.some((event) => explicitOnly.includes(event.name)) && (
+            <div className="ms-6 space-y-2">
+              <p className="text-xs text-ink-soft">{t.alsoExplicit}</p>
+              {events
+                .filter((event) => explicitOnly.includes(event.name))
+                .map((event) => (
+                  <label key={event.name} className="flex cursor-pointer items-start gap-2">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={alsoPicked.includes(event.name)}
+                      onChange={(e) =>
+                        setAlsoPicked((prev) => (e.target.checked ? [...prev, event.name] : prev.filter((n) => n !== event.name)))
+                      }
+                    />
+                    <span>
+                      <code dir="ltr" className="block font-mono text-sm text-ink">
+                        {event.name}
+                      </code>
+                      <span className="block text-xs text-ink-soft">{event.description}</span>
+                    </span>
+                  </label>
+                ))}
+            </div>
+          )}
           <label className="flex cursor-pointer items-start gap-2">
             <input type="radio" name="webhook-events" className="mt-1" checked={!all} onChange={() => setAll(false)} />
             <span className="text-sm text-ink">{t.pickEvents}</span>
