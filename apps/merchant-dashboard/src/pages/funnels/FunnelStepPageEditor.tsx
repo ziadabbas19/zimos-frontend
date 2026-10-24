@@ -203,6 +203,8 @@ function StepPageEditor({
   // --- selection: a section, and one element inside it ------------------------
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  /** The element that opened by itself with its section (soleElementId), not picked: Delete still acts on the section. */
+  const [autoElementId, setAutoElementId] = useState<string | null>(null);
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("content");
   /** Where "add a section here" pointed; the next block from the library lands there. */
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
@@ -242,6 +244,8 @@ function StepPageEditor({
   const selected = sections.find((s) => s.id === selectedSectionId) ?? null;
   const elementId =
     selected && selectedElementId && sectionElements(selected).some((el) => el.id === selectedElementId) ? selectedElementId : null;
+  // What Delete acts on: the element the merchant picked, else the section.
+  const keyElementId = elementId !== autoElementId ? elementId : null;
   const labels = useMemo(() => Object.fromEntries(sections.map((s) => [s.id, sectionLabel(s, locale)])), [sections, locale]);
   const inlineText = useMemo(() => inlineTextIds(sections), [sections]);
   const hasSettings = onSeoChange !== undefined;
@@ -255,7 +259,9 @@ function StepPageEditor({
   function selectSection(sectionId: string, { scroll, reveal = true }: { scroll: boolean; reveal?: boolean }) {
     setSelectedSectionId(sectionId);
     // A section holding one element opens that element at once: no second click to reach its settings.
-    setSelectedElementId(soleElementId(sections.find((s) => s.id === sectionId)));
+    const sole = soleElementId(sections.find((s) => s.id === sectionId));
+    setSelectedElementId(sole);
+    setAutoElementId(sole);
     setSectionsOpen(false);
     if (reveal) revealInspector();
     if (scroll) setScrollRequest((prev) => ({ sectionId, nonce: (prev?.nonce ?? 0) + 1 }));
@@ -264,9 +270,15 @@ function StepPageEditor({
   /** A click on an element of the selected section — in the preview, or in the section list. */
   function selectElement(target: { sectionId: string; elementId: string }) {
     setSelectedSectionId(target.sectionId);
-    setSelectedElementId(target.elementId);
+    pickElement(target.elementId);
     setSectionsOpen(false);
     revealInspector();
+  }
+
+  /** An element the merchant chose (on the page, in the section list, in the inspector); null steps back to its section. */
+  function pickElement(elementId: string | null) {
+    setSelectedElementId(elementId);
+    setAutoElementId(null);
   }
 
   function clearSelection() {
@@ -380,7 +392,7 @@ function StepPageEditor({
     escape: stepSelectionUp,
     // Delete / Backspace on a selected section asks first: a stray key should not cost a section.
     remove: () => {
-      if (!selected || elementId) return false;
+      if (!selected || keyElementId) return false;
       setPendingDelete(selected);
       return true;
     },
@@ -447,7 +459,7 @@ function StepPageEditor({
       tab={inspectorTab}
       onTabChange={setInspectorTab}
       onRequestImage={(apply) => requestImage({ kind: "apply", apply })}
-      onFocusElementChange={setSelectedElementId}
+      onFocusElementChange={pickElement}
       variant={wide ? "panel" : "sheet"}
     />
   ) : null;
