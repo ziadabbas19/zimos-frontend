@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Bell } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, cn } from "@store-builder/ui";
@@ -7,14 +7,23 @@ import * as notificationsApi from "@/lib/notificationsApi";
 import type { ConsoleNotification } from "@/lib/notificationsApi";
 import { NOTIFICATION_STRINGS, typeLabel } from "@/lib/notificationStrings";
 import { formatRelative } from "@/lib/format";
+import { useConsoleLive } from "@/lib/liveUpdates";
 
 const POLL_MS = 60_000;
+/** Live updates connected: the count on their events, on coming back to the tab, and this often for the kinds they do not send. */
+const LIVE_POLL_MS = 5 * 60_000;
+/** Live updates on but not connected: polled this often until they are. */
+const FALLBACK_MS = 30_000;
+/** A burst of events (several sign-ups at once) is one read. */
+const SETTLE_MS = 800;
 
 /**
- * Top-bar bell: the unread count (polled every 60 s) and the latest 8 in a
- * menu. The round button and its count are the merchant dashboard's bell; the
- * list is a menu pane of the theme, drawn outside the frosted toolbar so
- * nothing clips it.
+ * Top-bar bell: the unread count and the latest 8 in a menu. The count is
+ * polled every 60 s; with VITE_CONSOLE_REALTIME_ENABLED it follows the live
+ * updates instead (lib/liveUpdates), polled every 30 s while they are down.
+ * The round button and its count are the merchant dashboard's bell; the list
+ * is a menu pane of the theme, drawn outside the frosted toolbar so nothing
+ * clips it.
  */
 export function NotificationBell() {
   const t = useT(NOTIFICATION_STRINGS);
@@ -30,11 +39,26 @@ export function NotificationBell() {
       .catch(() => undefined);
   }, []);
 
+  const settle = useRef<number | undefined>(undefined);
+  const live = useConsoleLive(() => {
+    window.clearTimeout(settle.current);
+    settle.current = window.setTimeout(refreshCount, SETTLE_MS);
+  });
+  useEffect(() => () => window.clearTimeout(settle.current), []);
+
   useEffect(() => {
     refreshCount();
-    const timer = window.setInterval(refreshCount, POLL_MS);
-    return () => window.clearInterval(timer);
-  }, [refreshCount]);
+    const timer = window.setInterval(refreshCount, live === "off" ? POLL_MS : live === "live" ? LIVE_POLL_MS : FALLBACK_MS);
+    if (live === "off") return () => window.clearInterval(timer);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refreshCount();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [refreshCount, live]);
 
   useEffect(() => {
     if (!open) return;
