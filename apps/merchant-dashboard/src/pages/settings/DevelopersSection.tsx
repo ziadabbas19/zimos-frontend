@@ -114,6 +114,7 @@ const STRINGS = {
     allEvents: "All events",
     allEventsHint: "Including events added later.",
     alsoExplicit: "“All events” leaves these out. Tick them to receive them too:",
+    customerDataMasked: "Customer details arrive masked: whoever set this address can't see them in full. An owner saving the address again sends them in full.",
     pickEvents: "Choose events",
     endpointCreatedTitle: "Copy your signing secret",
     endpointCreatedBody: "Your server uses it to check each request really came from us. It's shown only now and when you rotate it.",
@@ -209,6 +210,7 @@ const STRINGS = {
     allEvents: "كل الأحداث",
     allEventsHint: "حتى اللي هتتضاف بعدين.",
     alsoExplicit: "«كل الأحداث» ما بتشملش دول. علّم عليهم لو عايزهم يوصلوا برضه:",
+    customerDataMasked: "بيانات العملاء بتوصل مخفية، لأن اللي حط الرابط مالوش صلاحية يشوفها كاملة. لو صاحب المتجر حفظ الرابط تاني هتوصل كاملة.",
     pickEvents: "اختار الأحداث",
     endpointCreatedTitle: "انسخ مفتاح التوقيع",
     endpointCreatedBody: "السيرفر بتاعك بيستخدمه عشان يتأكد إن كل طلب جاي مننا فعلاً. بيظهر دلوقتي بس، ولما تغيّره.",
@@ -625,6 +627,7 @@ function WebhooksPanel({ t, onForbidden }: { t: T; onForbidden: () => void }) {
                     {endpoint.secretHint}
                   </code>
                 </p>
+                {endpoint.sendsCustomerData === false && <p className="text-xs text-warning">{t.customerDataMasked}</p>}
                 <WebhookEndpointNotes endpoint={endpoint} />
                 {WEBHOOK_HEADERS_ENABLED && <WebhookHeadersNote endpoint={endpoint} />}
                 <div className="flex flex-wrap gap-2">

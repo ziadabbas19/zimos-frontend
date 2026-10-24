@@ -74,6 +74,18 @@ describe("order.accepted beside “All events”", () => {
   });
 });
 
+describe("customer details on an endpoint", () => {
+  it("says when an endpoint is sent customers masked, and nothing when it is sent them in full", async () => {
+    serve([
+      { ...ENDPOINT, id: "wh_masked", url: "https://hooks.example.com/masked", sendsCustomerData: false },
+      { ...ENDPOINT, id: "wh_full", url: "https://hooks.example.com/full", sendsCustomerData: true },
+    ]);
+    renderWithProviders(<DevelopersSection />);
+    expect(await screen.findByText("https://hooks.example.com/masked")).toBeInTheDocument();
+    expect(screen.getAllByText(/Customer details arrive masked/)).toHaveLength(1);
+  });
+});
+
 describe("the kitchen-status scope of an API key", () => {
   it("is not offered while the switch is off", async () => {
     flags.ack = false;

@@ -89,6 +89,11 @@ export interface WebhookEndpointDto {
   isActive: boolean;
   /** `whsec_…abcd` — never the secret itself; null when the server cannot read a sealed secret. */
   secretHint: string | null;
+  /**
+   * False when its deliveries carry customers masked: the teammate who last
+   * set its address cannot see customers in full. Absent on older servers.
+   */
+  sendsCustomerData?: boolean;
   createdAt: string;
   updatedAt: string;
 }
