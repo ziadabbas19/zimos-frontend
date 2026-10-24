@@ -75,7 +75,12 @@ export function XsFooter({ store, locale, year, look }: { store: StorefrontMeta;
   if (footer.colors?.heading) own["--xs-own-foot-heading"] = footer.colors.heading;
   // The columns and the bottom line as arranged, else the template's own.
   const columns = readFooterColumns(footer.columns) ?? defaultFooterColumns(groups.length, footer.showBrand);
-  const bottom = readFooterBottom(footer.bottom) ?? DEFAULT_FOOTER_BOTTOM;
+  const arranged = readFooterBottom(footer.bottom) ?? DEFAULT_FOOTER_BOTTOM;
+  // ZIMOS's line is the plan's to hide (removeBranding), not the arrangement's: one saved without it still carries it, last.
+  const bottom =
+    brandingRemoved(store) || arranged.some((part) => part.type === "powered")
+      ? arranged
+      : [...arranged, { id: "powered", type: "powered" as const }];
   // Its own sizes and column widths, per screen: a small stylesheet of their own (./shellSizes).
   const sizeCss = footerSizeCss(footer.sizes) + footerWidthCss(columns, pageGroups.length);
   const ar = locale === "ar";

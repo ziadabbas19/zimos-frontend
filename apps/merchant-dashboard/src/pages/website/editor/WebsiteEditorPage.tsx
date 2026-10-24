@@ -167,6 +167,8 @@ function WebsiteEditor() {
   // --- selection: a section, and one element inside it ----------------------
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  /** The element that opened by itself with its section (soleElementId), not picked: the keys still act on the section. */
+  const [autoElementId, setAutoElementId] = useState<string | null>(null);
   /** The entry of the element's list the preview pressed (a slide, a card): its card opens in the inspector. */
   const [focusItem, setFocusItem] = useState<FocusItem | null>(null);
   /** The announcement bar, header or footer, when one of those is open instead of a section. */
@@ -223,6 +225,8 @@ function WebsiteEditor() {
     selected && selectedElementId && sectionElements(selected).some((el) => el.id === selectedElementId)
       ? selectedElementId
       : null;
+  // What Delete, Ctrl/⌘+C and Ctrl/⌘+D act on: the element the merchant picked, else the section.
+  const keyElementId = elementId !== autoElementId ? elementId : null;
   const labels = useMemo(
     () => Object.fromEntries(sections.map((s) => [s.id, sectionLabel(s, locale)])),
     [sections, locale]
@@ -244,7 +248,9 @@ function WebsiteEditor() {
     setSelectedSectionId(sectionId);
     setFocusItem(null);
     // A section holding one element opens that element at once: no second click to reach its settings.
-    setSelectedElementId(soleElementId(sections.find((s) => s.id === sectionId)));
+    const sole = soleElementId(sections.find((s) => s.id === sectionId));
+    setSelectedElementId(sole);
+    setAutoElementId(sole);
     setSelectedShell(null);
     setSectionsOpen(false);
     if (reveal) revealInspector();
@@ -254,7 +260,7 @@ function WebsiteEditor() {
   /** A click on an element of the selected section — in the preview, or in the section list. */
   function selectElement(target: { sectionId: string; elementId: string; item?: string }) {
     setSelectedSectionId(target.sectionId);
-    setSelectedElementId(target.elementId);
+    pickElement(target.elementId);
     const [list, at] = target.item ? target.item.split(".") : [];
     setFocusItem((prev) =>
       list && at ? { elementId: target.elementId, list, index: Number(at), nonce: (prev?.nonce ?? 0) + 1 } : null
@@ -262,6 +268,12 @@ function WebsiteEditor() {
     setSelectedShell(null);
     setSectionsOpen(false);
     revealInspector();
+  }
+
+  /** An element the merchant chose (on the page, in the section list, in the inspector); null steps back to its section. */
+  function pickElement(elementId: string | null) {
+    setSelectedElementId(elementId);
+    setAutoElementId(null);
   }
 
   /** Opens the announcement bar's, header's or footer's panel — and, from the editor side, scrolls the preview to it. */
@@ -454,16 +466,16 @@ function WebsiteEditor() {
     escape: stepSelectionUp,
     // Delete / Backspace on a selected section asks first: a stray key should not cost a section.
     remove: () => {
-      if (!selected || elementId) return false;
+      if (!selected || keyElementId) return false;
       setPendingDelete(selected);
       return true;
     },
     ...(xsEditor
       ? {
-          copy: () => edits.copy(selectedSectionId, elementId),
+          copy: () => edits.copy(selectedSectionId, keyElementId),
           // Pasting needs no selection: a copied section lands at the end of the page.
-          paste: () => edits.paste(selectedSectionId, elementId),
-          duplicate: () => edits.duplicateSelected(selectedSectionId, elementId),
+          paste: () => edits.paste(selectedSectionId, keyElementId),
+          duplicate: () => edits.duplicateSelected(selectedSectionId, keyElementId),
         }
       : {}),
   });
@@ -605,7 +617,7 @@ function WebsiteEditor() {
       tab={inspectorTab}
       onTabChange={setInspectorTab}
       onRequestImage={(apply) => requestImage({ kind: "apply", apply })}
-      onFocusElementChange={setSelectedElementId}
+      onFocusElementChange={pickElement}
       variant={wide ? "panel" : "sheet"}
     />
   ) : null;
@@ -802,12 +814,12 @@ function WebsiteEditor() {
                     // The same keys as on the editor itself (useEditorShortcuts), pressed while the page had the focus.
                     // The frame hands them over only with the template's tools (templateTools).
                     if (!xsEditor) return;
-                    if (key === "copy") edits.copy(selectedSectionId, elementId);
-                    else if (key === "paste") edits.paste(selectedSectionId, elementId);
-                    else if (key === "duplicate") edits.duplicateSelected(selectedSectionId, elementId);
+                    if (key === "copy") edits.copy(selectedSectionId, keyElementId);
+                    else if (key === "paste") edits.paste(selectedSectionId, keyElementId);
+                    else if (key === "duplicate") edits.duplicateSelected(selectedSectionId, keyElementId);
                     else if (key === "undo") doc.undo();
                     else if (key === "redo") doc.redo();
-                    else if (key === "delete" && selected && !elementId) setPendingDelete(selected);
+                    else if (key === "delete" && selected && !keyElementId) setPendingDelete(selected);
                   }}
                 />
               )}

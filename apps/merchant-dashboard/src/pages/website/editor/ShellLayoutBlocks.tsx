@@ -522,7 +522,8 @@ export function FooterLayoutBlock({
                   id={part.id}
                   grip={isAr ? `اسحب: ${label}` : `Drag: ${label}`}
                   removeLabel={isAr ? `احذف: ${label}` : `Remove: ${label}`}
-                  onRemove={() => setBottom(bottom.filter((p) => p.id !== part.id))}
+                  // ZIMOS's line is hidden by the plan (Store design → Hide ZIMOS branding), not from here: the store puts it back.
+                  onRemove={part.type === "powered" ? undefined : () => setBottom(bottom.filter((p) => p.id !== part.id))}
                 >
                   {part.type === "text" ? (
                     <Input
@@ -543,6 +544,11 @@ export function FooterLayoutBlock({
         </SortableContext>
       </DndContext>
       <p className="text-xs text-ink-soft">{isAr ? "سطر حقوق تصميم القالب: ثابت ولا يُحذف (شرط ترخيص القالب)." : "The template's design credit: always shown (its licence asks for it)."}</p>
+      <p className="text-xs text-ink-soft">
+        {isAr
+          ? "«مدعوم من زيموس» لا يُحذف من هنا: يُخفيه «إخفاء شعار ZIMOS» في إعدادات المتجر ← عام، إن كانت باقتك تتيح ذلك."
+          : "“Powered by Zimos” is not removed here: “Hide ZIMOS branding” in Store settings → General hides it, where your plan allows."}
+      </p>
       <div className="flex flex-wrap gap-2">
         <Button type="button" size="sm" variant="outline" onClick={() => setBottom([...bottom, { id: partId("text"), type: "text", label: isAr ? "كلام جديد" : "New words" }])}>
           <IconPlus className="size-4" aria-hidden />
