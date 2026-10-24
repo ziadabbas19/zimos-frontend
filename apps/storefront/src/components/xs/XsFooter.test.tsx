@@ -11,7 +11,8 @@ import { XS_LOGOS } from "@/lib/xsShell";
  * The footer of an imported template: which logo its brand column shows (and
  * says it shows, for the editor's preview), the tile that keeps the store's
  * logo seen on a footer of the other ground than the look's bar
- * (app/xs-shell.css).
+ * (app/xs-shell.css), and ZIMOS's line in its bottom row, which only the plan
+ * hides (`removeBranding`).
  */
 
 vi.mock("next/navigation", () => ({
@@ -109,3 +110,19 @@ describe("an imported template footer's logo", () => {
   });
 });
 
+describe("ZIMOS's line at the foot of an imported template's footer", () => {
+  it("shows on a store whose plan does not hide it", () => {
+    expect(show("05").powered).not.toBeNull();
+  });
+
+  it("is gone on a store that hides ZIMOS's branding with a plan that allows it", () => {
+    expect(show("05", { removeBranding: true }).powered).toBeNull();
+  });
+
+  it("comes back on a bottom line saved without it, unless the plan hides it", () => {
+    const bottom = [{ id: "rights", type: "rights" }];
+    expect(show("05", { footer: { bottom } }).powered).not.toBeNull();
+    cleanup();
+    expect(show("05", { footer: { bottom }, removeBranding: true }).powered).toBeNull();
+  });
+});
