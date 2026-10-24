@@ -645,6 +645,24 @@
   max-height: 56px;
   object-fit: contain;
 }
+/* The store's logo in a footer drawn on the other ground than its look's bar, measured on the templates' own
+   colours: dark under a white bar (01, 05, 07, 08), white under a green (02) or navy (16) one. The logo is made
+   to be seen on the bar, so here it sits on a tile of the bar's colour. Not on the footer's own picture nor on
+   the template's logo (both made for this footer), not on a footer the merchant gave a colour of its own, and
+   not in dark mode, where bar and footer are both dark. The tile's colour is a property: the dark copies
+   (scripts/xs-dark.mjs) leave the rule alone. */
+.brand-theme:not([data-color-mode="dark"]) .xs-footer:is([data-xs-look="01"], [data-xs-look="02"], [data-xs-look="05"], [data-xs-look="07"], [data-xs-look="08"], [data-xs-look="16"]):not([style*="--xs-own-foot:"]) .xs-footer__title:not([data-logo-source="own"]) > img:not([data-xs-logo="template"]) {
+  box-sizing: content-box;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--xs-logo-tile, #fff);
+}
+.xs-footer[data-xs-look="02"] {
+  --xs-logo-tile: var(--xs-brand);
+}
+.xs-footer[data-xs-look="16"] {
+  --xs-logo-tile: var(--xs-dark);
+}
 /* The template's logo in the bar keeps its own proportions within the bar's logo box. */
 .xs-header__logo-img[data-xs-logo="template"] {
   width: auto;
