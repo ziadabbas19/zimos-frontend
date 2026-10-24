@@ -421,6 +421,13 @@ export interface ApiClientOptions {
   onSessionExpired?: () => void;
   /** Sent with every request; a call's own headers win on a clash. */
   defaultHeaders?: Record<string, string>;
+  /**
+   * Makes the client's requests in place of the global fetch, with the same
+   * arguments. The storefront's server passes one that sends a call once more
+   * on the public address when its private one can't be reached
+   * (apps/storefront/src/lib/serverApiBase.ts).
+   */
+  fetch?: (input: string, init: RequestInit) => Promise<Response>;
 }
 
 interface RequestOptions {
@@ -496,6 +503,7 @@ export class ApiClient {
   private tokenStorage: TokenStorage;
   private onSessionExpired?: () => void;
   private defaultHeaders: Record<string, string>;
+  private fetchImpl: (input: string, init: RequestInit) => Promise<Response>;
   private refreshPromise: Promise<boolean> | null = null;
   private addressTrees = new Map<string, { at: number; value: Promise<CarrierAddressTree> }>();
 
@@ -504,6 +512,10 @@ export class ApiClient {
     this.tokenStorage = options.tokenStorage ?? createLocalStorageTokenStorage();
     this.onSessionExpired = options.onSessionExpired;
     this.defaultHeaders = options.defaultHeaders ?? {};
+    // Always called as a plain function: a browser's fetch refuses any other
+    // `this`. The global one is looked up on each call, as before.
+    const custom = options.fetch;
+    this.fetchImpl = custom ? (input, init) => custom(input, init) : (input, init) => fetch(input, init);
   }
 
   get tokens() {
@@ -548,7 +560,7 @@ export class ApiClient {
       if (idempotent) {
         finalHeaders["Idempotency-Key"] = randomKey();
       }
-      return fetch(`${this.baseUrl}${path}`, {
+      return this.fetchImpl(`${this.baseUrl}${path}`, {
         method,
         headers: finalHeaders,
         body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -1779,7 +1791,7 @@ export class ApiClient {
     const checkedAt = new Date().toISOString();
 
     try {
-      const res = await fetch(`${this.rootUrl}${path}`, {
+      const res = await this.fetchImpl(`${this.rootUrl}${path}`, {
         method: "GET",
         headers: { Accept: "application/json" },
         signal: controller.signal,
@@ -3415,7 +3427,7 @@ export class ApiClient {
       new Headers(init.headers).forEach((value, key) => headers.set(key, value));
       const { accessToken } = this.tokens;
       if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
-      return fetch(`${this.baseUrl}${path}`, { ...init, headers });
+      return this.fetchImpl(`${this.baseUrl}${path}`, { ...init, headers });
     };
 
     let res = await doFetch();
