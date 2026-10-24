@@ -16,7 +16,9 @@ export function registerUrlFor(planId: string, cycle: "monthly" | "yearly"): str
 }
 
 /**
- * The API the pricing pages read the plans from, on the server. The same
- * variable the storefront uses for the same API.
+ * The API's public address, the same variable the storefront uses for the
+ * same API. The browser's visit counting calls it; the server's own calls
+ * start on lib/server-api's address (INTERNAL_API_BASE_URL when set) and fall
+ * back to this one.
  */
 export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api/v1").replace(/\/$/, "");

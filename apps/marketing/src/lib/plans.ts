@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "./urls";
+import { serverApiBase, serverApiFetch } from "./server-api";
 
 /**
  * The plans on offer, from the API's public list (GET /plans/public): active
@@ -39,13 +39,15 @@ export const PLANS_REVALIDATE_SECONDS = 300;
  * Read on the server, so the prices are in the page's HTML for visitors,
  * reviewers and search engines alike. Null when the API can't be reached or
  * answers oddly — the page then says prices are coming soon, never an error.
+ * On the API's private address when INTERNAL_API_BASE_URL is set (lib/server-api).
  */
 export async function getPublicPlans(): Promise<PublicPlan[] | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/plans/public`, {
-      next: { revalidate: PLANS_REVALIDATE_SECONDS },
-      signal: AbortSignal.timeout(8000),
-    });
+    const res = await serverApiFetch(
+      `${serverApiBase()}/plans/public`,
+      { next: { revalidate: PLANS_REVALIDATE_SECONDS } },
+      { timeoutMs: 8000 }
+    );
     if (!res.ok) return null;
     const body = (await res.json()) as { plans?: unknown };
     return Array.isArray(body.plans) ? (body.plans as PublicPlan[]) : null;
