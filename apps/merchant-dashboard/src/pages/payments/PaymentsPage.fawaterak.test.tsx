@@ -62,8 +62,9 @@ describe("Fawaterak on the payments page", () => {
 
     expect(await screen.findByText("How to connect Fawaterak")).toBeInTheDocument();
     expect(screen.getByText("Switch on Visa / Mastercard in Fawaterak.")).toBeInTheDocument();
-    // No logo until Fawaterak allows one: its initials stand in.
-    expect(screen.getByText("FA")).toBeInTheDocument();
+    // Its logo, not the initials badge.
+    expect(screen.getByRole("img", { name: "Fawaterak" })).toHaveAttribute("data-variant", "light");
+    expect(screen.queryByText("FA")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Connect Fawaterak" }));
     await user.type(screen.getByLabelText("Client ID"), "client-1");
