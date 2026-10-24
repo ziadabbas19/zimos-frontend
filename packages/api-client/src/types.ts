@@ -1714,7 +1714,17 @@ export interface Order {
   linkedOrders?: LinkedOrderSummary[];
   /** Detail only: the order this one is a late funnel offer of. */
   linkedFromOrder?: { id: string; orderNumber: string } | null;
+  /**
+   * Locked orders on: true when the customer's details (name, phones, email,
+   * the address below the governorate, notes) come hidden as "••••" until the
+   * store renews or tops up. Absent while the switch is off.
+   */
+  contactLocked?: boolean;
+  lockReason?: OrderLockReason;
 }
+
+/** What a hidden customer field reads ("••••"): shown as hidden, never as empty. */
+export const LOCKED_MASK = "••••";
 
 export interface LinkedOrderSummary {
   id: string;
@@ -3600,6 +3610,36 @@ export interface WorkspaceAccess {
   draftPlan?: DraftPlan;
   /** The pay-per-order balance; null (or absent, from an older API) when the store pays no order fee. */
   wallet?: WalletState | null;
+  /**
+   * Locked orders are on (ORDERS_LOCK_ENABLED): an unpaid subscription or an
+   * empty balance hides new orders' customer details instead of closing the
+   * store. Absent from an API from before it (= off).
+   */
+  ordersLock?: boolean;
+  /** Whether shoppers get the "unavailable" page; false while the store still sells despite `restricted`. */
+  storefrontClosed?: boolean;
+}
+
+/** Why an order's customer details are hidden: the subscription lapsed, or the balance can't pay the fee. */
+export type OrderLockReason = "subscription" | "balance";
+
+/** `GET /workspaces/:id/orders/locked-summary` (orders.view). Amounts in minor units. */
+export interface LockedOrdersSummary {
+  enabled: boolean;
+  /** open: nothing is locked; pay_per_order: by the balance; lapsed: by the subscription. */
+  mode: "open" | "pay_per_order" | "lapsed";
+  reason: OrderLockReason | null;
+  /** Pay per order: a free order is left or the balance holds one fee. */
+  canPay: boolean;
+  /** Open orders whose customer details are hidden now. */
+  count: number;
+  /** Of them, paid online with their fee still owed: POST /orders/locked/settle takes it once the balance can. */
+  due: number;
+  totals: Array<{ currency: string; amount: number; count: number }>;
+  fee?: number;
+  balance?: number;
+  freeLeft?: number;
+  currency?: string;
 }
 
 /** Where a pay-per-order balance stands against the fee. Amounts in minor units. */
@@ -3650,7 +3690,9 @@ export type WalletEntryType =
   | "refund_hold"
   | "refund_release"
   | "refund_paid"
-  | "move_payment_credit";
+  | "move_payment_credit"
+  /** The fee taken once when an order is confirmed (locked orders on). */
+  | "order_confirm_fee";
 
 /** One paid top-up and how much of it can still come back as a refund. */
 export interface WalletRefundTopup {

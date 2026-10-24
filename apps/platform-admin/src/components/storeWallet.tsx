@@ -29,6 +29,7 @@ const TYPE_LABEL: Record<string, string> = {
   refund_release: "Refund released",
   refund_paid: "Refund paid out",
   move_payment_credit: "Late payment of a void plan move (not refundable)",
+  order_confirm_fee: "Order fee (at confirmation)",
 };
 
 function entryLabel(e: WalletLedgerEntry): string {
