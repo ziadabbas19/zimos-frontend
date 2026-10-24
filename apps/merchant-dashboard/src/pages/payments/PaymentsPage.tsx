@@ -218,7 +218,7 @@ export function PaymentsPage() {
   }
 
   return (
-    <SettingsLayout title={t.title} sections={sections} current={current} onSelect={select} searchPlaceholder={t.search}>
+    <SettingsLayout title={t.title} sections={sections} current={current} onSelect={select} searchPlaceholder={t.search} searchScope="payments">
       <SettingsPane title={shown.label} description={shown.description} icon={shown.icon} tone={shown.tone}>
         {/* The store's own InstaPay / wallet numbers: no gateway, and not behind the online-payments switch. */}
         {shown.id === "manual" && <ManualMethodsSection workspaceId={workspaceId} />}

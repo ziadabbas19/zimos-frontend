@@ -14,3 +14,26 @@
    `bg-danger` was never generated, so those buttons rendered with no fill.
    Path is resolved relative to this file: src -> merchant-dashboard -> apps -> root. */
 @source "../../../packages/ui/src";
+
+/* A setting a search result opened (lib/search/reveal.ts): a ring that fades.
+   An outline, so the block's own shadow and background are left alone. */
+[data-search-hit] {
+  outline: 2px solid transparent;
+  outline-offset: 4px;
+  animation: zimos-search-hit 2.4s var(--ease-out, ease-out) both;
+}
+@keyframes zimos-search-hit {
+  0%,
+  55% {
+    outline-color: var(--color-primary);
+  }
+  100% {
+    outline-color: transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* No fade: the ring is there, then gone. */
+  [data-search-hit] {
+    animation-timing-function: steps(1, end);
+  }
+}

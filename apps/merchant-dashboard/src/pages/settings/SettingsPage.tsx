@@ -230,6 +230,7 @@ function SettingsScreen() {
       onSelect={select}
       canLeave={confirmLeave}
       searchPlaceholder={t.searchPlaceholder}
+      searchScope="settings"
       listHeader={<StoreCard t={t} />}
     >
       {/* A store switch, like a section switch, starts the section afresh. */}

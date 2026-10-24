@@ -1,82 +1,104 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useGuardedLeave } from "@/lib/useUnsavedGuard";
-import { BookUser, Box, CornerDownLeft, Inbox, Package, Percent, Route, Search, ShoppingBag, User, type LucideIcon } from "lucide-react";
+import { CornerDownLeft, History, Package, Route, Search, ShoppingBag, User, type LucideIcon } from "lucide-react";
 import { cn } from "@store-builder/ui";
 import { dashboardSearch, type DashboardSearchResult } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { NAV_ITEMS, NAV_LABELS, isNavItemVisible } from "@/lib/navigation";
 import { formatMoney } from "@/lib/format";
-import { useT, type Messages } from "@/i18n/LocaleContext";
+import { useLocale, useT, type Messages } from "@/i18n/LocaleContext";
+import {
+  SEARCH_INDEX,
+  entryForLocation,
+  findEntry,
+  isEntryShown,
+  pageId,
+  searchEntries,
+  type SearchEntry,
+} from "@/lib/search/siteIndex";
+import { SEARCH_UI_STRINGS } from "@/lib/search/searchStrings";
+import { readRecent, rememberPlace, rememberQuery } from "@/lib/search/recent";
+import { revealSearchTarget } from "@/lib/search/reveal";
+import { usePlanLocks } from "@/lib/search/usePlanLocks";
 
 const STRINGS = {
   en: {
     open: "Search",
-    placeholder: "Search orders, products, customers, pages…",
-    hint: "Type an order number, a phone, a name — or the page you want.",
+    placeholder: "Search orders, products, customers, pages, settings…",
+    hint: "Type an order number, a phone, a name — or the page or setting you want.",
     searching: "Searching…",
     nothing: "Nothing matches “{q}”.",
     pages: "Pages",
-    commands: "Actions",
     orders: "Orders",
     products: "Products",
     customers: "Customers",
     funnels: "Funnels",
-    cmdNewProduct: "New product",
-    cmdNewOrder: "Go to orders",
-    cmdNewDiscount: "Create a discount",
-    cmdForms: "Form submissions",
-    cmdSegments: "Contact segments",
     ordersCount: "{n} orders",
     toSelect: "to open",
     close: "Close search",
   },
   ar: {
     open: "بحث",
-    placeholder: "ابحث في الطلبات والمنتجات والعملاء والصفحات…",
-    hint: "اكتب رقم طلب أو موبايل أو اسم — أو الصفحة التي تريدها.",
+    placeholder: "ابحث في الطلبات والمنتجات والعملاء والصفحات والإعدادات…",
+    hint: "اكتب رقم طلب أو موبايل أو اسم — أو الصفحة أو الإعداد الذي تريده.",
     searching: "جارٍ البحث…",
     nothing: "لا توجد نتائج لـ «{q}».",
     pages: "الصفحات",
-    commands: "إجراءات",
     orders: "الطلبات",
     products: "المنتجات",
     customers: "العملاء",
     funnels: "مسارات البيع",
-    cmdNewProduct: "منتج جديد",
-    cmdNewOrder: "الذهاب إلى الطلبات",
-    cmdNewDiscount: "إنشاء خصم",
-    cmdForms: "رسائل النماذج",
-    cmdSegments: "شرائح جهات الاتصال",
     ordersCount: "{n} طلب",
     toSelect: "للفتح",
     close: "إغلاق البحث",
   },
 } satisfies Messages;
 
-interface Entry {
+/** What choosing a row does: open a place (and mark a setting on it), or search again for a recent query. */
+type Pick = { kind: "go"; to: string; anchor?: string } | { kind: "query"; query: string };
+
+interface Row {
   id: string;
   group: string;
   icon: LucideIcon;
   title: ReactNode;
   detail?: ReactNode;
-  to: string;
+  /** «Not in your plan», at the row's end. */
+  badge?: string;
+  /** An order, a product, a customer, a funnel: what was typed to find it is not kept among the recent searches. */
+  record?: boolean;
+  pick: Pick;
 }
 
 const EMPTY: DashboardSearchResult = { orders: [], products: [], customers: [], funnels: [] };
 const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
+/** Where a place the plan holds back leads: the plans. */
+const PLANS = "/subscription?tab=plans";
+/** Places listed for a search: enough for any word, short enough to read. */
+const MAX_PLACES = 30;
 
 /**
  * Global search (SPEC §18.6): ⌘K / Ctrl+K from anywhere in the dashboard.
- * Records come from GET /search; pages and actions are matched here, in the
- * language the dashboard is shown in.
+ *
+ * Places — pages, tabs, settings sections and single settings — come from the
+ * one index of the dashboard (lib/search/siteIndex.ts), matched in Arabic and
+ * English at once whatever the dashboard is shown in, closest first and
+ * grouped under their side-menu heading. A setting opens its section and is
+ * brought into view and marked there. Records come from GET /search, as
+ * before, and are listed after the places, so the list does not shift under
+ * the cursor when they arrive.
+ *
+ * Empty, the window offers the last searches and the last places opened
+ * (lib/search/recent.ts), then the actions.
  */
 export function CommandPalette() {
   const t = useT(STRINGS);
-  const navLabels = useT(NAV_LABELS);
+  const ui = useT(SEARCH_UI_STRINGS);
+  const { locale } = useLocale();
   const navigate = useNavigate();
+  const location = useLocation();
   const leave = useGuardedLeave();
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id;
@@ -89,10 +111,12 @@ export function CommandPalette() {
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const locked = usePlanLocks(workspaceId, open);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      // By the physical key too, so it works on an Arabic layout.
+      if ((e.metaKey || e.ctrlKey) && (e.code === "KeyK" || e.key.toLowerCase() === "k")) {
         e.preventDefault();
         setOpen((v) => !v);
       }
@@ -100,6 +124,12 @@ export function CommandPalette() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // Every place opened, however it was reached, is the first of the recent ones.
+  const here = useMemo(() => entryForLocation(location.pathname, location.search), [location.pathname, location.search]);
+  useEffect(() => {
+    if (workspaceId && here) rememberPlace(workspaceId, here.id);
+  }, [workspaceId, here]);
 
   useEffect(() => {
     if (!open) return;
@@ -139,23 +169,64 @@ export function CommandPalette() {
     };
   }, [open, workspaceId, term]);
 
-  const entries = useMemo<Entry[]>(() => {
-    const needle = term.toLowerCase();
-    const matches = (label: string) => needle === "" || label.toLowerCase().includes(needle);
+  const shown = useMemo(() => SEARCH_INDEX.filter((entry) => isEntryShown(entry, role)), [role]);
+  // Read when the window opens: what was opened since the last time is in it.
+  const recent = useMemo(() => (open && workspaceId ? readRecent(workspaceId) : null), [open, workspaceId]);
 
-    const commands: Entry[] = [
-      { id: "cmd-product", group: t.commands, icon: Box, title: t.cmdNewProduct, to: "/catalog/new" },
-      { id: "cmd-discount", group: t.commands, icon: Percent, title: t.cmdNewDiscount, to: "/discounts" },
-      { id: "cmd-orders", group: t.commands, icon: ShoppingBag, title: t.cmdNewOrder, to: "/orders" },
-      { id: "cmd-forms", group: t.commands, icon: Inbox, title: t.cmdForms, to: "/form-submissions" },
-      { id: "cmd-segments", group: t.commands, icon: BookUser, title: t.cmdSegments, to: "/customers?tab=segments" },
-    ].filter((c) => matches(String(c.title)));
+  const rows = useMemo<Row[]>(() => {
+    const plansPage = findEntry(pageId("/subscription"));
+    const placeRow = (entry: SearchEntry, group: string): Row => {
+      const held = locked(entry);
+      // Held back by the plan: to the plans, for a role that sees them; otherwise the page says it itself.
+      const plans = held && plansPage !== undefined && isEntryShown(plansPage, role);
+      return {
+        id: entry.id,
+        group,
+        icon: entry.icon,
+        title: entry.title[locale],
+        detail: entry.trail.length > 0 ? entry.trail.map((place) => place[locale]).join(" › ") : undefined,
+        badge: held ? ui.notInPlan : undefined,
+        pick: plans ? { kind: "go", to: PLANS } : { kind: "go", to: entry.to, anchor: entry.anchor },
+      };
+    };
 
-    const pages: Entry[] = NAV_ITEMS.filter((item) => isNavItemVisible(item, role))
-      .filter((item) => matches(navLabels[item.key]) || (needle !== "" && item.to.includes(needle)))
-      .map((item) => ({ id: `page-${item.to}`, group: t.pages, icon: item.icon, title: navLabels[item.key], to: item.to }));
+    if (term === "") {
+      const searches: Row[] = (recent?.queries ?? []).map((q, index) => ({
+        id: `recent-query-${index}`,
+        group: ui.recentSearches,
+        icon: History,
+        title: <bdi>{q}</bdi>,
+        pick: { kind: "query", query: q },
+      }));
+      const places: Row[] = (recent?.places ?? [])
+        .filter((id) => id !== here?.id)
+        .map((id) => findEntry(id))
+        .filter((entry): entry is SearchEntry => entry !== undefined && isEntryShown(entry, role))
+        .slice(0, 5)
+        .map((entry) => placeRow(entry, ui.recentPages));
+      const actions = shown.filter((entry) => entry.kind === "action").map((entry) => placeRow(entry, ui.actions));
+      // Nothing recent yet: the window is a launcher, actions then the first pages of the menu.
+      const pages =
+        searches.length + places.length === 0
+          ? shown
+              .filter((entry) => entry.kind === "page" && !entry.parent)
+              .slice(0, 8)
+              .map((entry) => placeRow(entry, t.pages))
+          : [];
+      return [...searches, ...places, ...actions, ...pages];
+    }
 
-    const records: Entry[] = [
+    // Places, closest first, each under its heading; a heading comes where its closest place is.
+    const byHeading = new Map<string, Row[]>();
+    for (const { entry } of searchEntries(term, shown).slice(0, MAX_PLACES)) {
+      const heading = entry.heading[locale];
+      const list = byHeading.get(heading) ?? [];
+      list.push(placeRow(entry, heading));
+      byHeading.set(heading, list);
+    }
+    const places = [...byHeading.values()].flat();
+
+    const records: Row[] = [
       ...results.orders.map((o) => ({
         id: `order-${o.id}`,
         group: t.orders,
@@ -166,7 +237,7 @@ export function CommandPalette() {
             <bdi>{o.customerName}</bdi> · {formatMoney(o.totalAmount, o.currency)}
           </>
         ),
-        to: `/orders/${o.id}`,
+        pick: { kind: "go" as const, to: `/orders/${o.id}` },
       })),
       ...results.products.map((p) => ({
         id: `product-${p.id}`,
@@ -174,7 +245,7 @@ export function CommandPalette() {
         icon: Package,
         title: <bdi>{p.name}</bdi>,
         detail: p.productCode ? <bdi dir="ltr">#{p.productCode}</bdi> : undefined,
-        to: `/catalog/${p.id}`,
+        pick: { kind: "go" as const, to: `/catalog/${p.id}` },
       })),
       ...results.customers.map((c) => ({
         id: `customer-${c.id}`,
@@ -186,40 +257,57 @@ export function CommandPalette() {
             <bdi dir="ltr">{c.phone}</bdi> · {t.ordersCount.replace("{n}", String(c.totalOrders))}
           </>
         ),
-        to: `/customers/${c.id}`,
+        pick: { kind: "go" as const, to: `/customers/${c.id}` },
       })),
-      ...results.funnels.map((f) => ({ id: `funnel-${f.id}`, group: t.funnels, icon: Route, title: <bdi>{f.name}</bdi>, to: `/funnels/${f.id}` })),
+      ...results.funnels.map((f) => ({
+        id: `funnel-${f.id}`,
+        group: t.funnels,
+        icon: Route,
+        title: <bdi>{f.name}</bdi>,
+        pick: { kind: "go" as const, to: `/funnels/${f.id}` },
+      })),
     ];
 
-    // With nothing typed the palette is a launcher: actions first, then pages.
-    return needle === "" ? [...commands, ...pages.slice(0, 8)] : [...records, ...commands, ...pages];
-  }, [term, results, t, navLabels, role]);
+    return [...places, ...records.map((row) => ({ ...row, record: true }))];
+  }, [term, results, t, ui, locale, shown, recent, here, locked, role]);
 
   useEffect(() => {
     setActive(0);
-  }, [entries.length, term]);
+  }, [rows.length, term]);
 
   useEffect(() => {
     listRef.current?.querySelector<HTMLElement>(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
   }, [active]);
 
-  function go(entry: Entry | undefined) {
-    if (!entry) return;
+  function choose(row: Row | undefined) {
+    if (!row) return;
+    const { pick } = row;
+    if (pick.kind === "query") {
+      setQuery(pick.query);
+      inputRef.current?.focus();
+      return;
+    }
+    // What found a place is kept; what found a record (a phone, a name) is not.
+    if (workspaceId && term && !row.record) rememberQuery(workspaceId, term);
     setOpen(false);
     // Unsaved changes on the page: asks before going.
-    leave(() => navigate(entry.to));
+    leave(() => {
+      navigate(pick.to);
+      if (pick.anchor) revealSearchTarget(pick.anchor);
+    });
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActive((i) => (entries.length ? (i + 1) % entries.length : 0));
+      setActive((i) => (rows.length ? (i + 1) % rows.length : 0));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActive((i) => (entries.length ? (i - 1 + entries.length) % entries.length : 0));
+      setActive((i) => (rows.length ? (i - 1 + rows.length) % rows.length : 0));
     } else if (e.key === "Enter") {
+      if (e.nativeEvent.isComposing) return;
       e.preventDefault();
-      go(entries[active]);
+      choose(rows[active]);
     } else if (e.key === "Escape") {
       e.preventDefault();
       setOpen(false);
@@ -276,45 +364,52 @@ export function CommandPalette() {
                 role="combobox"
                 aria-expanded="true"
                 aria-controls="command-palette-list"
-                aria-activedescendant={entries[active] ? `cp-${entries[active].id}` : undefined}
+                aria-activedescendant={rows[active] ? `cp-${rows[active].id}` : undefined}
                 aria-label={t.open}
                 placeholder={t.placeholder}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 maxLength={100}
+                autoComplete="off"
+                spellCheck={false}
                 className="min-h-12 w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-soft"
               />
             </div>
 
             <div ref={listRef} id="command-palette-list" role="listbox" aria-label={t.open} className="flex-1 overflow-y-auto p-2">
-              {entries.length === 0 ? (
+              {rows.length === 0 ? (
                 <p role="status" className="px-3 py-8 text-center text-sm text-ink-soft">
                   {searching ? t.searching : term ? t.nothing.replace("{q}", term) : t.hint}
                 </p>
               ) : (
-                entries.map((entry, index) => {
-                  const heading = index === 0 || entries[index - 1].group !== entry.group ? entry.group : null;
+                rows.map((row, index) => {
+                  const heading = index === 0 || rows[index - 1].group !== row.group ? row.group : null;
                   return (
-                    <div key={entry.id}>
+                    <div key={row.id}>
                       {heading && <p className="px-3 pt-2 pb-1 text-[11px] font-semibold tracking-wider text-ink-soft uppercase rtl:tracking-normal">{heading}</p>}
                       <button
                         type="button"
-                        id={`cp-${entry.id}`}
+                        id={`cp-${row.id}`}
                         role="option"
                         aria-selected={index === active}
                         data-index={index}
                         onMouseMove={() => setActive(index)}
-                        onClick={() => go(entry)}
+                        onClick={() => choose(row)}
                         className={cn(
                           "flex w-full cursor-pointer items-center gap-3 rounded-[0.5rem] px-3 py-2 text-start text-sm text-ink",
                           index === active && "bg-primary-soft text-primary-dark dark:text-primary"
                         )}
                       >
-                        <entry.icon className="size-4 shrink-0 text-ink-soft" aria-hidden />
+                        <row.icon className="size-4 shrink-0 text-ink-soft" aria-hidden />
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate font-medium">{entry.title}</span>
-                          {entry.detail && <span className="block truncate text-xs text-ink-soft">{entry.detail}</span>}
+                          <span className="block truncate font-medium">{row.title}</span>
+                          {row.detail && <span className="block truncate text-xs text-ink-soft">{row.detail}</span>}
                         </span>
+                        {row.badge && (
+                          <span title={ui.notInPlanHint} className="shrink-0 rounded-full bg-ink/8 px-2 py-0.5 text-[11px] font-medium text-ink-soft">
+                            {row.badge}
+                          </span>
+                        )}
                         {index === active && <CornerDownLeft className="size-3.5 shrink-0 text-ink-soft rtl:-scale-x-100" aria-hidden />}
                       </button>
                     </div>

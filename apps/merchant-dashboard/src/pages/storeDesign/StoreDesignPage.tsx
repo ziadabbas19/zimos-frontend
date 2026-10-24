@@ -178,7 +178,7 @@ function StoreDesignBody() {
 
   return (
     <>
-      <SettingsLayout title={t.title} sections={sections} current={active} onSelect={select} canLeave={confirmLeave} searchPlaceholder={t.search}>
+      <SettingsLayout title={t.title} sections={sections} current={active} onSelect={select} canLeave={confirmLeave} searchPlaceholder={t.search} searchScope="store-settings">
         <SettingsPane
           title={t[shown]}
           description={d[shown]}
