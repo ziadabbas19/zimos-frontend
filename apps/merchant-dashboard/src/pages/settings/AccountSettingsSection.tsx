@@ -118,7 +118,7 @@ export function AccountSettingsSection() {
             <form onSubmit={save} className="max-w-2xl space-y-5">
               <Field label={t.timezone} hint={t.timezoneHint}>
                 {({ id, ...aria }) => (
-                  <Select id={id} {...aria} dir="ltr" value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })}>
+                  <Select id={id} {...aria} data-search-anchor="timezone" dir="ltr" value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })}>
                     {zones.map((zone) => (
                       <option key={zone} value={zone}>
                         {zone}
@@ -129,13 +129,14 @@ export function AccountSettingsSection() {
               </Field>
               <TextField
                 label={t.contactEmail}
+                data-search-anchor="contact-email"
                 hint={t.contactEmailHint}
                 type="email"
                 dir="ltr"
                 value={form.contactFormEmail ?? ""}
                 onChange={(e) => setForm({ ...form, contactFormEmail: e.target.value })}
               />
-              <fieldset className="space-y-3">
+              <fieldset className="space-y-3" data-search-anchor="invoice-details">
                 <legend className="text-sm font-medium text-ink">{t.legalTitle}</legend>
                 <p className="text-xs text-ink-soft">{t.legalHint}</p>
                 <div className="grid gap-3 sm:grid-cols-2">

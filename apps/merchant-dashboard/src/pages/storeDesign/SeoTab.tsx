@@ -70,7 +70,7 @@ export function SeoTab() {
         <ReadOnlyNotice editable={editable} />
         <Alert>{t.auto}</Alert>
 
-        <Section title={t.title} description={t.description}>
+        <Section title={t.title} description={t.description} searchAnchor="seo-meta">
           <div className="space-y-4">
             <TextField
               label={t.titleTemplate}

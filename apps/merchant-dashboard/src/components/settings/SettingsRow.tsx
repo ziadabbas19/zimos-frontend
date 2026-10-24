@@ -40,6 +40,8 @@ export interface SettingsGroupProps {
   /** `SettingsRow`, `SettingsLinkRow`, `SettingsSwitch` — as direct children, so the hairlines fall between them. */
   children: ReactNode;
   className?: string;
+  /** Marks the block for the dashboard's search: brought into view and marked when a search result opens it (lib/search/reveal.ts). */
+  searchAnchor?: string;
 }
 
 /**
@@ -52,11 +54,12 @@ export interface SettingsGroupProps {
  * rows measure themselves against: in a narrow card a row with a text field
  * puts the field under its label by itself.
  */
-export function SettingsGroup({ title, description, footer, children, className }: SettingsGroupProps) {
+export function SettingsGroup({ title, description, footer, children, className, searchAnchor }: SettingsGroupProps) {
   const titleId = useId();
   return (
     <section
       data-slot="settings-group"
+      data-search-anchor={searchAnchor}
       aria-labelledby={title ? titleId : undefined}
       // A titled group after another block gets a little more air over its heading than the page gap alone.
       className={cn("min-w-0", title && "[&:not(:first-child)]:pt-2", className)}
@@ -96,6 +99,8 @@ export interface SettingsRowProps {
   /** Said under the control in danger ink. */
   error?: string;
   className?: string;
+  /** Marks the block for the dashboard's search: brought into view and marked when a search result opens it (lib/search/reveal.ts). */
+  searchAnchor?: string;
 }
 
 /**
@@ -111,11 +116,12 @@ export interface SettingsRowProps {
  * ("a control that holds a text field"); Tailwind reads class names as whole
  * literals, so they cannot be built from a shared piece.
  */
-export function SettingsRow({ label, hint, htmlFor, control, stacked = false, error, className }: SettingsRowProps) {
+export function SettingsRow({ label, hint, htmlFor, control, stacked = false, error, className, searchAnchor }: SettingsRowProps) {
   const labelId = useId();
   return (
     <div
       data-slot="settings-row"
+      data-search-anchor={searchAnchor}
       data-stacked={stacked ? "" : undefined}
       data-invalid={error ? "" : undefined}
       role={htmlFor ? undefined : "group"}
@@ -238,6 +244,8 @@ export interface SettingsSwitchProps {
   /** The change is being saved: the thumb shows a spinner and a second press waits. The row keeps the focus. */
   busy?: boolean;
   className?: string;
+  /** Marks the block for the dashboard's search: brought into view and marked when a search result opens it (lib/search/reveal.ts). */
+  searchAnchor?: string;
 }
 
 /**
@@ -248,7 +256,7 @@ export interface SettingsSwitchProps {
  *
  * The track is off = a grey well, on = the selection fill (the brand).
  */
-export function SettingsSwitch({ checked, onChange, label, hint, disabled = false, busy = false, className }: SettingsSwitchProps) {
+export function SettingsSwitch({ checked, onChange, label, hint, disabled = false, busy = false, className, searchAnchor }: SettingsSwitchProps) {
   const labelId = useId();
   const hintId = useId();
   return (
@@ -265,6 +273,7 @@ export function SettingsSwitch({ checked, onChange, label, hint, disabled = fals
         if (!busy) onChange(!checked);
       }}
       data-slot="settings-switch"
+      data-search-anchor={searchAnchor}
       className={cn(
         ROW,
         PRESSABLE,

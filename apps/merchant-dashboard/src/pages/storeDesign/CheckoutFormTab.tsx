@@ -191,7 +191,7 @@ export function CheckoutFormTab() {
         <ReadOnlyNotice editable={editable} />
         <Alert>{t.tip}</Alert>
 
-        <Section title={t.fieldsTitle} description={t.fieldsDescription}>
+        <Section title={t.fieldsTitle} description={t.fieldsDescription} searchAnchor="checkout-fields">
           <ul className="divide-y divide-line">
             {draft.fields.map((f, index) => {
               const fixed = CHECKOUT_FORM_LOCKED_KEYS.includes(f.key);

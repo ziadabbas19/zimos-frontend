@@ -442,13 +442,14 @@ function WorkspaceProfileSection() {
 
         <TextField
           label="Name"
+          data-search-anchor="store-name"
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
           error={fieldErrors.name}
         />
 
-        <div className="space-y-1.5">
+        <div className="space-y-1.5" data-search-anchor="store-logo">
           <Label>Logo</Label>
           <div className="flex flex-wrap items-center gap-4">
             {logoUrl ? (
@@ -495,7 +496,7 @@ function WorkspaceProfileSection() {
           hint="Optional — a short line shown under your store name."
         />
 
-        <div className="space-y-4 rounded-[0.5rem] border border-line p-4">
+        <div className="space-y-4 rounded-[0.5rem] border border-line p-4" data-search-anchor="brand-colours">
           <div>
             <h3 className="text-sm font-medium text-ink">Store colours</h3>
             <p className="mt-0.5 text-xs text-ink-soft">
@@ -619,7 +620,7 @@ function TeamSection() {
             People who can sign in to this store, and the role that sets what they can do.
           </p>
         </div>
-        <Button onClick={() => setInviting(true)} disabled={roles.length === 0}>
+        <Button onClick={() => setInviting(true)} disabled={roles.length === 0} data-search-anchor="invite-member">
           Invite member
         </Button>
       </div>

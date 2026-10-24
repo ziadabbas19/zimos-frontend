@@ -300,7 +300,7 @@ export function DomainsTab() {
       <div className="space-y-5">
         {state.data && state.data.certificateProvider === null && <Alert variant="danger">{t.noProvider}</Alert>}
 
-        <Section title={t.addTitle} description={t.addDescription}>
+        <Section title={t.addTitle} description={t.addDescription} searchAnchor="connect-domain">
           <form onSubmit={add} className="flex flex-wrap items-start gap-2">
             <Field label={t.hostname} error={addError ?? undefined} labelHidden className="min-w-0 flex-1">
               {({ id, ...aria }) => (

@@ -25,6 +25,8 @@ export interface SettingsCardProps {
   id?: string;
   children: ReactNode;
   className?: string;
+  /** Marks the block for the dashboard's search: brought into view and marked when a search result opens it (lib/search/reveal.ts). */
+  searchAnchor?: string;
 }
 
 /**
@@ -32,12 +34,13 @@ export interface SettingsCardProps {
  * rows; a form with several fields, a table or a guide goes in this one, so
  * every block of every section sits on the same pane with the same corner.
  */
-export function SettingsCard({ title, description, actions, tone = "default", flush = false, id, children, className }: SettingsCardProps) {
+export function SettingsCard({ title, description, actions, tone = "default", flush = false, id, children, className, searchAnchor }: SettingsCardProps) {
   const headingId = useId();
   const headed = Boolean(title || description || actions);
   return (
     <section
       id={id}
+      data-search-anchor={searchAnchor}
       data-slot="card"
       aria-labelledby={title ? headingId : undefined}
       className={cn(CARD, "scroll-mt-24", tone === "danger" && "ring-danger/40", !flush && "p-4 sm:p-5", className)}

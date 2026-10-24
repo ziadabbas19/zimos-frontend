@@ -134,7 +134,7 @@ export function GeneralTab() {
       <div className="space-y-5">
         <ReadOnlyNotice editable={editable} />
 
-        <Section title={t.identity} description={t.identityDescription}>
+        <Section title={t.identity} description={t.identityDescription} searchAnchor="store-identity">
           <div className="grid gap-4 sm:grid-cols-2">
             <FaviconField
               value={draft.favicon_url}
@@ -161,7 +161,7 @@ export function GeneralTab() {
           </div>
         </Section>
 
-        <Section title={t.social} description={t.socialDescription}>
+        <Section title={t.social} description={t.socialDescription} searchAnchor="social-links">
           <div className="grid gap-4 sm:grid-cols-2">
             {SOCIAL_LINK_KEYS.map((key) => (
               <TextField
@@ -180,7 +180,7 @@ export function GeneralTab() {
           <p className="mt-3 text-xs text-ink-soft">{t.linkHint}</p>
         </Section>
 
-        <Section title={t.whatsappButton} description={t.whatsappDescription}>
+        <Section title={t.whatsappButton} description={t.whatsappDescription} searchAnchor="whatsapp-button">
           <div className="space-y-4">
             <ToggleRow
               label={t.whatsappEnabled}
@@ -213,7 +213,7 @@ export function GeneralTab() {
           </div>
         </Section>
 
-        <Section title={t.branding} description={t.brandingDescription}>
+        <Section title={t.branding} description={t.brandingDescription} searchAnchor="remove-branding">
           <ToggleRow
             label={t.hideBranding}
             hint={t.hideBrandingHint}

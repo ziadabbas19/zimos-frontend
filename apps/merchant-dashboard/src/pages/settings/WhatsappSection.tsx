@@ -337,6 +337,7 @@ function ConnectForm({ onCancel, onDone }: { onCancel?: () => void; onDone: () =
       </div>
       <TextField
         label={t.accessToken}
+        data-search-anchor="whatsapp-token"
         required
         type="password"
         autoComplete="off"
@@ -408,6 +409,7 @@ function ConnectedView({
         <Info label={t.verifiedName} value={<bdi>{integration.verifiedName ?? "—"}</bdi>} />
         <Info
           label={t.token}
+          searchAnchor="whatsapp-token"
           value={
             <code dir="ltr" className="text-xs">
               {integration.accessTokenMask ?? "—"}
@@ -425,7 +427,7 @@ function ConnectedView({
         <Info label={t.lastVerified} value={formatRelativeTime(integration.lastVerifiedAt)} />
       </dl>
 
-      <div className="space-y-3 rounded-lg bg-paper p-4 ring-1 ring-foreground/10">
+      <div className="space-y-3 rounded-lg bg-paper p-4 ring-1 ring-foreground/10" data-search-anchor="whatsapp-webhook">
         <div>
           <h3 className="text-sm font-medium text-ink">{t.webhookTitle}</h3>
           <p className="mt-1 text-xs text-ink-soft">{t.webhookHint}</p>
@@ -448,9 +450,9 @@ function ConnectedView({
   );
 }
 
-function Info({ label, value }: { label: string; value: ReactNode }) {
+function Info({ label, value, searchAnchor }: { label: string; value: ReactNode; searchAnchor?: string }) {
   return (
-    <div className="min-w-0">
+    <div className="min-w-0" data-search-anchor={searchAnchor}>
       <dt className="text-xs font-medium text-ink-soft">{label}</dt>
       <dd className="mt-0.5 truncate text-sm font-medium text-ink">{value}</dd>
     </div>
