@@ -18,6 +18,7 @@ import { useViewNavigate } from "@/lib/viewTransition";
 import { openBlob, useDocumentError } from "../list/orderDocuments";
 import { SyncFromFileDialog } from "../list/SyncFromFileDialog";
 import { ExportOrdersDialog, type ExportOrdersFilters } from "./ExportOrders";
+import { ExportAcceptedOrdersDialog } from "./ExportAcceptedOrders";
 
 const STRINGS = {
   en: {
@@ -27,6 +28,7 @@ const STRINGS = {
     manifestToday: "Today's manifest",
     sync: "Sync from file",
     export: "Export",
+    exportAccepted: "Export accepted orders",
   },
   ar: {
     tools: "أدوات",
@@ -35,6 +37,7 @@ const STRINGS = {
     manifestToday: "كشف تسليم اليوم",
     sync: "تحديث من ملف",
     export: "تصدير",
+    exportAccepted: "تصدير الطلبات المؤكدة",
   },
 } satisfies Messages;
 
@@ -73,6 +76,7 @@ export function OrdersHeaderTools({
   const documentError = useDocumentError();
   const [syncOpen, setSyncOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [acceptedOpen, setAcceptedOpen] = useState(false);
   const [preparing, setPreparing] = useState(false);
 
   async function manifestToday() {
@@ -135,12 +139,22 @@ export function OrdersHeaderTools({
               <IconDownload className={GLYPH} aria-hidden />
               {t.export}
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setAcceptedOpen(true)} className={ITEM}>
+              <IconDownload className={GLYPH} aria-hidden />
+              {t.exportAccepted}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </DirectionProvider>
 
       <SyncFromFileDialog open={syncOpen} onClose={() => setSyncOpen(false)} onImported={onImported} />
       {exportOpen && <ExportOrdersDialog filters={exportFilters} onClose={() => setExportOpen(false)} />}
+      {acceptedOpen && (
+        <ExportAcceptedOrdersDialog
+          initial={{ from: exportFilters.from, to: exportFilters.to, stage: exportFilters.stage }}
+          onClose={() => setAcceptedOpen(false)}
+        />
+      )}
     </>
   );
 }

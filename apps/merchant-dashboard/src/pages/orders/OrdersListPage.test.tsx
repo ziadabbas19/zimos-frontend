@@ -177,6 +177,7 @@ describe("OrdersListPage", () => {
       "Today's manifest",
       "Sync from file",
       "Export",
+      "Export accepted orders",
     ]);
 
     // The courier's sheet is CSV, as the API reads it.
