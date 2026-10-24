@@ -5393,7 +5393,7 @@ export interface ShipmentSyncResult {
 }
 
 // ---------------------------------------------------------------------
-// Online payments (merchant's own gateway account: Paymob, Kashier)
+// Online payments (merchant's own gateway account: Paymob, Kashier, Fawaterak)
 // ---------------------------------------------------------------------
 
 export type GatewayMode = "test" | "live";
@@ -5418,6 +5418,12 @@ export interface PaymentGatewayConnection {
   settings: Record<string, unknown>;
   /** The methods these settings can take. */
   methods: Array<OnlineMethod>;
+  /**
+   * Warning codes about the connected account. "customer_pays_fees": the
+   * gateway adds its fees to what the shopper pays (Fawaterak). Older servers
+   * leave it out.
+   */
+  notices?: string[];
   /** Paste into each gateway integration (see webhookSetup). */
   webhookUrl: string;
   lastVerifiedAt: string | null;
@@ -5447,6 +5453,11 @@ export interface PaymentGatewayInfo {
    * settingFields is empty and the connect form is just the keys.
    */
   methodsFromAccount: boolean;
+  /**
+   * true: refunds of this gateway's payments are made in its own dashboard,
+   * never from ours (Fawaterak). Older servers leave it out.
+   */
+  refundsInGatewayDashboard?: boolean;
   connection: PaymentGatewayConnection | null;
 }
 
@@ -5573,8 +5584,12 @@ export interface PaymentTimeline {
   refundable: number;
   /** 'gateway': refunds go back through the gateway; 'manual': recorded only (COD / manual). */
   refundVia: "gateway" | "manual";
-  /** Gateway payments that can still give money back. A refund draws on exactly one. */
-  perPayment: Array<{ paymentId: string; refundable: number }>;
+  /**
+   * Gateway payments that can still give money back. A refund draws on exactly one.
+   * `refundInGatewayDashboard`: refunded in the gateway's own dashboard, never
+   * from here (Fawaterak); POST /refunds answers 422 REFUND_IN_GATEWAY_DASHBOARD.
+   */
+  perPayment: Array<{ paymentId: string; refundable: number; refundInGatewayDashboard?: boolean }>;
   /** Payment risk flags needing the merchant: duplicate_payment, paid_after_expiry, test_payment, ... */
   alerts: string[];
   paymentExpiresAt: string | null;

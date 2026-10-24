@@ -68,6 +68,10 @@ const STRINGS = {
     webhookHint: "Paste this into \"{field}\" of each {name} integration you entered below.",
     webhookHintAutomatic:
       "Nothing to paste for payments: {name} is given this URL with every payment. To also see refunds you make in {name}'s own dashboard, add it there under \"{field}\" (events: refund, partial_refund, void).",
+    webhookHintNothingToPaste: "Nothing to paste: {name} is given this URL with every payment.",
+    refundsInDashboard: "Refunds of {name} payments are made in your {name} dashboard, not from here.",
+    notice_customer_pays_fees:
+      "Your {name} account adds its fees to what the shopper pays. When the amount paid differs from the order total, the order is flagged for you to check. To avoid it, set {name} to charge the fees to you.",
     copyWebhook: "Copy webhook URL",
     setupTitle: "How to connect {name}",
     helpLinks: "Help",
@@ -138,6 +142,10 @@ const STRINGS = {
     webhookHint: "الصق هذا الرابط في خانة \"{field}\" لكل تكامل من تكاملات {name} التي أدخلتها بالأسفل.",
     webhookHintAutomatic:
       "لا حاجة للصق أي شيء للمدفوعات: {name} يستلم هذا الرابط مع كل عملية دفع. لو تريد أن تظهر هنا الاستردادات التي تعملها من لوحة {name} نفسها، أضفه هناك في \"{field}\" (الأحداث: refund و partial_refund و void).",
+    webhookHintNothingToPaste: "لا حاجة للصق أي شيء: {name} يستلم هذا الرابط مع كل عملية دفع.",
+    refundsInDashboard: "استرداد مدفوعات {name} يتم من لوحة تحكم {name}، وليس من هنا.",
+    notice_customer_pays_fees:
+      "حساب {name} يضيف رسومه على ما يدفعه العميل. إذا اختلف المبلغ المدفوع عن إجمالي الأوردر، يُعلَّم الأوردر لتراجعه. لتجنّب ذلك، اضبط {name} بحيث تتحمّل أنت الرسوم.",
     copyWebhook: "نسخ رابط الـ webhook",
     setupTitle: "طريقة ربط {name}",
     helpLinks: "مساعدة",
@@ -469,7 +477,15 @@ function GatewayCard({
                 ? fmt(t.noWebhookYetAutomatic, { name })
                 : t.noWebhookYet}
           </p>
+          {(connection.notices ?? []).includes("customer_pays_fees") && (
+            <p role="status" className="rounded-[0.5rem] border border-warning px-4 py-3 text-sm text-warning">
+              {fmt(t.notice_customer_pays_fees, { name })}
+            </p>
+          )}
           <WebhookUrl gateway={gateway} url={connection.webhookUrl} />
+          {gateway.refundsInGatewayDashboard && (
+            <p className="text-sm text-ink-soft">{fmt(t.refundsInDashboard, { name })}</p>
+          )}
           <p className="text-sm text-ink-soft">
             {fromAccount
               ? `${fmt(t.accountMethods, { name })}: ${connection.methods
@@ -606,10 +622,15 @@ function WebhookUrl({ gateway, url }: { gateway: PaymentGatewayInfo; url: string
         <CopyButton value={url} label={t.copyWebhook} />
       </div>
       <p className="text-xs text-ink-soft">
-        {fmt(gateway.webhookSetup.automatic ? t.webhookHintAutomatic : t.webhookHint, {
-          field: gateway.webhookSetup.field,
-          name: gateway.name,
-        })}
+        {fmt(
+          // A gateway refunded in its own dashboard (Fawaterak) has no refund events to subscribe to here.
+          gateway.refundsInGatewayDashboard
+            ? t.webhookHintNothingToPaste
+            : gateway.webhookSetup.automatic
+              ? t.webhookHintAutomatic
+              : t.webhookHint,
+          { field: gateway.webhookSetup.field, name: gateway.name }
+        )}
       </p>
     </div>
   );
