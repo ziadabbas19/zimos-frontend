@@ -159,7 +159,7 @@ function SummaryReports({ readOnly }: { readOnly: boolean }) {
   const settings = useAsync(() => scheduledReportsGet(apiClient, workspaceId), [workspaceId]);
 
   return (
-    <SettingsCard id="summary-reports" title={t.title} description={t.description}>
+    <SettingsCard id="summary-reports" searchAnchor="summary-reports" title={t.title} description={t.description}>
       <DataState loading={settings.loading} error={settings.error} onRetry={() => void settings.refresh()}>
         {settings.data && <ReportsForm saved={settings.data} readOnly={readOnly} onSaved={(next) => settings.setData(next)} />}
       </DataState>

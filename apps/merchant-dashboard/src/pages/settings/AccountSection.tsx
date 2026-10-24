@@ -168,7 +168,7 @@ export function AccountSection() {
       </div>
 
       <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
-        <div>
+        <div data-search-anchor="account-email">
           <dt className="text-ink-soft">{t.email}</dt>
           <dd className="mt-0.5 flex flex-wrap items-center gap-2 font-medium text-ink">
             <bdi dir="ltr" className="break-all">
@@ -179,7 +179,7 @@ export function AccountSection() {
             </Button>
           </dd>
         </div>
-        <div>
+        <div data-search-anchor="account-phone">
           <dt className="text-ink-soft">{t.phone}</dt>
           <dd className="mt-0.5 flex flex-wrap items-center gap-2 font-medium text-ink">
             {user.phone ? <bdi dir="ltr">{user.phone}</bdi> : <span className="text-ink-soft">{t.noPhone}</span>}
@@ -202,7 +202,7 @@ export function AccountSection() {
         </div>
       </dl>
 
-      <div className="mt-5 max-w-md space-y-3">
+      <div className="mt-5 max-w-md space-y-3" data-search-anchor="username">
         <UsernameField value={username} onChange={setUsername} onStatus={setStatus} current={current} disabled={locked || saving} />
         <p className="text-xs text-ink-soft">
           {locked && lockedUntil ? fmt(t.nextChange, { date: formatDate(lockedUntil) }) : t.rule}

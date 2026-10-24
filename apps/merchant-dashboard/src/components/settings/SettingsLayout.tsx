@@ -13,7 +13,13 @@ import {
 import { useSearchParams } from "react-router-dom";
 import { cn } from "@store-builder/ui";
 import { IconCaretLeft, IconCaretRight, IconClose, IconSearch, type IconComponent } from "@/components/icons";
-import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
+import { useWorkspace } from "@/context/WorkspaceContext";
+import { fmt, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
+import { matchScore, type Searchable } from "@/lib/search/match";
+import { revealSearchTarget } from "@/lib/search/reveal";
+import { SEARCH_UI_STRINGS } from "@/lib/search/searchStrings";
+import { entriesInScope, isEntryShown, type SearchEntry, type SearchScope } from "@/lib/search/siteIndex";
+import { usePlanLocks } from "@/lib/search/usePlanLocks";
 import { SettingsIconTile, type SettingsTone } from "./SettingsPane";
 
 const STRINGS = {
@@ -62,6 +68,14 @@ export interface SettingsLayoutProps {
   /** Runs before a switch away from the current section; return false to stay (unsaved edits). */
   canLeave?: () => boolean | Promise<boolean>;
   searchPlaceholder?: string;
+  /**
+   * The page's part of the dashboard's search index (lib/search/siteIndex.ts):
+   * the search then finds the sections by their names in both languages, and
+   * the single settings inside them — a match on one opens its section and
+   * marks it. Without it, the search reads the sections' own label,
+   * description and keywords.
+   */
+  searchScope?: SearchScope;
   /** Above the list: a store card, an account card. */
   listHeader?: ReactNode;
   /** Under the list: version, sign out. */
@@ -88,21 +102,22 @@ function useIsDesktop(): boolean {
   return useSyncExternalStore(subscribeDesktop, isDesktopNow, () => true);
 }
 
-/**
- * Lower-case, without Arabic diacritics or tatweel, and with the letters
- * people type interchangeably folded together (أ إ آ → ا, ة → ه, ى → ي), so
- * «اعدادات» finds «الإعدادات» — the same folding as Spotlight
- * (components/CommandPalette.tsx). `\p{Mn}` is every combining mark, which is
- * what the diacritics are.
- */
-function foldForSearch(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[\p{Mn}ـ]/gu, "")
-    .replace(/[أإآٱ]/g, "ا")
-    .replace(/ة/g, "ه")
-    .replace(/ى/g, "ي")
-    .trim();
+/** A section the search found, and the single setting in it that matched best, when that is what matched. */
+interface Found {
+  id: string;
+  score: number;
+  at: number;
+  via?: SearchEntry;
+}
+
+/** An entry as the list's own search reads it: without the page's name, which every one of them carries. */
+function withinPage(entry: SearchEntry): Searchable {
+  return {
+    titles: entry.searchable.titles,
+    keywords: entry.searchable.keywords,
+    details: entry.searchable.details,
+    trail: entry.trail.slice(1).flatMap((place) => [place.en, place.ar]),
+  };
 }
 
 interface ListGroup {
@@ -179,12 +194,17 @@ export function SettingsLayout({
   onSelect,
   canLeave,
   searchPlaceholder,
+  searchScope,
   listHeader,
   listFooter,
   children,
   className,
 }: SettingsLayoutProps) {
   const t = useT(STRINGS);
+  const ui = useT(SEARCH_UI_STRINGS);
+  const { locale } = useLocale();
+  const { currentWorkspace } = useWorkspace();
+  const role = currentWorkspace?.role;
   const isDesktop = useIsDesktop();
   const navId = useId();
   const headingBase = useId();
@@ -214,16 +234,45 @@ export function SettingsLayout({
     setEntrance(current === null ? "list" : seen === null ? "push" : "swap");
   }
 
-  const groups = useMemo(() => {
-    const words = foldForSearch(query).split(/\s+/).filter(Boolean);
-    if (words.length === 0) return groupSections(sections);
-    return groupSections(
-      sections.filter((section) => {
-        const text = foldForSearch([section.label, section.description ?? "", ...(section.keywords ?? [])].join(" "));
-        return words.every((word) => text.includes(word));
-      })
-    );
-  }, [sections, query]);
+  // This page's part of the index, for this role: each section, and the single settings in it.
+  const targets = useMemo(() => {
+    const entries = searchScope ? entriesInScope(searchScope).filter((entry) => isEntryShown(entry, role)) : [];
+    return entries.map((entry) => ({ entry, searchable: withinPage(entry) }));
+  }, [searchScope, role]);
+  const searching = query.trim() !== "";
+  const locked = usePlanLocks(currentWorkspace?.id, searching && targets.some(({ entry }) => entry.plan));
+
+  // While searching: the sections that match, closest first, each with the setting that matched in it.
+  const found = useMemo<Found[] | null>(() => {
+    if (!searching) return null;
+    const out: Found[] = [];
+    sections.forEach((section, at) => {
+      const own = targets.find(({ entry }) => entry.kind === "section" && entry.section === section.id);
+      let best: Found = {
+        id: section.id,
+        at,
+        score: matchScore(
+          query,
+          own?.searchable ?? { titles: [section.label], keywords: section.keywords, details: section.description ? [section.description] : [] }
+        ),
+      };
+      for (const { entry, searchable } of targets) {
+        if (entry.kind !== "setting" || entry.section !== section.id) continue;
+        const score = matchScore(query, searchable);
+        if (score > best.score) best = { id: section.id, at, score, via: entry };
+      }
+      if (best.score > 0) out.push(best);
+    });
+    return out.sort((a, b) => b.score - a.score || a.at - b.at);
+  }, [searching, query, sections, targets]);
+  const viaOf = useMemo(() => new Map((found ?? []).flatMap((hit) => (hit.via ? [[hit.id, hit.via] as const] : []))), [found]);
+
+  const groups = useMemo<ListGroup[]>(() => {
+    if (!found) return groupSections(sections);
+    // Ranked: one list without headings, the closest first.
+    const byId = new Map(sections.map((section) => [section.id, section]));
+    return [{ heading: null, items: found.flatMap((hit) => byId.get(hit.id) ?? []) }];
+  }, [found, sections]);
   // The rows in the order they are drawn: what the arrow keys walk.
   const order = useMemo(() => groups.flatMap((group) => group.items.map((section) => section.id)), [groups]);
 
@@ -236,8 +285,13 @@ export function SettingsLayout({
 
   // One question at a time: a second press while «تسيب التعديلات؟» is open does nothing.
   const asking = useRef(false);
-  async function request(id: string | null) {
-    if (id === current || asking.current) return;
+  // `anchor`: a single setting the search found in the section, brought into view and marked once it is drawn.
+  async function request(id: string | null, anchor?: string) {
+    if (asking.current) return;
+    if (id === current) {
+      if (anchor) revealSearchTarget(anchor);
+      return;
+    }
     if (canLeave && current !== null) {
       asking.current = true;
       let leave = false;
@@ -252,6 +306,7 @@ export function SettingsLayout({
       if (!leave) return;
     }
     onSelect(id);
+    if (anchor) revealSearchTarget(anchor);
   }
 
   // A desktop with no section chosen: ask for the first, so the URL names what is on screen.
@@ -336,7 +391,7 @@ export function SettingsLayout({
       // Only with something typed: the first match. An empty field is not a choice.
       if (first === undefined || query.trim() === "") return;
       event.preventDefault();
-      void request(first);
+      void request(first, viaOf.get(first)?.anchor);
     } else if (event.key === "Escape" && query !== "") {
       // Escape empties the field first; with nothing in it the key belongs to whatever is around.
       event.preventDefault();
@@ -450,6 +505,7 @@ export function SettingsLayout({
                 >
                   {group.items.map((section) => {
                     const selected = section.id === shownId;
+                    const via = viaOf.get(section.id);
                     return (
                       <li
                         key={section.id}
@@ -469,7 +525,7 @@ export function SettingsLayout({
                           aria-current={selected ? "page" : undefined}
                           // Roving focus: Tab stops once in the list, the arrow keys do the rest.
                           tabIndex={section.id === tabStop ? 0 : -1}
-                          onClick={() => void request(section.id)}
+                          onClick={() => void request(section.id, via?.anchor)}
                           onFocus={() => setFocusId(section.id)}
                           className={cn(
                             "zimos-settings-item group/item relative flex w-full cursor-pointer items-center gap-3 text-start select-none",
@@ -494,13 +550,20 @@ export function SettingsLayout({
                           )}
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-[15px] leading-5 font-medium lg:text-sm">{section.label}</span>
-                            {section.description && (
-                              <span className="mt-0.5 block truncate text-[13px] leading-[1.125rem] text-ink-soft lg:hidden">
-                                {section.description}
+                            {via ? (
+                              // The setting the search found in this section, at every width.
+                              <span className="mt-0.5 block truncate text-[13px] leading-[1.125rem] text-ink-soft lg:text-xs lg:leading-4 lg:group-aria-[current=page]/item:text-primary-foreground/80">
+                                {via.title[locale]}
                               </span>
+                            ) : (
+                              section.description && (
+                                <span className="mt-0.5 block truncate text-[13px] leading-[1.125rem] text-ink-soft lg:hidden">
+                                  {section.description}
+                                </span>
+                              )
                             )}
                           </span>
-                          {shown(section.badge) && <ListBadge value={section.badge} />}
+                          {via && locked(via) ? <ListBadge value={ui.notInPlan} /> : shown(section.badge) && <ListBadge value={section.badge} />}
                           {/* The row leads into the section: a caret toward the end side, phone only. */}
                           <IconCaretRight
                             className="size-4 shrink-0 text-ink-soft lg:hidden rtl:-scale-x-100"

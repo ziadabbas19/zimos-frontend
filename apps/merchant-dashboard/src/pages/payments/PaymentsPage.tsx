@@ -15,7 +15,6 @@ import { formatDateTime } from "@/lib/format";
 import { STOREFRONT_URL } from "@/lib/storefrontUrl";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { fmt, useCommon, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
-import { IconCard, IconChecklist, IconWallet } from "@/components/icons";
 import { PageHeader } from "@/components/PageHeader";
 import { SettingsLayout, SettingsPane, useSettingsSection, type SettingsSectionDef } from "@/components/settings";
 import { DataState } from "@/components/DataState";
@@ -25,17 +24,11 @@ import { CopyButton } from "@/components/CopyButton";
 import { ProviderLogo } from "@/components/ProviderLogo";
 import { useToast } from "@/components/Toast";
 import { ManualMethodsSection } from "./ManualMethodsSection";
-
-/**
- * Role keys that manage payments: the backend gates every /payments call on
- * workspace.manage, which only the owner ("*") and the workspace manager hold
- * among the system roles. A custom role reads as view-only here, and a 403
- * flips the page to view-only.
- */
-const PAYMENT_ROLES: ReadonlySet<string> = new Set(["owner", "workspace_manager"]);
+import { PAYMENT_ROLES, PAYMENT_SECTIONS, PAYMENT_SECTION_STRINGS } from "./paymentSections";
 
 const STRINGS = {
   en: {
+    ...PAYMENT_SECTION_STRINGS.en,
     title: "Payments",
     description: "Connect your own payment gateway so shoppers can pay by card or wallet. The money goes straight to your gateway account.",
     viewOnly: "Only the store owner or a workspace manager can manage payments.",
@@ -44,11 +37,6 @@ const STRINGS = {
     notAvailable: "Online payments aren't switched on for this server yet. Your store keeps taking cash on delivery.",
     offlineNotice:
       "Online checkout isn't live on the platform yet, so shoppers only see cash on delivery for now. You can connect and test your gateway already; nothing changes for shoppers until it goes live.",
-    gatewaysTitle: "Gateways",
-    secManual: "InstaPay and wallets",
-    secManualHint: "Your own InstaPay address and wallet numbers, paid to directly.",
-    secGatewaysHint: "The payment gateways connected to this store, and their keys.",
-    secMethodsHint: "Which ways to pay shoppers see at checkout, and in which order.",
     search: "Search the payment settings…",
     notConnected: "Not connected",
     connected: "Connected",
@@ -96,7 +84,6 @@ const STRINGS = {
     connectedToast: "{name} is connected.",
     savedToast: "{name} settings saved.",
     disconnectedToast: "{name} disconnected.",
-    methodListTitle: "Checkout methods",
     methodListHint:
       "Choose which methods shoppers see and in what order. One gateway per method: turning one on turns the other gateway's same method off. At least one must stay on.",
     methodCod: "Cash on delivery",
@@ -110,6 +97,7 @@ const STRINGS = {
     on: "On",
   },
   ar: {
+    ...PAYMENT_SECTION_STRINGS.ar,
     title: "المدفوعات",
     description: "اربط بوابة الدفع الخاصة بك لكي يدفع العملاء بالكارت أو المحفظة. الفلوس بتروح مباشرة لحساب البوابة بتاعك.",
     viewOnly: "مالك المتجر أو مدير مساحة العمل فقط يمكنه إدارة المدفوعات.",
@@ -118,11 +106,6 @@ const STRINGS = {
     notAvailable: "الدفع الإلكتروني غير مفعّل على هذا الخادم بعد. متجرك مستمر في الدفع عند الاستلام.",
     offlineNotice:
       "الدفع الإلكتروني لم يُفعَّل على المنصة بعد، لذلك يرى العملاء الدفع عند الاستلام فقط حاليًا. يمكنك ربط البوابة وتجربتها من الآن، ولن يتغير شيء للعملاء قبل التفعيل.",
-    gatewaysTitle: "البوابات",
-    secManual: "إنستاباي والمحافظ",
-    secManualHint: "عنوان إنستاباي وأرقام المحافظ الخاصة بك، ويُدفع إليها مباشرة.",
-    secGatewaysHint: "بوابات الدفع المربوطة بهذا المتجر ومفاتيحها.",
-    secMethodsHint: "طرق الدفع التي يراها العملاء عند إتمام الشراء وترتيبها.",
     search: "ابحث في إعدادات الدفع…",
     notConnected: "غير مربوطة",
     connected: "مربوطة",
@@ -170,7 +153,6 @@ const STRINGS = {
     connectedToast: "تم ربط {name}.",
     savedToast: "تم حفظ إعدادات {name}.",
     disconnectedToast: "تم إلغاء ربط {name}.",
-    methodListTitle: "طرق الدفع في صفحة الدفع",
     methodListHint:
       "اختر الطرق التي يراها العملاء وترتيبها. بوابة واحدة لكل طريقة: تفعيل طريقة من بوابة يوقف نفس الطريقة من البوابة الأخرى. لازم تفضل طريقة واحدة على الأقل مفعّلة.",
     methodCod: "الدفع عند الاستلام",
@@ -210,11 +192,15 @@ export function PaymentsPage() {
   }
 
   const sections = useMemo<SettingsSectionDef[]>(
-    () => [
-      { id: "manual", label: t.secManual, description: t.secManualHint, icon: IconWallet, tone: "green" },
-      { id: "gateways", label: t.gatewaysTitle, description: t.secGatewaysHint, icon: IconCard, tone: "blue" },
-      { id: "methods", label: t.methodListTitle, description: t.secMethodsHint, icon: IconChecklist, tone: "purple" },
-    ],
+    () =>
+      PAYMENT_SECTIONS.map((section) => ({
+        id: section.id,
+        label: t[section.label],
+        description: t[section.hint],
+        icon: section.icon,
+        tone: section.tone,
+        keywords: [...section.keywords],
+      })),
     [t]
   );
   const { current, select } = useSettingsSection(sections);
@@ -232,7 +218,7 @@ export function PaymentsPage() {
   }
 
   return (
-    <SettingsLayout title={t.title} sections={sections} current={current} onSelect={select} searchPlaceholder={t.search}>
+    <SettingsLayout title={t.title} sections={sections} current={current} onSelect={select} searchPlaceholder={t.search} searchScope="payments">
       <SettingsPane title={shown.label} description={shown.description} icon={shown.icon} tone={shown.tone}>
         {/* The store's own InstaPay / wallet numbers: no gateway, and not behind the online-payments switch. */}
         {shown.id === "manual" && <ManualMethodsSection workspaceId={workspaceId} />}

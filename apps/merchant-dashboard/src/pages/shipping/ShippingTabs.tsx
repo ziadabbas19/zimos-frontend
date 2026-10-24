@@ -3,7 +3,7 @@ import { IconPercent, IconPlug, IconShipping, IconSliders } from "@/components/i
 import type { SettingsSectionDef } from "@/components/settings";
 import { useT, type Messages } from "@/i18n/LocaleContext";
 
-const STRINGS = {
+export const SHIPPING_SECTION_STRINGS = {
   en: {
     rates: "Shipping prices",
     options: "Shipping options",
@@ -28,11 +28,19 @@ const STRINGS = {
   },
 } satisfies Messages;
 
-const TABS = ["rates", "options", "carriers", "taxes"] as const;
-export type ShippingTab = (typeof TABS)[number];
+export const SHIPPING_TABS = ["rates", "options", "carriers", "taxes"] as const;
+export type ShippingTab = (typeof SHIPPING_TABS)[number];
 
-const ICONS = { rates: IconShipping, options: IconSliders, carriers: IconPlug, taxes: IconPercent } as const;
+export const SHIPPING_ICONS = { rates: IconShipping, options: IconSliders, carriers: IconPlug, taxes: IconPercent } as const;
 const TONES = { rates: "blue", options: "purple", carriers: "orange", taxes: "green" } as const;
+
+/** What the search also finds each section by, in both languages: the list's own search and the dashboard's (lib/search/siteIndex.ts). */
+export const SHIPPING_KEYWORDS: Record<ShippingTab, readonly string[]> = {
+  rates: ["shipping price", "delivery fee", "governorates", "delivery areas", "zones", "couriers", "pickup", "working hours", "سعر الشحن", "مصاريف الشحن", "المحافظات", "مناطق التوصيل", "المناديب", "الاستلام من المتجر", "ساعات العمل"],
+  options: ["delivery options", "express", "standard", "free shipping", "طرق التوصيل", "شحن مجاني", "سريع"],
+  carriers: ["bosta", "j&t", "courier company", "waybill", "بوسطة", "شركة شحن", "بوليصة"],
+  taxes: ["tax", "vat", "rates", "ضريبة", "القيمة المضافة", "ضرائب"],
+};
 
 /**
  * The shipping page's sections, kept in the URL (?tab=, the values it always
@@ -40,9 +48,17 @@ const TONES = { rates: "blue", options: "purple", carriers: "orange", taxes: "gr
  * the first and a phone shows the list.
  */
 export function useShippingSections(): { sections: SettingsSectionDef[]; searchPlaceholder: string } {
-  const t = useT(STRINGS);
+  const t = useT(SHIPPING_SECTION_STRINGS);
   const sections = useMemo<SettingsSectionDef[]>(
-    () => TABS.map((id) => ({ id, label: t[id], description: t[`${id}Hint`], icon: ICONS[id], tone: TONES[id] })),
+    () =>
+      SHIPPING_TABS.map((id) => ({
+        id,
+        label: t[id],
+        description: t[`${id}Hint`],
+        icon: SHIPPING_ICONS[id],
+        tone: TONES[id],
+        keywords: [...SHIPPING_KEYWORDS[id]],
+      })),
     [t]
   );
   return { sections, searchPlaceholder: t.search };
@@ -50,5 +66,5 @@ export function useShippingSections(): { sections: SettingsSectionDef[]; searchP
 
 /** The section an id names; anything else (or none) reads as the first. */
 export function shippingTabOf(id: string | null): ShippingTab {
-  return (TABS as readonly string[]).includes(id ?? "") ? (id as ShippingTab) : "rates";
+  return (SHIPPING_TABS as readonly string[]).includes(id ?? "") ? (id as ShippingTab) : "rates";
 }

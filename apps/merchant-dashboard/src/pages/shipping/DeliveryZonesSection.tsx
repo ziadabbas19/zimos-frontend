@@ -160,7 +160,7 @@ export function DeliveryZonesSection({ currency }: { currency: string }) {
   );
 
   return (
-    <section className="rounded-[var(--radius-card)] border border-line p-5">
+    <section className="rounded-[var(--radius-card)] border border-line p-5" data-search-anchor="delivery-zones">
       <h2 className="font-display text-lg font-medium text-ink">{t.title}</h2>
       <p className="mt-1 text-sm text-ink-soft">{t.description}</p>
       {error && (

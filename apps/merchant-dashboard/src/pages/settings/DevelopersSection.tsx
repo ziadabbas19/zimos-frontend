@@ -325,7 +325,7 @@ function ApiKeysPanel({ t, onForbidden }: { t: T; onForbidden: () => void }) {
   const [revoking, setRevoking] = useState<ApiKeyDto | null>(null);
 
   return (
-    <div>
+    <div data-search-anchor="api-keys">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-medium text-ink">{t.keysTitle}</h3>
@@ -564,7 +564,7 @@ function WebhooksPanel({ t, onForbidden }: { t: T; onForbidden: () => void }) {
   }
 
   return (
-    <div>
+    <div data-search-anchor="webhooks">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-medium text-ink">{t.hooksTitle}</h3>

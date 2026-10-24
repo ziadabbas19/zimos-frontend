@@ -413,7 +413,7 @@ function ShippingTaxBody() {
   const shown = sections.find((section) => section.id === tab) ?? sections[0];
 
   return (
-    <SettingsLayout title={tr.title} sections={sections} current={current} onSelect={select} searchPlaceholder={searchPlaceholder}>
+    <SettingsLayout title={tr.title} sections={sections} current={current} onSelect={select} searchPlaceholder={searchPlaceholder} searchScope="shipping">
       <SettingsPane title={shown.label} description={shown.description} icon={shown.icon} tone={shown.tone}>
         <div className="space-y-12">
 

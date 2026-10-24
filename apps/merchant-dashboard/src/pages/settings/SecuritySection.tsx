@@ -144,7 +144,7 @@ export function SecuritySection() {
       {/* The part behind the switch: while it is off the API is not asked about the second step. */}
       {TWO_FACTOR_ENABLED && <TwoStepPanel t={t} />}
       {/* There is no change-password call: the way to a new password is the reset link (/forgot-password). */}
-      <SettingsGroup title={t.passwordTitle}>
+      <SettingsGroup title={t.passwordTitle} searchAnchor="password">
         <SettingsLinkRow to="/forgot-password" icon={IconKey} tone="gray" label={t.resetPassword} hint={t.resetPasswordHint} />
       </SettingsGroup>
       <DevicesPanel t={t} />
@@ -166,7 +166,7 @@ function DevicesPanel({ t }: { t: T }) {
 
   return (
     <>
-      <SettingsGroup title={t.devicesTitle}>
+      <SettingsGroup title={t.devicesTitle} searchAnchor="devices">
         <SettingsRow
           label={t.signOutAll}
           hint={t.signOutAllHint}
@@ -309,7 +309,7 @@ function TwoStepPanel({ t }: { t: T }) {
     <>
       <DataState loading={status.loading} error={status.error} onRetry={() => void status.refresh()} skeleton={<PaneSkeleton rows={4} />}>
         {data && (
-          <SettingsGroup title={t.twoTitle} description={t.twoHint}>
+          <SettingsGroup title={t.twoTitle} description={t.twoHint} searchAnchor="two-step">
             <SettingsRow
               label={t.status}
               hint={data.mode !== "off" && data.rememberedDevices > 0 ? fmt(t.remembered, { count: data.rememberedDevices }) : undefined}

@@ -71,7 +71,7 @@ export function StoreInfoTab() {
       <div className="space-y-5">
         <ReadOnlyNotice editable={editable} />
 
-        <Section title={t.title} description={t.description}>
+        <Section title={t.title} description={t.description} searchAnchor="store-contact">
           <div className="space-y-4">
             <ToggleRow
               label={t.enabled}
@@ -111,10 +111,10 @@ export function StoreInfoTab() {
           </div>
         </Section>
 
-        {STORE_INFO_CARD_KEYS.map((key) => {
+        {STORE_INFO_CARD_KEYS.map((key, index) => {
           const card = draft[key];
           return (
-            <Section key={key} title={t[key]}>
+            <Section key={key} title={t[key]} searchAnchor={index === 0 ? "trust-cards" : undefined}>
               <div className="space-y-4">
                 <ToggleRow
                   label={t.cardShown}

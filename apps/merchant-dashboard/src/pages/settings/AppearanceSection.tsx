@@ -82,6 +82,7 @@ export function AppearanceSection() {
     >
       <SettingsRow
         label={t.language}
+        searchAnchor="language"
         hint={t.languageHint}
         control={
           <Segmented
@@ -98,6 +99,7 @@ export function AppearanceSection() {
       {/* Three segments do not fit beside the label on a phone: the control takes its own line. */}
       <SettingsRow
         label={t.look}
+        searchAnchor="dark-mode"
         hint={t.lookHint}
         stacked
         control={
@@ -121,6 +123,7 @@ export function AppearanceSection() {
       {/* A switch that is held off says why, in words, not only by looking dimmed. */}
       <SettingsSwitch
         label={t.glass}
+        searchAnchor="glass"
         hint={glass === "system" ? t.glassSystem : glass === "black" ? t.glassBlack : t.glassHint}
         checked={glass === "on"}
         disabled={glass === "system" || glass === "black"}

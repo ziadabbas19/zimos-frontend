@@ -105,7 +105,7 @@ export function ShippingSettingsSection({ onSaved }: { onSaved?: () => Promise<v
   const data = useAsync(() => apiClient.getShippingSettings(workspaceId), [workspaceId]);
 
   return (
-    <section className="rounded-[var(--radius-card)] border border-line p-5">
+    <section className="rounded-[var(--radius-card)] border border-line p-5" data-search-anchor="shipping-prices">
       <h2 className="font-display text-lg font-medium text-ink">{t.title}</h2>
       <p className="mt-1 text-sm text-ink-soft">{t.description}</p>
       <DataState loading={data.loading} error={data.error} empty={false} onRetry={() => data.refresh()}>
