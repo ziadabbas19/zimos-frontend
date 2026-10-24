@@ -35,3 +35,12 @@ export const SITE_TRAFFIC_DETAILS_ENABLED = import.meta.env.VITE_SITE_TRAFFIC_DE
  * seconds. Off: the count is read every 60 seconds, as before.
  */
 export const CONSOLE_REALTIME_ENABLED = import.meta.env.VITE_CONSOLE_REALTIME_ENABLED === "true";
+
+/**
+ * Live, a tab of Site traffic in detail: who is on zimos.co now (the last 5
+ * minutes, read again every 15 seconds) — place, source and UTM, device,
+ * browser and system, the page they are on and their last sign-up / sign-in
+ * click. Shown only with SITE_TRAFFIC_DETAILS_ENABLED above, and filled by the
+ * API's SITE_TRAFFIC_DETAILS_ENABLED (it answers 404 without it).
+ */
+export const SITE_LIVE_ENABLED = import.meta.env.VITE_SITE_LIVE_ENABLED === "true";
