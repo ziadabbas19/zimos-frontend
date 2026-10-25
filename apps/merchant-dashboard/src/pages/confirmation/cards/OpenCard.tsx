@@ -21,6 +21,7 @@ import { useOutcomeLabels, useQueueStrings } from "../queueStrings";
 import { outcomePayload, useTaskActions } from "../useTaskActions";
 import { OrderFacts, OrderHeadline } from "./OrderSummary";
 import { attemptAgentName, isCustomerLinkAttempt } from "../customerLink";
+import { LockedBadge, LockedOrderNotice, isLockedOrder, useConfirmBlockedText } from "@/components/OrdersLock";
 
 /** Once picked, an outcome takes its meaning colour (with the word, never colour alone). */
 const OUTCOME_PICKED: Record<ConfirmationOutcome, string> = {
@@ -83,12 +84,16 @@ export function OpenCard({
   const [assignOpen, setAssignOpen] = useState(false);
 
   const { order } = task;
+  // Locked (components/OrdersLock): its customer details are hidden; it can't be confirmed or called yet.
+  const contactLocked = isLockedOrder(order);
+  const confirmBlocked = useConfirmBlockedText();
   const { inProgress, mine, expired, minutesLeft } = lockStateOf(task, userId, now);
   const holderName = task.lockedBy?.fullName ?? t.someone;
   const rejectionMissing = outcome === "rejected" && rejectionReason.trim() === "";
   const lastAttempt = task.attempts[task.attempts.length - 1];
   // The dialer opens only on touch phones; elsewhere the button says what it does.
   const canDial =
+    !contactLocked &&
     Boolean(order.contactSnapshot.phone) &&
     typeof window !== "undefined" &&
     Boolean(window.matchMedia?.("(pointer: coarse)").matches);
@@ -103,7 +108,7 @@ export function OpenCard({
     actions.run(async () => {
       await actions.claimTask();
       const phone = order.contactSnapshot.phone;
-      if (phone && window.matchMedia?.("(pointer: coarse)").matches) {
+      if (phone && !contactLocked && window.matchMedia?.("(pointer: coarse)").matches) {
         window.location.href = `tel:${phone.replace(/[^\d+]/g, "")}`;
       }
     });
@@ -190,15 +195,21 @@ export function OpenCard({
             </label>
           )
         }
-        aside={<AttemptsBadge count={task.attemptCount} />}
+        aside={
+          <>
+            {contactLocked && <LockedBadge reason={order.lockReason} />}
+            <AttemptsBadge count={task.attemptCount} />
+          </>
+        }
       />
 
       <OrderFacts
         task={task}
         now={now}
-        contactAction={<WhatsAppButton order={order} onOpen={() => mine && !expired && pickChannel("whatsapp")} />}
+        contactAction={contactLocked ? null : <WhatsAppButton order={order} onOpen={() => mine && !expired && pickChannel("whatsapp")} />}
         onChanged={onChanged}
       />
+      {contactLocked && <LockedOrderNotice order={order} />}
 
       {/* One quiet line for who has it; a manager opens the picker only when needed. */}
       {(task.assignedTo || (canManage && team.length > 0)) && (
@@ -297,8 +308,10 @@ export function OpenCard({
                   type="button"
                   aria-pressed={picked}
                   onClick={() => setOutcome(o)}
-                  // A manually paid order is confirmed only once its payment is approved (the server refuses too).
-                  disabled={busy || (o === "confirmed" && awaitsPaymentApproval(task))}
+                  // A manually paid order is confirmed only once its payment is approved (the server refuses too);
+                  // a locked one only once the store renews or tops up.
+                  disabled={busy || (o === "confirmed" && (awaitsPaymentApproval(task) || contactLocked))}
+                  title={o === "confirmed" && contactLocked ? confirmBlocked : undefined}
                   className={cn(
                     "zimos-queue-outcome flex min-h-14 cursor-pointer flex-col items-center justify-center gap-1 rounded-[1rem] text-sm font-semibold ring-1 transition-[scale,background-color,color] duration-[var(--dur-fade)] ease-[var(--ease-out)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100",
                     picked ? OUTCOME_PICKED[o] : "bg-paper-raised text-ink ring-line hover:bg-paper-sunken"
@@ -310,6 +323,7 @@ export function OpenCard({
               );
             })}
           </div>
+          {contactLocked && <p className="text-xs font-medium text-danger">{confirmBlocked}</p>}
 
           <ChannelPicker value={channel} onChange={pickChannel} disabled={busy} />
 

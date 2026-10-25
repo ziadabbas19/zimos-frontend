@@ -5,6 +5,7 @@ import { FOCUS_TOGGLE_EVENT, KeyboardShortcuts } from "@/components/KeyboardShor
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { AccessBanner } from "@/components/AccessBanner";
+import { BalanceWidget } from "@/components/OrdersLock";
 import { EmailConfirmBanner } from "@/components/EmailConfirmBanner";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { useT, type Messages } from "@/i18n/LocaleContext";
@@ -134,6 +135,8 @@ export function DashboardLayout() {
           <div className="flex shrink-0 items-center gap-1 md:gap-1.5">
             {/* Search, the store's link, the language, light or dark, alerts and the account.
                 On a phone the language and the theme are in the menu sheet and in Settings. */}
+            {/* The pay-per-order balance and the orders it still covers, on every page (locked orders on). */}
+            <BalanceWidget />
             <CommandPalette />
             {currentWorkspace?.slug && <StoreLinkBar slug={currentWorkspace.slug} className="hidden lg:flex" />}
             {/* Arabic / English, flipping the whole dashboard between RTL and LTR. */}

@@ -396,6 +396,21 @@ describe("ConfirmationQueuePage selection", () => {
     expect(within(first).getByText("Left as they are")).toBeInTheDocument();
     expect(within(first).getByText("1 order a teammate is on right now")).toBeInTheDocument();
   });
+
+  it("leaves a locked order out of Accept all: the server would refuse to confirm it", async () => {
+    asRole("owner");
+    const base = free("t2");
+    const locked = free("t2", { order: { ...base.order, contactLocked: true, contactSnapshot: { fullName: "••••", phone: "••••" } } });
+    queueOf([free("t1"), locked]);
+    const { user } = renderWithProviders(<ConfirmationQueuePage />);
+
+    await user.click(await screen.findByRole("checkbox", { name: "Select ORD-t1" }));
+    await user.click(screen.getByRole("checkbox", { name: "Select ORD-t2" }));
+    await user.click(within(bar()).getByRole("button", { name: "Accept all selected" }));
+
+    const first = await screen.findByRole("dialog", { name: "Accept 1 order?" });
+    expect(within(first).getByText(/1 order whose customer details are hidden/)).toBeInTheDocument();
+  });
 });
 
 describe("ConfirmationQueuePage channel", () => {

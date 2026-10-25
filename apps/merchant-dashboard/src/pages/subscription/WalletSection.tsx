@@ -29,12 +29,13 @@ export function WalletSection() {
   const workspaceId = useWorkspaceId();
   const toast = useToast();
   const [page, setPage] = useState(1);
-  const [topping, setTopping] = useState(false);
+  // Back from a card top-up's payment page: ask the API (the redirect proves nothing).
+  const [params] = useSearchParams();
+  // ?wallet=topup (the toolbar's balance, the locked-orders banner) opens the top-up dialog.
+  const [topping, setTopping] = useState(() => params.get("wallet") === "topup");
   const summary = useAsync(() => apiClient.getWallet(workspaceId), [workspaceId]);
   const ledger = useAsync(() => apiClient.getWalletLedger(workspaceId, { page, pageSize: PAGE_SIZE }), [workspaceId, page]);
   const proofs = useAsync(() => apiClient.listBillingPaymentProofs(workspaceId), [workspaceId]);
-  // Back from a card top-up's payment page: ask the API (the redirect proves nothing).
-  const [params] = useSearchParams();
   const returned = params.get("topup");
   const cardResult = useAsync(
     () => (returned ? apiClient.getOnlinePayment(workspaceId, returned).catch(() => null) : Promise.resolve(null)),

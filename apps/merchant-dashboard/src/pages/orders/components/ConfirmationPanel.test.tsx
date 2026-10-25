@@ -61,6 +61,20 @@ describe("ConfirmationPanel", () => {
     await waitFor(() => expect(api.confirmOrder).toHaveBeenCalledWith("ws_1", "o1", undefined, "whatsapp"));
   });
 
+  it("does not confirm a locked order, says why, and offers no call or message (locked orders on)", () => {
+    asRole("owner");
+    const locked = order({
+      contactLocked: true,
+      lockReason: "balance",
+      contactSnapshot: { fullName: "••••", phone: "••••" },
+    });
+    renderWithProviders(<ConfirmationPanel order={locked} onChanged={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Confirm order" })).toBeDisabled();
+    expect(screen.getByText("Can't be confirmed while its customer details are hidden.")).toBeInTheDocument();
+    expect(screen.getByTestId("locked-order-notice")).toHaveTextContent("your balance can't pay its fee");
+    expect(screen.queryByRole("radio", { name: "WhatsApp" })).not.toBeInTheDocument();
+  });
+
   it("holds an agent back from a task assigned to someone else", () => {
     asRole("confirmation_agent");
     const assigned = order();

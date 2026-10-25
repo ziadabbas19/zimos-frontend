@@ -14,6 +14,7 @@ export {
   BOSTA_PACKAGE_TYPES,
   BOSTA_PARCEL_SIZES,
   MAX_WEIGHT_GRAMS,
+  LOCKED_MASK,
   resolveCheckoutSettings,
   resolveFraudRules,
   isCityDistrictLevels,

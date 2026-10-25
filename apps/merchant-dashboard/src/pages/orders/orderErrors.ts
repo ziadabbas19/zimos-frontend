@@ -20,6 +20,8 @@ const STRINGS = {
     ORDER_NOT_PAID: "This prepaid order must be paid before it ships.",
     ORDER_ALREADY_SHIPPED: "This order has already shipped and can't be changed.",
     INSUFFICIENT_STOCK: "There isn't enough stock left for this order.",
+    // One order of a bulk result (no reason with it); a single refusal reads the shared, reason-aware wording.
+    ORDER_LOCKED: "This order's customer details are hidden. Renew your subscription or top up your balance from My Plan, then try again.",
   },
   ar: {
     INVALID_STATUS_TRANSITION: "لا يمكن نقل هذا الأوردر إلى هذه الحالة من حالته الحالية.",
@@ -32,6 +34,7 @@ const STRINGS = {
     ORDER_NOT_PAID: "يجب دفع هذا الأوردر قبل شحنه.",
     ORDER_ALREADY_SHIPPED: "تم شحن هذا الأوردر ولا يمكن تغييره.",
     INSUFFICIENT_STOCK: "لا يوجد مخزون كافٍ لهذا الأوردر.",
+    ORDER_LOCKED: "بيانات عميل هذا الطلب مخفية. جدّد اشتراكك أو اشحن رصيدك من خطتي ثم حاول مرة أخرى.",
   },
 } satisfies Messages;
 
@@ -48,6 +51,8 @@ export function useOrderErrorMessage() {
           ? (err as { code?: string; message?: string })
           : null;
       const code = err instanceof ApiError ? (err.code as string | undefined) : plain?.code;
+      // A whole refusal carries its reason (subscription or balance): the shared wording says which.
+      if (code === "ORDER_LOCKED" && err instanceof ApiError) return fallback(err);
       if (code && code in t) return t[code as Code];
       if (plain) return plain.message || code || fallback(err);
       return fallback(err);

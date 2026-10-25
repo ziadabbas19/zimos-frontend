@@ -33,6 +33,7 @@ import { STAGE_TONE, useOrderLabels } from "./orderLabels";
 import { OrderProtectionSection } from "@/pages/fraud/OrderProtectionSection";
 import { OrderAttributionSection } from "@/pages/marketing/OrderAttributionSection";
 import { CustomerHistoryBadge, OrderSessionCard, useLastActionText, useOrderSessionDetails } from "./components/OrderSessionDetails";
+import { LockedBadge, isLockedOrder } from "@/components/OrdersLock";
 
 const STRINGS = {
   en: {
@@ -117,11 +118,13 @@ export function OrderDetailPage() {
               />
               <OrderMetaBadges order={data} />
               <CustomerHistoryBadge details={session.data} />
+              {isLockedOrder(data) && <LockedBadge reason={data.lockReason} />}
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
               <OrderActions order={data} onChanged={reload} />
-              <WhatsappConfirmButton order={data} onChanged={reload} />
+              {/* A locked order's customer is not messaged (the server refuses too). */}
+              {!isLockedOrder(data) && <WhatsappConfirmButton order={data} onChanged={reload} />}
               <EditItemsButton order={data} onChanged={reload} />
               <FulfillButton order={data} onChanged={reload} />
               <OrderMetaActions order={data} onChanged={reload} />

@@ -1,4 +1,5 @@
 import {
+  LOCKED_MASK,
   isCityDistrictLevels,
   type CarrierInfo,
   type Order,
@@ -201,8 +202,10 @@ export const TYPED_NAME_MAX = 60;
 export function prefillTypedNames(levels: string[], address: OrderAddressSnapshot | null | undefined): string[] {
   const names = levels.map(() => "");
   if (!address) return names;
-  const province = address.province?.trim() ?? "";
-  const city = address.city?.trim() ?? "";
+  // A hidden part (locked orders, "••••") is left for the merchant to type, never copied.
+  const real = (value: string | null | undefined) => (value && value !== LOCKED_MASK ? value.trim() : "");
+  const province = real(address.province);
+  const city = real(address.city);
   if (levels.length === 1) {
     names[0] = city || province;
   } else {

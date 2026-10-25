@@ -15,12 +15,20 @@ const STRINGS = {
     test: "Test",
     poorData: "Poor data",
     pickup: "Pickup from the store",
+    hiddenName: "Customer details hidden",
+    locked: "Locked",
+    lockedBalance: "Customer details hidden: your balance can't pay this order's fee.",
+    lockedSubscription: "Customer details hidden: your subscription has expired.",
   },
   ar: {
     noName: "عميل بدون اسم",
     test: "تجريبي",
     poorData: "بيانات ضعيفة",
     pickup: "استلام من المتجر",
+    hiddenName: "بيانات العميل مخفية",
+    locked: "مقفل",
+    lockedBalance: "بيانات العميل مخفية: رصيدك لا يكفي لرسم هذا الطلب.",
+    lockedSubscription: "بيانات العميل مخفية: اشتراكك انتهى.",
   },
 } satisfies Messages;
 
@@ -96,12 +104,22 @@ export function useOrderRowViews(orders: readonly Order[]): OrderRowView[] {
         const meta = ordersMeta(order);
         const extras = orderListExtrasOf(order);
         const risk = order as Order & OrderRiskFields;
-        const rawPhone = order.contactSnapshot?.phone?.trim() || "";
+        // Locked (locked orders on): the details come as "••••"; said as hidden, nothing to dial.
+        const locked = order.contactLocked === true;
+        const rawPhone = locked ? "" : order.contactSnapshot?.phone?.trim() || "";
         // A masked number is not one to dial or copy: every action on it needs the whole number.
         const phone = dialablePhone(rawPhone);
         const method = labels.paymentMethod(order.paymentMethod);
 
         const flags: OrderFlagInfo[] = [];
+        if (locked) {
+          flags.push({
+            id: "locked",
+            tone: "danger",
+            label: t.locked,
+            title: order.lockReason === "subscription" ? t.lockedSubscription : t.lockedBalance,
+          });
+        }
         if (order.riskFlags.length > 0) {
           flags.push({
             id: "flagged",
@@ -124,11 +142,12 @@ export function useOrderRowViews(orders: readonly Order[]): OrderRowView[] {
         return {
           order,
           to: `/orders/${order.id}`,
-          name: order.contactSnapshot?.fullName?.trim() || t.noName,
+          name: locked ? t.hiddenName : order.contactSnapshot?.fullName?.trim() || t.noName,
           rawPhone,
           phone,
           whatsapp: phone ? toWhatsAppNumber(phone) : null,
-          place: order.deliveryMethod === "pickup" ? t.pickup : orderPlace(order),
+          // Locked: the governorate only, which always shows.
+          place: order.deliveryMethod === "pickup" ? t.pickup : locked ? order.shippingAddressSnapshot?.province?.trim() || "" : orderPlace(order),
           money: formatMoney(order.totalAmount, order.currency),
           stageLabel: order.stage ? labels.stage(order.stage) : null,
           flagged: order.riskFlags.length > 0,

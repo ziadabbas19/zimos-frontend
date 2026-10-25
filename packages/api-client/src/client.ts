@@ -34,6 +34,7 @@ import type {
   AdminSpecialTermsInput,
   AdminStoreAccess,
   WorkspaceAccess,
+  LockedOrdersSummary,
   GoLiveResult,
   SubscriptionPlans,
   PlanSwitchPreview,
@@ -2634,6 +2635,21 @@ export class ApiClient {
       `${this.ordersBase(workspaceId)}/pipeline${buildQuery({ ...params })}`,
       { signal }
     );
+  }
+
+  /** `GET /orders/locked-summary` — how many open orders are locked and what they are worth (locked orders on). */
+  async getLockedOrdersSummary(workspaceId: string): Promise<LockedOrdersSummary> {
+    const { locked } = await this.request<{ locked: LockedOrdersSummary }>(`${this.ordersBase(workspaceId)}/locked-summary`);
+    return locked;
+  }
+
+  /** `POST /orders/locked/settle` — takes the owed fees of orders paid online while the balance couldn't (orders.manage). */
+  async settleLockedOrders(workspaceId: string): Promise<{ settled: number; left: number; locked: LockedOrdersSummary }> {
+    // request() serializes the body itself: a string here would go out as the JSON string "{}" (400).
+    return this.request<{ settled: number; left: number; locked: LockedOrdersSummary }>(`${this.ordersBase(workspaceId)}/locked/settle`, {
+      method: "POST",
+      body: {},
+    });
   }
 
   async getOrder(workspaceId: string, orderId: string) {

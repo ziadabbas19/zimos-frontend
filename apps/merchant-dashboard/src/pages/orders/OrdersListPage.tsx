@@ -35,6 +35,7 @@ import { useOrdersData } from "./list/useOrdersData";
 import { useOrdersQuery } from "./list/useOrdersQuery";
 import { useSelectMatching } from "./list/useSelectMatching";
 import { useOrderLabels } from "./orderLabels";
+import { LockedOrdersBanner } from "@/components/OrdersLock";
 
 const STRINGS = {
   en: {
@@ -360,6 +361,8 @@ export function OrdersListPage() {
         // The page's one creation action: in the header from md up, in the bar above the dock on a phone.
         primaryAction={newOrder}
       />
+      {/* Orders whose customer details are hidden; paying their fees reloads the list. */}
+      <LockedOrdersBanner onChanged={data.afterChange} />
 
       <div className="flex flex-col gap-3">
         <OrdersToolbar

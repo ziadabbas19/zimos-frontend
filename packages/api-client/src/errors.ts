@@ -103,6 +103,9 @@ export type ApiErrorCode =
   | "SUBSCRIPTION_REQUIRED" // 402 — creating a product or funnel while unpaid past the grace day
   | "STORE_SUSPENDED" // 403 — creating a product or funnel while suspended by the platform
   | "STORE_UNAVAILABLE" // 423 — any public store route of a restricted store; details.store = { name, slug, defaultLocale, logoUrl }
+  // 402 — locked orders on: the order's customer details are hidden, so it is not confirmed, shipped,
+  // messaged or edited; details = { reason: "subscription" | "balance", balance?, fee?, freeLeft?, currency? }
+  | "ORDER_LOCKED"
   | "WORKSPACE_ALREADY_SUSPENDED" // 409 (console)
   | "WORKSPACE_NOT_SUSPENDED" // 409 (console)
   | "WORKSPACE_NOT_ACTIVE" // 409 (console)

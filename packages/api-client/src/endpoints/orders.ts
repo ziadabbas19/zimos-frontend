@@ -366,15 +366,20 @@ export async function ordersPreviewDraft(client: ApiClient, workspaceId: string,
 }
 
 export interface OrderDraftCustomer {
-  id: string;
+  /** null for a customer who comes hidden (locked orders): every order in the list carries it, so it would lead to theirs. */
+  id: string | null;
   fullName: string | null;
   phone: string;
   email: string | null;
   isBlacklisted: boolean;
-  totalOrders: number;
-  totalRejectedOrders: number;
+  /** null for a customer who comes hidden (locked orders): the counts would tie the typed phone to their orders. */
+  totalOrders: number | null;
+  totalRejectedOrders: number | null;
   lastAddress: { country?: string; province?: string | null; city?: string; addressLine?: string } | null;
+  /** null for a customer who comes hidden, as the counts. */
   lastOrder: { id: string; orderNumber: string; createdAt: string } | null;
+  /** Locked orders on: true when every order this customer placed is locked (their details come "••••"). */
+  contactLocked?: boolean;
 }
 
 /** The customer behind a phone number, or null when it is new to the store. */

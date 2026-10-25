@@ -11,6 +11,7 @@ import { IconEye, IconSpinner } from "@/components/icons";
 import { Modal } from "@/components/Modal";
 import { PILL, PILL_LABELLED, PILL_QUIET } from "./LostOrderParts";
 import { isMasked, useLast } from "./lostOrderModel";
+import { formValue } from "@/components/OrdersLock";
 
 const STRINGS = {
   en: {
@@ -91,11 +92,12 @@ export function LostOrderConvertModal({
   const sessionId = session?.id ?? null;
   useEffect(() => {
     if (!session) return;
-    setName(session.customerName ?? "");
-    setPhone(session.phone ?? "");
-    setProvince(session.shippingAddress?.province ?? "");
-    setCity(session.shippingAddress?.city ?? "");
-    setAddress(session.shippingAddress?.addressLine ?? "");
+    // A hidden value (locked orders) starts empty: "••••" is never sent back as the customer's.
+    setName(formValue(session.customerName));
+    setPhone(formValue(session.phone));
+    setProvince(formValue(session.shippingAddress?.province));
+    setCity(formValue(session.shippingAddress?.city));
+    setAddress(formValue(session.shippingAddress?.addressLine));
     setShowErrors(false);
     setError(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps

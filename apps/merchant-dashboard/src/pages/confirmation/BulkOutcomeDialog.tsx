@@ -10,6 +10,7 @@ import { countOf } from "@/lib/plural";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { minutesUntil } from "./confirmationRoles";
 import { awaitsPaymentApproval, lockStateOf, useQueueAbilities } from "./queueModel";
+import { isLockedOrder } from "@/components/OrdersLock";
 import { useQueueStrings } from "./queueStrings";
 import { useTaskErrorText } from "./useTaskActions";
 
@@ -34,13 +35,16 @@ interface Groups {
   held: ConfirmationTask[];
   /** Accept only: paid by transfer, and the payment is not approved yet. */
   unpaid: ConfirmationTask[];
+  /** Accept only: its customer details are hidden (locked orders), so the server refuses to confirm it. */
+  locked: ConfirmationTask[];
 }
 
 function groupsOf(tasks: ConfirmationTask[], kind: BulkOutcomeKind, userId: string | null, now: number): Groups {
-  const groups: Groups = { ready: [], held: [], unpaid: [] };
+  const groups: Groups = { ready: [], held: [], unpaid: [], locked: [] };
   for (const task of tasks) {
     const lock = lockStateOf(task, userId, now);
     if (lock.inProgress && !lock.mine && !lock.expired) groups.held.push(task);
+    else if (kind === "accept" && isLockedOrder(task.order)) groups.locked.push(task);
     else if (kind === "accept" && awaitsPaymentApproval(task)) groups.unpaid.push(task);
     else groups.ready.push(task);
   }
@@ -212,7 +216,7 @@ export function BulkOutcomeDialog({
     );
   }
 
-  const leftOut = groups.held.length + groups.unpaid.length;
+  const leftOut = groups.held.length + groups.unpaid.length + groups.locked.length;
   return (
     <Modal
       open
@@ -255,6 +259,7 @@ export function BulkOutcomeDialog({
                 <li>{fmt(t.bulkLeftPayment, { count: countOf("order", groups.unpaid.length) })}</li>
               )}
               {groups.held.length > 0 && <li>{fmt(t.bulkLeftHeld, { count: countOf("order", groups.held.length) })}</li>}
+              {groups.locked.length > 0 && <li>{fmt(t.bulkLeftLocked, { count: countOf("order", groups.locked.length) })}</li>}
             </ul>
           </div>
         )}

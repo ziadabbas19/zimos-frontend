@@ -21,6 +21,7 @@ import { useToast } from "@/components/Toast";
 import { CONFIRM_ROLES, MANAGE_ROLES, minutesUntil, useNow } from "@/pages/confirmation/confirmationRoles";
 import { ChannelPicker, WhatsAppButton, useChannelLabels } from "@/pages/confirmation/confirmationChannel";
 import { CustomizationList } from "./CustomizationList";
+import { LockedOrderNotice, isLockedOrder, useConfirmBlockedText } from "@/components/OrdersLock";
 
 const STRINGS = {
   en: {
@@ -105,6 +106,8 @@ export function ConfirmationPanel({ order, onChanged }: { order: Order; onChange
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [channel, setChannel] = useState<ConfirmationChannel>("call");
+  const confirmBlocked = useConfirmBlockedText();
+  const locked = isLockedOrder(order);
 
   const task = order.confirmationTask ?? null;
   const attempts = task?.attempts ?? [];
@@ -210,7 +213,10 @@ export function ConfirmationPanel({ order, onChanged }: { order: Order; onChange
         </section>
       )}
 
-      {canConfirm && !heldByOther && !assignedToOther && !waiting && (
+      {/* Locked: no call, no message, no confirmation until the store renews or tops up. */}
+      {locked && <LockedOrderNotice order={order} />}
+
+      {canConfirm && !heldByOther && !assignedToOther && !waiting && !locked && (
         <div className="space-y-3">
           <WhatsAppButton order={order} onOpen={() => setChannel("whatsapp")} />
           <ChannelPicker value={channel} onChange={setChannel} disabled={busy} />
@@ -221,9 +227,20 @@ export function ConfirmationPanel({ order, onChanged }: { order: Order; onChange
 
       <div className="flex flex-wrap items-center gap-3">
         {canConfirm && (
-          <Button onClick={confirm} disabled={busy || heldByOther || assignedToOther || waiting} className="min-h-11">
+          <Button
+            onClick={confirm}
+            disabled={busy || heldByOther || assignedToOther || waiting || locked}
+            title={locked ? confirmBlocked : undefined}
+            aria-describedby={locked ? `confirm-blocked-${order.id}` : undefined}
+            className="min-h-11"
+          >
             {busy ? t.confirming : t.confirm}
           </Button>
+        )}
+        {canConfirm && locked && (
+          <span id={`confirm-blocked-${order.id}`} className="text-xs font-medium text-danger">
+            {confirmBlocked}
+          </span>
         )}
         <Link to="/confirmation-queue" className="inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline">
           {t.openQueue}
