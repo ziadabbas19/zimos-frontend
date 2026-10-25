@@ -17,7 +17,16 @@ import type { ApiClient } from "./client";
  * expires or the session ends; this connects again with the renewed token.
  *
  * `onStatus("waiting")` whenever there is no connection: the caller polls in
- * the meantime, and stops once it is "live" again.
+ * the meantime, and stops once it is "live" again. `onReconnect` once a
+ * connection is back after it was lost: the messages sent meanwhile are not
+ * sent again, so the caller reads what it shows afresh.
+ *
+ * Trying again: a lost transport is retried by socket.io-client itself (with
+ * its own jitter). After the server refused the handshake or ended the
+ * connection — a deploy ends every one at once — this waits a random time
+ * between RETRY_FLOOR_MS and a cap that starts at RETRY_FIRST_CAP_MS and
+ * doubles up to RETRY_MAX_MS, so the tabs of every merchant do not all come
+ * back in the same second.
  */
 
 export interface RealtimeMessage {
@@ -43,6 +52,8 @@ export interface RealtimeOptions {
   refreshProbe: () => Promise<unknown>;
   onMessage: (message: RealtimeMessage) => void;
   onStatus?: (status: RealtimeStatus) => void;
+  /** A connection is back after one was lost. */
+  onReconnect?: () => void;
   /** Tests pass a fake socket. */
   createSocket?: SocketFactory;
 }
@@ -52,8 +63,15 @@ export interface RealtimeConnection {
   status: () => RealtimeStatus;
 }
 
-const RETRY_MIN_MS = 5_000;
+const RETRY_FLOOR_MS = 1_000;
+const RETRY_FIRST_CAP_MS = 10_000;
 const RETRY_MAX_MS = 5 * 60_000;
+
+/** How long to wait before attempt `attempt` (0 first): random between the floor and a doubling cap. */
+export function retryDelayMs(attempt: number, random: number = Math.random()): number {
+  const cap = Math.min(RETRY_MAX_MS, RETRY_FIRST_CAP_MS * 2 ** attempt);
+  return Math.round(RETRY_FLOOR_MS + random * (cap - RETRY_FLOOR_MS));
+}
 /** A token with less left than this is renewed before an attempt. */
 const FRESH_MARGIN_MS = 60_000;
 
@@ -82,12 +100,13 @@ export function isRealtimeMessage(value: unknown): value is RealtimeMessage {
 }
 
 export function connectRealtime(options: RealtimeOptions): RealtimeConnection {
-  const { client, refreshProbe, onMessage, onStatus } = options;
+  const { client, refreshProbe, onMessage, onStatus, onReconnect } = options;
   const { url, path } = realtimeEndpoint(options.baseUrl);
   const create: SocketFactory = options.createSocket ?? io;
   let closed = false;
   let current: RealtimeStatus = "waiting";
-  let retryMs = RETRY_MIN_MS;
+  let attempt = 0;
+  let connectedBefore = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   const setStatus = (next: RealtimeStatus) => {
@@ -120,17 +139,19 @@ export function connectRealtime(options: RealtimeOptions): RealtimeConnection {
     socket.connect();
   }
 
-  /** After a refusal or a disconnect the client will not retry by itself: try again later, waiting longer each time. */
+  /** After a refusal or a disconnect the client will not retry by itself: try again later, at a random time within a growing window. */
   function retryLater() {
     if (closed) return;
     clearTimeout(timer);
-    timer = setTimeout(() => void start(), retryMs);
-    retryMs = Math.min(retryMs * 2, RETRY_MAX_MS);
+    timer = setTimeout(() => void start(), retryDelayMs(attempt));
+    attempt += 1;
   }
 
   socket.on("connect", () => {
-    retryMs = RETRY_MIN_MS;
+    attempt = 0;
     setStatus("live");
+    if (connectedBefore) onReconnect?.();
+    connectedBefore = true;
   });
   socket.on("connect_error", () => {
     if (closed) return;

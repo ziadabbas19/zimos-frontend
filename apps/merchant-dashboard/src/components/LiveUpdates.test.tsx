@@ -104,6 +104,13 @@ describe("live updates in the shell", () => {
     expect(h.playChime).not.toHaveBeenCalled();
   });
 
+  it("a connection back after a drop reads the counts again: what was sent meanwhile is not sent again", () => {
+    renderWithProviders(<LiveUpdates />);
+    const live = h.connections.at(-1);
+    act(() => live?.options.onReconnect?.());
+    expect(h.refreshWorkCounts).toHaveBeenCalledTimes(1);
+  });
+
   it("closes its connection when the shell goes", () => {
     const { unmount } = renderWithProviders(<LiveUpdates />);
     unmount();

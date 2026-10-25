@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiClient, createMemoryTokenStorage } from "@store-builder/api-client";
-import { connectRealtime, isRealtimeMessage, realtimeEndpoint, tokenLifeMs, type RealtimeMessage } from "@store-builder/api-client/realtime";
+import { connectRealtime, isRealtimeMessage, realtimeEndpoint, retryDelayMs, tokenLifeMs, type RealtimeMessage } from "@store-builder/api-client/realtime";
 
 /** A token whose payload says it expires `inSeconds` from now (the signature is never checked here). */
 function token(inSeconds: number): string {
@@ -167,23 +167,51 @@ describe("connectRealtime", () => {
     expect(socket.connects).toBe(1);
   });
 
-  it("after a refusal or the server ending it, tries again later and waits longer each time", async () => {
+  it("after a refusal or the server ending it, tries again at a random time in a window that doubles", async () => {
+    // The longest wait each time: 10 s, then 20 s.
+    const random = vi.spyOn(Math, "random").mockReturnValue(1);
+    try {
+      client.setTokens({ accessToken: token(600), refreshToken: "r1" });
+      start();
+      await settle();
+      expect(socket.connects).toBe(1);
+
+      socket.fire("connect_error", new Error("unauthorized"));
+      await vi.advanceTimersByTimeAsync(9_999);
+      expect(socket.connects).toBe(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(socket.connects).toBe(2);
+
+      socket.fire("disconnect", "io server disconnect");
+      await vi.advanceTimersByTimeAsync(19_999);
+      expect(socket.connects).toBe(2);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(socket.connects).toBe(3);
+    } finally {
+      random.mockRestore();
+    }
+  });
+
+  it("spreads the retries: 1 to 10 s first, the window doubling up to 5 minutes", () => {
+    expect(retryDelayMs(0, 0)).toBe(1_000);
+    expect(retryDelayMs(0, 1)).toBe(10_000);
+    expect(retryDelayMs(1, 1)).toBe(20_000);
+    expect(retryDelayMs(10, 1)).toBe(300_000);
+    const delays = new Set(Array.from({ length: 50 }, () => retryDelayMs(0)));
+    expect(delays.size).toBeGreaterThan(10);
+  });
+
+  it("says when a lost connection is back, not on the first one", async () => {
     client.setTokens({ accessToken: token(600), refreshToken: "r1" });
-    start();
+    const onReconnect = vi.fn();
+    start({ onReconnect });
     await settle();
-    expect(socket.connects).toBe(1);
-
-    socket.fire("connect_error", new Error("unauthorized"));
-    await vi.advanceTimersByTimeAsync(4_999);
-    expect(socket.connects).toBe(1);
-    await vi.advanceTimersByTimeAsync(1);
-    expect(socket.connects).toBe(2);
-
-    socket.fire("disconnect", "io server disconnect");
-    await vi.advanceTimersByTimeAsync(9_999);
-    expect(socket.connects).toBe(2);
-    await vi.advanceTimersByTimeAsync(1);
-    expect(socket.connects).toBe(3);
+    socket.fire("connect");
+    expect(onReconnect).not.toHaveBeenCalled();
+    socket.active = true;
+    socket.fire("disconnect", "transport close");
+    socket.fire("connect");
+    expect(onReconnect).toHaveBeenCalledTimes(1);
   });
 
   it("close() disconnects and schedules nothing more", async () => {

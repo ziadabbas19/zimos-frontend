@@ -137,7 +137,17 @@ export function NotificationsBell() {
   }, [poll]);
 
   // A new order or low stock makes a notification: with the live updates on, ask at once (and keep the 20 s poll).
-  useLiveEvents(workspaceId, LIVE_TYPES, () => window.setTimeout(() => void poll(), BELL_DELAY_MS), { fallback: false });
+  const asking = useRef<number | undefined>(undefined);
+  useLiveEvents(
+    workspaceId,
+    LIVE_TYPES,
+    () => {
+      window.clearTimeout(asking.current);
+      asking.current = window.setTimeout(() => void poll(), BELL_DELAY_MS);
+    },
+    { fallback: false }
+  );
+  useEffect(() => () => window.clearTimeout(asking.current), []);
 
   if (!workspaceId) return null;
 

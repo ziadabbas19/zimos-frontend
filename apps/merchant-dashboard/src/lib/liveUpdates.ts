@@ -12,7 +12,8 @@ import { REALTIME_ENABLED } from "@/lib/features";
  * Messages carry ids only, for every store the account belongs to; a screen
  * takes those of its own store and reads what it shows through the API, as
  * it already does (useLiveEvents). While the connection is down, the same
- * screens are asked to read again every FALLBACK_MS instead.
+ * screens are asked to read again every FALLBACK_MS instead, and once more
+ * when it comes back: what was sent meanwhile is not sent again.
  */
 
 export type LiveStatus = RealtimeStatus | "off";
@@ -67,6 +68,7 @@ export function useLiveConnection(): void {
       refreshProbe: () => apiClient.request("/auth/me"),
       onMessage: (message) => messageListeners.forEach((fn) => fn(message)),
       onStatus: setStatus,
+      onReconnect: () => fallbackListeners.forEach((fn) => fn()),
     });
     setStatus(connection.status());
     const timer = window.setInterval(() => {
