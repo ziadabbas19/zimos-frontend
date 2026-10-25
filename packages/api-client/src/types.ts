@@ -6109,23 +6109,31 @@ export interface WhatsappIntegrationConnected {
   verifiedName: string | null;
   /** Masked — the real token never leaves the server. */
   accessTokenMask: string | null;
-  /** False means inbound webhook signatures cannot be verified. */
+  /** False: every webhook from Meta is refused, so no reply or confirmation tap arrives. */
   appSecretSet: boolean;
   webhook: { url: string; verifyToken: string };
   lastVerifiedAt: string | null;
   lastError: string | null;
+  /** See `WhatsappIntegration`. */
+  planLocked?: boolean;
 }
 
 /**
  * A workspace with no integration row answers the bare `{ connected: false }`,
  * so narrow on `connected` before reading any other field.
+ *
+ * `planLocked` (GET only): the store's plan lacks whatsapp_confirmation while
+ * the plan gate is on (WHATSAPP_REQUIRE_PLAN_FEATURE + PLAN_FEATURE_ENFORCEMENT),
+ * so a new connection would be refused with 403 PLAN_FEATURE_REQUIRED. A number
+ * already connected keeps working; once disconnected it can't be connected again.
  */
-export type WhatsappIntegration = { connected: false } | WhatsappIntegrationConnected;
+export type WhatsappIntegration = { connected: false; planLocked?: boolean } | WhatsappIntegrationConnected;
 
 export interface ConnectWhatsappPayload {
   phoneNumberId: string;
   accessToken: string;
   businessAccountId?: string;
+  /** Required unless one is already saved (422 WHATSAPP_APP_SECRET_REQUIRED); empty keeps the saved one. */
   appSecret?: string;
 }
 

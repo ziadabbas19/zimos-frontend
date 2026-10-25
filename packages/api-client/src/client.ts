@@ -4051,7 +4051,9 @@ export class ApiClient {
   /**
    * Verifies the credentials with Meta before storing them, so this is slow
    * and can fail on Meta's side: 422 WHATSAPP_AUTH_FAILED / WHATSAPP_API_ERROR,
-   * 502 WHATSAPP_UNREACHABLE. Needs workspace:manage.
+   * 502 WHATSAPP_UNREACHABLE. 422 WHATSAPP_APP_SECRET_REQUIRED without an App
+   * Secret given or saved; 403 PLAN_FEATURE_REQUIRED for a first connection on
+   * a plan without whatsapp_confirmation (the plan gate on). Needs workspace:manage.
    */
   async connectWhatsapp(workspaceId: string, payload: ConnectWhatsappPayload) {
     const { integration } = await this.request<{ integration: WhatsappIntegration }>(

@@ -125,6 +125,12 @@ export interface AutomationFlowTemplate {
   ruleId: string | null;
   /** Switched on with a coupon code, its last message offers it (abandoned cart). */
   acceptsCoupon?: boolean;
+  /**
+   * Switching it on would be refused (403 PLAN_FEATURE_REQUIRED): the WhatsApp
+   * order confirmation while the plan gate is on and the plan lacks
+   * whatsapp_confirmation. Never set once the store has the rule.
+   */
+  planLocked?: boolean;
 }
 
 const base = (workspaceId: string) => `/workspaces/${workspaceId}/automations`;
