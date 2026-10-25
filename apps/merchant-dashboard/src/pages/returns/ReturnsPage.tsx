@@ -23,6 +23,7 @@ import { DataState } from "@/components/DataState";
 import { FilterTabs, type FilterTab } from "@/components/FilterTabs";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
+import { ViewOrderButton } from "@/components/ViewOrderButton";
 import { SHOPPER_RETURNS_ENABLED } from "@/lib/features";
 import { ReturnDecisionSheet } from "./ReturnDecisionSheet";
 import { ReturnPhotos, ReturnSourceBadge } from "./ReturnExtras";
@@ -453,30 +454,29 @@ function ReturnCard({
 
       {error && <Alert variant="danger">{error}</Alert>}
 
-      {(canModerate || canRestock) && (
-        <div className="flex flex-wrap gap-2">
-          {canModerate && (
-            <>
-              <Button size="sm" onClick={() => moderate("approve")} disabled={busy !== null}>
-                {busy === "approve" ? t.saving : t.approve}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => moderate("reject")}
-                disabled={busy !== null}
-              >
-                {busy === "reject" ? t.saving : t.reject}
-              </Button>
-            </>
-          )}
-          {canRestock && (
-            <Button size="sm" onClick={() => run("restock")} disabled={busy !== null}>
-              {busy === "restock" ? t.saving : t.restock}
+      <div className="flex flex-wrap items-center gap-2">
+        {canModerate && (
+          <>
+            <Button size="sm" onClick={() => moderate("approve")} disabled={busy !== null}>
+              {busy === "approve" ? t.saving : t.approve}
             </Button>
-          )}
-        </div>
-      )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => moderate("reject")}
+              disabled={busy !== null}
+            >
+              {busy === "reject" ? t.saving : t.reject}
+            </Button>
+          </>
+        )}
+        {canRestock && (
+          <Button size="sm" onClick={() => run("restock")} disabled={busy !== null}>
+            {busy === "restock" ? t.saving : t.restock}
+          </Button>
+        )}
+        <ViewOrderButton orderId={ret.orderId} orderNumber={order?.orderNumber} size="sm" />
+      </div>
 
       {SHOPPER_RETURNS_ENABLED && (
         <ReturnDecisionSheet

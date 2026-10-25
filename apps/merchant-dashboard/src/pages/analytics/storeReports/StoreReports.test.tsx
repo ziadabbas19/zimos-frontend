@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
+import type { UserEvent } from "@testing-library/user-event";
 import type { RfmOverview, ScheduledReportSettings, StoreReportInventoryValue, TrackingPixelList } from "@store-builder/api-client";
 import { invalidateCached } from "@/lib/useCachedAsync";
 import { callsTo, fakeBackend } from "@/test/fakeBackend";
@@ -109,6 +110,19 @@ describe("summary reports by email", () => {
   });
 });
 
+/** The Platform field is a list with the platforms' icons (components/IconSelect): opened, its options' spoken names in order. */
+async function platformChoices(user: UserEvent, dialog: HTMLElement) {
+  await user.click(within(dialog).getByRole("combobox", { name: /^Platform/ }));
+  return within(screen.getByRole("listbox", { name: /^Platform/ }))
+    .getAllByRole("option")
+    .map((option) => {
+      // The icons (a logo, or a letter in a circle) are hidden from screen readers.
+      const copy = option.cloneNode(true) as Element;
+      copy.querySelectorAll("[aria-hidden]").forEach((icon) => icon.remove());
+      return copy.textContent;
+    });
+}
+
 describe("the extra ad platforms' pixels", () => {
   const list = {
     pixels: [],
@@ -124,8 +138,7 @@ describe("the extra ad platforms' pixels", () => {
     const { user } = renderWithProviders(<TrackingPixelsSection />);
     await user.click((await screen.findAllByRole("button", { name: "Add pixel" }))[0]);
     const dialog = await screen.findByRole("dialog");
-    const options = within(within(dialog).getByLabelText(/^Platform/)).getAllByRole("option");
-    expect(options.map((option) => option.textContent)).toEqual(["Meta (Facebook & Instagram)", "Pinterest", "Taboola"]);
+    expect(await platformChoices(user, dialog)).toEqual(["Meta (Facebook & Instagram)", "Pinterest", "Taboola"]);
   });
 
   it("asks Pinterest's ad account before its server events can be saved", async () => {
@@ -133,7 +146,8 @@ describe("the extra ad platforms' pixels", () => {
     const { user } = renderWithProviders(<TrackingPixelsSection />);
     await user.click((await screen.findAllByRole("button", { name: "Add pixel" }))[0]);
     const dialog = await screen.findByRole("dialog");
-    await user.selectOptions(within(dialog).getByLabelText(/^Platform/), "pinterest");
+    await user.click(within(dialog).getByRole("combobox", { name: /^Platform/ }));
+    await user.click(screen.getByRole("option", { name: "Pinterest" }));
     await user.type(within(dialog).getByPlaceholderText("2612345678901"), "2612345678901");
     await user.click(within(dialog).getByRole("switch", { name: /Conversions API/ }));
     await waitFor(() => expect(within(dialog).getByRole("button", { name: "Save" })).toBeDisabled());

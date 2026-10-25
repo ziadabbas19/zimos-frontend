@@ -16,6 +16,8 @@ import { EmptyState } from "@/components/EmptyState";
 import { FilterTabs } from "@/components/FilterTabs";
 import { LoadMore } from "@/components/LoadMore";
 import { StatusBadge } from "@/components/StatusBadge";
+import { PlatformIcon } from "./PlatformIcon";
+import { platformName } from "./pixelPlatforms";
 
 const STRINGS = {
   en: {
@@ -71,6 +73,7 @@ const STRINGS = {
 type Filter = "all" | TrackingPixelEventStatus;
 const PAGE_SIZE = 50;
 
+/** Short names for the log's narrow column; the other platforms keep their full name (pixelPlatforms.ts). */
 const PLATFORM_NAMES: Record<string, string> = {
   meta: "Meta",
   tiktok: "TikTok",
@@ -145,11 +148,14 @@ export function PixelEventLogSection({ reloadKey = 0 }: { reloadKey?: number }) 
       key: "pixel",
       header: t.colPixel,
       cell: (e) => (
-        <div>
-          <div className="text-ink">{PLATFORM_NAMES[e.platform] ?? e.platform}</div>
-          <code dir="ltr" className="font-mono text-xs text-ink-soft">
-            {e.pixelId}
-          </code>
+        <div className="flex items-start gap-2">
+          <PlatformIcon platform={e.platform} className="mt-px text-ink" />
+          <div className="min-w-0">
+            <div className="text-ink">{PLATFORM_NAMES[e.platform] ?? platformName(e.platform)}</div>
+            <code dir="ltr" className="font-mono text-xs text-ink-soft">
+              {e.pixelId}
+            </code>
+          </div>
         </div>
       ),
     },

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { screen, within } from "@testing-library/react";
+import type { UserEvent } from "@testing-library/user-event";
 import type { TrackingPixelDto, TrackingPixelPlatformInfo, Workspace } from "@store-builder/api-client";
 import { api, fake } from "@/test/mocks";
 import { renderWithProviders } from "@/test/renderWithProviders";
@@ -65,6 +66,12 @@ const render = () =>
 /** The calls that wrote something (anything but a GET). */
 const writes = () => api.request.mock.calls.filter(([, opts]) => opts?.method && opts.method !== "GET");
 
+/** The Platform field is a list with the platforms' icons (components/IconSelect), not a native select. */
+async function pickPlatform(user: UserEvent, dialog: HTMLElement, name: string) {
+  await user.click(within(dialog).getByRole("combobox", { name: "Platform" }));
+  await user.click(screen.getByRole("option", { name }));
+}
+
 describe("MarketingPage", () => {
   it("lists the store's pixels with their platform, ID, scope and status", async () => {
     serve();
@@ -80,13 +87,38 @@ describe("MarketingPage", () => {
     expect(await screen.findByText("No server events yet")).toBeInTheDocument();
   });
 
+  it("draws each platform's icon in the table and in the Platform list", async () => {
+    serve();
+    const { user } = render();
+
+    const row = (await screen.findByText("Meta (Facebook & Instagram)")).closest("tr") as HTMLElement;
+    expect(row.querySelector('[data-platform-icon="meta"][data-mark="brand"]')).not.toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Add pixel" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add a pixel" });
+    const field = within(dialog).getByRole("combobox", { name: "Platform" });
+    // The chosen platform's icon is on the field itself.
+    expect(field).toHaveTextContent("Meta (Facebook & Instagram)");
+    expect(field.querySelector('[data-platform-icon="meta"]')).not.toBeNull();
+
+    await user.click(field);
+    const list = screen.getByRole("listbox", { name: "Platform" });
+    const names = ["Meta (Facebook & Instagram)", "TikTok", "Snapchat", "Google (GA4 / Ads)", "Google Tag Manager", "Microsoft Clarity"];
+    expect(within(list).getAllByRole("option")).toHaveLength(names.length);
+    for (const name of names) {
+      expect(within(list).getByRole("option", { name }).querySelector("[data-platform-icon]")).not.toBeNull();
+    }
+    // Clarity has no logo in simple-icons: the circle with its letter, hidden from screen readers like the logos.
+    expect(within(list).getByRole("option", { name: "Microsoft Clarity" }).querySelector('[data-mark="letter"]')).toHaveTextContent("C");
+  });
+
   it("adds a pixel for another platform, for the whole store", async () => {
     serve({ "POST /workspaces/ws_1/tracking-pixels": { pixel: { ...pixel, id: "px_2", platform: "tiktok" } } });
     const { user } = render();
 
     await user.click(await screen.findByRole("button", { name: "Add pixel" }));
     const dialog = await screen.findByRole("dialog", { name: "Add a pixel" });
-    await user.selectOptions(within(dialog).getByLabelText("Platform"), "tiktok");
+    await pickPlatform(user, dialog, "TikTok");
     await user.type(within(dialog).getByLabelText(/Pixel \/ tag ID/), "C4ABCDEF1234567890");
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
@@ -110,7 +142,7 @@ describe("MarketingPage", () => {
 
     await user.click(await screen.findByRole("button", { name: "Add pixel" }));
     const dialog = await screen.findByRole("dialog", { name: "Add a pixel" });
-    await user.selectOptions(within(dialog).getByLabelText("Platform"), "tiktok");
+    await pickPlatform(user, dialog, "TikTok");
     await user.type(within(dialog).getByLabelText(/Pixel \/ tag ID/), "nope");
 
     expect(within(dialog).getByText("That doesn't look like a valid ID for this platform.")).toBeInTheDocument();
@@ -125,7 +157,7 @@ describe("MarketingPage", () => {
     await user.click(await screen.findByRole("button", { name: "Edit" }));
     const dialog = await screen.findByRole("dialog", { name: "Edit pixel" });
     // The platform of a saved pixel is fixed.
-    expect(within(dialog).getByLabelText("Platform")).toBeDisabled();
+    expect(within(dialog).getByRole("combobox", { name: "Platform" })).toBeDisabled();
     const note = within(dialog).getByLabelText("Note");
     await user.clear(note);
     await user.type(note, "Spring campaign");

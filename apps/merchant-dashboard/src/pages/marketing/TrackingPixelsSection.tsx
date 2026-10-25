@@ -1,5 +1,4 @@
 import {
-  AD_PLATFORM_PIXEL_IDS,
   PINTEREST_AD_ACCOUNT_ID,
   X_CAPI_TOKEN,
   isAdPlatformPixel,
@@ -13,6 +12,8 @@ import {
 import { AD_PIXELS_ENABLED } from "@/lib/features";
 import { AdPlatformCapiFields, BrowserOnlyPixelNote, XEventIdsField, isServerAdPlatform, useAdPlatformIdField } from "./AdPlatformPixelFields";
 import { PinterestCapiFields } from "./PinterestCapiFields";
+import { PlatformIcon } from "./PlatformIcon";
+import { PLATFORM_META, platformName } from "./pixelPlatforms";
 import { useMemo, useState, type FormEvent } from "react";
 import { Pencil, Plus, Radio, Send, Trash2 } from "lucide-react";
 import { Alert, Button, Card } from "@store-builder/ui";
@@ -41,25 +42,10 @@ import { EmptyState } from "@/components/EmptyState";
 import { Modal } from "@/components/Modal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Field, TextField } from "@/components/Field";
+import { IconSelect } from "@/components/IconSelect";
 import { Select } from "@/components/Select";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
-
-/**
- * What each platform's ID looks like. The patterns are the backend's
- * (trackingPixelService.PLATFORMS), so a bad ID is caught before the request.
- */
-const PLATFORM_META: Record<TrackingPixelPlatform, { name: string; pattern: RegExp; example: string }> = {
-  meta: { name: "Meta (Facebook & Instagram)", pattern: /^\d{5,20}$/, example: "123456789012345" },
-  tiktok: { name: "TikTok", pattern: /^[A-Z0-9]{10,30}$/, example: "C4ABCDEF1234567890" },
-  snapchat: { name: "Snapchat", pattern: /^[a-f0-9-]{20,40}$/i, example: "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d" },
-  google: { name: "Google (GA4 / Ads)", pattern: /^(G|AW|GT)-[A-Z0-9]{4,20}$/, example: "G-ABC123XYZ" },
-  gtm: { name: "Google Tag Manager", pattern: /^GTM-[A-Z0-9]{4,12}$/, example: "GTM-ABC1234" },
-  clarity: { name: "Microsoft Clarity", pattern: /^[a-z0-9]{6,20}$/, example: "abcd1234ef" },
-  pinterest: { name: "Pinterest", pattern: /^\d{10,16}$/, example: "2612345678901" },
-  // X, Taboola, Outbrain, Kwai, Reddit, Microsoft Ads.
-  ...AD_PLATFORM_PIXEL_IDS,
-};
 
 /** The platforms behind the API's extra_pixels: offered here only while their switch is on (lib/features). */
 const isExtraPlatform = (platform: TrackingPixelPlatform) => platform === "pinterest" || isAdPlatformPixel(platform);
@@ -264,7 +250,7 @@ export function TrackingPixelsSection({ onEventsChanged }: { onEventsChanged?: (
   const [testing, setTesting] = useState<string | null>(null);
 
   async function sendTest(pixel: TrackingPixelDto) {
-    const name = PLATFORM_META[pixel.platform]?.name ?? pixel.platform;
+    const name = platformName(pixel.platform);
     setTesting(pixel.id);
     try {
       const result = await trackingPixelsSendTest(apiClient, workspaceId, pixel.id);
@@ -284,9 +270,12 @@ export function TrackingPixelsSection({ onEventsChanged }: { onEventsChanged?: (
       key: "platform",
       header: t.colPlatform,
       cell: (p) => (
-        <div>
-          <div className="font-medium text-ink">{PLATFORM_META[p.platform]?.name ?? p.platform}</div>
-          {p.label && <div className="text-xs text-ink-soft">{p.label}</div>}
+        <div className="flex items-start gap-2.5">
+          <PlatformIcon platform={p.platform} className="mt-px text-ink" />
+          <div className="min-w-0">
+            <div className="font-medium text-ink">{platformName(p.platform)}</div>
+            {p.label && <div className="text-xs text-ink-soft">{p.label}</div>}
+          </div>
         </div>
       ),
     },
@@ -409,7 +398,7 @@ export function TrackingPixelsSection({ onEventsChanged }: { onEventsChanged?: (
       <ConfirmDialog
         open={Boolean(deleting)}
         title={t.deleteTitle}
-        description={deleting ? fmt(t.deleteBody, { name: PLATFORM_META[deleting.platform]?.name ?? deleting.platform, id: deleting.pixelId }) : undefined}
+        description={deleting ? fmt(t.deleteBody, { name: platformName(deleting.platform), id: deleting.pixelId }) : undefined}
         confirmLabel={t.delete}
         cancelLabel={t.cancel}
         busyLabel={t.deleting}
@@ -553,18 +542,18 @@ function PixelDialog({
 
         <Field label={t.platform}>
           {({ id: fieldId }) => (
-            <Select
+            <IconSelect
               id={fieldId}
+              label={t.platform}
               value={form.platform}
               disabled={Boolean(pixel)}
-              onChange={(e) => setForm((prev) => ({ ...prev, platform: e.target.value as TrackingPixelPlatform, capiEnabled: false }))}
-            >
-              {offered.map((p) => (
-                <option key={p.name} value={p.name}>
-                  {PLATFORM_META[p.name]?.name ?? p.name}
-                </option>
-              ))}
-            </Select>
+              options={offered.map((p) => ({
+                value: p.name,
+                label: platformName(p.name),
+                icon: <PlatformIcon platform={p.name} />,
+              }))}
+              onChange={(platform) => setForm((prev) => ({ ...prev, platform, capiEnabled: false }))}
+            />
           )}
         </Field>
 

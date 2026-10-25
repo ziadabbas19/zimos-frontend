@@ -11,6 +11,7 @@ import { Field, TextField } from "@/components/Field";
 import { Select } from "@/components/Select";
 import { Textarea } from "@/components/Textarea";
 import { useToast } from "@/components/Toast";
+import { ViewOrderButton } from "@/components/ViewOrderButton";
 import { fmt } from "@/i18n/LocaleContext";
 import { formatDateTime } from "@/lib/format";
 import { countOf } from "@/lib/plural";
@@ -339,10 +340,11 @@ export function OpenCard({
             <Button variant="outline" onClick={() => void release()} disabled={busy} className="h-12 rounded-full px-5">
               {t.release}
             </Button>
+            <ViewOrderButton orderId={order.id} orderNumber={order.orderNumber} className="h-12" />
           </div>
         </div>
       ) : (
-        <div className="flex flex-wrap items-center gap-2 empty:hidden">
+        <div className="flex flex-wrap items-center gap-2">
           {canConfirm && (!inProgress || expired) && assignedToOther && !canManage ? (
             <p className="text-sm text-ink-soft">{fmt(t.assignedToOther, { name: assignedName })}</p>
           ) : (
@@ -364,6 +366,7 @@ export function OpenCard({
               {busy ? t.releasing : t.release}
             </Button>
           )}
+          <ViewOrderButton orderId={order.id} orderNumber={order.orderNumber} className="h-12" />
         </div>
       )}
     </div>

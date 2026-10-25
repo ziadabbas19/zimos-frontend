@@ -266,6 +266,7 @@ export function StationCard({
         )}
         <StationActions
           orderId={order.id}
+          orderNumber={order.orderNumber}
           canCall={phone !== null}
           noPhoneLabel={q.noPhone}
           whatsAppUrl={whatsAppUrl}

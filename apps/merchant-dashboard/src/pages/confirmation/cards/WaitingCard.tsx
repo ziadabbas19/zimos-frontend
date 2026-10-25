@@ -1,5 +1,6 @@
 import type { ConfirmationTask } from "@store-builder/api-client";
 import { IconHourglass } from "@/components/icons";
+import { ViewOrderButton } from "@/components/ViewOrderButton";
 import { fmt } from "@/i18n/LocaleContext";
 import { formatDateTime } from "@/lib/format";
 import { countOf } from "@/lib/plural";
@@ -8,9 +9,9 @@ import { useQueueStrings } from "../queueStrings";
 
 /**
  * The shopper may still add an upsell to this order, so nobody works it yet:
- * the order number and when it opens, nothing to act on (the server refuses a
- * claim until then). It turns into the normal card by itself when the time
- * comes; the funnel may also close the window early.
+ * the order number and when it opens, nothing to act on but «View order» (the
+ * server refuses a claim until then). It turns into the normal card by itself
+ * when the time comes; the funnel may also close the window early.
  */
 export function WaitingCard({ task, now }: { task: ConfirmationTask; now: number }) {
   const t = useQueueStrings();
@@ -39,6 +40,7 @@ export function WaitingCard({ task, now }: { task: ConfirmationTask; now: number
             ? fmt(t.waitingBody, { left: countOf("minute", minutes), time: formatDateTime(task.availableAt as string) })
             : t.waitingSoon}
         </p>
+        <ViewOrderButton orderId={task.order.id} orderNumber={task.order.orderNumber} size="sm" className="mt-1.5" />
       </div>
     </div>
   );
