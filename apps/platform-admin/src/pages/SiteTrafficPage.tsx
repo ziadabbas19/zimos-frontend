@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Alert, Button } from "@store-builder/ui";
+import { useState, type ReactNode } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Alert, Button, Segmented } from "@store-builder/ui";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
 import { KpiCard } from "@/components/KpiCard";
@@ -7,19 +8,52 @@ import { BarChart, ChartAxis, HBarList } from "@/components/charts";
 import { Panel } from "@/components/Panel";
 import { fmt, useLocale, useT } from "@/i18n/LocaleContext";
 import { useAsync } from "@/lib/useAsync";
-import { SITE_TRAFFIC_DETAILS_ENABLED } from "@/lib/features";
+import { SITE_LIVE_ENABLED, SITE_TRAFFIC_DETAILS_ENABLED } from "@/lib/features";
 import * as siteTrafficApi from "@/lib/siteTrafficApi";
 import { SITE_TRAFFIC_RANGES, type SiteTrafficRange } from "@/lib/siteTrafficApi";
 import { SITE_TRAFFIC_STRINGS, formatDuration } from "@/lib/siteTrafficStrings";
 import { formatChartLabel, formatNumber } from "@/lib/format";
-import { SiteTrafficDetails } from "@/pages/SiteTrafficDetails";
+import { LiveTab, SiteTrafficDetails } from "@/pages/SiteTrafficDetails";
 
-/** The detailed tabs with VITE_SITE_TRAFFIC_DETAILS_ENABLED; otherwise the summary, as before. */
+/**
+ * The detailed tabs with VITE_SITE_TRAFFIC_DETAILS_ENABLED (Live among them with
+ * VITE_SITE_LIVE_ENABLED). Without the details: the summary, as before, with a
+ * Summary / Live switch when VITE_SITE_LIVE_ENABLED is on.
+ */
 export function SiteTrafficPage() {
-  return SITE_TRAFFIC_DETAILS_ENABLED ? <SiteTrafficDetails /> : <SiteTrafficSummary />;
+  if (SITE_TRAFFIC_DETAILS_ENABLED) return <SiteTrafficDetails />;
+  if (SITE_LIVE_ENABLED) return <SummaryOrLive />;
+  return <SiteTrafficSummary />;
 }
 
-function SiteTrafficSummary() {
+/** VITE_SITE_LIVE_ENABLED without the details: the summary or Live, which one in the address (?tab=live). */
+function SummaryOrLive() {
+  const t = useT(SITE_TRAFFIC_STRINGS);
+  const { locale } = useLocale();
+  const [params, setParams] = useSearchParams();
+  const live = params.get("tab") === "live";
+  const switcher = (
+    <Segmented
+      label={t.title}
+      value={live ? "live" : "summary"}
+      onChange={(v) => setParams(v === "live" ? { tab: "live" } : {}, { replace: true })}
+      options={[
+        { value: "summary", label: t.tabSummary },
+        { value: "live", label: t.tabLive },
+      ]}
+    />
+  );
+  if (!live) return <SiteTrafficSummary switcher={switcher} />;
+  return (
+    <div>
+      <PageHeader title={t.title} description={t.description} />
+      <div className="mb-4">{switcher}</div>
+      <LiveTab t={t} locale={locale} />
+    </div>
+  );
+}
+
+function SiteTrafficSummary({ switcher }: { switcher?: ReactNode }) {
   const t = useT(SITE_TRAFFIC_STRINGS);
   const { locale } = useLocale();
   const [range, setRange] = useState<SiteTrafficRange>("7d");
@@ -49,6 +83,8 @@ function SiteTrafficSummary() {
           </div>
         }
       />
+
+      {switcher && <div className="mb-4">{switcher}</div>}
 
       <DataState loading={loading && !data} error={error} onRetry={() => void refresh()}>
         {data && (

@@ -1,4 +1,4 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@store-builder/api-client";
@@ -8,19 +8,23 @@ import * as api from "@/lib/siteTrafficApi";
 import { SiteTrafficPage } from "./SiteTrafficPage";
 
 /**
- * The Live tab of Site traffic (VITE_SITE_LIVE_ENABLED, inside the detailed
- * page): who is on zimos.co in the last five minutes, read again every 15
- * seconds — place, source and UTM, device, browser and system, page now and
- * last click. Off, there is no such tab and the API is never asked.
+ * Live in Site traffic (VITE_SITE_LIVE_ENABLED, paired with the API's
+ * SITE_LIVE_ENABLED): who is on zimos.co in the last five minutes, read again
+ * every 15 seconds — place, source and UTM, device, browser and system, page
+ * now and last click. A tab of the detailed page; without the details, a
+ * Summary / Live switch on the summary page. Off, there is no Live and the API
+ * is never asked.
  */
 
-const flags = vi.hoisted(() => ({ live: true }));
+const flags = vi.hoisted(() => ({ live: true, details: true }));
 
 vi.mock("@/lib/features", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/features")>();
   return {
     ...actual,
-    SITE_TRAFFIC_DETAILS_ENABLED: true,
+    get SITE_TRAFFIC_DETAILS_ENABLED() {
+      return flags.details;
+    },
     get SITE_LIVE_ENABLED() {
       return flags.live;
     },
@@ -102,7 +106,9 @@ function renderPage(query = "") {
 
 beforeEach(() => {
   flags.live = true;
+  flags.details = true;
   vi.clearAllMocks();
+  mocked.getSummary.mockReturnValue(new Promise(() => undefined));
   // The other tabs are not under test here: their reads never answer.
   mocked.getDetailsSummary.mockReturnValue(new Promise(() => undefined));
   mocked.getLive.mockResolvedValue(LIVE);
@@ -155,10 +161,17 @@ describe("the Live tab", () => {
     expect(mocked.getLive).toHaveBeenCalledTimes(2);
   });
 
-  it("says plainly when the API's details switch is off", async () => {
+  it("says plainly when the API's own Live switch is off", async () => {
     mocked.getLive.mockRejectedValue(new ApiError("Not found", 404));
     renderPage("?tab=live");
-    expect(await screen.findByText("Site visit details are off on the API (SITE_TRAFFIC_DETAILS_ENABLED).")).toBeTruthy();
+    expect(await screen.findByText("Live is off on the API (SITE_LIVE_ENABLED).")).toBeTruthy();
+  });
+
+  it("names a click whose link was not kept as sign up or sign in", async () => {
+    mocked.getLive.mockResolvedValue({ ...LIVE, visitors: [{ ...LIVE.visitors[0], lastCta: { kind: null, at: new Date().toISOString() } }] });
+    renderPage("?tab=live");
+    const table = await screen.findByRole("table");
+    expect(within(table).getAllByRole("row")[1].textContent).toContain("Sign up or sign in");
   });
 
   it("speaks Arabic", async () => {
@@ -166,5 +179,31 @@ describe("the Live tab", () => {
     renderPage("?tab=live");
     expect(await screen.findByRole("radio", { name: "مباشر" })).toBeTruthy();
     expect(await screen.findByText("نشط الآن")).toBeTruthy();
+  });
+});
+
+describe("Live without the details (VITE_SITE_TRAFFIC_DETAILS_ENABLED off)", () => {
+  it("both off: the summary page as it was, no Live, nothing asked of it", async () => {
+    flags.details = false;
+    flags.live = false;
+    renderPage("?tab=live");
+    expect(screen.queryByRole("radio", { name: "Live" })).toBeNull();
+    expect(mocked.getSummary).toHaveBeenCalled();
+    expect(mocked.getLive).not.toHaveBeenCalled();
+  });
+
+  it("Live on: a Summary / Live switch; Live lists the sessions, and a row opens nothing (the visit needs the details)", async () => {
+    flags.details = false;
+    renderPage();
+    expect(await screen.findByRole("radio", { name: "Summary" })).toBeTruthy();
+    expect(mocked.getLive).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("radio", { name: "Live" }));
+    const table = await screen.findByRole("table");
+    const [, first] = within(table).getAllByRole("row");
+    expect(first.textContent).toContain("/pricing");
+    fireEvent.click(first);
+    expect(mocked.getVisit).not.toHaveBeenCalled();
+    expect(mocked.getDetailsSummary).not.toHaveBeenCalled();
   });
 });

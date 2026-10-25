@@ -21,7 +21,7 @@ import { formatChartLabel, formatDateTime, formatNumber, formatRelative } from "
 import { Pager } from "@/pages/BlocklistPage";
 import { ClickableList, SimpleTable } from "@/pages/StoreTrafficPage";
 
-type Strings = Record<keyof (typeof SITE_TRAFFIC_STRINGS)["en"], string>;
+export type Strings = Record<keyof (typeof SITE_TRAFFIC_STRINGS)["en"], string>;
 type Locale = "en" | "ar";
 const TABS = ["overview", "visits", "campaigns", "protection", "live"] as const;
 type Tab = (typeof TABS)[number];
@@ -534,10 +534,11 @@ function ProtectionTab({ t, locale, range }: { t: Strings; locale: Locale; range
 /**
  * Live: the sessions of the last five minutes (api.getLive), read again every
  * 15 seconds while the tab shows — by polling, not the live updates: a ping
- * every 15 seconds per visitor is too many events to send. A row opens the
- * visit, as on Visits.
+ * every 15 seconds per visitor is too many events to send. With `onOpen` (the
+ * detailed page), a row opens the visit, as on Visits. Also on the summary page
+ * when only Live is on (SiteTrafficPage).
  */
-function LiveTab({ t, locale, onOpen }: { t: Strings; locale: Locale; onOpen: (sessionId: string) => void }) {
+export function LiveTab({ t, locale, onOpen }: { t: Strings; locale: Locale; onOpen?: (sessionId: string) => void }) {
   const { data, loading, error, refresh } = useAsync(() => api.getLive(), []);
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -545,8 +546,10 @@ function LiveTab({ t, locale, onOpen }: { t: Strings; locale: Locale; onOpen: (s
     }, api.SITE_LIVE_POLL_MS);
     return () => window.clearInterval(timer);
   }, [refresh]);
-  const ctaLabel = (kind: string) => t[`cta_${kind}` as keyof Strings] ?? kind;
+  const ctaLabel = (kind: string | null) => (kind ? (t[`cta_${kind}` as keyof Strings] ?? kind) : t.cta_any);
 
+  // Its own switch on the API (SITE_LIVE_ENABLED): said plainly, not as the details being off.
+  if (isOff(error)) return <Alert>{t.liveOff}</Alert>;
   return (
     <Loaded t={t} loading={loading && !data} error={error} onRetry={() => void refresh()}>
       {data && (
@@ -575,7 +578,7 @@ function LiveTab({ t, locale, onOpen }: { t: Strings; locale: Locale; onOpen: (s
                   </TableHeader>
                   <TableBody>
                     {data.visitors.map((v) => (
-                      <TableRow key={v.sessionId} className="cursor-pointer" onClick={() => onOpen(v.sessionId)}>
+                      <TableRow key={v.sessionId} className={onOpen ? "cursor-pointer" : undefined} onClick={onOpen ? () => onOpen(v.sessionId) : undefined}>
                         <Td>
                           <div className="flex flex-col items-start gap-1">
                             <Badge variant={v.active ? "default" : "secondary"}>{v.active ? t.activeBadge : t.idleBadge}</Badge>

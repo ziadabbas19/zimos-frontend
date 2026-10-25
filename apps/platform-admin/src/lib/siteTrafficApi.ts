@@ -149,7 +149,7 @@ export const getProtection = (range: SiteDetailsRange) => getDetail<SiteProtecti
 
 /**
  * The Live view (VITE_SITE_LIVE_ENABLED; the API's /admin/site-traffic/live,
- * behind SITE_TRAFFIC_DETAILS_ENABLED): the sessions seen in the last five
+ * behind its SITE_LIVE_ENABLED): the sessions seen in the last five
  * minutes, newest first, asked again every 15 seconds. A session is a browser
  * tab; the visitor's id changes every UTC day, so nothing ties it to another day.
  */
@@ -172,7 +172,8 @@ export interface SiteLiveVisitor {
   os: string | null;
   locale: string | null;
   currentPath: string | null;
-  lastCta: { kind: "register" | "login"; at: string } | null;
+  /** kind null: which link it was is kept only with the API's SITE_TRAFFIC_DETAILS_ENABLED. */
+  lastCta: { kind: "register" | "login" | null; at: string } | null;
 }
 
 export interface SiteLive {
