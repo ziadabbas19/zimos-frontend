@@ -19,7 +19,9 @@ import type { ApiClient } from "./client";
  * `onStatus("waiting")` whenever there is no connection: the caller polls in
  * the meantime, and stops once it is "live" again. `onReconnect` once a
  * connection is back after it was lost: the messages sent meanwhile are not
- * sent again, so the caller reads what it shows afresh.
+ * sent again, so the caller reads what it shows afresh. It comes a random
+ * moment (up to RECONNECT_SPREAD_MS) after the connection, so tabs that all
+ * came back together after a dropped transport do not all read at once.
  *
  * Trying again: a lost transport is retried by socket.io-client itself (with
  * its own jitter). After the server refused the handshake or ended the
@@ -64,6 +66,7 @@ export interface RealtimeConnection {
 }
 
 const RETRY_FLOOR_MS = 1_000;
+const RECONNECT_SPREAD_MS = 3_000;
 const RETRY_FIRST_CAP_MS = 10_000;
 const RETRY_MAX_MS = 5 * 60_000;
 
@@ -108,6 +111,7 @@ export function connectRealtime(options: RealtimeOptions): RealtimeConnection {
   let attempt = 0;
   let connectedBefore = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let rereading: ReturnType<typeof setTimeout> | undefined;
 
   const setStatus = (next: RealtimeStatus) => {
     if (next === current) return;
@@ -150,7 +154,12 @@ export function connectRealtime(options: RealtimeOptions): RealtimeConnection {
   socket.on("connect", () => {
     attempt = 0;
     setStatus("live");
-    if (connectedBefore) onReconnect?.();
+    if (connectedBefore && onReconnect) {
+      clearTimeout(rereading);
+      rereading = setTimeout(() => {
+        if (!closed) onReconnect();
+      }, Math.random() * RECONNECT_SPREAD_MS);
+    }
     connectedBefore = true;
   });
   socket.on("connect_error", () => {
@@ -173,6 +182,7 @@ export function connectRealtime(options: RealtimeOptions): RealtimeConnection {
     close() {
       closed = true;
       clearTimeout(timer);
+      clearTimeout(rereading);
       socket.offAny();
       socket.disconnect();
     },

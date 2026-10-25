@@ -161,10 +161,16 @@ describe("the Live tab", () => {
     expect(mocked.getLive).toHaveBeenCalledTimes(2);
   });
 
-  it("says plainly when the API's own Live switch is off", async () => {
+  it("says plainly when the API's own Live switch is off, and stops asking", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     mocked.getLive.mockRejectedValue(new ApiError("Not found", 404));
     renderPage("?tab=live");
     expect(await screen.findByText("Live is off on the API (SITE_LIVE_ENABLED).")).toBeTruthy();
+    expect(mocked.getLive).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(45_000);
+    });
+    expect(mocked.getLive).toHaveBeenCalledTimes(1);
   });
 
   it("names a click whose link was not kept as sign up or sign in", async () => {

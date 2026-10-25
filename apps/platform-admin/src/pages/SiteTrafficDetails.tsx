@@ -540,16 +540,19 @@ function ProtectionTab({ t, locale, range }: { t: Strings; locale: Locale; range
  */
 export function LiveTab({ t, locale, onOpen }: { t: Strings; locale: Locale; onOpen?: (sessionId: string) => void }) {
   const { data, loading, error, refresh } = useAsync(() => api.getLive(), []);
+  // The API's Live switch off (404): nothing to ask again until the page is opened anew.
+  const off = isOff(error);
   useEffect(() => {
+    if (off) return;
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") void refresh({ silent: true });
     }, api.SITE_LIVE_POLL_MS);
     return () => window.clearInterval(timer);
-  }, [refresh]);
+  }, [refresh, off]);
   const ctaLabel = (kind: string | null) => (kind ? (t[`cta_${kind}` as keyof Strings] ?? kind) : t.cta_any);
 
   // Its own switch on the API (SITE_LIVE_ENABLED): said plainly, not as the details being off.
-  if (isOff(error)) return <Alert>{t.liveOff}</Alert>;
+  if (off) return <Alert>{t.liveOff}</Alert>;
   return (
     <Loaded t={t} loading={loading && !data} error={error} onRetry={() => void refresh()}>
       {data && (

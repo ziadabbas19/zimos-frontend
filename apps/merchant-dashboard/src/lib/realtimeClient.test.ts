@@ -201,17 +201,26 @@ describe("connectRealtime", () => {
     expect(delays.size).toBeGreaterThan(10);
   });
 
-  it("says when a lost connection is back, not on the first one", async () => {
+  it("says when a lost connection is back, not on the first one, at a random moment within 3 s", async () => {
     client.setTokens({ accessToken: token(600), refreshToken: "r1" });
     const onReconnect = vi.fn();
     start({ onReconnect });
     await settle();
     socket.fire("connect");
+    await vi.advanceTimersByTimeAsync(5_000);
     expect(onReconnect).not.toHaveBeenCalled();
     socket.active = true;
     socket.fire("disconnect", "transport close");
-    socket.fire("connect");
-    expect(onReconnect).toHaveBeenCalledTimes(1);
+    const random = vi.spyOn(Math, "random").mockReturnValue(0.5);
+    try {
+      socket.fire("connect");
+      await vi.advanceTimersByTimeAsync(1_499);
+      expect(onReconnect).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(onReconnect).toHaveBeenCalledTimes(1);
+    } finally {
+      random.mockRestore();
+    }
   });
 
   it("close() disconnects and schedules nothing more", async () => {
