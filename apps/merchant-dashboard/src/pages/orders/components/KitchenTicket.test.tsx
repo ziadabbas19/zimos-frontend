@@ -93,6 +93,15 @@ describe("kitchen ticket", () => {
     expect(esc(`"'&`)).toBe("&quot;&#39;&amp;");
   });
 
+  it("leaves the customer's name and the note off a locked order, and keeps every line and the totals", () => {
+    const locked = { ...ORDER, contactLocked: true, contactSnapshot: { fullName: "••••", phone: "••••", email: "••••" }, notes: "••••" } as Order;
+    const html = ticketHtml(locked, CONTEXT);
+    expect(html).not.toContain("••••");
+    expect(html).not.toContain(CONTEXT.words.notes);
+    for (const item of ORDER.items) expect(html).toContain(item.productNameSnapshot);
+    expect(html).toContain(CONTEXT.money(ORDER.totalAmount, ORDER.currency));
+  });
+
   it("prints from a frame that may run no script", async () => {
     workspaceMock.currentWorkspace = fake<Workspace>({ id: "ws_1", name: "Nile Store", role: "owner" });
     const { user } = renderWithProviders(<KitchenTicketButton order={ORDER} />);

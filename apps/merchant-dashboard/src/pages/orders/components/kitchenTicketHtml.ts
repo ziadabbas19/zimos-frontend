@@ -1,4 +1,4 @@
-import { menuOptionsLabel, type Order } from "@store-builder/api-client";
+import { LOCKED_MASK, menuOptionsLabel, type Order } from "@store-builder/api-client";
 import { formatOptions } from "@/lib/format";
 
 /** The words on the ticket, in the ticket's language (KitchenTicket.tsx STRINGS). */
@@ -38,9 +38,16 @@ export interface TicketContext {
  * options and the customer's answers, the order note, the totals and how it
  * is paid. Nothing else — no phone, no address, no email: a ticket lies on a
  * counter. Every value is escaped; the page it makes holds no script.
+ *
+ * A locked order (`contactLocked`: the store's subscription lapsed or its
+ * balance cannot pay the fee) comes with the customer's name and the note as
+ * "••••": the ticket leaves both off, and the kitchen still has every line.
  */
 export function ticketHtml(order: Order, x: TicketContext): string {
   const w = x.words;
+  const shown = (value: string | null | undefined) => (order.contactLocked === true || !value || value === LOCKED_MASK ? "" : value);
+  const name = shown(order.contactSnapshot?.fullName);
+  const note = shown(order.notes);
   const cod = order.paymentMethod === "cod";
   const lines = order.items
     .map((item) => {
@@ -94,11 +101,11 @@ export function ticketHtml(order: Order, x: TicketContext): string {
 <h1>${esc(x.storeName)}</h1>
 <div class="num">${esc(w.order)} #${esc(order.orderNumber)}</div>
 <div class="meta">${esc(x.date(order.createdAt))}</div>
-<div class="meta">${esc(order.deliveryMethod === "pickup" ? w.pickup : w.delivery)}${order.contactSnapshot?.fullName ? ` · ${esc(order.contactSnapshot.fullName)}` : ""}</div>
+<div class="meta">${esc(order.deliveryMethod === "pickup" ? w.pickup : w.delivery)}${name ? ` · ${esc(name)}` : ""}</div>
 ${order.cancelledAt ? `<div class="flag">${esc(w.cancelled)}</div>` : ""}
 <hr>
 ${lines}
-${order.notes ? `<hr><div class="note">${esc(w.notes)}: ${esc(order.notes)}</div>` : ""}
+${note ? `<hr><div class="note">${esc(w.notes)}: ${esc(note)}</div>` : ""}
 <hr>
 ${total(w.subtotal, order.subtotalAmount)}
 ${total(w.shipping, order.shippingAmount, Number(order.shippingAmount) > 0)}
