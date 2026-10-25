@@ -92,6 +92,25 @@ describe("AutomationsPage", () => {
     expect(screen.getByRole("switch", { name: "Active: Shipped notice" })).toBeChecked();
   });
 
+  it("shows the WhatsApp confirmation template locked when the plan lacks it, with the way to the plans", async () => {
+    api.getWhatsappIntegration.mockResolvedValue(fake({ connected: true, status: "connected" }));
+    const locked = fake<AutomationFlowTemplate>({
+      ...template,
+      key: "order_confirmation",
+      trigger: "order.created",
+      name: { ar: "تأكيد الطلب عبر واتساب", en: "Confirm orders on WhatsApp" },
+      planLocked: true,
+    });
+    serve(lists([], [], [locked, template]));
+    renderWithProviders(<AutomationsPage />, { route: "/automations" });
+
+    expect(await screen.findByText("Confirm orders on WhatsApp")).toBeInTheDocument();
+    expect(screen.getByText("Not in your current plan")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "See the plans" })).toHaveAttribute("href", "/subscription");
+    // Only the other template offers the switch.
+    expect(screen.getAllByRole("button", { name: "Switch on" })).toHaveLength(1);
+  });
+
   it("creates a rule with a token inserted into a template variable", async () => {
     api.getWhatsappIntegration.mockResolvedValue(fake({ connected: true, status: "connected" }));
     serve({
