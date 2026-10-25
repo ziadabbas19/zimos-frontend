@@ -366,7 +366,8 @@ export async function ordersPreviewDraft(client: ApiClient, workspaceId: string,
 }
 
 export interface OrderDraftCustomer {
-  id: string;
+  /** null for a customer who comes hidden (locked orders): every order in the list carries it, so it would lead to theirs. */
+  id: string | null;
   fullName: string | null;
   phone: string;
   email: string | null;
