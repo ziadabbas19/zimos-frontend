@@ -2645,9 +2645,10 @@ export class ApiClient {
 
   /** `POST /orders/locked/settle` — takes the owed fees of orders paid online while the balance couldn't (orders.manage). */
   async settleLockedOrders(workspaceId: string): Promise<{ settled: number; left: number; locked: LockedOrdersSummary }> {
+    // request() serializes the body itself: a string here would go out as the JSON string "{}" (400).
     return this.request<{ settled: number; left: number; locked: LockedOrdersSummary }>(`${this.ordersBase(workspaceId)}/locked/settle`, {
       method: "POST",
-      body: JSON.stringify({}),
+      body: {},
     });
   }
 

@@ -12,6 +12,7 @@ import { Modal } from "@/components/Modal";
 import { TextField } from "@/components/Field";
 import { useToast } from "@/components/Toast";
 import { useOrderErrorMessage } from "../orderErrors";
+import { formValue } from "@/components/OrdersLock";
 
 const STRINGS = {
   en: {
@@ -143,10 +144,11 @@ function EditContactDialog({ order, onClose, onSaved }: { order: Order; onClose:
   const toast = useToast();
   const errorMessage = useOrderErrorMessage();
   const c = order.contactSnapshot ?? { fullName: "", phone: "" };
-  const [fullName, setFullName] = useState(c.fullName ?? "");
-  const [phone, setPhone] = useState(c.phone ?? "");
-  const [altPhone, setAltPhone] = useState(c.alternatePhone ?? "");
-  const [email, setEmail] = useState(c.email ?? "");
+  // The page offers no edit on a locked order; a hidden value still never starts a field.
+  const [fullName, setFullName] = useState(formValue(c.fullName));
+  const [phone, setPhone] = useState(formValue(c.phone));
+  const [altPhone, setAltPhone] = useState(formValue(c.alternatePhone));
+  const [email, setEmail] = useState(formValue(c.email));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

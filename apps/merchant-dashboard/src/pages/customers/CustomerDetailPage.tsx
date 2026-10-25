@@ -31,6 +31,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useT, fmt, useCommon, type Messages } from "@/i18n/LocaleContext";
 import { ContactInsights } from "./ContactInsights";
+import { formValue } from "@/components/OrdersLock";
 
 const STRINGS = {
   en: {
@@ -81,6 +82,7 @@ const STRINGS = {
     customerUnblacklisted: "Customer removed from the blacklist.",
     addressesTitle: "Addresses",
     addAddress: "Add address",
+    lockedNote: "This customer's details are hidden: every order they placed is locked. They can be edited, blacklisted or given an address once you renew or top up.",
     noAddresses: "No addresses on file.",
     defaultBadge: "Default",
     editAddress: "Edit address",
@@ -143,6 +145,7 @@ const STRINGS = {
     customerUnblacklisted: "تم إلغاء حظر العميل.",
     addressesTitle: "العناوين",
     addAddress: "إضافة عنوان",
+    lockedNote: "بيانات هذا العميل مخفية لأن كل طلباته مقفلة. يمكن تعديلها أو حظره أو إضافة عنوان له بعد تجديد الاشتراك أو شحن الرصيد.",
     noAddresses: "لا توجد عناوين مسجّلة.",
     defaultBadge: "الافتراضي",
     editAddress: "تعديل العنوان",
@@ -200,9 +203,16 @@ export function CustomerDetailPage() {
             {CUSTOMER_REFERRALS_ENABLED && <CustomerInvitesCard customerId={customer.id} />}
             {/* The customer's RFM group: how recently, how often and how much they buy (lib/features). */}
             {STORE_REPORTS_ENABLED && <CustomerRfmCard customerId={customer.id} />}
-            <ContactForm customer={customer} onSaved={reload} />
+            {/* A hidden customer (locked orders): no form that would write "••••" over their details. */}
+            {customer.contactLocked === true ? (
+              <p role="note" className="rounded-[var(--radius-card)] border border-danger/30 bg-danger-soft p-4 text-sm text-ink">
+                {t.lockedNote}
+              </p>
+            ) : (
+              <ContactForm customer={customer} onSaved={reload} />
+            )}
             <OrderHistorySection customer={customer} />
-            <BlacklistSection customer={customer} onChanged={reload} />
+            {customer.contactLocked !== true && <BlacklistSection customer={customer} onChanged={reload} />}
             <AddressesSection customer={customer} onChanged={reload} />
           </div>
         )}
@@ -297,9 +307,9 @@ function ContactForm({ customer, onSaved }: { customer: Customer; onSaved: () =>
   const common = useCommon();
   const workspaceId = useWorkspaceId();
   const toast = useToast();
-  const [fullName, setFullName] = useState(customer.fullName ?? "");
-  const [email, setEmail] = useState(customer.email ?? "");
-  const [alternatePhone, setAlternatePhone] = useState(customer.alternatePhone ?? "");
+  const [fullName, setFullName] = useState(formValue(customer.fullName));
+  const [email, setEmail] = useState(formValue(customer.email));
+  const [alternatePhone, setAlternatePhone] = useState(formValue(customer.alternatePhone));
   const [marketingConsent, setMarketingConsent] = useState(customer.marketingConsent);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -491,14 +501,18 @@ function AddressesSection({
   const common = useCommon();
   const [target, setTarget] = useState<CustomerAddress | "new" | null>(null);
   const addresses = customer.addresses ?? [];
+  // A hidden customer's addresses show hidden and are not edited (the API refuses it too).
+  const editable = customer.contactLocked !== true;
 
   return (
     <section className="rounded-[var(--radius-card)] border border-line p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-lg font-medium text-ink">{t.addressesTitle}</h2>
-        <Button size="sm" onClick={() => setTarget("new")}>
-          {t.addAddress}
-        </Button>
+        {editable && (
+          <Button size="sm" onClick={() => setTarget("new")}>
+            {t.addAddress}
+          </Button>
+        )}
       </div>
 
       {addresses.length === 0 ? (
@@ -519,9 +533,11 @@ function AddressesSection({
                 {a.notes && <p className="text-xs text-ink-soft">{a.notes}</p>}
                 {a.isDefault && <p className="text-xs text-primary">{t.defaultBadge}</p>}
               </div>
-              <Button size="sm" variant="ghost" onClick={() => setTarget(a)}>
-                {common.edit}
-              </Button>
+              {editable && (
+                <Button size="sm" variant="ghost" onClick={() => setTarget(a)}>
+                  {common.edit}
+                </Button>
+              )}
             </li>
           ))}
         </ul>
@@ -565,11 +581,11 @@ function AddressForm({
   const workspaceId = useWorkspaceId();
   const toast = useToast();
   const [country, setCountry] = useState(address?.country ?? "EG");
-  const [province, setProvince] = useState(address?.province ?? "");
-  const [city, setCity] = useState(address?.city ?? "");
-  const [addressLine, setAddressLine] = useState(address?.addressLine ?? "");
-  const [postalCode, setPostalCode] = useState(address?.postalCode ?? "");
-  const [notes, setNotes] = useState(address?.notes ?? "");
+  const [province, setProvince] = useState(formValue(address?.province));
+  const [city, setCity] = useState(formValue(address?.city));
+  const [addressLine, setAddressLine] = useState(formValue(address?.addressLine));
+  const [postalCode, setPostalCode] = useState(formValue(address?.postalCode));
+  const [notes, setNotes] = useState(formValue(address?.notes));
   const [isDefault, setIsDefault] = useState(address?.isDefault ?? false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);

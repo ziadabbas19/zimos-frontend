@@ -9,6 +9,7 @@ import { formatMinorMoney } from "@/lib/format";
 import { useErrorMessage } from "@/lib/errorMessages";
 import { useToast } from "@/components/Toast";
 import { LOW_ORDERS, ordersCovered, useWorkspaceAccess } from "@/lib/workspaceAccess";
+import { canManageOrderFulfilment } from "@/lib/fulfilmentAccess";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { countOf } from "@/lib/plural";
 
@@ -74,7 +75,7 @@ const STRINGS = {
     settled: "تم فتح {orders}.",
     hidden: "مخفي",
     hiddenTitle: "مخفي حتى تجدّد الاشتراك أو تشحن الرصيد",
-    badge: "مقفول",
+    badge: "مقفل",
     badgeBalance: "بيانات العميل مخفية: رصيدك لا يكفي لرسم هذا الطلب.",
     badgeSubscription: "بيانات العميل مخفية: اشتراكك انتهى.",
     noticeBalance:
@@ -95,6 +96,16 @@ const BILLING_ROLES = ["owner", "accountant"];
 export const isHidden = (value: unknown): boolean => value === LOCKED_MASK;
 
 export const isLockedOrder = (order: Pick<Order, "contactLocked"> | null | undefined): boolean => order?.contactLocked === true;
+
+/**
+ * A value fit for a form's state: a hidden one becomes empty. A form filled
+ * from a hidden view would otherwise send "••••" back over the real value
+ * (the API refuses it with 422 too).
+ */
+export const formValue = (value: string | null | undefined): string => (value == null || isHidden(value) ? "" : value);
+
+/** True when any of `values` came hidden: a whole address or contact is then left for the merchant to type. */
+export const anyHidden = (...values: unknown[]): boolean => values.some(isHidden);
 
 /** The toolbar's balance: only for a store on pay per order while locked orders are on. */
 export function BalanceWidget({ className }: { className?: string }) {
@@ -202,7 +213,8 @@ export function LockedOrdersBanner({ className, onChanged }: { className?: strin
   const main = summary.totals[0];
   const amount = summary.totals.map((x) => formatMinorMoney(x.amount, x.currency)).join(" + ") || formatMinorMoney(0, main?.currency ?? "EGP");
   const canAct = BILLING_ROLES.includes(currentWorkspace?.role ?? "");
-  const canSettle = canAct && !subscription && summary.due > 0 && summary.canPay;
+  // Settling confirms orders: POST /orders/locked/settle needs orders.manage, which the accountant lacks.
+  const canSettle = canManageOrderFulfilment(currentWorkspace?.role) && !subscription && summary.due > 0 && summary.canPay;
 
   async function settle() {
     if (!workspaceId) return;

@@ -227,8 +227,13 @@ export function ConfirmationQueuePage() {
   return (
     <div className="max-w-3xl">
       <QueueHeader description={queueAnswer ?? t.description} view={canSwitch ? view : null} onViewChange={changeView} />
-      {/* Calls that can't be confirmed while their orders' customer details are hidden. */}
-      <LockedOrdersBanner />
+      {/* Calls that can't be confirmed while their orders' customer details are hidden; opened, the list loads them again. */}
+      <LockedOrdersBanner
+        onChanged={() => {
+          list.reload();
+          refreshCounts();
+        }}
+      />
 
       <div className="flex items-center gap-2">
         <ChipRow<ConfirmationQueueTab>

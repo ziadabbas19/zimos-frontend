@@ -26,7 +26,7 @@ const STRINGS = {
     poorData: "بيانات ضعيفة",
     pickup: "استلام من المتجر",
     hiddenName: "بيانات العميل مخفية",
-    locked: "مقفول",
+    locked: "مقفل",
     lockedBalance: "بيانات العميل مخفية: رصيدك لا يكفي لرسم هذا الطلب.",
     lockedSubscription: "بيانات العميل مخفية: اشتراكك انتهى.",
   },

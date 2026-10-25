@@ -11,6 +11,7 @@ import { OrderTimelineLines } from "@/pages/orders/components/OrderTimelineLines
 import { ManualPaymentProof } from "@/pages/orders/components/ManualPaymentProof";
 import { useOrderLabels } from "@/pages/orders/orderLabels";
 import { useQueueStrings } from "../queueStrings";
+import { HiddenValue, isHidden } from "@/components/OrdersLock";
 
 /** A card's item list never runs past this many lines; a longer order ends in "+N more". */
 const MAX_ITEM_LINES = 4;
@@ -104,7 +105,10 @@ export function OrderFacts({
     <div className="space-y-2.5">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <p className="font-display text-xl leading-7 font-medium text-ink tabular-nums">
-          {phone ? (
+          {/* A locked order's number comes hidden: said as hidden, nothing to dial. */}
+          {isHidden(phone) ? (
+            <HiddenValue className="text-base" />
+          ) : phone ? (
             <a
               href={`tel:${phone}`}
               className="relative rounded-sm before:absolute before:-inset-x-2 before:-inset-y-2 before:content-[''] hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"

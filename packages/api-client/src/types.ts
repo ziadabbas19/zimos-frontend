@@ -2552,6 +2552,8 @@ export interface Customer {
   totalRejectedOrders: number;
   /** Present on the detail endpoint only. */
   addresses?: CustomerAddress[];
+  /** Locked orders on: every order this customer placed is locked, so their details come "••••" and can't be edited. */
+  contactLocked?: boolean;
 }
 
 export interface CustomerListParams {

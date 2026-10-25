@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { LOCKED_MASK, type LockedOrdersSummary, type Order, type Workspace, type WorkspaceAccess } from "@store-builder/api-client";
 import { api, fake, workspaceMock } from "@/test/mocks";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { publishWorkspaceAccess } from "@/lib/workspaceAccess";
-import { BalanceWidget, HiddenValue, LockedOrderNotice, LockedOrdersBanner } from "./OrdersLock";
+import { BalanceWidget, HiddenValue, LockedOrderNotice, LockedOrdersBanner, anyHidden, formValue } from "./OrdersLock";
 
 // Locked orders (components/OrdersLock.tsx): the toolbar's balance, the
 // locked-orders banner and how a hidden field reads — only while the API says
@@ -130,6 +130,25 @@ describe("LockedOrdersBanner", () => {
     await waitFor(() => expect(screen.queryByTestId("locked-orders-banner")).not.toBeInTheDocument());
   });
 
+  it("offers no settle to a role without orders.manage (the accountant tops up, the server would answer 403)", async () => {
+    inStore("ws_accountant", "accountant", accessWith({ wallet: wallet(500) }));
+    api.getLockedOrdersSummary.mockResolvedValue(summary({ canPay: true, count: 1, due: 1 }));
+    renderWithProviders(<LockedOrdersBanner />);
+    await screen.findByTestId("locked-orders-banner");
+    expect(screen.queryByRole("button", { name: "Pay the fees and open them" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Top up" })).toBeInTheDocument();
+  });
+
+  it("tells its page once the fees are paid, so the list loads the opened orders again", async () => {
+    inStore("ws_reload", "owner", accessWith({ wallet: wallet(500) }));
+    api.getLockedOrdersSummary.mockResolvedValue(summary({ canPay: true, count: 1, due: 1 }));
+    api.settleLockedOrders.mockResolvedValue({ settled: 1, left: 0, locked: summary({ canPay: true, count: 0, due: 0, totals: [] }) });
+    const onChanged = vi.fn();
+    renderWithProviders(<LockedOrdersBanner onChanged={onChanged} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Pay the fees and open them" }));
+    await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1));
+  });
+
   it("asks nothing while locked orders are off", () => {
     inStore("ws_quiet", "owner", accessWith({ ordersLock: false }));
     renderWithProviders(<LockedOrdersBanner />);
@@ -150,5 +169,14 @@ describe("a hidden field and a locked order", () => {
     expect(screen.getByTestId("locked-order-notice")).toHaveTextContent("your balance can't pay its fee");
     expect(screen.getByRole("link", { name: "Top up" })).toBeInTheDocument();
     expect(LOCKED_MASK).toBe("••••");
+  });
+
+  it("never lets a hidden value into a form's state", () => {
+    expect(formValue(LOCKED_MASK)).toBe("");
+    expect(formValue(null)).toBe("");
+    expect(formValue(undefined)).toBe("");
+    expect(formValue("12 Tahrir St")).toBe("12 Tahrir St");
+    expect(anyHidden("Giza", LOCKED_MASK)).toBe(true);
+    expect(anyHidden("Giza", "Dokki", null)).toBe(false);
   });
 });

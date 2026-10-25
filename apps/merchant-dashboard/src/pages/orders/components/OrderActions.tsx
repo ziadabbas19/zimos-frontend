@@ -17,6 +17,7 @@ import { Textarea } from "@/components/Textarea";
 import { Select } from "@/components/Select";
 import { isCarrierBooked } from "@/pages/shipping/carriers";
 import { useManualCancelPrompt } from "@/pages/shipping/useManualCancelPrompt";
+import { formValue, isLockedOrder } from "@/components/OrdersLock";
 
 const SHIPPED_STATES = ["fulfilled", "partially_fulfilled", "returned"];
 
@@ -138,7 +139,8 @@ export function OrderActions({ order, onChanged }: Props) {
   const isCancelled = Boolean(order.cancelledAt);
   const isShipped = SHIPPED_STATES.includes(order.fulfillmentState);
   const canCancel = !isCancelled && !isShipped;
-  const canEdit = !isCancelled && !isShipped;
+  // A locked order's details come hidden: no form that would write "••••" over them.
+  const canEdit = !isCancelled && !isShipped && !isLockedOrder(order);
   // The backend cancels 'created' and 'failed' courier deliveries at the
   // courier first (cancelCarrierShipmentsForOrder), all-or-nothing.
   const courierToCancel = (order.shipments ?? []).some(
@@ -332,11 +334,11 @@ function EditOrderForm({
   const errorMessage = useErrorMessage();
   const addr = order.shippingAddressSnapshot ?? {};
   const [country, setCountry] = useState(addr.country ?? "EG");
-  const [city, setCity] = useState(addr.city ?? "");
-  const [province, setProvince] = useState(addr.province ?? "");
-  const [addressLine, setAddressLine] = useState(addr.addressLine ?? "");
-  const [postalCode, setPostalCode] = useState(addr.postalCode ?? "");
-  const [notes, setNotes] = useState(order.notes ?? "");
+  const [city, setCity] = useState(formValue(addr.city));
+  const [province, setProvince] = useState(formValue(addr.province));
+  const [addressLine, setAddressLine] = useState(formValue(addr.addressLine));
+  const [postalCode, setPostalCode] = useState(formValue(addr.postalCode));
+  const [notes, setNotes] = useState(formValue(order.notes));
 
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);

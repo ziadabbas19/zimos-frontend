@@ -57,6 +57,7 @@ import { useLevelLabel } from "./useLevelLabel";
 import { ShipmentDraftNote, ShipmentDraftSaveButton } from "./ShipmentDraftBar";
 import { TRACKING_PROVIDERS_ENABLED } from "@/lib/features";
 import { ManualShipmentTracking } from "./ManualShipmentTracking";
+import { isLockedOrder } from "@/components/OrdersLock";
 
 const STATUSES: ShipmentStatus[] = [
   "created",
@@ -115,6 +116,7 @@ const STRINGS = {
       "You cancelled {numbers} in {carrier}'s dashboard, but {carrier} still reports the parcel as picked up, on its way or delivered. Open your {carrier} dashboard and check it: if the parcel is still moving, cancel it there again or contact {carrier}.",
     theCourier: "The courier",
     orderCancelled: "This order is cancelled, so it can't be shipped.",
+    orderLocked: "This order's customer details are hidden, so it can't be shipped or prepared until it opens.",
     activeBlocks:
       "This order already has an active shipment ({status}). You can book a new one once it's cancelled or returned.",
     viewOnly: "Only the store owner, a workspace manager or an order operator can manage shipments.",
@@ -212,6 +214,7 @@ const STRINGS = {
       "ألغيت {numbers} من لوحة تحكم {carrier}، لكن {carrier} ما زالت تُظهر الطرد كمُستلَم أو في الطريق أو تم تسليمه. افتح لوحة تحكم {carrier} وراجعه: إذا كان الطرد ما زال يتحرك، ألغِه هناك مرة أخرى أو تواصل مع {carrier}.",
     theCourier: "شركة الشحن",
     orderCancelled: "هذا الأوردر ملغي، لذلك لا يمكن شحنه.",
+    orderLocked: "بيانات عميل هذا الأوردر مخفية، لذلك لا يمكن شحنه أو تجهيز شحنته حتى يُفتح.",
     activeBlocks: "لهذا الأوردر شحنة نشطة بالفعل ({status}). يمكنك حجز شحنة جديدة بعد إلغائها أو إرجاعها.",
     viewOnly: "يمكن لمالك المتجر أو مدير مساحة العمل أو مسؤول الأوردرات فقط إدارة الشحنات.",
     viewOnlyForbidden: "دورك لا يسمح بإدارة الشحنات، لذلك تظهر للعرض فقط.",
@@ -365,6 +368,9 @@ export function ShipmentsSection({ order, onChanged }: Props) {
           <p className="text-sm text-ink-soft">{t.viewOnlyForbidden}</p>
         ) : order.cancelledAt ? (
           <p className="text-sm text-ink-soft">{t.orderCancelled}</p>
+        ) : isLockedOrder(order) ? (
+          // No form and no draft: they would fill from the hidden address and save "••••" (the API refuses both).
+          <p className="text-sm text-ink-soft">{t.orderLocked}</p>
         ) : active ? (
           <p className="text-sm text-ink-soft">
             {fmt(t.activeBlocks, { status: labels.shipment(active.status) })}

@@ -30,6 +30,11 @@ import { MoneyInput } from "@/components/MoneyInput";
 import { useToast } from "@/components/Toast";
 import { useOrderLabels } from "./orderLabels";
 import { useOrderErrorMessage } from "./orderErrors";
+import { anyHidden, formValue } from "@/components/OrdersLock";
+
+/** A last address worth copying into the form: none of its fields came hidden (locked orders). */
+const usableAddress = (address: OrderDraftCustomer["lastAddress"] | undefined): boolean =>
+  Boolean(address) && !anyHidden(address?.province, address?.city, address?.addressLine);
 
 const STRINGS = {
   en: {
@@ -42,6 +47,7 @@ const STRINGS = {
     name: "Full name",
     email: "Email (optional)",
     known: "Existing customer · {orders} orders, {rejected} rejected",
+    knownHidden: "Existing customer · their details are hidden until you renew or top up",
     knownBlocked: "This customer is blocked.",
     newCustomer: "New customer",
     useLastAddress: "Use their last address",
@@ -90,6 +96,7 @@ const STRINGS = {
     name: "الاسم بالكامل",
     email: "البريد الإلكتروني (اختياري)",
     known: "عميل موجود · {orders} أوردر، {rejected} مرفوض",
+    knownHidden: "عميل موجود · بياناته مخفية حتى تجدّد الاشتراك أو تشحن الرصيد",
     knownBlocked: "هذا العميل محظور.",
     newCustomer: "عميل جديد",
     useLastAddress: "استخدم آخر عنوان له",
@@ -214,13 +221,16 @@ export function ManualOrderPage() {
     try {
       const found = await ordersCustomerByPhone(apiClient, workspaceId, phone.trim());
       setCustomer(found);
-      // From a conversation, the name the store has for them beats the WhatsApp profile name.
-      if (found?.fullName && (fillAddress || !fullName.trim())) setFullName(found.fullName);
-      if (found?.email && !email.trim()) setEmail(found.email);
-      if (fillAddress && found?.lastAddress) {
-        setProvince(found.lastAddress.province ?? "");
-        setCity(found.lastAddress.city ?? "");
-        setAddressLine(found.lastAddress.addressLine ?? "");
+      // From a conversation, the name the store has for them beats the WhatsApp profile name —
+      // unless it came hidden (locked orders): "••••" never goes into the form.
+      const knownName = formValue(found?.fullName);
+      if (knownName && (fillAddress || !fullName.trim())) setFullName(knownName);
+      const knownEmail = formValue(found?.email);
+      if (knownEmail && !email.trim()) setEmail(knownEmail);
+      if (fillAddress && usableAddress(found?.lastAddress)) {
+        setProvince(found?.lastAddress?.province ?? "");
+        setCity(found?.lastAddress?.city ?? "");
+        setAddressLine(found?.lastAddress?.addressLine ?? "");
       }
     } catch {
       setCustomer(undefined);
@@ -236,7 +246,7 @@ export function ManualOrderPage() {
 
   function useLastAddress() {
     const last = customer?.lastAddress;
-    if (!last) return;
+    if (!last || !usableAddress(last)) return;
     setProvince(last.province ?? "");
     setCity(last.city ?? "");
     setAddressLine(last.addressLine ?? "");
@@ -380,9 +390,11 @@ export function ManualOrderPage() {
                   <span className={customer.isBlacklisted ? "font-medium text-danger" : "text-ink-soft"}>
                     {customer.isBlacklisted
                       ? t.knownBlocked
-                      : fmt(t.known, { orders: customer.totalOrders, rejected: customer.totalRejectedOrders })}
+                      : customer.contactLocked === true || customer.totalOrders === null
+                        ? t.knownHidden
+                        : fmt(t.known, { orders: customer.totalOrders, rejected: customer.totalRejectedOrders ?? 0 })}
                   </span>
-                  {customer.lastAddress && (
+                  {usableAddress(customer.lastAddress) && (
                     <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={useLastAddress}>
                       {t.useLastAddress}
                     </Button>
