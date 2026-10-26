@@ -144,6 +144,37 @@ describe("points and store credit at checkout", () => {
     expect(latest.onError(new ApiError("Nope", 422, "VALIDATION_ERROR"))).toBeNull();
   });
 
+  it("take no more points than the store's cap for one order, and say so", async () => {
+    const { store } = aStore(true);
+    const capped = { ...PROGRAM, maxRedeemPointsPerOrder: 500 };
+    request.mockImplementation(async (path: string) => {
+      if (path.endsWith("/account/config")) return { enabled: true, channels: ["sms"] };
+      if (path.endsWith("/account/loyalty")) return { balance: 2000, worth: "20000", currency: "EGP", expiresAt: null, history: [], program: capped };
+      if (path.endsWith("/account/store-credit")) return { balance: "0", currency: "EGP", history: [], spendingEnabled: false };
+      if (path.endsWith("/loyalty")) return { program: capped };
+      throw new Error(`unexpected ${path}`);
+    });
+    show(store);
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Use your points/ }));
+    // Half the order would allow 2000 points; the cap leaves 500 (worth 5000).
+    await waitFor(() => expect(latest.pointsOff).toBe(5000));
+    expect(latest.rest).toBe(45000);
+    expect(screen.getByText(/One order takes up to 500 points\./)).toBeTruthy();
+  });
+
+  it("say why the API refused the points: frozen, not on this order, or another account on this device", async () => {
+    const { store } = aStore(true);
+    answers();
+    show(store);
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Use your points/ }));
+    await waitFor(() => expect(latest.pointsOn).toBe(true));
+    const refusal = (code: string) => new ApiError("Refused", 422, code, { error: { details: [{ field: "loyaltyPoints", message: "Refused" }] } });
+    await waitFor(() => expect(latest.onError(refusal("LOYALTY_FROZEN"))).toContain("This store no longer takes points."));
+    await waitFor(() => expect(latest.onError(refusal("LOYALTY_UNAVAILABLE"))).toContain("Points can't be used on this order."));
+    await waitFor(() => expect(latest.onError(refusal("LOYALTY_DEVICE_LIMIT"))).toContain("Another account's points were used on this device today."));
+    await waitFor(() => expect(latest.pointsOn).toBe(false));
+  });
+
   it("are inert with no way to pay handed in (the features switched off, or a bank transfer chosen)", async () => {
     const { store } = aStore(true);
     answers();
