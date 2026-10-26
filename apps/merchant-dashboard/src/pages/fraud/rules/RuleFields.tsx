@@ -17,21 +17,28 @@ const SWITCH =
   "before:transition-[translate] before:duration-[var(--dur-move)] before:ease-[var(--ease-spring)] motion-reduce:before:transition-none " +
   "checked:before:translate-x-5 checked:before:bg-primary-foreground rtl:checked:before:-translate-x-5 forced-colors:checked:bg-[color:Highlight]";
 
-/** A switch with its label and hint. The whole row is the target, at least 44px tall. */
+/**
+ * A switch with its label and hint. The whole row is the target, at least 44px tall.
+ * `note`: a warning under the hint (the rule has no effect on this platform right now, and why).
+ */
 export function SwitchRow({
   checked,
   disabled,
   onChange,
   label,
   hint,
+  note,
 }: {
   checked: boolean;
   disabled?: boolean;
   onChange: (checked: boolean) => void;
   label: string;
   hint?: string;
+  note?: string;
 }) {
   const hintId = useId();
+  const noteId = useId();
+  const describedBy = [hint ? hintId : null, note ? noteId : null].filter(Boolean).join(" ") || undefined;
   return (
     <label className="flex min-h-11 cursor-pointer items-start gap-3 py-1 has-[:disabled]:cursor-default">
       <span className="min-w-0 flex-1">
@@ -41,6 +48,11 @@ export function SwitchRow({
             {hint}
           </span>
         )}
+        {note && (
+          <span id={noteId} data-slot="rule-note" className="mt-1 block text-[13px] leading-5 font-medium text-warning">
+            {note}
+          </span>
+        )}
       </span>
       <input
         type="checkbox"
@@ -48,7 +60,7 @@ export function SwitchRow({
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
-        aria-describedby={hint ? hintId : undefined}
+        aria-describedby={describedBy}
         className={SWITCH}
       />
     </label>
@@ -71,12 +83,16 @@ export function RuleChip({ tone, children }: { tone: "on" | "off" | "alert"; chi
   );
 }
 
-/** One rule: its switch, and — while it is on — its number (number rules only) and what it does when it fires. */
+/**
+ * One rule: its switch, and — while it is on — its number (number rules only) and what it does when it fires.
+ * `note`: why the rule has no effect right now; such a rule can be switched off but not on.
+ */
 export function RuleRow({
   ruleKey,
   draft,
   disabled,
   error,
+  note,
   t,
   onToggle,
   onValue,
@@ -87,6 +103,7 @@ export function RuleRow({
   draft: Draft;
   disabled: boolean;
   error?: string;
+  note?: string;
   t: RulesStrings;
   onToggle: (on: boolean) => void;
   onValue: (value: string) => void;
@@ -100,7 +117,14 @@ export function RuleRow({
   const on = draft.on[ruleKey];
   return (
     <div data-slot="rule-row" className="space-y-2.5 py-3 first:pt-0 last:pb-0">
-      <SwitchRow checked={on} disabled={disabled} onChange={onToggle} label={t[ruleKey]} hint={t[`${ruleKey}Hint` as keyof RulesStrings]} />
+      <SwitchRow
+        checked={on}
+        disabled={disabled || (Boolean(note) && !on)}
+        onChange={onToggle}
+        label={t[ruleKey]}
+        hint={t[`${ruleKey}Hint` as keyof RulesStrings]}
+        note={note}
+      />
       {on && (
         <div data-slot="rule-detail" className="space-y-3 rounded-2xl bg-paper-sunken/60 px-3 py-3">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -157,13 +181,14 @@ export function RuleRow({
   );
 }
 
-/** A list of two-letter country codes, typed. */
+/** A list of two-letter country codes, typed. `note`: why the list has no effect right now. */
 export function CountriesField({
   value,
   disabled,
   label,
   hint,
   error,
+  note,
   onChange,
 }: {
   value: string;
@@ -171,10 +196,12 @@ export function CountriesField({
   label: string;
   hint: string;
   error?: string;
+  note?: string;
   onChange: (value: string) => void;
 }) {
   const id = useId();
   const hintId = useId();
+  const noteId = useId();
   return (
     <div className="space-y-1.5">
       <label htmlFor={id} className="text-sm font-medium text-ink">
@@ -188,12 +215,17 @@ export function CountriesField({
         placeholder="EG, SA"
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={error ? true : undefined}
-        aria-describedby={hintId}
+        aria-describedby={note ? `${hintId} ${noteId}` : hintId}
         className={cn("h-11 max-w-sm", error && "border-danger")}
       />
       <p id={hintId} className={cn("text-xs leading-5", error ? "font-medium text-danger" : "text-ink-soft")}>
         {error ?? hint}
       </p>
+      {note && (
+        <p id={noteId} data-slot="rule-note" className="text-xs leading-5 font-medium text-warning">
+          {note}
+        </p>
+      )}
     </div>
   );
 }

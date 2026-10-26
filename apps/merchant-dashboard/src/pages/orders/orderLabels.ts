@@ -82,6 +82,7 @@ const LABELS = {
     risk_paid_after_cod_switch: "Paid online after switching to COD",
     risk_payment_amount_mismatch: "Paid amount differs",
     risk_carrier_cancel_unconfirmed: "Courier still shows a cancelled parcel moving",
+    risk_otp_unavailable: "Phone code could not be sent",
     flagged: "Flagged",
   },
   ar: {
@@ -141,6 +142,7 @@ const LABELS = {
     risk_paid_after_cod_switch: "دُفع إلكترونيًا بعد التحويل للدفع عند الاستلام",
     risk_payment_amount_mismatch: "المبلغ المدفوع مختلف",
     risk_carrier_cancel_unconfirmed: "شركة الشحن ما زالت تُظهر طردًا ملغى يتحرك",
+    risk_otp_unavailable: "تعذّر إرسال رمز التحقق",
     flagged: "مشتبه به",
   },
 } satisfies Messages;

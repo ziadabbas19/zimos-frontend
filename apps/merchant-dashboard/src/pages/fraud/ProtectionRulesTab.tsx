@@ -1,11 +1,14 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "@store-builder/ui";
 import {
   ApiError,
   PROTECTION_NUMBER_RULES,
+  protectionCapabilities,
+  protectionOtpChannelDelivers,
   protectionResolveRules,
   protectionSaveRules,
   type CheckoutOtpSettings,
+  type ProtectionCapabilities,
   type ProtectionRuleKey,
 } from "@store-builder/api-client";
 import { AccordionGroup, AccordionSection } from "@/components/Accordion";
@@ -25,6 +28,8 @@ import {
   EDITOR_ROLES,
   GROUPS,
   NUMBER_BOUNDS,
+  deadRuleReason,
+  effectiveBotProtection,
   isNumberRule,
   parseCountries,
   rangeProblem,
@@ -69,6 +74,21 @@ export function ProtectionRulesTab() {
   const [error, setError] = useState<string | null>(null);
   const [showErrors, setShowErrors] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
+  // What the platform can act on right now (GET /fraud/capabilities). Null until it answers, or if it
+  // cannot: then nothing is warned about and an unset bot guard reads as the platform's usual default, off.
+  const [capabilities, setCapabilities] = useState<ProtectionCapabilities | null>(null);
+  useEffect(() => {
+    let live = true;
+    protectionCapabilities(apiClient, workspaceId).then(
+      (next) => {
+        if (live) setCapabilities(next);
+      },
+      () => undefined
+    );
+    return () => {
+      live = false;
+    };
+  }, [workspaceId]);
 
   const editable = EDITOR_ROLES.has(currentWorkspace?.role ?? "") && !forbidden;
   const disabled = !editable || saving;
@@ -144,10 +164,31 @@ export function ProtectionRulesTab() {
     ? [t[`otpBy_${draft.otp.channel}`], t[`otpApply_${draft.otp.apply_to}`], fmt(t.otpDigits, { n: draft.otp.code_length })].join(t.summarySep)
     : t.otpOffSummary;
 
+  // ---- What has no effect on this platform right now. ----
+
+  const botOn = effectiveBotProtection(draft, capabilities);
+  const botHint = draft.botProtection === null ? `${t.botProtectionHint} ${botOn ? t.botDefaultOn : t.botDefaultOff}` : t.botProtectionHint;
+  const captchaNote = capabilities && !capabilities.captcha.provider ? t.deadCaptcha : undefined;
+  const blockedCountriesNote = !capabilities
+    ? undefined
+    : !capabilities.visitorGate.enabled
+      ? t.deadBlockedCountriesGate
+      : !capabilities.ipIntel.provider
+        ? t.deadBlockedCountriesIntel
+        : undefined;
+  const ruleNote = (key: ProtectionRuleKey) => {
+    const reason = deadRuleReason(key, capabilities);
+    return reason === "ipIntel" ? t.deadIpIntel : reason === "networkRate" ? t.deadNetworkRate : undefined;
+  };
+  const otpNote =
+    capabilities && !protectionOtpChannelDelivers(capabilities, draft.otp.channel)
+      ? `${t.otpChannelDown} ${capabilities.checkoutOtp.guard ? t.otpChannelDownGuard : t.otpChannelDownNoGuard}`
+      : undefined;
+
   const hiddenCountries = parseCountries(draft.blockedCountries)?.length ?? 0;
   const visitorsSummary = [
-    draft.botProtection ? t.botOnSummary : t.botOffSummary,
-    draft.botProtection && draft.botCaptcha ? t.botCaptchaSummary : null,
+    botOn ? t.botOnSummary : t.botOffSummary,
+    botOn && draft.botCaptcha ? t.botCaptchaSummary : null,
     hiddenCountries > 0 ? pluralOf(t, "countriesHidden", hiddenCountries) : null,
   ]
     .filter(Boolean)
@@ -188,6 +229,7 @@ export function ProtectionRulesTab() {
                     ruleKey={key}
                     draft={draft}
                     disabled={disabled}
+                    note={ruleNote(key)}
                     t={t}
                     error={
                       showErrors && isNumberRule(key) && rangeProblems.includes(key)
@@ -230,6 +272,7 @@ export function ProtectionRulesTab() {
               onChange={(enabled) => patch({ otp: { ...draft.otp, enabled } })}
               label={t.otpEnabled}
               hint={t.otpEnabledHint}
+              note={otpNote}
             />
             {draft.otp.enabled && (
               <div data-slot="rule-detail" className="grid gap-3 rounded-2xl bg-paper-sunken/60 px-3 py-3 sm:grid-cols-3">
@@ -282,33 +325,35 @@ export function ProtectionRulesTab() {
           title={t.visitorsHeading}
           icon={IconRobot}
           summary={visitorsSummary}
-          badge={chip(blockedCountriesProblem, draft.botProtection, draft.botProtection ? t.chipOn : t.chipOff)}
+          badge={chip(blockedCountriesProblem, botOn, botOn ? t.chipOn : t.chipOff)}
           persistKey="fraud:rules:visitors"
           keepMounted
         >
           <div className="space-y-3">
             <SwitchRow
-              checked={draft.botProtection}
+              checked={botOn}
               disabled={disabled}
               onChange={(botProtection) => patch({ botProtection })}
               label={t.botProtection}
-              hint={t.botProtectionHint}
+              hint={botHint}
             />
-            {draft.botProtection && (
+            {botOn && (
               <SwitchRow
                 checked={draft.botCaptcha}
-                disabled={disabled}
+                disabled={disabled || (Boolean(captchaNote) && !draft.botCaptcha)}
                 onChange={(botCaptcha) => patch({ botCaptcha })}
                 label={t.botCaptcha}
                 hint={t.botCaptchaHint}
+                note={captchaNote}
               />
             )}
             <CountriesField
               value={draft.blockedCountries}
-              disabled={disabled}
+              disabled={disabled || (Boolean(blockedCountriesNote) && draft.blockedCountries.trim() === "")}
               label={t.blockedCountries}
               hint={t.blockedCountriesHint}
               error={showErrors && blockedCountriesProblem ? t.allowedCountriesError : undefined}
+              note={blockedCountriesNote}
               onChange={(blockedCountries) => patch({ blockedCountries })}
             />
           </div>

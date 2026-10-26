@@ -36,6 +36,7 @@ const STRINGS = {
     reason_ai_gibberish: "AI check: the name or address looks made up",
     reason_ai_abusive: "AI check: abusive words",
     reason_ai_incomplete_address: "AI check: the address is not enough to deliver",
+    reason_otp_unavailable: "The phone code reached the customer on no channel, so the order was placed unverified",
   },
   ar: {
     level_low: "خطورة منخفضة",
@@ -57,6 +58,7 @@ const STRINGS = {
     reason_ai_gibberish: "فحص الذكاء الاصطناعي: الاسم أو العنوان يبدو مختلقًا",
     reason_ai_abusive: "فحص الذكاء الاصطناعي: ألفاظ مسيئة",
     reason_ai_incomplete_address: "فحص الذكاء الاصطناعي: العنوان لا يكفي للتوصيل",
+    reason_otp_unavailable: "لم يصل رمز التحقق إلى العميل عبر أي قناة، فقُبل الطلب دون تحقق",
   },
 } satisfies Messages;
 

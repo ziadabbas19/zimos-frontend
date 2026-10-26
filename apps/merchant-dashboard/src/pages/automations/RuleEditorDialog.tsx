@@ -79,7 +79,7 @@ const STRINGS = {
     returningOnly: "Returning customers only",
     risk: "Risk level",
     risk_low: "Low",
-    risk_medium: "Medium",
+    risk_moderate: "Medium",
     risk_high: "High",
     coupon: "Coupon code for {{coupon_code}}",
     delayDays: "Days after delivery",
@@ -143,7 +143,7 @@ const STRINGS = {
     returningOnly: "العملاء العائدون فقط",
     risk: "مستوى الخطورة",
     risk_low: "منخفض",
-    risk_medium: "متوسط",
+    risk_moderate: "متوسط",
     risk_high: "مرتفع",
     coupon: "كود الخصم لـ {{coupon_code}}",
     delayDays: "عدد الأيام بعد التسليم",
@@ -197,7 +197,8 @@ export function RuleEditorDialog({
   const [governorates, setGovernorates] = useState((c.governorates ?? []).join("، "));
   const [tags, setTags] = useState((c.tags ?? []).join("، "));
   const [firstOrder, setFirstOrder] = useState(c.isFirstOrder === true ? "first" : c.isFirstOrder === false ? "returning" : "");
-  const [risk, setRisk] = useState<string[]>(c.riskLevel ?? []);
+  // "medium" is how rules were saved before the levels matched the orders' ("moderate").
+  const [risk, setRisk] = useState<string[]>(() => (c.riskLevel ?? []).map((level: string) => (level === "medium" ? "moderate" : level)));
   const [segment, setSegment] = useState<SegmentConditions>({ segmentId: c.segmentId ?? null, excludeSegmentId: c.excludeSegmentId ?? null });
   const [scope, setScope] = useState({ productIds: c.productIds ?? [], funnelIds: c.funnelIds ?? [] });
   const [coupon, setCoupon] = useState(c.couponCode ?? "");
@@ -448,7 +449,7 @@ export function RuleEditorDialog({
             <fieldset>
               <legend className="mb-1.5 text-sm font-medium text-ink">{t.risk}</legend>
               <div className="flex flex-wrap gap-3">
-                {(["low", "medium", "high"] as const).map((level) => (
+                {(["low", "moderate", "high"] as const).map((level) => (
                   <label key={level} className="flex cursor-pointer items-center gap-1.5 text-sm text-ink">
                     <input
                       type="checkbox"

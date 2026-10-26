@@ -3,6 +3,7 @@ import {
   PROTECTION_SWITCH_RULES,
   type CheckoutOtpSettings,
   type ProtectionAction,
+  type ProtectionCapabilities,
   type ProtectionNumberRule,
   type ProtectionRuleKey,
   type ProtectionRules,
@@ -46,7 +47,8 @@ export interface Draft {
   strictPhone: boolean;
   countries: string;
   blockedCountries: string;
-  botProtection: boolean;
+  /** null: not set for this store, so the platform default applies (`effectiveBotProtection`). */
+  botProtection: boolean | null;
   botCaptcha: boolean;
   otp: CheckoutOtpSettings;
   on: Record<ProtectionRuleKey, boolean>;
@@ -68,8 +70,8 @@ export function toDraft(rules: ProtectionRules): Draft {
     strictPhone: rules.phone_validation === "strict",
     countries: rules.allowed_countries.join(", "),
     blockedCountries: rules.blocked_countries.join(", "),
-    // Unset means the platform default, which is on for a live store.
-    botProtection: rules.bot_protection !== false,
+    // Unset stays unset: the platform default applies, and saving does not pin it.
+    botProtection: rules.bot_protection,
     botCaptcha: rules.bot_captcha,
     otp: { ...rules.checkout_otp },
     on,
@@ -105,6 +107,26 @@ export function toRules(draft: Draft): ProtectionRules {
     switches,
     actions: { ...draft.actions },
   };
+}
+
+/**
+ * Whether the bot guard is on for this store: its own setting, else the
+ * platform default (GET /fraud/capabilities), which is off until it says otherwise.
+ */
+export function effectiveBotProtection(draft: Draft, capabilities: ProtectionCapabilities | null): boolean {
+  return draft.botProtection ?? capabilities?.botProtection.platformDefault ?? false;
+}
+
+/**
+ * Why a rule cannot fire on this platform right now, or null: no IP lookup
+ * (country, VPN), or no delivery rate across stores. Null while the
+ * capabilities are unknown.
+ */
+export function deadRuleReason(key: ProtectionRuleKey, capabilities: ProtectionCapabilities | null): "ipIntel" | "networkRate" | null {
+  if (!capabilities) return null;
+  if ((key === "block_outside_country" || key === "block_vpn") && !capabilities.ipIntel.provider) return "ipIntel";
+  if (key === "min_network_delivery_rate" && !capabilities.networkDeliveryRate.available) return "networkRate";
+  return null;
 }
 
 export function rangeProblem(key: ProtectionNumberRule, draft: Draft): boolean {
