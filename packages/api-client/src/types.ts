@@ -2623,7 +2623,9 @@ export type PlanFeatureKey =
   // On top of advanced_analytics: the Visitors section's visits, campaigns and governorates.
   | "visitor_insights"
   | "remove_branding"
-  | "priority_support";
+  | "priority_support"
+  // Loyalty points: with LOYALTY_REQUIRE_PLAN_FEATURE, switching the programme on, and earning or spending points.
+  | "loyalty";
 
 /**
  * One row of `GET /admin/workspaces`. This is a purpose-built overview row,

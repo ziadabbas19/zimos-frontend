@@ -17,7 +17,13 @@
  *   GET /store/:ws/account/loyalty      → ShopperLoyalty (X-Shopper-Token; 401 SHOPPER_NOT_SIGNED_IN)
  *   Checkout: `loyaltyPoints` (int) with X-Shopper-Token, with cash on delivery only.
  *   On field `loyaltyPoints`: 401 SHOPPER_NOT_SIGNED_IN,
- *   422 LOYALTY_OFF, LOYALTY_TOO_FEW, LOYALTY_NOT_ENOUGH. The 201 adds `loyalty` (LoyaltyRedemption).
+ *   422 LOYALTY_OFF, LOYALTY_FROZEN, LOYALTY_TOO_FEW, LOYALTY_NOT_ENOUGH, and with the
+ *   API's LOYALTY_GUARD_ENABLED LOYALTY_UNAVAILABLE / LOYALTY_DEVICE_LIMIT.
+ *   The 201 adds `loyalty` (LoyaltyRedemption).
+ *
+ * Frozen (the store's plan lacks `loyalty` with LOYALTY_REQUIRE_PLAN_FEATURE, or its
+ * subscription stopped with LOYALTY_GUARD_ENABLED): balances are kept and shown, but
+ * nothing is earned, spent or expired; the storefront's `program` is null meanwhile.
  *
  * Points are whole numbers. Money is integer minor units (sent as a string in the ledger).
  */
@@ -36,14 +42,24 @@ export interface LoyaltySettings {
   minRedeemPoints: number;
   /** Most of an order's total points may pay, 1–100. */
   maxRedeemPercent: number;
+  /** Most points one order may take (1–10,000,000), or null for no cap but the percent. Older APIs leave it out. */
+  maxRedeemPointsPerOrder?: number | null;
   /** Days without earning or spending after which a balance expires (30–1825), or null for never. */
   expiryDays: number | null;
 }
+
+/** Why a store's points are frozen: its plan lacks `loyalty`, or its subscription stopped. */
+export type LoyaltyFrozenReason = "plan" | "subscription";
 
 export interface LoyaltyOverview {
   settings: LoyaltySettings;
   /** Enabled and fully set: shoppers earn and spend. */
   active: boolean;
+  /** Switching the programme on would be refused (403 PLAN_FEATURE_REQUIRED). Older APIs leave it out. */
+  planLocked?: boolean;
+  /** Points kept and shown, but neither earned, spent nor expired now. */
+  frozen?: boolean;
+  frozenReason?: LoyaltyFrozenReason | null;
   currency: string;
   customersWithPoints: number;
   outstandingPoints: number;
@@ -59,6 +75,7 @@ export interface LoyaltySettingsPayload {
   pointValue?: number | null;
   minRedeemPoints?: number;
   maxRedeemPercent?: number;
+  maxRedeemPointsPerOrder?: number | null;
   expiryDays?: number | null;
 }
 
@@ -69,6 +86,7 @@ export const LOYALTY_LIMITS = {
   pointValueMin: 1,
   pointValueMax: 1_000_000,
   minRedeemMax: 10_000_000,
+  maxPerOrderMax: 10_000_000,
   expiryMin: 30,
   expiryMax: 1825,
   adjustMax: 10_000_000,
@@ -104,8 +122,10 @@ export interface LoyaltyAccount {
   /** What the balance is worth, minor units; null while no point value is set. */
   worth: string | null;
   currency: string;
-  /** When the balance expires if nothing is earned or spent; null for never or an empty balance. */
+  /** When the balance expires if nothing is earned or spent; null for never, an empty balance or a frozen one. */
   expiresAt: string | null;
+  /** The store's points are frozen: the balance shows, but can't be earned or spent now. Older APIs leave it out. */
+  frozen?: boolean;
   /** Newest first. */
   history: LoyaltyTransaction[];
 }
@@ -149,6 +169,8 @@ export interface LoyaltyProgram {
   pointValue: number;
   minRedeemPoints: number;
   maxRedeemPercent: number;
+  /** Most points one order takes, or null / absent for no cap but the percent. */
+  maxRedeemPointsPerOrder?: number | null;
   expiryDays: number | null;
   currency: string;
 }
@@ -189,7 +211,7 @@ export interface LoyaltyRedemption {
   /** Points left. */
   balance?: number;
   currency?: string;
-  /** When not applied: "unusable", "nothing_due", "error" or "covers_order_cod_unavailable". */
+  /** When not applied: "unusable", "frozen", "nothing_due", "error" or "covers_order_cod_unavailable". */
   reason?: string;
 }
 
@@ -200,17 +222,21 @@ export interface LoyaltyCheckoutFields {
 
 /**
  * Why a checkout refused the points, when they were the reason: "signed_out",
- * "off" (the store has no programme now), "too_few" (under the minimum),
- * "not_enough" (more than the balance), "cod_only" (the way to pay is not
- * cash on delivery), or null.
+ * "off" (the store has no programme now, or its points are frozen),
+ * "too_few" (under the minimum), "not_enough" (more than the balance),
+ * "unavailable" (not on this order: the store's guard), "device_limit"
+ * (this device used another account's points within a day), "cod_only" (the
+ * way to pay is not cash on delivery), or null.
  */
-export type LoyaltyRefusal = "signed_out" | "off" | "too_few" | "not_enough" | "cod_only";
+export type LoyaltyRefusal = "signed_out" | "off" | "too_few" | "not_enough" | "unavailable" | "device_limit" | "cod_only";
 
 export function loyaltyRefusalOf(err: unknown): LoyaltyRefusal | null {
   if (!(err instanceof ApiError)) return null;
-  if (err.code === "LOYALTY_OFF") return "off";
+  if (err.code === "LOYALTY_OFF" || err.code === "LOYALTY_FROZEN") return "off";
   if (err.code === "LOYALTY_TOO_FEW") return "too_few";
   if (err.code === "LOYALTY_NOT_ENOUGH") return "not_enough";
+  if (err.code === "LOYALTY_UNAVAILABLE") return "unavailable";
+  if (err.code === "LOYALTY_DEVICE_LIMIT") return "device_limit";
   // The other refusals carry their own code and name the field in `details`.
   const details = apiErrorDetails<unknown>(err);
   const named = Array.isArray(details) && details.some((d) => !!d && (d as { field?: unknown }).field === "loyaltyPoints");
