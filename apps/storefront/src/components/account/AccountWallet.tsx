@@ -185,9 +185,11 @@ export function AccountPoints() {
             <li>{copy.redeemLine(100, amount(100 * program.pointValue))}</li>
             {program.minRedeemPoints > 1 && <li>{copy.pointsMin(program.minRedeemPoints)}</li>}
             {program.maxRedeemPercent < 100 && <li>{copy.pointsShare(program.maxRedeemPercent)}</li>}
+            {program.maxRedeemPointsPerOrder ? <li>{copy.pointsCap(program.maxRedeemPointsPerOrder)}</li> : null}
           </ul>
         ) : (
-          <p className="mt-4 border-t border-line pt-4 text-sm text-ink-soft">{copy.programOff}</p>
+          // Frozen (the store's plan or subscription): the balance waits, nothing is lost.
+          <p className="mt-4 border-t border-line pt-4 text-sm text-ink-soft">{data.frozen ? copy.pointsFrozen : copy.programOff}</p>
         )}
       </section>
 
