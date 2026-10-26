@@ -26,6 +26,7 @@ import { formatDate } from "@/lib/format";
 import { useT, fmt, useCommon, type Messages } from "@/i18n/LocaleContext";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
+import { ListSkeleton } from "@/components/list";
 import { DataTable, type Column } from "@/components/DataTable";
 import { EmptyState } from "@/components/EmptyState";
 import { Field, TextField } from "@/components/Field";
@@ -282,7 +283,7 @@ function DeliveriesTab() {
   ];
 
   return (
-    <DataState loading={list.loading} error={list.error} onRetry={() => void list.refresh()}>
+    <DataState skeleton={<ListSkeleton />} loading={list.loading} error={list.error} onRetry={() => void list.refresh()}>
       <Card className="p-0">
         <DataTable
           columns={columns}
@@ -638,7 +639,7 @@ function FilesTab() {
         </p>
         {uploadButton}
       </div>
-      <DataState loading={list.loading} error={list.error} onRetry={() => void list.refresh()}>
+      <DataState skeleton={<ListSkeleton rows={4} />} loading={list.loading} error={list.error} onRetry={() => void list.refresh()}>
         <Card className="p-0">
           <DataTable
             columns={columns}

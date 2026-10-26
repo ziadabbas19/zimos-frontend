@@ -20,6 +20,7 @@ import {
   percentToBasisPoints,
 } from "@/lib/format";
 import { DataState } from "@/components/DataState";
+import { ListSkeleton } from "@/components/list";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Modal } from "@/components/Modal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -459,6 +460,7 @@ function ShippingTaxBody() {
         </div>
 
         <DataState
+          skeleton={<ListSkeleton variant="card" rows={3} />}
           loading={zones.loading}
           error={zones.error}
           empty={zoneList.length === 0}
@@ -500,6 +502,7 @@ function ShippingTaxBody() {
         </div>
 
         <DataState
+          skeleton={<ListSkeleton variant="table" rows={4} />}
           loading={taxRates.loading}
           error={taxRates.error}
           empty={taxList.length === 0}

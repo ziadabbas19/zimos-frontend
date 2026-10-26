@@ -42,6 +42,7 @@ import { useLocale, useT, fmt, type Messages } from "@/i18n/LocaleContext";
 import { useCatalogLabels } from "./catalogLabels";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
+import { ListSkeleton } from "@/components/list";
 import { Modal } from "@/components/Modal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { TextField, Field } from "@/components/Field";
@@ -707,6 +708,7 @@ export function CollectionsPage() {
       )}
 
       <DataState
+        skeleton={<ListSkeleton />}
         loading={list.loading}
         error={list.error}
         empty={flat.length === 0}

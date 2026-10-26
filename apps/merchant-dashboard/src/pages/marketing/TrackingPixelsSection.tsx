@@ -37,6 +37,7 @@ import { useErrorMessage } from "@/lib/errorMessages";
 import { formatRelativeTime } from "@/lib/relativeTime";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { DataState } from "@/components/DataState";
+import { ListSkeleton } from "@/components/list";
 import { DataTable, type Column } from "@/components/DataTable";
 import { EmptyState } from "@/components/EmptyState";
 import { Modal } from "@/components/Modal";
@@ -365,7 +366,7 @@ export function TrackingPixelsSection({ onEventsChanged }: { onEventsChanged?: (
       <Alert className="mt-3">{t.capiWarning}</Alert>
 
       <div className="mt-3">
-        <DataState loading={loading} error={error} onRetry={() => void refresh()}>
+        <DataState skeleton={<ListSkeleton rows={3} />} loading={loading} error={error} onRetry={() => void refresh()}>
           {data && data.pixels.length === 0 ? (
             <EmptyState
               icon={<Radio className="size-6" aria-hidden />}

@@ -30,6 +30,7 @@ import { formatDate } from "@/lib/format";
 import { useT, fmt, useCommon, type Messages } from "@/i18n/LocaleContext";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
+import { ListSkeleton } from "@/components/list";
 import { EmptyState } from "@/components/EmptyState";
 import { Field, TextField } from "@/components/Field";
 import { FilterTabs } from "@/components/FilterTabs";
@@ -240,7 +241,7 @@ export function CoursesPage() {
           </Button>
         }
       />
-      <DataState loading={list.loading} error={list.error} onRetry={() => void list.refresh()}>
+      <DataState skeleton={<ListSkeleton />} loading={list.loading} error={list.error} onRetry={() => void list.refresh()}>
         {courses.length === 0 ? (
           <EmptyState
             icon={<GraduationCap className="size-6" aria-hidden />}
@@ -715,7 +716,7 @@ function StudentsTab({ courseId }: { courseId: string }) {
         </form>
       </Card>
 
-      <DataState loading={list.loading} error={list.error} onRetry={() => void list.refresh()}>
+      <DataState skeleton={<ListSkeleton />} loading={list.loading} error={list.error} onRetry={() => void list.refresh()}>
         {data && data.students.length === 0 ? (
           <EmptyState title={t.noStudents} />
         ) : (

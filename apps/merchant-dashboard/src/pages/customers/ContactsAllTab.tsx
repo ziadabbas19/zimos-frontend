@@ -19,6 +19,7 @@ import { useErrorMessage } from "@/lib/errorMessages";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useT, fmt, useCommon, type Messages } from "@/i18n/LocaleContext";
 import { DataState } from "@/components/DataState";
+import { ListSkeleton } from "@/components/list";
 import { DataTable, type Column } from "@/components/DataTable";
 import { EmptyState } from "@/components/EmptyState";
 import { Field, TextField } from "@/components/Field";
@@ -313,7 +314,7 @@ export function ContactsAllTab({ segmentId, onSegmentChange }: { segmentId: stri
         </div>
       </div>
 
-      <DataState loading={list.loading} error={list.error} onRetry={() => void list.refresh()}>
+      <DataState skeleton={<ListSkeleton />} loading={list.loading} error={list.error} onRetry={() => void list.refresh()}>
         <Card className="p-0">
           <DataTable
             columns={columns}

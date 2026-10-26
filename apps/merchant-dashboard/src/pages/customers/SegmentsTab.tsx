@@ -20,6 +20,7 @@ import { useErrorMessage } from "@/lib/errorMessages";
 import { formatMoney, majorToMinor, minorToMajorInput } from "@/lib/format";
 import { useT, fmt, useCommon, type Messages } from "@/i18n/LocaleContext";
 import { DataState } from "@/components/DataState";
+import { ListSkeleton } from "@/components/list";
 import { EmptyState } from "@/components/EmptyState";
 import { Field, TextField } from "@/components/Field";
 import { Modal } from "@/components/Modal";
@@ -209,7 +210,7 @@ export function SegmentsTab({ onView }: { onView: (segmentId: string) => void })
         </Button>
       </div>
 
-      <DataState loading={list.loading} error={list.error} onRetry={() => void list.refresh()}>
+      <DataState skeleton={<ListSkeleton rows={4} />} loading={list.loading} error={list.error} onRetry={() => void list.refresh()}>
         {segments.length === 0 ? (
           <EmptyState
             icon={<ListFilter className="size-6" aria-hidden />}
