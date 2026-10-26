@@ -61,6 +61,9 @@ export type ApiErrorCode =
   // storefront checkout / fraud / autosave
   | "ORDER_REJECTED"
   | "INVALID_PHONE"
+  // 422 on saving the fraud rules: phone codes switched on (or a rule asking for one) while no
+  // channel can deliver them; details[0] = { field, message, channel } (CHECKOUT_OTP_DELIVERY_GUARD_ENABLED)
+  | "OTP_CHANNEL_UNAVAILABLE"
   | "CART_NOT_FOUND"
   | "CART_TOKEN_OR_ITEM_REQUIRED"
   // funnel runtime

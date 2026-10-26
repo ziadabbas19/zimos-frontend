@@ -46,7 +46,8 @@ export interface AutomationFlowConditions {
   governorates?: string[];
   source?: "store" | "funnel" | null;
   funnelIds?: string[];
-  riskLevel?: Array<"low" | "medium" | "high">;
+  /** The levels orders carry. A rule saved before with "medium" is read back as "moderate". */
+  riskLevel?: Array<"low" | "moderate" | "high">;
   isFirstOrder?: boolean | null;
   tags?: string[];
   /** Stop a waiting sequence when the order's status changed meanwhile. Default true. */

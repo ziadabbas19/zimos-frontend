@@ -3850,10 +3850,15 @@ export class ApiClient {
     return payment;
   }
 
-  async switchOrderToCod(workspaceId: string, orderId: string, paymentToken: string, previewToken?: string) {
+  /**
+   * A store may want the phone verified first: 428 OTP_REQUIRED (details:
+   * CheckoutOtpChallenge) and a code is sent to the order's phone; send it
+   * back here as `otpCode`. 422 INVALID_CODE / EXPIRED, 429 TOO_MANY_ATTEMPTS.
+   */
+  async switchOrderToCod(workspaceId: string, orderId: string, paymentToken: string, previewToken?: string, otpCode?: string) {
     const { payment } = await this.request<{ payment: ShopperPaymentStatus }>(
       `/store/${workspaceId}/orders/${orderId}/payment/switch-to-cod`,
-      { method: "POST", body: {}, auth: false, headers: this.shopperPaymentHeaders(paymentToken, previewToken) }
+      { method: "POST", body: otpCode ? { otpCode } : {}, auth: false, headers: this.shopperPaymentHeaders(paymentToken, previewToken) }
     );
     return payment;
   }

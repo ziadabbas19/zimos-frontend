@@ -158,7 +158,10 @@ export interface ProtectionRules {
   allowed_countries: string[];
   /** ISO2 codes whose visitors do not see the store at all. */
   blocked_countries: string[];
-  /** Checkout bot guard. null = the platform default (on in production). */
+  /**
+   * Checkout bot guard. null = the platform default, which is off unless the
+   * platform sets it on (`ProtectionCapabilities.botProtection.platformDefault`).
+   */
   bot_protection: boolean | null;
   /** Adds the invisible challenge to the bot guard; only acts once a challenge provider is configured. */
   bot_captcha: boolean;
@@ -244,6 +247,40 @@ export async function protectionSaveRules(
   );
   const settings = body.workspace?.settings ?? body.settings;
   return protectionResolveRules(settings?.fraud_rules);
+}
+
+/**
+ * What the platform can act on right now (GET /fraud/capabilities, any team
+ * member). A rule whose provider is missing is kept but never fires.
+ */
+export interface ProtectionCapabilities {
+  /** What an unset `bot_protection` means. */
+  botProtection: { platformDefault: boolean };
+  /** The IP lookup; null: `block_outside_country`, `block_vpn` and `blocked_countries` never fire. */
+  ipIntel: { provider: string | null };
+  /** The challenge verifier; null: `bot_captcha` is skipped. */
+  captcha: { provider: string | null };
+  /** Whether IPs blocked with scope `visit` (and blocked countries) are refused at all. */
+  visitorGate: { enabled: boolean };
+  /** false: `min_network_delivery_rate` never fires. */
+  networkDeliveryRate: { available: boolean };
+  /**
+   * Whether codes can be delivered on each channel (WhatsApp falls back to
+   * SMS). `guard`: switching codes on while they cannot arrive is refused
+   * (OTP_CHANNEL_UNAVAILABLE), and an order whose code reached no channel goes
+   * through marked `otp_unavailable`.
+   */
+  checkoutOtp: { guard: boolean; whatsapp: boolean; sms: boolean };
+}
+
+export async function protectionCapabilities(client: ApiClient, workspaceId: string): Promise<ProtectionCapabilities> {
+  return client.request<ProtectionCapabilities>(`${fraudBase(workspaceId)}/capabilities`);
+}
+
+/** Whether codes sent on `channel` can reach a shopper (WhatsApp falls back to SMS). */
+export function protectionOtpChannelDelivers(capabilities: ProtectionCapabilities, channel: "whatsapp" | "sms"): boolean {
+  const { whatsapp, sms } = capabilities.checkoutOtp;
+  return channel === "sms" ? sms : whatsapp || sms;
 }
 
 // ------------------------------------------------------- storefront guard --
