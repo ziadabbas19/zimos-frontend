@@ -77,6 +77,18 @@ export const EMAIL_SUPPRESSIONS_ENABLED = import.meta.env.VITE_EMAIL_SUPPRESSION
 /** Custom headers on outgoing webhooks. */
 export const WEBHOOK_HEADERS_ENABLED = import.meta.env.VITE_WEBHOOK_HEADERS_ENABLED === "true";
 
+/**
+ * Tills and kitchens on the public API: the API key option for the order's
+ * kitchen status (orders:pos_status). Turn on with the API's PUBLIC_API_ACK_ENABLED.
+ */
+export const PUBLIC_API_ACK_ENABLED = import.meta.env.VITE_PUBLIC_API_ACK_ENABLED === "true";
+
+/**
+ * Each menu choice's code in the merchant's till, sent with the order's
+ * options to integrations. Turn on with the API's ORDER_PAYLOAD_OPTIONS_ENABLED.
+ */
+export const ORDER_PAYLOAD_OPTIONS_ENABLED = import.meta.env.VITE_ORDER_PAYLOAD_OPTIONS_ENABLED === "true";
+
 /** The block designer for order emails. */
 export const ORDER_EMAIL_DESIGN_ENABLED = import.meta.env.VITE_ORDER_EMAIL_DESIGN_ENABLED === "true";
 

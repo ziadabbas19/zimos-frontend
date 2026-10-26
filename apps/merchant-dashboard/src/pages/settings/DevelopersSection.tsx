@@ -35,7 +35,7 @@ import { DataState } from "@/components/DataState";
 import { PlanFeatureNotice } from "@/components/PlanFeatureNotice";
 import { WebhookDeliveryLog, WebhookEndpointNotes, WebhookFilterField } from "./WebhookExtras";
 import { EditWebhookEndpointModal, WebhookHeadersField, WebhookHeadersNote, useWebhookHeaders } from "./WebhookEndpointFields";
-import { WEBHOOK_HEADERS_ENABLED } from "@/lib/features";
+import { PUBLIC_API_ACK_ENABLED, WEBHOOK_HEADERS_ENABLED } from "@/lib/features";
 import { ApiKeyAccessPicker, EMPTY_ACCESS, countExtraResources, scopesForAccess, type AccessMap } from "./ApiKeyAccessPicker";
 import { TextField } from "@/components/Field";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -80,6 +80,8 @@ const STRINGS = {
     readOnlyAccessHint: "See orders and their shipments. Changes nothing.",
     readWriteAccess: "Read and update orders",
     readWriteAccessHint: "Also confirm, cancel, ship, deliver and mark COD cash collected.",
+    posAccess: "Kitchen status (till system)",
+    posAccessHint: "Lets a till mark an order received, preparing, ready or completed. It never moves the order's stage.",
     create: "Create",
     creating: "Creating…",
     cancel: "Cancel",
@@ -111,6 +113,8 @@ const STRINGS = {
     events: "Events",
     allEvents: "All events",
     allEventsHint: "Including events added later.",
+    alsoExplicit: "“All events” leaves these out. Tick them to receive them too:",
+    customerDataMasked: "Customer details arrive masked: whoever last saved this address can't see them in full. They arrive in full once a teammate who can see customers in full saves the address again.",
     pickEvents: "Choose events",
     endpointCreatedTitle: "Copy your signing secret",
     endpointCreatedBody: "Your server uses it to check each request really came from us. It's shown only now and when you rotate it.",
@@ -173,6 +177,8 @@ const STRINGS = {
     readOnlyAccessHint: "يشوف الأوردرات وشحناتها. مابيغيّرش حاجة.",
     readWriteAccess: "قراءة وتحديث الأوردرات",
     readWriteAccessHint: "وكمان يأكد ويلغي ويشحن ويسلّم ويسجل تحصيل الكاش.",
+    posAccess: "حالة المطبخ (نظام الكاشير)",
+    posAccessHint: "يتيح لنظام الكاشير أن يسجّل أن الطلب استُلم أو قيد التحضير أو جاهز أو اكتمل. لا يغيّر مرحلة الطلب.",
     create: "إنشاء",
     creating: "بيتعمل…",
     cancel: "إلغاء",
@@ -203,6 +209,8 @@ const STRINGS = {
     events: "الأحداث",
     allEvents: "كل الأحداث",
     allEventsHint: "حتى اللي هتتضاف بعدين.",
+    alsoExplicit: "«كل الأحداث» لا تشمل هذه الأحداث. حدّدها إن أردت أن تصلك أيضًا:",
+    customerDataMasked: "تصل بيانات العملاء مخفية لأن من حفظ هذا العنوان آخر مرة لا يملك صلاحية عرضها كاملة. وتصل كاملة إذا حفظه من جديد عضو يملك هذه الصلاحية.",
     pickEvents: "اختار الأحداث",
     endpointCreatedTitle: "انسخ مفتاح التوقيع",
     endpointCreatedBody: "السيرفر بتاعك بيستخدمه عشان يتأكد إن كل طلب جاي مننا فعلاً. بيظهر دلوقتي بس، ولما تغيّره.",
@@ -326,7 +334,8 @@ function ApiKeysPanel({ t, onForbidden }: { t: T; onForbidden: () => void }) {
 
   return (
     <div data-search-anchor="api-keys">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      {/* The search's "kitchen status key" lands here: the new-key form offers orders:pos_status. */}
+      <div className="flex flex-wrap items-start justify-between gap-3" data-search-anchor="api-key-pos-status">
         <div className="min-w-0">
           <h3 className="font-medium text-ink">{t.keysTitle}</h3>
           <p className="text-sm text-ink-soft">
@@ -365,7 +374,8 @@ function ApiKeysPanel({ t, onForbidden }: { t: T; onForbidden: () => void }) {
                       {key.keyPrefix}…
                     </code>
                     {" · "}
-                    {key.scopes.some((s) => s.startsWith("orders:") && s !== "orders:read") ? `${t.scopeRead} + ${t.scopeWrite}` : t.scopeRead}
+                    {key.scopes.some((s) => s.startsWith("orders:") && s !== "orders:read" && s !== "orders:pos_status") ? `${t.scopeRead} + ${t.scopeWrite}` : t.scopeRead}
+                    {key.scopes.includes("orders:pos_status") ? ` + ${t.posAccess}` : ""}
                     {countExtraResources(key.scopes) > 0 && (
                       <span title={key.scopes.join(", ")}> {fmt(t.scopeMore, { count: countExtraResources(key.scopes) })}</span>
                     )}
@@ -424,6 +434,8 @@ function NewKeyModal({ t, open, onClose, onCreated }: { t: T; open: boolean; onC
   const errorMessage = useErrorMessage();
   const [name, setName] = useState("");
   const [write, setWrite] = useState(true);
+  // orders:pos_status, offered while PUBLIC_API_ACK_ENABLED (VITE_PUBLIC_API_ACK_ENABLED).
+  const [pos, setPos] = useState(false);
   const [access, setAccess] = useState<AccessMap>(EMPTY_ACCESS);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -432,6 +444,7 @@ function NewKeyModal({ t, open, onClose, onCreated }: { t: T; open: boolean; onC
   function close() {
     setName("");
     setWrite(true);
+    setPos(false);
     setAccess(EMPTY_ACCESS);
     setError(null);
     setSecret(null);
@@ -443,7 +456,11 @@ function NewKeyModal({ t, open, onClose, onCreated }: { t: T; open: boolean; onC
     setBusy(true);
     setError(null);
     try {
-      const scopes: ApiKeyScope[] = [...(write ? (["orders:read", "orders:write"] as ApiKeyScope[]) : (["orders:read"] as ApiKeyScope[])), ...scopesForAccess(access)];
+      const scopes: ApiKeyScope[] = [
+        ...(write ? (["orders:read", "orders:write"] as ApiKeyScope[]) : (["orders:read"] as ApiKeyScope[])),
+        ...(PUBLIC_API_ACK_ENABLED && pos ? (["orders:pos_status"] as ApiKeyScope[]) : []),
+        ...scopesForAccess(access),
+      ];
       const created = await developersCreateApiKey(apiClient, workspaceId, { name: name.trim(), scopes });
       setSecret(created.secret);
       onCreated();
@@ -494,6 +511,15 @@ function NewKeyModal({ t, open, onClose, onCreated }: { t: T; open: boolean; onC
               </span>
             </label>
           ))}
+          {PUBLIC_API_ACK_ENABLED && (
+            <label className="flex cursor-pointer items-start gap-2 rounded-md border border-line p-3">
+              <input type="checkbox" className="mt-1" checked={pos} onChange={(e) => setPos(e.target.checked)} />
+              <span>
+                <span className="block text-sm font-medium text-ink">{t.posAccess}</span>
+                <span className="block text-xs text-ink-soft">{t.posAccessHint}</span>
+              </span>
+            </label>
+          )}
         </fieldset>
         <ApiKeyAccessPicker value={access} onChange={setAccess} />
         {error && <Alert variant="danger">{error}</Alert>}
@@ -536,7 +562,9 @@ function WebhooksPanel({ t, onForbidden }: { t: T; onForbidden: () => void }) {
   const [editing, setEditing] = useState<WebhookEndpointDto | null>(null);
 
   const endpoints = hooks.data?.endpoints ?? [];
-  const eventLabel = (events: string[]) => (events.includes("*") ? t.allEvents : events.join(", "));
+  // "*" may sit beside the events it leaves out (order.accepted): "All events + order.accepted".
+  const eventLabel = (events: string[]) =>
+    events.includes("*") ? [t.allEvents, ...events.filter((e) => e !== "*")].join(" + ") : events.join(", ");
 
   async function sendTest(endpoint: WebhookEndpointDto) {
     setTesting(endpoint.id);
@@ -565,7 +593,8 @@ function WebhooksPanel({ t, onForbidden }: { t: T; onForbidden: () => void }) {
 
   return (
     <div data-search-anchor="webhooks">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      {/* The search's "order.accepted" lands here: the add-endpoint form offers it beside "All events". */}
+      <div className="flex flex-wrap items-start justify-between gap-3" data-search-anchor="webhook-accepted-event">
         <div className="min-w-0">
           <h3 className="font-medium text-ink">{t.hooksTitle}</h3>
           <p className="text-sm text-ink-soft">{t.hooksHint}</p>
@@ -600,6 +629,7 @@ function WebhooksPanel({ t, onForbidden }: { t: T; onForbidden: () => void }) {
                     {endpoint.secretHint}
                   </code>
                 </p>
+                {endpoint.sendsCustomerData === false && <p className="text-xs text-warning">{t.customerDataMasked}</p>}
                 <WebhookEndpointNotes endpoint={endpoint} />
                 {WEBHOOK_HEADERS_ENABLED && <WebhookHeadersNote endpoint={endpoint} />}
                 <div className="flex flex-wrap gap-2">
@@ -637,6 +667,7 @@ function WebhooksPanel({ t, onForbidden }: { t: T; onForbidden: () => void }) {
           key={editing.id}
           endpoint={editing}
           events={hooks.data?.events ?? []}
+          explicitOnly={hooks.data?.explicitOnly ?? []}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
@@ -649,6 +680,7 @@ function WebhooksPanel({ t, onForbidden }: { t: T; onForbidden: () => void }) {
         t={t}
         open={adding}
         events={hooks.data?.events ?? []}
+        explicitOnly={hooks.data?.explicitOnly ?? []}
         onClose={() => setAdding(false)}
         onCreated={() => void hooks.refresh({ silent: true })}
       />
@@ -715,12 +747,15 @@ function NewEndpointModal({
   t,
   open,
   events,
+  explicitOnly = [],
   onClose,
   onCreated,
 }: {
   t: T;
   open: boolean;
   events: Array<{ name: string; description: string }>;
+  /** Events "*" leaves out: offered beside "All events" too. */
+  explicitOnly?: string[];
   onClose: () => void;
   onCreated: () => void;
 }) {
@@ -729,6 +764,8 @@ function NewEndpointModal({
   const [url, setUrl] = useState("");
   const [all, setAll] = useState(true);
   const [picked, setPicked] = useState<string[]>([]);
+  // With "All events": the events "*" leaves out that are wanted as well.
+  const [alsoPicked, setAlsoPicked] = useState<string[]>([]);
   const [filter, setFilter] = useState<WebhookFilter | null>(null);
   // Custom headers the receiver asks for; no rows and nothing sent while the feature is off.
   const headers = useWebhookHeaders();
@@ -740,6 +777,7 @@ function NewEndpointModal({
     setUrl("");
     setAll(true);
     setPicked([]);
+    setAlsoPicked([]);
     setFilter(null);
     headers.reset();
     setError(null);
@@ -755,7 +793,7 @@ function NewEndpointModal({
     setBusy(true);
     setError(null);
     try {
-      const body = { url: url.trim(), events: all ? ["*"] : picked };
+      const body = { url: url.trim(), events: all ? ["*", ...alsoPicked] : picked };
       const created =
         customHeaders.length > 0
           ? await webhooksCreateEndpoint(apiClient, workspaceId, { ...body, ...(filter ? { filter } : {}), customHeaders })
@@ -803,6 +841,31 @@ function NewEndpointModal({
               <span className="block text-xs text-ink-soft">{t.allEventsHint}</span>
             </span>
           </label>
+          {all && events.some((event) => explicitOnly.includes(event.name)) && (
+            <div className="ms-6 space-y-2">
+              <p className="text-xs text-ink-soft">{t.alsoExplicit}</p>
+              {events
+                .filter((event) => explicitOnly.includes(event.name))
+                .map((event) => (
+                  <label key={event.name} className="flex cursor-pointer items-start gap-2">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={alsoPicked.includes(event.name)}
+                      onChange={(e) =>
+                        setAlsoPicked((prev) => (e.target.checked ? [...prev, event.name] : prev.filter((n) => n !== event.name)))
+                      }
+                    />
+                    <span>
+                      <code dir="ltr" className="block font-mono text-sm text-ink">
+                        {event.name}
+                      </code>
+                      <span className="block text-xs text-ink-soft">{event.description}</span>
+                    </span>
+                  </label>
+                ))}
+            </div>
+          )}
           <label className="flex cursor-pointer items-start gap-2">
             <input type="radio" name="webhook-events" className="mt-1" checked={!all} onChange={() => setAll(false)} />
             <span className="text-sm text-ink">{t.pickEvents}</span>

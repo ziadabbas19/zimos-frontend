@@ -14,6 +14,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useOrderErrorMessage } from "../orderErrors";
 import { lastOrdersListQuery } from "../orderListQuery";
+import { KitchenTicketButton } from "./KitchenTicket";
 
 const STRINGS = {
   en: {
@@ -195,6 +196,7 @@ export function OrderMetaActions({ order, onChanged }: { order: Order; onChanged
       <Button variant="outline" size="sm" className="min-h-11" onClick={openInvoice} disabled={invoiceBusy}>
         {invoiceBusy ? t.invoicePreparing : t.invoice}
       </Button>
+      <KitchenTicketButton order={order} />
       <Button variant="outline" size="sm" className="min-h-11" onClick={toggleTest} disabled={busy}>
         {meta.isTest ? t.unmarkTest : t.markTest}
       </Button>

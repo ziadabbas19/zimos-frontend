@@ -239,7 +239,7 @@ export function WebhookDeliveryLog() {
   const tone = { pending: "warning", delivered: "success", failed: "danger", exhausted: "neutral" } as const;
 
   return (
-    <div className="mt-8">
+    <div className="mt-8" data-search-anchor="webhook-deliveries">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <h3 className="font-medium text-ink">{t.logTitle}</h3>

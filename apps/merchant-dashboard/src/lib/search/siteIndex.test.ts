@@ -152,6 +152,21 @@ describe("the search index", () => {
     expect(favicon?.to).toBe("/store-settings/general");
     expect(favicon?.heading).toEqual({ en: "Online store", ar: "المتجر" });
   });
+
+  it("finds order.accepted, the delivery log and — with its switch — the kitchen status key under Developers", async () => {
+    for (const on of [true, false]) {
+      const index = await indexWith(on);
+      for (const [id, anchor] of [
+        ["setting:webhookAcceptedEvent", "webhook-accepted-event"],
+        ["setting:webhookDeliveries", "webhook-deliveries"],
+      ]) {
+        expect(index.findEntry(id)?.to, id).toBe("/settings?tab=developers");
+        expect(index.findEntry(id)?.anchor, id).toBe(anchor);
+      }
+      expect(Boolean(index.findEntry("setting:apiKeyPosStatus"))).toBe(on);
+      expect(index.findEntry("setting:webhooks")?.keywords).toEqual(expect.arrayContaining(["zapier", "بيانات العملاء"]));
+    }
+  });
 });
 
 describe("what a build leaves out", () => {

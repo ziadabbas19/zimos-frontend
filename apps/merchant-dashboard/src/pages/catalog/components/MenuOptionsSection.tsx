@@ -11,6 +11,7 @@ import { DataState } from "@/components/DataState";
 import { TextField } from "@/components/Field";
 import { MoneyInput } from "@/components/MoneyInput";
 import { useToast } from "@/components/Toast";
+import { ORDER_PAYLOAD_OPTIONS_ENABLED } from "@/lib/features";
 
 const STRINGS = {
   en: {
@@ -25,6 +26,7 @@ const STRINGS = {
     active: "Shown",
     choiceName: "Choice",
     choicePrice: "Adds",
+    choiceCode: "Till code",
     addChoice: "Add choice",
     removeChoice: "Remove choice",
     removeGroup: "Remove group",
@@ -47,6 +49,7 @@ const STRINGS = {
     active: "ظاهر",
     choiceName: "الاختيار",
     choicePrice: "يضيف",
+    choiceCode: "الكود في نظام الكاشير",
     addChoice: "إضافة اختيار",
     removeChoice: "حذف الاختيار",
     removeGroup: "حذف المجموعة",
@@ -65,6 +68,8 @@ interface DraftChoice {
   name: string;
   price: string;
   active: boolean;
+  /** The till's code (ORDER_PAYLOAD_OPTIONS_ENABLED); "" = none. */
+  externalCode: string;
 }
 interface DraftGroup {
   id?: string;
@@ -84,7 +89,7 @@ const toDraft = (groups: MenuOptionGroup[]): DraftGroup[] =>
     min: String(g.minSelect),
     max: String(g.maxSelect),
     active: g.active,
-    choices: g.choices.map((c) => ({ id: c.id, name: c.name, price: minorToMajorInput(c.priceDeltaAmount), active: c.active })),
+    choices: g.choices.map((c) => ({ id: c.id, name: c.name, price: minorToMajorInput(c.priceDeltaAmount), active: c.active, externalCode: c.externalCode ?? "" })),
   }));
 
 function fromDraft(groups: DraftGroup[]): MenuOptionGroup[] | null {
@@ -97,7 +102,14 @@ function fromDraft(groups: DraftGroup[]): MenuOptionGroup[] | null {
     for (const c of g.choices) {
       const price = majorToMinor(c.price || "0");
       if (!c.name.trim() || !Number.isFinite(price) || price < 0) return null;
-      choices.push({ ...(c.id ? { id: c.id } : {}), name: c.name.trim(), priceDeltaAmount: price, active: c.active });
+      choices.push({
+        ...(c.id ? { id: c.id } : {}),
+        name: c.name.trim(),
+        priceDeltaAmount: price,
+        active: c.active,
+        // Sent only while the field is shown: left out, the server keeps the stored code.
+        ...(ORDER_PAYLOAD_OPTIONS_ENABLED ? { externalCode: c.externalCode.trim() || null } : {}),
+      });
     }
     if (choices.length === 0) return null;
     out.push({ ...(g.id ? { id: g.id } : {}), name: g.name.trim(), required: g.required, minSelect: min, maxSelect: max, active: g.active, choices });
@@ -105,7 +117,8 @@ function fromDraft(groups: DraftGroup[]): MenuOptionGroup[] | null {
   return out;
 }
 
-const NEW_GROUP: DraftGroup = { name: "", required: false, min: "0", max: "1", active: true, choices: [{ name: "", price: "", active: true }] };
+const NEW_CHOICE: DraftChoice = { name: "", price: "", active: true, externalCode: "" };
+const NEW_GROUP: DraftGroup = { name: "", required: false, min: "0", max: "1", active: true, choices: [{ ...NEW_CHOICE }] };
 
 /** A product's menu options (backend catalog/menuOptions.js), saved as a whole; products.manage, audited. */
 export function MenuOptionsSection({ productId }: { productId: string }) {
@@ -193,9 +206,15 @@ function Editor({ productId, initial, onSaved }: { productId: string; initial: D
           </div>
           <ul className="space-y-2">
             {g.choices.map((c, ci) => (
-              <li key={c.id ?? `new-${ci}`} className="grid items-end gap-3 sm:grid-cols-[2fr_1fr_auto_auto]">
+              <li
+                key={c.id ?? `new-${ci}`}
+                className={ORDER_PAYLOAD_OPTIONS_ENABLED ? "grid items-end gap-3 sm:grid-cols-[2fr_1fr_1fr_auto_auto]" : "grid items-end gap-3 sm:grid-cols-[2fr_1fr_auto_auto]"}
+              >
                 <TextField label={t.choiceName} value={c.name} maxLength={100} onChange={(e) => setChoice(gi, ci, { name: e.target.value })} />
                 <MoneyInput label={t.choicePrice} value={c.price} onChange={(v) => setChoice(gi, ci, { price: v })} />
+                {ORDER_PAYLOAD_OPTIONS_ENABLED && (
+                  <TextField label={t.choiceCode} value={c.externalCode} dir="ltr" maxLength={120} onChange={(e) => setChoice(gi, ci, { externalCode: e.target.value })} />
+                )}
                 <label className="flex h-11 items-center gap-2 text-sm text-ink">
                   <input type="checkbox" checked={c.active} onChange={(e) => setChoice(gi, ci, { active: e.target.checked })} />
                   {t.active}
@@ -206,7 +225,7 @@ function Editor({ productId, initial, onSaved }: { productId: string; initial: D
               </li>
             ))}
           </ul>
-          <Button size="sm" variant="outline" onClick={() => setGroup(gi, { choices: [...g.choices, { name: "", price: "", active: true }] })}>
+          <Button size="sm" variant="outline" onClick={() => setGroup(gi, { choices: [...g.choices, { ...NEW_CHOICE }] })}>
             {t.addChoice}
           </Button>
         </div>

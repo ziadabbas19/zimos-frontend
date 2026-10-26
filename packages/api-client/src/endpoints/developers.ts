@@ -22,7 +22,10 @@ import type { ApiClient } from "../client";
 // ------------------------------------------------------------------ types --
 
 export type ApiKeyScope =
+  // Also the accepted-orders feed and this key's receipts of it (PUBLIC_API_ACK_ENABLED).
   | "orders:read"
+  // A till / kitchen system's status for an order: a note, never the order's stage.
+  | "orders:pos_status"
   // Create + update + delete in one, from before the three were told apart.
   | "orders:write"
   | "orders:create"
@@ -84,8 +87,13 @@ export interface WebhookEndpointDto {
   /** Event names, or `["*"]` for every event. */
   events: string[];
   isActive: boolean;
-  /** `whsec_…abcd` — never the secret itself. */
-  secretHint: string;
+  /** `whsec_…abcd` — never the secret itself; null when the server cannot read a sealed secret. */
+  secretHint: string | null;
+  /**
+   * False when its deliveries carry customers masked: the teammate who last
+   * set its address cannot see customers in full. Absent on older servers.
+   */
+  sendsCustomerData?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -94,6 +102,8 @@ export interface WebhookEndpointList {
   endpoints: WebhookEndpointDto[];
   events: WebhookEventInfo[];
   wildcard: string;
+  /** Events "*" does not bring (order.accepted): listed by name, beside "*" if wanted. Absent on older servers. */
+  explicitOnly?: string[];
 }
 
 export interface WebhookEndpointCreated {

@@ -65,6 +65,7 @@ import {
   EMAIL_SUPPRESSIONS_ENABLED,
   LOYALTY_ENABLED,
   PRODUCT_SPECS_ENABLED,
+  PUBLIC_API_ACK_ENABLED,
   SIZE_CHARTS_ENABLED,
   STORE_CREDIT_ENABLED,
   STORE_REPORTS_ENABLED,
@@ -418,7 +419,10 @@ const DECLARED: EntryDef[] = [
   setting("password", { keywords: ["change password", "reset password", "باسورد", "تغيير كلمة المرور"], icon: IconKey, scope: "settings", section: "security", anchor: "password" }),
   setting("devices", { keywords: ["sessions", "devices", "logout", "sign out", "الأجهزة", "الجلسات"], icon: IconDevices, scope: "settings", section: "security", anchor: "devices" }),
   setting("apiKeys", { keywords: ["api key", "integration", "مفتاح", "ربط"], icon: IconKey, scope: "settings", section: "developers", anchor: "api-keys" }),
-  setting("webhooks", { keywords: ["webhook", "endpoint", "events", "ويب هوك"], icon: IconCode, scope: "settings", section: "developers", anchor: "webhooks" }),
+  setting("webhooks", { keywords: ["webhook", "endpoint", "events", "ويب هوك", "customer data", "masked", "zapier", "make", "n8n", "google sheets", "apps script", "بيانات العملاء", "مخفية"], icon: IconCode, scope: "settings", section: "developers", anchor: "webhooks" }),
+  setting("webhookAcceptedEvent", { keywords: ["order.accepted", "accepted", "kitchen", "pos", "cashier", "till", "مؤكد", "مطبخ", "كاشير"], icon: IconCode, scope: "settings", section: "developers", anchor: "webhook-accepted-event" }),
+  setting("apiKeyPosStatus", { keywords: ["pos", "pos_status", "kitchen", "till", "cashier", "receipt", "ack", "كاشير", "مطبخ", "حالة الطلب"], icon: IconKey, scope: "settings", section: "developers", anchor: "api-key-pos-status", when: PUBLIC_API_ACK_ENABLED }),
+  setting("webhookDeliveries", { keywords: ["deliveries", "log", "resend", "redeliver", "failed", "سجل", "إعادة إرسال", "فشل"], icon: IconCode, scope: "settings", section: "developers", anchor: "webhook-deliveries" }),
 
   // Single settings: Store settings.
   setting("favicon", { keywords: ["favicon", "tab icon", "أيقونة"], icon: IconImage, scope: "store-settings", section: "general", anchor: "store-identity" }),

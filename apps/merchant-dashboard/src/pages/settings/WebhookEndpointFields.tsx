@@ -665,11 +665,14 @@ export function WebhookHeadersNote({ endpoint }: { endpoint: WebhookEndpointDto 
 export function EditWebhookEndpointModal({
   endpoint,
   events,
+  explicitOnly = [],
   onClose,
   onSaved,
 }: {
   endpoint: WebhookEndpointDto;
   events: WebhookEventInfo[];
+  /** Events "*" leaves out (order.accepted): kept beside "*" when the endpoint already lists them. */
+  explicitOnly?: string[];
   onClose: () => void;
   onSaved: (endpoint: WebhookEndpointWithHeaders) => void;
 }) {
@@ -696,7 +699,7 @@ export function EditWebhookEndpointModal({
     try {
       const saved = await webhooksUpdateEndpoint(apiClient, workspaceId, endpoint.id, {
         url: url.trim(),
-        events: all ? ["*"] : picked,
+        events: all ? ["*", ...picked.filter((name) => explicitOnly.includes(name))] : picked,
         customHeaders,
       });
       toast.success(t.saved);

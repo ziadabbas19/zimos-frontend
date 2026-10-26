@@ -6369,6 +6369,10 @@ export interface OrderExportCatalogue {
   defaults: { order: string[]; item: string[] };
   /** A file stops after this many orders; narrow the dates to get the rest. */
   maxOrders: number;
+  /** Ready-made exports with fixed columns (e.g. "accepted"). Absent on older servers. */
+  presets?: Record<string, { columns: string[] }>;
+  /** A preset downloads directly up to this; past it, the file is built in the background (413 EXPORT_TOO_LARGE). */
+  direct?: { maxOrders: number; maxDays: number };
 }
 
 /** The orders list's own filters, plus what the file should look like. */
@@ -6383,4 +6387,11 @@ export interface OrderExportParams extends OrderSearchParams {
   rowPer?: "order" | "item";
   /** Language of the header row and the status words. */
   lang?: "en" | "ar";
+  /**
+   * A ready-made export: "accepted" = the accepted orders (confirmed COD,
+   * paid online; not cancelled) with fixed columns. `columns` and `rowPer`
+   * must be left out with it.
+   */
+  preset?: "accepted";
+  format?: "csv" | "xlsx";
 }
