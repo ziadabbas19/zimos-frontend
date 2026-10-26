@@ -32,6 +32,7 @@ export const PLAN_STRINGS = {
     visitor_insights: "Visitor insights",
     remove_branding: "Remove platform branding",
     priority_support: "Priority support",
+    loyalty: "Loyalty points",
   },
   ar: {
     perMonth: "/ شهريًا",
@@ -58,6 +59,7 @@ export const PLAN_STRINGS = {
     visitor_insights: "تحليلات الزوار المفصّلة",
     remove_branding: "إزالة شعار المنصة",
     priority_support: "دعم ذو أولوية",
+    loyalty: "نقاط الولاء",
   },
 } satisfies Messages;
 

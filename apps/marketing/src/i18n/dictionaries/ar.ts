@@ -257,6 +257,7 @@ export const ar: Dictionary = {
       visitor_insights: "تحليلات الزوار المفصّلة",
       remove_branding: "إزالة شعار المنصة",
       priority_support: "دعم ذو أولوية",
+      loyalty: "نقاط الولاء",
     },
   },
 

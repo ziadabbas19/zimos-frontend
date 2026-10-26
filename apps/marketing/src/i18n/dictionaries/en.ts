@@ -252,6 +252,7 @@ export const en: Dictionary = {
       visitor_insights: "Visitor insights",
       remove_branding: "Remove platform branding",
       priority_support: "Priority support",
+      loyalty: "Loyalty points",
     },
   },
 
