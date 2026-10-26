@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { apiErrorCode } from "@store-builder/api-client";
-import { Alert, Button, Spinner, cn } from "@store-builder/ui";
+import { Alert, Button, SkeletonBar, Spinner, cn } from "@store-builder/ui";
 import { isPermissionError } from "@/lib/errors";
 import { useErrorMessage } from "@/lib/errorMessages";
 import { useT, type Messages } from "@/i18n/LocaleContext";
@@ -62,10 +62,8 @@ export function TableSkeleton() {
   );
 }
 
-/** One grey bar of a loading placeholder; size it with `h-*` / `w-*`. */
-export function SkeletonBar({ className }: { className?: string }) {
-  return <div className={cn("relative h-3 animate-pulse overflow-hidden rounded-full bg-paper-sunken motion-reduce:animate-none", className)} />;
-}
+/** One grey bar of a loading placeholder; size it with `h-*` / `w-*`. Shared with the console (@store-builder/ui). */
+export { SkeletonBar };
 
 const SKELETON_CARD = "rounded-[var(--radius-card)] bg-paper-raised p-4 shadow-[var(--shadow-card)] ring-1 ring-line";
 

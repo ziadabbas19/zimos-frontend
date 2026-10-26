@@ -17,6 +17,7 @@ export {
 } from "./components/card";
 export { Alert, AlertTitle, AlertDescription, AlertAction } from "./components/alert";
 export { Spinner } from "./components/spinner";
+export { SkeletonBar, ListSkeleton, type ListSkeletonProps } from "./components/skeleton";
 
 export { Badge, badgeVariants } from "./components/badge";
 export { Textarea } from "./components/textarea";
