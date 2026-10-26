@@ -102,6 +102,14 @@ describe("kitchen ticket", () => {
     expect(html).toContain(CONTEXT.money(ORDER.totalAmount, ORDER.currency));
   });
 
+  it("is off for a locked order, saying why", () => {
+    workspaceMock.currentWorkspace = fake<Workspace>({ id: "ws_1", name: "Nile Store", role: "owner" });
+    renderWithProviders(<KitchenTicketButton order={{ ...ORDER, contactLocked: true } as Order} />);
+    const button = screen.getByRole("button", { name: /kitchen ticket|تذكرة المطبخ/i });
+    expect(button).toBeDisabled();
+    expect(button.getAttribute("title")).toBeTruthy();
+  });
+
   it("prints from a frame that may run no script", async () => {
     workspaceMock.currentWorkspace = fake<Workspace>({ id: "ws_1", name: "Nile Store", role: "owner" });
     const { user } = renderWithProviders(<KitchenTicketButton order={ORDER} />);

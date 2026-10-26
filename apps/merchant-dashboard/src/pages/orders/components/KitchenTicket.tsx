@@ -13,6 +13,7 @@ const STRINGS = {
     print: "Kitchen ticket",
     printing: "Printing…",
     failed: "The ticket could not be printed. Try again.",
+    locked: "The ticket prints once this order's customer details are shown again.",
     order: "Order",
     delivery: "Delivery",
     pickup: "Pickup from the store",
@@ -30,6 +31,7 @@ const STRINGS = {
     print: "تذكرة المطبخ",
     printing: "جارٍ الطباعة…",
     failed: "تعذّرت طباعة التذكرة. حاول مرة أخرى.",
+    locked: "تُطبع التذكرة بعد أن تظهر بيانات عميل هذا الطلب من جديد.",
     order: "طلب",
     delivery: "توصيل",
     pickup: "استلام من المتجر",
@@ -72,7 +74,11 @@ function printHtml(html: string): Promise<void> {
   });
 }
 
-/** "Kitchen ticket" on the order page: the 80 mm ticket of this order, printed now. */
+/**
+ * "Kitchen ticket" on the order page: the 80 mm ticket of this order, printed
+ * now. Off while the order is locked (contactLocked): the kitchen waits for it
+ * to open, as the till's feed does.
+ */
 export function KitchenTicketButton({ order }: { order: Order }) {
   const t = useT(STRINGS);
   const { locale, dir } = useLocale();
@@ -103,8 +109,9 @@ export function KitchenTicketButton({ order }: { order: Order }) {
     }
   }
 
+  const locked = order.contactLocked === true;
   return (
-    <Button variant="outline" size="sm" className="min-h-11" onClick={() => void print()} disabled={busy}>
+    <Button variant="outline" size="sm" className="min-h-11" onClick={() => void print()} disabled={busy || locked} title={locked ? t.locked : undefined}>
       {busy ? t.printing : t.print}
     </Button>
   );
