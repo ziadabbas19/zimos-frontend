@@ -25,3 +25,24 @@ export const STORE_TRAFFIC_ENABLED = import.meta.env.VITE_STORE_TRAFFIC_ENABLED 
  * it; off, the page is the summary it was.
  */
 export const SITE_TRAFFIC_DETAILS_ENABLED = import.meta.env.VITE_SITE_TRAFFIC_DETAILS_ENABLED === "true";
+
+/**
+ * The bell on the API's live updates (its REALTIME_ENABLED): a sign-up, a paid
+ * subscription or a new support ticket updates the count at once, for the
+ * accounts whose permissions open those pages. While connected the count is
+ * also read when the tab comes back and every 5 minutes (the other kinds of
+ * notification are not sent live); while the connection is down, every 30
+ * seconds. Off: the count is read every 60 seconds, as before.
+ */
+export const CONSOLE_REALTIME_ENABLED = import.meta.env.VITE_CONSOLE_REALTIME_ENABLED === "true";
+
+/**
+ * Live in Site traffic: who is on zimos.co now (the last 5 minutes, read again
+ * every 15 seconds) — place, source and UTM, device and system, the page they
+ * are on and their last sign-up / sign-in click. Pairs with the API's
+ * SITE_LIVE_ENABLED (it answers 404 without it). A tab of the detailed page
+ * with SITE_TRAFFIC_DETAILS_ENABLED above; without it, a Summary / Live switch
+ * on the summary page (and no governorate, browser or link kind, which only
+ * the details keep).
+ */
+export const SITE_LIVE_ENABLED = import.meta.env.VITE_SITE_LIVE_ENABLED === "true";

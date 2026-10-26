@@ -146,3 +146,43 @@ export const getVisits = (f: SiteFilters & { page: number; pageSize: number; sor
 export const getVisit = (sessionId: string) => getDetail<SiteVisitTimeline>(`sessions/${encodeURIComponent(sessionId)}`);
 /** Counts are kept 30 days: a 90-day view asks for 30. */
 export const getProtection = (range: SiteDetailsRange) => getDetail<SiteProtectionSummary>("protection", { range: range === "90d" ? "30d" : range });
+
+/**
+ * The Live view (VITE_SITE_LIVE_ENABLED; the API's /admin/site-traffic/live,
+ * behind its SITE_LIVE_ENABLED): the sessions seen in the last five
+ * minutes, newest first, asked again every 15 seconds. A session is a browser
+ * tab; the visitor's id changes every UTC day, so nothing ties it to another day.
+ */
+export interface SiteLiveVisitor {
+  sessionId: string;
+  lastSeenAt: string;
+  startedAt: string | null;
+  /** Seen within `activeSeconds` (the beacon pings every 15 s while the tab shows). */
+  active: boolean;
+  country: string | null;
+  governorate: string | null;
+  source: string | null;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  referrerHost: string | null;
+  device: string | null;
+  browser: string | null;
+  /** Kept since migration 709; null on visits from before. */
+  os: string | null;
+  locale: string | null;
+  currentPath: string | null;
+  /** kind null: which link it was is kept only with the API's SITE_TRAFFIC_DETAILS_ENABLED. */
+  lastCta: { kind: "register" | "login" | null; at: string } | null;
+}
+
+export interface SiteLive {
+  at: string;
+  windowSeconds: number;
+  activeSeconds: number;
+  active: number;
+  visitors: SiteLiveVisitor[];
+}
+
+export const SITE_LIVE_POLL_MS = 15_000;
+export const getLive = () => getDetail<SiteLive>("live");

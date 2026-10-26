@@ -13,6 +13,7 @@ import { useWorkspace } from "@/context/WorkspaceContext";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { useErrorMessage } from "@/lib/errorMessages";
 import { isPermissionError } from "@/lib/errors";
+import { ORDER_EVENTS, useLiveEvents } from "@/lib/liveUpdates";
 import { pluralOf } from "@/lib/plural";
 import { storeUrl } from "@/lib/storeAddress";
 import { markViewSource, useViewNavigate } from "@/lib/viewTransition";
@@ -121,6 +122,8 @@ export function OrdersListPage() {
 
   const query = useOrdersQuery();
   const data = useOrdersData(query);
+  // A new, paid or moved order of this store (live updates), or every 30 s while they are down: read the list again.
+  useLiveEvents(currentWorkspace?.id, ORDER_EVENTS, data.afterChange);
   const { stage } = query;
   const { rows } = data;
 

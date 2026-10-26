@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { Alert, Badge, Button, Segmented, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
@@ -12,6 +12,7 @@ import { NativeSelect, SearchInput } from "@/components/forms";
 import { Mono, Panel, Td, Th } from "@/components/Panel";
 import { fmt, useLocale, useT } from "@/i18n/LocaleContext";
 import { useAsync } from "@/lib/useAsync";
+import { SITE_LIVE_ENABLED } from "@/lib/features";
 import * as api from "@/lib/siteTrafficApi";
 import { SITE_DETAILS_RANGES, SITE_DEVICES, SITE_VISIT_SORTS, type SiteDetailsRange, type SiteFilters, type SiteVisitSort } from "@/lib/siteTrafficApi";
 import { SITE_TRAFFIC_STRINGS, formatDuration } from "@/lib/siteTrafficStrings";
@@ -20,10 +21,12 @@ import { formatChartLabel, formatDateTime, formatNumber, formatRelative } from "
 import { Pager } from "@/pages/BlocklistPage";
 import { ClickableList, SimpleTable } from "@/pages/StoreTrafficPage";
 
-type Strings = Record<keyof (typeof SITE_TRAFFIC_STRINGS)["en"], string>;
+export type Strings = Record<keyof (typeof SITE_TRAFFIC_STRINGS)["en"], string>;
 type Locale = "en" | "ar";
-const TABS = ["overview", "visits", "campaigns", "protection"] as const;
+const TABS = ["overview", "visits", "campaigns", "protection", "live"] as const;
 type Tab = (typeof TABS)[number];
+/** Live only with VITE_SITE_LIVE_ENABLED. */
+const shownTabs = (): readonly Tab[] => TABS.filter((v) => v !== "live" || SITE_LIVE_ENABLED);
 const PAGE_SIZE = 25;
 
 /** The API answers 404 while SITE_TRAFFIC_DETAILS_ENABLED is off there. */
@@ -42,7 +45,8 @@ export function SiteTrafficDetails() {
   const t = useT(SITE_TRAFFIC_STRINGS);
   const { locale } = useLocale();
   const [params, setParams] = useSearchParams();
-  const tab = (TABS as readonly string[]).includes(params.get("tab") ?? "") ? (params.get("tab") as Tab) : "overview";
+  const tabs = shownTabs();
+  const tab = (tabs as readonly string[]).includes(params.get("tab") ?? "") ? (params.get("tab") as Tab) : "overview";
   const range = (SITE_DETAILS_RANGES as string[]).includes(params.get("range") ?? "") ? (params.get("range") as SiteDetailsRange) : "7d";
   const filters: SiteFilters = {
     range,
@@ -72,18 +76,21 @@ export function SiteTrafficDetails() {
           label={t.title}
           value={tab}
           onChange={(v) => set({ tab: v === "overview" ? undefined : v })}
-          options={TABS.map((v) => ({ value: v, label: t[`tab${v[0].toUpperCase()}${v.slice(1)}` as keyof Strings] }))}
+          options={tabs.map((v) => ({ value: v, label: t[`tab${v[0].toUpperCase()}${v.slice(1)}` as keyof Strings] }))}
         />
-        <div className="flex flex-wrap items-end gap-2">
-          <Segmented
-            size="sm"
-            label={t.title}
-            value={range}
-            onChange={(v) => set({ range: v === "7d" ? undefined : v })}
-            options={SITE_DETAILS_RANGES.map((r) => ({ value: r, label: t[`range_${r}`] }))}
-          />
-          {tab !== "protection" && <VisitFilters t={t} locale={locale} filters={filters} onChange={set} />}
-        </div>
+        {/* Live is always the last five minutes: no period, no filters. */}
+        {tab !== "live" && (
+          <div className="flex flex-wrap items-end gap-2">
+            <Segmented
+              size="sm"
+              label={t.title}
+              value={range}
+              onChange={(v) => set({ range: v === "7d" ? undefined : v })}
+              options={SITE_DETAILS_RANGES.map((r) => ({ value: r, label: t[`range_${r}`] }))}
+            />
+            {tab !== "protection" && <VisitFilters t={t} locale={locale} filters={filters} onChange={set} />}
+          </div>
+        )}
       </div>
 
       {tab === "overview" && <OverviewTab t={t} locale={locale} filters={filters} onFilter={set} />}
@@ -101,6 +108,7 @@ export function SiteTrafficDetails() {
       )}
       {tab === "campaigns" && <CampaignsTab t={t} filters={filters} />}
       {tab === "protection" && <ProtectionTab t={t} locale={locale} range={range} />}
+      {tab === "live" && <LiveTab t={t} locale={locale} onOpen={setVisit} />}
 
       <VisitDrawer t={t} locale={locale} sessionId={visit} onClose={() => setVisit(null)} />
     </div>
@@ -517,6 +525,105 @@ function ProtectionTab({ t, locale, range }: { t: Strings; locale: Locale; range
               <HBarList rows={data.byCountry.map((c) => ({ label: countryName(c.country, locale), value: c.bot + c.rejected }))} format={(v) => formatNumber(v)} />
             </Panel>
           </div>
+        </div>
+      )}
+    </Loaded>
+  );
+}
+
+/**
+ * Live: the sessions of the last five minutes (api.getLive), read again every
+ * 15 seconds while the tab shows — by polling, not the live updates: a ping
+ * every 15 seconds per visitor is too many events to send. With `onOpen` (the
+ * detailed page), a row opens the visit, as on Visits. Also on the summary page
+ * when only Live is on (SiteTrafficPage).
+ */
+export function LiveTab({ t, locale, onOpen }: { t: Strings; locale: Locale; onOpen?: (sessionId: string) => void }) {
+  const { data, loading, error, refresh } = useAsync(() => api.getLive(), []);
+  // The API's Live switch off (404): nothing to ask again until the page is opened anew.
+  const off = isOff(error);
+  useEffect(() => {
+    if (off) return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void refresh({ silent: true });
+    }, api.SITE_LIVE_POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [refresh, off]);
+  const ctaLabel = (kind: string | null) => (kind ? (t[`cta_${kind}` as keyof Strings] ?? kind) : t.cta_any);
+
+  // Its own switch on the API (SITE_LIVE_ENABLED): said plainly, not as the details being off.
+  if (off) return <Alert>{t.liveOff}</Alert>;
+  return (
+    <Loaded t={t} loading={loading && !data} error={error} onRetry={() => void refresh()}>
+      {data && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <KpiCard label={t.activeNow} value={formatNumber(data.active)} hint={fmt(t.activeHint, { seconds: data.activeSeconds })} />
+            <KpiCard label={t.inWindow} value={formatNumber(data.visitors.length)} hint={t.sessionsCol} />
+          </div>
+          <Panel title={t.liveTitle} description={t.liveHint} flush>
+            {data.visitors.length === 0 ? (
+              <div className="p-4">
+                <EmptyBlock message={t.liveNone} />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <Th>{t.lastSeen}</Th>
+                      <Th>{t.place}</Th>
+                      <Th>{t.source}</Th>
+                      <Th>{t.systemCol}</Th>
+                      <Th>{t.currentPage}</Th>
+                      <Th>{t.lastCta}</Th>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.visitors.map((v) => (
+                      <TableRow key={v.sessionId} className={onOpen ? "cursor-pointer" : undefined} onClick={onOpen ? () => onOpen(v.sessionId) : undefined}>
+                        <Td>
+                          <div className="flex flex-col items-start gap-1">
+                            <Badge variant={v.active ? "default" : "secondary"}>{v.active ? t.activeBadge : t.idleBadge}</Badge>
+                            <span className="text-xs text-ink-soft" title={formatDateTime(v.lastSeenAt)}>
+                              {formatRelative(v.lastSeenAt)}
+                            </span>
+                          </div>
+                        </Td>
+                        <Td>
+                          <div className="flex flex-col">
+                            <span>{countryName(v.country, locale)}</span>
+                            {v.governorate && <span className="text-xs text-ink-soft">{governorateName(v.governorate, locale)}</span>}
+                          </div>
+                        </Td>
+                        <Td>
+                          {sourceLabel(t, v.source)}
+                          {(v.utmMedium || v.utmCampaign) && (
+                            <span className="block text-xs text-ink-soft">{[v.utmMedium, v.utmCampaign].filter(Boolean).join(" / ")}</span>
+                          )}
+                        </Td>
+                        <Td>
+                          {deviceLabel(t, v.device)}
+                          {(v.browser || v.os) && <span className="block text-xs text-ink-soft">{[v.browser, v.os].filter(Boolean).join(" · ")}</span>}
+                        </Td>
+                        <Td>{v.currentPath ? <Mono>{v.currentPath}</Mono> : "—"}</Td>
+                        <Td>
+                          {v.lastCta ? (
+                            <div className="flex flex-col">
+                              <span>{ctaLabel(v.lastCta.kind)}</span>
+                              <span className="text-xs text-ink-soft">{formatRelative(v.lastCta.at)}</span>
+                            </div>
+                          ) : (
+                            <span className="text-ink-soft">—</span>
+                          )}
+                        </Td>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </Panel>
         </div>
       )}
     </Loaded>

@@ -12,6 +12,7 @@ import { useT, type Messages } from "@/i18n/LocaleContext";
 import { StoreLinkBar } from "@/components/StoreLinkBar";
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import { NotificationsBell } from "@/components/NotificationsBell";
+import { LiveUpdates } from "@/components/LiveUpdates";
 import { CommandPalette } from "@/components/CommandPalette";
 import { SidebarShortcuts } from "@/components/SidebarShortcuts";
 import { MobileTabBar } from "@/components/MobileTabBar";
@@ -146,6 +147,8 @@ export function DashboardLayout() {
               <ThemeToggle />
             </span>
             <NotificationsBell />
+            {/* The live updates' connection, toasts and sound (VITE_REALTIME_ENABLED); renders nothing. */}
+            <LiveUpdates />
             <AccountMenu />
           </div>
         </header>
