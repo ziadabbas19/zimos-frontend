@@ -4,6 +4,8 @@ import Link from "next/link";
 import { createContext, useContext, type ComponentProps, type ReactNode } from "react";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { storeHref } from "@/lib/storeHref";
+import { STORE_SKELETONS_ENABLED } from "@/lib/features";
+import { NavPendingReport } from "@/lib/navSkeleton";
 
 /**
  * The store's link prefix, handed down to client components.
@@ -56,5 +58,14 @@ export function StoreLink({
 }: Omit<ComponentProps<typeof Link>, "href"> & { href: string }) {
   const basePath = useStoreBasePath();
   const isInternal = href.startsWith("/");
+  if (STORE_SKELETONS_ENABLED && isInternal) {
+    // The page's loading shape while this link's navigation is under way (lib/navSkeleton); it draws nothing itself.
+    return (
+      <Link href={storeHref(basePath, href)} {...props}>
+        {props.children}
+        <NavPendingReport href={href} basePath={basePath} scroll={props.scroll} />
+      </Link>
+    );
+  }
   return <Link href={isInternal ? storeHref(basePath, href) : href} {...props} />;
 }

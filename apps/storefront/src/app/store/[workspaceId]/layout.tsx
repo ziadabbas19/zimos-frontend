@@ -12,7 +12,8 @@ import { MobileCategoryStrip } from "@/components/MobileCategoryStrip";
 import { PaymentsPreviewBanner } from "@/components/PaymentsPreviewBanner";
 import { HolidayBanner } from "@/components/holiday/HolidayBanner";
 import { InviteBanner } from "@/components/rewards/InviteBanner";
-import { CUSTOMER_REFERRALS_ENABLED } from "@/lib/features";
+import { CUSTOMER_REFERRALS_ENABLED, STORE_SKELETONS_ENABLED } from "@/lib/features";
+import { NavSkeletonProvider, NavSkeletonSlot } from "@/lib/navSkeleton";
 import { StoreFooter } from "@/components/StoreFooter";
 import { StoreHeader } from "@/components/StoreHeader";
 import { StoreAnalytics } from "@/components/StoreAnalytics";
@@ -225,93 +226,101 @@ export default async function StoreLayout({
         {/* Holds the editor preview's unsaved header/footer settings; empty,
             and so invisible, on every page a shopper sees. */}
         <StoreShellProvider>
-          {/* Reads the search params, hence the Suspense boundary. */}
-          <Suspense fallback={null}>
-            <StoreAnalytics workspaceId={workspaceId} websiteId={typeof websiteId === "string" ? websiteId : undefined} />
-            <BotGuard workspaceId={workspaceId} />
-            <OtpGate />
-          </Suspense>
-          {pixels.length > 0 && (
-            // Reads the search params to send page views on navigation.
+          {/* Which main page a link is opening, for its loading shape (STORE_SKELETONS_ENABLED; off, it only passes its children). */}
+          <NavSkeletonProvider>
+            {/* Reads the search params, hence the Suspense boundary. */}
             <Suspense fallback={null}>
-              <TrackingPixels pixels={pixels} purchaseTiming={purchaseTimingOf(store)} />
+              <StoreAnalytics workspaceId={workspaceId} websiteId={typeof websiteId === "string" ? websiteId : undefined} />
+              <BotGuard workspaceId={workspaceId} />
+              <OtpGate />
             </Suspense>
-          )}
-          {/* suppressHydrationWarning: the editor's preview page puts its
-              unsaved theme on this element before hydrating (brandTheme.ts
-              previewBootScript); a live store never changes it. */}
-          <div
-            lang={intlLocaleFor(locale)}
-            dir={dirFor(locale)}
-            className="brand-theme flex min-h-full flex-1 flex-col bg-paper font-sans text-ink"
-            style={ownAccentText ? ({ ...brandStyle(store.themeSettings), "--xs-own-accent-text": ownAccentText } as React.CSSProperties) : brandStyle(store.themeSettings)}
-            data-store-theme={theme ?? undefined}
-            data-xs-shell={xsShell ?? undefined}
-            data-xs-own-accent={xsOwnAccent(store.themeSettings) ? "" : undefined}
-            data-color-mode={dark ? "dark" : undefined}
-            suppressHydrationWarning
-          >
-            {theme && <style dangerouslySetInnerHTML={{ __html: THEME_FONT_CSS }} />}
-            <DocumentLocale locale={locale} />
-            {editorView && <EditorViewBridge view={editorView} />}
-            {/* The worn template's own stylesheet and its phone header — every page of the store is drawn in it (components/xs/XsLookStyles). */}
-            {xsShell && (
-              <>
-                <XsLookStyles looks={[xsShell]} />
-                <XsPhoneStyles />
-                {/* The store's own Template look over the template's (lib/xsTokens). */}
-                <XsTokenStyles store={store} look={xsShell} />
-                {/* Its dark mode, for a store that may be drawn dark: after the looks (components/xs/XsLookStyles). */}
-                {colorOptions.capable && <XsDarkStyles />}
-              </>
+            {pixels.length > 0 && (
+              // Reads the search params to send page views on navigation.
+              <Suspense fallback={null}>
+                <TrackingPixels pixels={pixels} purchaseTiming={purchaseTimingOf(store)} />
+              </Suspense>
             )}
-            <StoreNavFrame store={store} locale={locale} collections={collections}>
-              <PaymentsPreviewBanner workspaceId={workspaceId} />
-              {/* The band across the top while the store is on holiday; on funnel pages too (HOLIDAY_MODE_ENABLED). */}
-              <HolidayBanner />
-              {/* A friend's invite from a `?ref=` link, above the store (lib/features); funnel pages keep their own path. */}
-              {CUSTOMER_REFERRALS_ENABLED && (
-                <HideInFunnel>
-                  <InviteBanner />
-                </HideInFunnel>
+            {/* suppressHydrationWarning: the editor's preview page puts its
+                unsaved theme on this element before hydrating (brandTheme.ts
+                previewBootScript); a live store never changes it. */}
+            <div
+              lang={intlLocaleFor(locale)}
+              dir={dirFor(locale)}
+              className="brand-theme flex min-h-full flex-1 flex-col bg-paper font-sans text-ink"
+              style={ownAccentText ? ({ ...brandStyle(store.themeSettings), "--xs-own-accent-text": ownAccentText } as React.CSSProperties) : brandStyle(store.themeSettings)}
+              data-store-theme={theme ?? undefined}
+              data-xs-shell={xsShell ?? undefined}
+              data-xs-own-accent={xsOwnAccent(store.themeSettings) ? "" : undefined}
+              data-color-mode={dark ? "dark" : undefined}
+              suppressHydrationWarning
+            >
+              {theme && <style dangerouslySetInnerHTML={{ __html: THEME_FONT_CSS }} />}
+              <DocumentLocale locale={locale} />
+              {editorView && <EditorViewBridge view={editorView} />}
+              {/* The worn template's own stylesheet and its phone header — every page of the store is drawn in it (components/xs/XsLookStyles). */}
+              {xsShell && (
+                <>
+                  <XsLookStyles looks={[xsShell]} />
+                  <XsPhoneStyles />
+                  {/* The store's own Template look over the template's (lib/xsTokens). */}
+                  <XsTokenStyles store={store} look={xsShell} />
+                  {/* Its dark mode, for a store that may be drawn dark: after the looks (components/xs/XsLookStyles). */}
+                  {colorOptions.capable && <XsDarkStyles />}
+                </>
               )}
-              <HideInFunnel>
-                {xsShell ? (
-                  <XsHeader store={store} locale={locale} look={xsShell} colorMode={colorMode} colorModeButton={colorOptions.button} />
-                ) : (
-                  <StoreHeader store={store} locale={locale} />
+              <StoreNavFrame store={store} locale={locale} collections={collections}>
+                <PaymentsPreviewBanner workspaceId={workspaceId} />
+                {/* The band across the top while the store is on holiday; on funnel pages too (HOLIDAY_MODE_ENABLED). */}
+                <HolidayBanner />
+                {/* A friend's invite from a `?ref=` link, above the store (lib/features); funnel pages keep their own path. */}
+                {CUSTOMER_REFERRALS_ENABLED && (
+                  <HideInFunnel>
+                    <InviteBanner />
+                  </HideInFunnel>
                 )}
-                {/* The store's own row of collections on a phone; an imported template has none, and its menu is its own. */}
-                {!xsShell && <MobileCategoryStrip collections={collections} t={t} />}
-              </HideInFunnel>
-              <div className="flex flex-1 flex-col">{children}</div>
-              <HideInFunnel>
-                {/* The merchant's sign-up form: a band above the footer, or a popup (Offers → Newsletter). */}
-                <NewsletterSignup workspaceId={store.id} />
-                {xsShell ? (
-                  <XsFooter store={store} locale={locale} year={new Date().getFullYear()} look={xsShell} />
+                <HideInFunnel>
+                  {xsShell ? (
+                    <XsHeader store={store} locale={locale} look={xsShell} colorMode={colorMode} colorModeButton={colorOptions.button} />
+                  ) : (
+                    <StoreHeader store={store} locale={locale} />
+                  )}
+                  {/* The store's own row of collections on a phone; an imported template has none, and its menu is its own. */}
+                  {!xsShell && <MobileCategoryStrip collections={collections} t={t} />}
+                </HideInFunnel>
+                {STORE_SKELETONS_ENABLED ? (
+                  // A navigation to a main page shows its loading shape here (lib/navSkeleton); never on the first load.
+                  <NavSkeletonSlot label={t.common.loading}>{children}</NavSkeletonSlot>
                 ) : (
-                  <StoreFooter store={store} locale={locale} year={new Date().getFullYear()} />
+                  <div className="flex flex-1 flex-col">{children}</div>
                 )}
-                {/* The slide-over cart: opened by "add to cart" and the header's
-                    cart icon. Funnel pages have no cart, so it steps aside with
-                    the rest of the store's chrome. */}
-                <CartDrawer />
-                {/* The merchant's exit popup, once per visitor (Offers → Exit popup). */}
-                <ExitDownsell workspaceId={store.id} />
-                {/* Sales notifications from real orders (Offers → Sales notifications). */}
-                <SocialProofPopup workspaceId={store.id} />
-                {floatingWhatsapp && <FloatingWhatsapp phone={floatingWhatsapp.phone} message={floatingWhatsapp.message} />}
-              </HideInFunnel>
-              {/* Remembers a ?coupon=CODE link so a checkout applies it — the store's or a funnel's. */}
-              <CouponFromLink workspaceId={workspaceId} />
-              <BackToTop label={t.common.backToTop} />
-              {/* The store as an app for shoppers (Settings → Store app). */}
-              <StoreAppInstall app={storefrontStoreApp(store)} locale={arOrEn(locale)} />
-              {/* The phone toolbar and floating buttons a store can switch on (themeSettings). */}
-              <ThemeChrome store={store} />
-            </StoreNavFrame>
-          </div>
+                <HideInFunnel>
+                  {/* The merchant's sign-up form: a band above the footer, or a popup (Offers → Newsletter). */}
+                  <NewsletterSignup workspaceId={store.id} />
+                  {xsShell ? (
+                    <XsFooter store={store} locale={locale} year={new Date().getFullYear()} look={xsShell} />
+                  ) : (
+                    <StoreFooter store={store} locale={locale} year={new Date().getFullYear()} />
+                  )}
+                  {/* The slide-over cart: opened by "add to cart" and the header's
+                      cart icon. Funnel pages have no cart, so it steps aside with
+                      the rest of the store's chrome. */}
+                  <CartDrawer />
+                  {/* The merchant's exit popup, once per visitor (Offers → Exit popup). */}
+                  <ExitDownsell workspaceId={store.id} />
+                  {/* Sales notifications from real orders (Offers → Sales notifications). */}
+                  <SocialProofPopup workspaceId={store.id} />
+                  {floatingWhatsapp && <FloatingWhatsapp phone={floatingWhatsapp.phone} message={floatingWhatsapp.message} />}
+                </HideInFunnel>
+                {/* Remembers a ?coupon=CODE link so a checkout applies it — the store's or a funnel's. */}
+                <CouponFromLink workspaceId={workspaceId} />
+                <BackToTop label={t.common.backToTop} />
+                {/* The store as an app for shoppers (Settings → Store app). */}
+                <StoreAppInstall app={storefrontStoreApp(store)} locale={arOrEn(locale)} />
+                {/* The phone toolbar and floating buttons a store can switch on (themeSettings). */}
+                <ThemeChrome store={store} />
+              </StoreNavFrame>
+            </div>
+          </NavSkeletonProvider>
         </StoreShellProvider>
       </StoreContextProvider>
     </StoreRouteProvider>

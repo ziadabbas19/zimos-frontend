@@ -6,12 +6,13 @@ import { useParams } from "next/navigation";
 import { BoxIcon, CartGlyph } from "@/components/Icons";
 import { QuantityStepper } from "@/components/QuantityStepper";
 import { StoreImage } from "@/components/StoreImage";
+import { CartBodyBones, SkeletonStatus } from "@/components/Skeleton";
 import { StoreLink } from "@/components/StoreRoute";
 import { TrustStrip } from "@/components/TrustStrip";
 import { storeCards } from "@/lib/storePromises";
 import { CartShippingSummary } from "@/components/checkout/CartShippingSummary";
 import { HolidayCheckoutGate } from "@/components/holiday/HolidayCheckoutGate";
-import { btnPrimaryLg, btnSecondary, card, container, skeleton } from "@/components/ui";
+import { btnPrimaryLg, btnSecondary, card, container } from "@/components/ui";
 import { useCart } from "@/lib/CartProvider";
 import { variantLabel } from "@/lib/product";
 import { lineImage } from "@/lib/variantImage";
@@ -66,26 +67,10 @@ export default function CartPage() {
       {!stripHoldsTitle(xsPages) && <h1 className="zt-page-title font-display text-2xl font-bold text-ink sm:text-3xl">{t.cart.title}</h1>}
 
       {isLoading && !cart ? (
-        // The page's own shape while the cart resolves, so nothing jumps when it lands.
-        <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_22rem]" role="status" aria-busy="true" aria-label={t.cart.loading}>
-          <ul className={`${card} divide-y divide-line`}>
-            {[0, 1].map((i) => (
-              <li key={i} className="flex gap-4 p-4 sm:p-5">
-                <span className={`${skeleton} h-20 w-20 shrink-0`} />
-                <span className="flex-1 space-y-2 pt-1">
-                  <span className={`${skeleton} block h-4 w-2/3`} />
-                  <span className={`${skeleton} block h-3 w-1/4`} />
-                  <span className={`${skeleton} mt-3 block h-11 w-32`} />
-                </span>
-              </li>
-            ))}
-          </ul>
-          <div className={`${card} space-y-3 p-5`}>
-            <span className={`${skeleton} block h-5 w-1/2`} />
-            <span className={`${skeleton} block h-4 w-full`} />
-            <span className={`${skeleton} block h-12 w-full`} />
-          </div>
-        </div>
+        // The page's own shape while the cart resolves, so nothing jumps when it lands (the same bones a navigation here shows).
+        <SkeletonStatus label={t.cart.loading}>
+          <CartBodyBones />
+        </SkeletonStatus>
       ) : isEmpty ? (
         <div className={`${card} mt-8 flex flex-col items-center px-6 py-16 text-center`}>
           <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-soft text-primary">
