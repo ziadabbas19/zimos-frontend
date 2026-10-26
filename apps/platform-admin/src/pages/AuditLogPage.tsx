@@ -4,7 +4,7 @@ import { RefreshCw } from "lucide-react";
 import { Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import type { AdminAuditEntry, AdminAuditLogPage } from "@store-builder/api-client";
 import { PageHeader } from "@/components/PageHeader";
-import { DataState, EmptyBlock } from "@/components/DataState";
+import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { DetailRow, Drawer } from "@/components/Drawer";
 import { NativeSelect } from "@/components/forms";
 import { JsonBlock, Mono, Panel, Td, Th } from "@/components/Panel";
@@ -151,7 +151,7 @@ export function AuditLogPage() {
           </Button>
         }
       />
-      <DataState loading={loading} error={error} onRetry={refreshAll}>
+      <DataState skeleton={<ListSkeleton variant="table" />} loading={loading} error={error} onRetry={refreshAll}>
         <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
           <NativeSelect
             aria-label="Actor"

@@ -8,7 +8,7 @@ import type {
   AdminRiskIdentifierType as IdentifierType,
 } from "@store-builder/api-client";
 import { PageHeader } from "@/components/PageHeader";
-import { DataState, EmptyBlock } from "@/components/DataState";
+import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { Modal } from "@/components/Modal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { FilterChips, SearchInput, SelectField, TextAreaField, TextField } from "@/components/forms";
@@ -111,7 +111,7 @@ export function BlocklistPage() {
         <SearchInput value={query} onChange={setQuery} placeholder="Search phone, email, address or reason" />
       </div>
 
-      <DataState loading={loading && !data} error={error} onRetry={() => void refresh()}>
+      <DataState skeleton={<ListSkeleton variant="table" />} loading={loading && !data} error={error} onRetry={() => void refresh()}>
         {entries.length === 0 ? (
           <EmptyBlock message={filtered ? "No entries match these filters." : "Nothing is blocked platform-wide."} />
         ) : (

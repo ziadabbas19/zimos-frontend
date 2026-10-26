@@ -8,7 +8,7 @@ import type {
   AdminRiskSignalReason,
 } from "@store-builder/api-client";
 import { PageHeader } from "@/components/PageHeader";
-import { DataState, EmptyBlock } from "@/components/DataState";
+import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { FilterChips, NativeSelect } from "@/components/forms";
 import { Mono, Panel, Td, Th } from "@/components/Panel";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -133,7 +133,7 @@ export function FraudSignalsPage() {
         </p>
       )}
 
-      <DataState loading={loading && !data} error={error} onRetry={() => void refresh()}>
+      <DataState skeleton={<ListSkeleton variant="table" />} loading={loading && !data} error={error} onRetry={() => void refresh()}>
         {signals.length === 0 ? (
           <EmptyBlock message="No identifier crosses these thresholds." />
         ) : (

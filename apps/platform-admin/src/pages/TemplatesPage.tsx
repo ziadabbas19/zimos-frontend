@@ -8,7 +8,7 @@ import type {
   AdminTemplateVersion,
 } from "@store-builder/api-client";
 import { PageHeader } from "@/components/PageHeader";
-import { DataState, EmptyBlock } from "@/components/DataState";
+import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { Drawer } from "@/components/Drawer";
 import { Modal } from "@/components/Modal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -248,7 +248,7 @@ export function TemplatesPage() {
       />
       <FilterChips options={options} value={kind} onChange={setKind} className="mb-4" />
 
-      <DataState loading={loading && !data} error={error} onRetry={() => void refresh()}>
+      <DataState skeleton={<ListSkeleton variant="table" />} loading={loading && !data} error={error} onRetry={() => void refresh()}>
         {templates.length === 0 ? (
           <EmptyBlock message={kind === "all" ? tx.emptyAll : tx.emptyKind} />
         ) : (

@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import type { AdminUserStore } from "@store-builder/api-client";
 import { PageHeader } from "@/components/PageHeader";
-import { DataState, EmptyBlock } from "@/components/DataState";
+import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { SearchInput } from "@/components/forms";
 import { Panel, Td, Th } from "@/components/Panel";
 import { CopyId } from "@/components/CopyId";
@@ -153,7 +153,7 @@ export function UsersPage() {
         )}
       </div>
 
-      <DataState loading={loading} error={error} onRetry={() => void refresh()}>
+      <DataState skeleton={<ListSkeleton variant="table" />} loading={loading} error={error} onRetry={() => void refresh()}>
         {data && data.users.length === 0 ? (
           <EmptyBlock message={q ? fmt(t.noMatch, { q }) : t.empty} />
         ) : (

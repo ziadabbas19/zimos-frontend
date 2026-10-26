@@ -4,7 +4,7 @@ import { UserPlus } from "lucide-react";
 import { Alert, Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import type { AdminAgent } from "@store-builder/api-client";
 import { PageHeader } from "@/components/PageHeader";
-import { DataState, EmptyBlock } from "@/components/DataState";
+import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { Modal } from "@/components/Modal";
 import { TextField } from "@/components/forms";
 import { Mono, Panel, Td, Th } from "@/components/Panel";
@@ -104,7 +104,7 @@ export function AgentsPage() {
 
       <Alert className="mb-4">{fmt(t.commissionNote, { rate: formatBp(defaultRateBp) })}</Alert>
 
-      <DataState loading={loading && !data} error={error} onRetry={() => void refresh()}>
+      <DataState skeleton={<ListSkeleton variant="table" />} loading={loading && !data} error={error} onRetry={() => void refresh()}>
         {agents.length === 0 ? (
           <EmptyBlock message={t.empty} />
         ) : (
