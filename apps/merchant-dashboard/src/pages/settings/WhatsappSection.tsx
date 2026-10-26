@@ -10,6 +10,7 @@ import { formatRelativeTime } from "@/lib/relativeTime";
 import { DataState } from "@/components/DataState";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { TextField } from "@/components/Field";
+import { PlanFeatureNotice } from "@/components/PlanFeatureNotice";
 import { useToast } from "@/components/Toast";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { WhatsappTemplatesPanel } from "@/components/WhatsappTemplates";
@@ -38,7 +39,10 @@ const STRINGS = {
     accessTokenHint: "Stored encrypted. We only ever show a masked version.",
     wabaId: "WhatsApp Business Account ID (optional)",
     appSecret: "App Secret",
-    appSecretHint: "From App settings → Basic. At least 16 characters.",
+    appSecretHint:
+      "From App settings → Basic, at least 16 characters. Required: Meta signs every message with it, and without it we refuse them all — no customer reply or Confirm / Cancel tap would reach you.",
+    appSecretKeepHint: "Leave it empty to keep the saved App Secret.",
+    appSecretRequired: "The App Secret is required: without it no customer reply reaches you.",
     connect: "Connect",
     connecting: "Checking with Meta…",
     connectedToast: "WhatsApp connected.",
@@ -54,7 +58,11 @@ const STRINGS = {
     token: "Access token",
     appSecretSet: "App Secret",
     secretYes: "Saved",
-    secretNo: "Not set — webhook signatures can't be checked",
+    secretNo: "Not set — no customer reply reaches you",
+    noSecretTitle: "Add your App Secret",
+    noSecretBody:
+      "Meta signs every message it sends us with your App Secret. Without it we refuse them all, so your customers' replies and their taps on Confirm / Cancel never arrive.",
+    addSecret: "Add App Secret",
     lastVerified: "Last checked",
     lastError: "Last error",
     reconnect: "Reconnect",
@@ -71,6 +79,8 @@ const STRINGS = {
     disconnectTitle: "Disconnect WhatsApp?",
     disconnectDescription:
       "You won't be able to send or receive WhatsApp messages until you connect again. Your saved conversations stay.",
+    disconnectPlanNote:
+      "Your current plan doesn't include WhatsApp order confirmation: once disconnected, you can only connect again after upgrading your plan.",
     disconnected: "WhatsApp disconnected.",
     working: "Working…",
   },
@@ -94,7 +104,10 @@ const STRINGS = {
     accessTokenHint: "بيتحفظ مشفّر، ومش هنعرضه غير متخبّي.",
     wabaId: "WhatsApp Business Account ID (اختياري)",
     appSecret: "App Secret",
-    appSecretHint: "من App settings ← Basic. ١٦ حرف على الأقل.",
+    appSecretHint:
+      "من App settings ← Basic، و١٦ حرفًا على الأقل. مطلوب: تُوقّع Meta به كل رسالة، وبدونه نرفض الرسائل كلها، فلن تصلك ردود العملاء ولا ضغطاتهم على «تأكيد» أو «إلغاء».",
+    appSecretKeepHint: "اتركه فارغًا للإبقاء على الـ App Secret المحفوظ.",
+    appSecretRequired: "الـ App Secret مطلوب: بدونه لن يصلك أي رد من العملاء.",
     connect: "اربط",
     connecting: "بنتأكد مع Meta…",
     connectedToast: "واتساب اتربط.",
@@ -110,7 +123,11 @@ const STRINGS = {
     token: "Access token",
     appSecretSet: "App Secret",
     secretYes: "متسجّل",
-    secretNo: "مش متسجّل — مش هنقدر نتأكد من توقيع الرسايل",
+    secretNo: "غير محفوظ — لن تصلك ردود العملاء",
+    noSecretTitle: "أضف الـ App Secret",
+    noSecretBody:
+      "تُوقّع Meta كل رسالة ترسلها إلينا بالـ App Secret الخاص بك. بدونه نرفض الرسائل كلها، فلا تصلك ردود العملاء ولا ضغطاتهم على «تأكيد» أو «إلغاء».",
+    addSecret: "أضف الـ App Secret",
     lastVerified: "آخر تأكيد",
     lastError: "آخر خطأ",
     reconnect: "اربط تاني",
@@ -127,6 +144,8 @@ const STRINGS = {
     disconnectTitle: "تفصل واتساب؟",
     disconnectDescription:
       "مش هتقدر تبعت أو تستقبل رسايل واتساب لحد ما تربط تاني. المحادثات القديمة هتفضل موجودة.",
+    disconnectPlanNote:
+      "خطتك الحالية لا تشمل تأكيد الطلبات عبر واتساب: بعد الفصل لن تتمكن من الربط مرة أخرى إلا بعد ترقية خطتك.",
     disconnected: "واتساب اتفصل.",
     working: "جارٍ التنفيذ…",
   },
@@ -146,6 +165,9 @@ export function WhatsappSection() {
 
   const data = integration.data;
   const isConnected = data?.connected === true;
+  // The plan gate (WHATSAPP_REQUIRE_PLAN_FEATURE): a new connection would be refused for the plan.
+  const planLocked = data?.planLocked === true;
+  const appSecretSaved = isConnected && (data as WhatsappIntegrationConnected).appSecretSet;
 
   async function disconnect() {
     await apiClient.disconnectWhatsapp(workspaceId);
@@ -186,10 +208,13 @@ export function WhatsappSection() {
               {/* The account's templates and their status in Meta (components/WhatsappTemplates.tsx). */}
               <WhatsappTemplatesPanel />
             </>
+          ) : data && !isConnected && planLocked ? (
+            <PlanFeatureNotice feature="whatsapp_confirmation" />
           ) : data ? (
             <div className="space-y-5">
               {!isConnected && <SetupGuide />}
               <ConnectForm
+                appSecretSaved={appSecretSaved}
                 onCancel={reconnecting ? () => setReconnecting(false) : undefined}
                 onDone={() => {
                   setReconnecting(false);
@@ -204,7 +229,7 @@ export function WhatsappSection() {
       <ConfirmDialog
         open={confirmDisconnect}
         title={t.disconnectTitle}
-        description={t.disconnectDescription}
+        description={planLocked ? `${t.disconnectDescription} ${t.disconnectPlanNote}` : t.disconnectDescription}
         confirmLabel={t.disconnect}
         cancelLabel={t.cancelReconnect}
         busyLabel={t.working}
@@ -260,7 +285,11 @@ function SetupGuide() {
   );
 }
 
-function ConnectForm({ onCancel, onDone }: { onCancel?: () => void; onDone: () => void }) {
+/**
+ * The App Secret is required unless one is saved already (a reconnect may
+ * leave it empty to keep it): without it every webhook is refused.
+ */
+function ConnectForm({ appSecretSaved, onCancel, onDone }: { appSecretSaved: boolean; onCancel?: () => void; onDone: () => void }) {
   const workspaceId = useWorkspaceId();
   const t = useT(STRINGS);
   const toast = useToast();
@@ -271,6 +300,8 @@ function ConnectForm({ onCancel, onDone }: { onCancel?: () => void; onDone: () =
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+  // 403 PLAN_FEATURE_REQUIRED: the plan, not the member's role, is what refused.
+  const [planRefused, setPlanRefused] = useState(false);
 
   function errorText(err: unknown): string {
     if (err instanceof ApiError) {
@@ -290,9 +321,11 @@ function ConnectForm({ onCancel, onDone }: { onCancel?: () => void; onDone: () =
     const secret = appSecret.trim();
     if (!/^\d+$/.test(pid)) next.phoneNumberId = t.invalidPhoneId;
     if (token.length < 20) next.accessToken = t.invalidToken;
-    if (secret && secret.length < 16) next.appSecret = t.invalidSecret;
+    if (!secret && !appSecretSaved) next.appSecret = t.appSecretRequired;
+    else if (secret && secret.length < 16) next.appSecret = t.invalidSecret;
     setErrors(next);
     setFormError(null);
+    setPlanRefused(false);
     if (Object.keys(next).length) return;
     setSaving(true);
     try {
@@ -306,7 +339,9 @@ function ConnectForm({ onCancel, onDone }: { onCancel?: () => void; onDone: () =
       onDone();
     } catch (err) {
       const fields = getFieldErrors(err);
-      if (Object.keys(fields).length) setErrors(fields);
+      if (err instanceof ApiError && err.code === "PLAN_FEATURE_REQUIRED") setPlanRefused(true);
+      else if (err instanceof ApiError && err.code === "WHATSAPP_APP_SECRET_REQUIRED") setErrors({ appSecret: t.appSecretRequired });
+      else if (Object.keys(fields).length) setErrors(fields);
       else setFormError(errorText(err));
     } finally {
       setSaving(false);
@@ -315,6 +350,7 @@ function ConnectForm({ onCancel, onDone }: { onCancel?: () => void; onDone: () =
 
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
+      {planRefused && <PlanFeatureNotice feature="whatsapp_confirmation" />}
       {formError && <Alert variant="danger">{formError}</Alert>}
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField
@@ -349,13 +385,14 @@ function ConnectForm({ onCancel, onDone }: { onCancel?: () => void; onDone: () =
       />
       <TextField
         label={t.appSecret}
+        required={!appSecretSaved}
         type="password"
         autoComplete="off"
         dir="ltr"
         value={appSecret}
         onChange={(e) => setAppSecret(e.target.value)}
         error={errors.appSecret}
-        hint={t.appSecretHint}
+        hint={appSecretSaved ? t.appSecretKeepHint : t.appSecretHint}
       />
       <div className="flex justify-end gap-3">
         {onCancel && (
@@ -363,7 +400,10 @@ function ConnectForm({ onCancel, onDone }: { onCancel?: () => void; onDone: () =
             {t.cancelReconnect}
           </Button>
         )}
-        <Button type="submit" disabled={saving || !phoneNumberId.trim() || !accessToken.trim()}>
+        <Button
+          type="submit"
+          disabled={saving || !phoneNumberId.trim() || !accessToken.trim() || (!appSecretSaved && !appSecret.trim())}
+        >
           {saving ? (
             <>
               <Spinner className="size-4" /> {t.connecting}
@@ -397,6 +437,22 @@ function ConnectedView({
           </div>
           <Button size="sm" onClick={onReconnect}>
             <RefreshCw className="size-4" /> {t.reconnect}
+          </Button>
+        </Alert>
+      )}
+
+      {/* Connected before the App Secret was required: every webhook is refused until it is added. */}
+      {integration.status !== "error" && !integration.appSecretSet && (
+        <Alert
+          variant="default"
+          className="flex flex-wrap items-center justify-between gap-3 border-accent/40 bg-accent-soft text-accent-dark dark:text-accent"
+        >
+          <div className="min-w-0">
+            <p className="font-medium">{t.noSecretTitle}</p>
+            <p className="text-sm">{t.noSecretBody}</p>
+          </div>
+          <Button size="sm" onClick={onReconnect}>
+            {t.addSecret}
           </Button>
         </Alert>
       )}

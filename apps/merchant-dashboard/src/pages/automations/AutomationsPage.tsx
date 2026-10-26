@@ -18,6 +18,7 @@ import { apiClient } from "@/lib/apiClient";
 import { useAsync } from "@/lib/useAsync";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useErrorMessage } from "@/lib/errorMessages";
+import { ApiError } from "@/lib/errors";
 import { formatDateTime } from "@/lib/format";
 import { fmt, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
 import { PageHeader } from "@/components/PageHeader";
@@ -53,6 +54,8 @@ const STRINGS = {
     templatesDesc: "Switch one on with a click, then adjust it like any other automation.",
     enable: "Switch on",
     enabled: "Switched on",
+    planLocked: "Not in your current plan",
+    seePlans: "See the plans",
     viewMessages: "Messages to approve",
     messagesTitle: "WhatsApp templates for “{name}”",
     messagesDesc:
@@ -107,6 +110,8 @@ const STRINGS = {
     templatesDesc: "فعّل أيًّا منها بضغطة، ثم عدّلها مثل أي أتمتة أخرى.",
     enable: "تفعيل",
     enabled: "مفعّلة",
+    planLocked: "غير متاحة في خطتك الحالية",
+    seePlans: "عرض الخطط",
     viewMessages: "الرسائل المطلوب اعتمادها",
     messagesTitle: "قوالب واتساب لـ «{name}»",
     messagesDesc:
@@ -244,7 +249,9 @@ export function AutomationsPage() {
       await Promise.all([rules.refresh({ silent: true }), templates.refresh({ silent: true })]);
       if (template.whatsappTemplates.length > 0) setMessagesOf(template);
     } catch (err) {
+      // The message names the feature the plan lacks; the card then shows itself locked.
       toast.error(errorMessage(err));
+      if (err instanceof ApiError && err.code === "PLAN_FEATURE_REQUIRED") void templates.refresh({ silent: true });
     } finally {
       setEnabling(null);
     }
@@ -311,6 +318,14 @@ export function AutomationsPage() {
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
                       <Check className="size-4" aria-hidden />
                       {t.enabled}
+                    </span>
+                  ) : template.planLocked ? (
+                    // The plan gate (WHATSAPP_REQUIRE_PLAN_FEATURE): switching it on would be refused.
+                    <span className="inline-flex flex-wrap items-center gap-2 text-xs text-ink-soft">
+                      {t.planLocked}
+                      <Link to="/subscription" className="font-medium text-primary hover:underline">
+                        {t.seePlans}
+                      </Link>
                     </span>
                   ) : (
                     <Button size="sm" variant="outline" disabled={enabling === template.key} onClick={() => void enableTemplate(template)}>
