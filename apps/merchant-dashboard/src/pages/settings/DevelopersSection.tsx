@@ -334,7 +334,8 @@ function ApiKeysPanel({ t, onForbidden }: { t: T; onForbidden: () => void }) {
 
   return (
     <div data-search-anchor="api-keys">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      {/* The search's "kitchen status key" lands here: the new-key form offers orders:pos_status. */}
+      <div className="flex flex-wrap items-start justify-between gap-3" data-search-anchor="api-key-pos-status">
         <div className="min-w-0">
           <h3 className="font-medium text-ink">{t.keysTitle}</h3>
           <p className="text-sm text-ink-soft">
@@ -592,7 +593,8 @@ function WebhooksPanel({ t, onForbidden }: { t: T; onForbidden: () => void }) {
 
   return (
     <div data-search-anchor="webhooks">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      {/* The search's "order.accepted" lands here: the add-endpoint form offers it beside "All events". */}
+      <div className="flex flex-wrap items-start justify-between gap-3" data-search-anchor="webhook-accepted-event">
         <div className="min-w-0">
           <h3 className="font-medium text-ink">{t.hooksTitle}</h3>
           <p className="text-sm text-ink-soft">{t.hooksHint}</p>
