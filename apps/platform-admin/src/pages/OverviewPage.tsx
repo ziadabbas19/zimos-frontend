@@ -15,7 +15,7 @@ import {
   Truck,
   Wallet,
 } from "lucide-react";
-import { Alert, Button, Spinner, Table, TableBody, TableHeader, TableRow, cn } from "@store-builder/ui";
+import { Alert, Button, Table, TableBody, TableHeader, TableRow, cn, ZLoader } from "@store-builder/ui";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState, EmptyBlock } from "@/components/DataState";
 import { KpiCard } from "@/components/KpiCard";
@@ -232,7 +232,7 @@ export function OverviewPage() {
   const busy = loading || refreshing;
 
   // A refresh keeps the current figures on screen instead of collapsing the
-  // whole dashboard to a spinner, but `useAsync` leaves `loading` false during
+  // whole dashboard to the Z loader, but `useAsync` leaves `loading` false during
   // a silent refresh — so the button needs its own busy state or it looks
   // inert and invites a second click.
   const reload = useCallback(async () => {
@@ -251,7 +251,7 @@ export function OverviewPage() {
         description={t.description}
         actions={
           <Button variant="outline" size="sm" onClick={() => void reload()} disabled={busy}>
-            {busy ? <Spinner /> : <RefreshCw />} {busy ? t.refreshing : t.refresh}
+            {busy ? <ZLoader size="sm" /> : <RefreshCw />} {busy ? t.refreshing : t.refresh}
           </Button>
         }
       />

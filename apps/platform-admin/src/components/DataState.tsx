@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Inbox } from "lucide-react";
-import { Alert, Button, ListSkeleton as SharedListSkeleton, Spinner, type ListSkeletonProps } from "@store-builder/ui";
+import { Alert, Button, ListSkeleton as SharedListSkeleton, type ListSkeletonProps, ZLoader } from "@store-builder/ui";
 import { useT, type Messages } from "@/i18n/LocaleContext";
 import { getErrorMessage, isPermissionError } from "@/lib/errors";
 
@@ -17,7 +17,7 @@ interface DataStateProps {
   emptyMessage?: string;
   emptyAction?: ReactNode;
   onRetry?: () => void;
-  /** Shown while loading in place of the spinner: placeholders in the shape of the content (a list: ListSkeleton). */
+  /** Shown while loading in place of the Z loader: placeholders in the shape of the content (a list: ListSkeleton). */
   skeleton?: ReactNode;
   children: ReactNode;
 }
@@ -25,7 +25,7 @@ interface DataStateProps {
 /**
  * Standard loading / error / empty wrapper for a data region, in the merchant
  * dashboard's shapes (its components/DataState.tsx and EmptyState.tsx): the
- * spinner in the middle of the region, the error as an alert with a way to
+ * Z loader in the middle of the region, the error as an alert with a way to
  * try again, and "nothing here" as a pane with an icon tile.
  */
 export function DataState({
@@ -38,12 +38,13 @@ export function DataState({
   skeleton,
   children,
 }: DataStateProps) {
+  const t = useT(STRINGS);
   if (loading && skeleton) return <>{skeleton}</>;
 
   if (loading) {
     return (
-      <div role="status" aria-live="polite" className="flex min-h-[30vh] items-center justify-center text-ink-soft">
-        <Spinner className="size-6" />
+      <div className="flex min-h-[30vh] items-center justify-center">
+        <ZLoader label={t.loading} />
       </div>
     );
   }
@@ -80,6 +81,12 @@ export function DataState({
  * (@store-builder/ui), its rows as tall as the real ones, announced in the
  * console's language.
  */
+/** The whole page is on its way (the session): the Z over the page, announced in the page's language. */
+export function PageLoader() {
+  const t = useT(STRINGS);
+  return <ZLoader size="lg" label={t.loading} />;
+}
+
 export function ListSkeleton(props: Omit<ListSkeletonProps, "label">) {
   const t = useT(STRINGS);
   return <SharedListSkeleton {...props} label={t.loading} />;

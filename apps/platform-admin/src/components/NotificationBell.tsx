@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Bell } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, cn } from "@store-builder/ui";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, cn, ZLoader } from "@store-builder/ui";
 import { fmt, useT } from "@/i18n/LocaleContext";
 import * as notificationsApi from "@/lib/notificationsApi";
 import type { ConsoleNotification } from "@/lib/notificationsApi";
@@ -118,7 +118,9 @@ export function NotificationBell() {
         </div>
         <ul className="max-h-96 divide-y divide-line overflow-y-auto">
           {items === null ? (
-            <li className="px-4 py-4 text-sm text-ink-soft">…</li>
+            <li className="flex justify-center px-4 py-4">
+              <ZLoader size="sm" />
+            </li>
           ) : items.length === 0 ? (
             <li className="px-4 py-4 text-sm text-ink-soft">{t.empty}</li>
           ) : (
