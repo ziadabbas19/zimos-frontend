@@ -19,17 +19,18 @@ function show(loading: boolean, skeleton?: boolean) {
 }
 
 describe("the console's loading state", () => {
-  it("a list page shows the shared list skeleton, three rows tall, instead of the spinner", () => {
+  it("a list page shows the shared list skeleton, three rows tall, instead of the Z loader", () => {
     const { container } = show(true, true);
     expect(screen.getByRole("status").textContent).toContain("Loading…");
     expect(container.querySelectorAll('[data-slot="list-skeleton-row"]')).toHaveLength(3);
-    expect(container.querySelector('[data-slot="spinner"]')).toBeNull();
+    expect(container.querySelector('[data-slot="z-loader"]')).toBeNull();
     expect(screen.queryByText("The table")).toBeNull();
   });
 
-  it("a page without one keeps the spinner, and the content shows once loaded", () => {
+  it("a page without one shows the Z loader, announced, and the content once loaded", () => {
     const loading = show(true);
-    expect(loading.container.querySelector('[data-slot="spinner"]')).not.toBeNull();
+    expect(loading.container.querySelector('[data-slot="z-loader"]')).not.toBeNull();
+    expect(screen.getByRole("status").getAttribute("aria-label")).toBe("Loading…");
     loading.unmount();
     show(false, true);
     expect(screen.getByText("The table")).toBeTruthy();

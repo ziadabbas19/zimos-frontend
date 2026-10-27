@@ -26,7 +26,7 @@ describe("ListSkeleton, the one skeleton for tables and lists", () => {
     expect(container.innerHTML).not.toMatch(/\b(ml|mr|pl|pr|left|right)-/);
   });
 
-  it("takes the place of DataState's spinner while a list loads, and gives way to the list", () => {
+  it("takes the place of DataState's Z loader while a list loads, and gives way to the list", () => {
     const loading = renderWithProviders(
       <DataState loading error={null} skeleton={<ListSkeleton />}>
         <p>The list</p>
