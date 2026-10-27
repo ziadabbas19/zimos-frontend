@@ -15,7 +15,9 @@ export type NotificationType =
   | "suggestion"
   | "wallet_fallback"
   // A store went over its daily analytics limit (Store traffic, protection tab).
-  | "traffic_cap";
+  | "traffic_cap"
+  // The platform, or one store, reached its daily SMS cap (SMS_PLATFORM_DAILY_CAP / SMS_STORE_DAILY_CAP).
+  | "sms_cap";
 
 export const NOTIFICATION_TYPES: NotificationType[] = [
   "user_signup",
@@ -31,6 +33,7 @@ export const NOTIFICATION_TYPES: NotificationType[] = [
   "suggestion",
   "wallet_fallback",
   "traffic_cap",
+  "sms_cap",
 ];
 
 export interface ConsoleNotification {

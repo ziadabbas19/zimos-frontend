@@ -67,6 +67,8 @@ const STRINGS = {
     CORRECTION_NOT_ALLOWED: "This outcome can't be changed: the order was cancelled from the order page.",
     ORDER_REJECTED: "This order couldn't be placed.",
     INVALID_PHONE: "Enter a valid phone number.",
+    OTP_CHANNEL_UNAVAILABLE:
+      "Phone codes can't be sent right now: Zimos has no working WhatsApp or SMS sender for this channel. Leave phone verification off for now, or contact Zimos support.",
     CART_NOT_FOUND: "That cart no longer exists.",
     CART_TOKEN_OR_ITEM_REQUIRED: "There's nothing to check out.",
     STEP_MISMATCH: "This page is out of date. Reload to continue.",
@@ -187,6 +189,8 @@ const STRINGS = {
     CORRECTION_NOT_ALLOWED: "لا يمكن تغيير هذه النتيجة: تم إلغاء الأوردر من صفحة الأوردر.",
     ORDER_REJECTED: "تعذّر تسجيل هذا الأوردر.",
     INVALID_PHONE: "أدخل رقم هاتف صحيحًا.",
+    OTP_CHANNEL_UNAVAILABLE:
+      "لا يمكن إرسال رموز التحقق حاليًا: لا تتوفر لدى Zimos وسيلة إرسال عاملة عبر واتساب أو الرسائل النصية لهذه القناة. اترك التحقق من الهاتف معطلًا الآن، أو تواصل مع دعم Zimos.",
     CART_NOT_FOUND: "هذه السلة لم تعد موجودة.",
     CART_TOKEN_OR_ITEM_REQUIRED: "لا يوجد ما يمكن إتمام شرائه.",
     STEP_MISMATCH: "هذه الصفحة لم تعد محدّثة. أعد التحميل للمتابعة.",

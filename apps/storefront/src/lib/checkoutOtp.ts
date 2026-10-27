@@ -27,7 +27,8 @@ export function registerOtpPrompt(next: OtpPrompt | null, message?: string) {
   if (message) cancelledMessage = message;
 }
 
-function challengeOf(err: unknown): CheckoutOtpChallenge | null {
+/** The challenge of a 428 OTP_REQUIRED (a checkout, or a switch to cash on delivery), or null for any other error. */
+export function otpChallengeOf(err: unknown): CheckoutOtpChallenge | null {
   if (!(err instanceof ApiError) || (err.code as string) !== "OTP_REQUIRED") return null;
   const details = apiErrorDetails<Partial<CheckoutOtpChallenge>>(err) ?? {};
   return {
@@ -50,7 +51,7 @@ export async function withCheckoutOtp<T>(
   try {
     return await submit({});
   } catch (err) {
-    const challenge = challengeOf(err);
+    const challenge = otpChallengeOf(err);
     if (!challenge || !prompt) throw err;
     const otpToken = await prompt({ workspaceId, phone, challenge });
     if (!otpToken) throw new Error(cancelledMessage);

@@ -64,6 +64,46 @@ describe("the protection page", () => {
     for (const key of [...PROTECTION_NUMBER_RULES, ...PROTECTION_SWITCH_RULES]) expect(JSON.stringify(rules)).toContain(key);
   });
 
+  it("says which rules have no effect, keeps them from being switched on, and shows the real bot guard default", async () => {
+    api.listFlaggedOrders.mockResolvedValue({ orders: [], nextCursor: null });
+    api.request.mockImplementation(async (path: string, init?: Init) => {
+      if (path === "/workspaces/ws_1/fraud/capabilities")
+        return {
+          botProtection: { platformDefault: true },
+          ipIntel: { provider: null },
+          captcha: { provider: null },
+          visitorGate: { enabled: false },
+          networkDeliveryRate: { available: false },
+          checkoutOtp: { guard: true, whatsapp: false, sms: false },
+        };
+      if (init?.method === "PATCH" && path === "/workspaces/ws_1") return { workspace: { ...testWorkspace, settings: { fraud_rules: (init.body as { settings: { fraud_rules: unknown } }).settings.fraud_rules } } };
+      return new Promise(() => undefined);
+    });
+    const { user } = renderWithProviders(<FraudPage />, { route: "/fraud", workspace: owner });
+    await screen.findByRole("heading", { name: "Protection" });
+    for (const fold of Array.from(document.querySelectorAll<HTMLButtonElement>('button[aria-expanded="false"]'))) await user.click(fold);
+
+    // No IP lookup: the VPN rule says so and cannot be switched on; the delivery rate likewise.
+    const vpn = await screen.findByRole("switch", { name: /VPN and server addresses/ });
+    await waitFor(() => expect(vpn).toBeDisabled());
+    expect(vpn).toHaveAccessibleDescription(expect.stringContaining("No effect for now"));
+    expect(screen.getByRole("switch", { name: /Low delivery rate/ })).toBeDisabled();
+    // Unset, the bot guard follows the platform default, here on — and says so.
+    const bot = screen.getByRole("switch", { name: /Bot protection/ });
+    expect(bot).toBeChecked();
+    expect(bot).toHaveAccessibleDescription(expect.stringContaining("platform default: on"));
+    expect(screen.getByRole("switch", { name: /invisible challenge/ })).toBeDisabled();
+    // Codes cannot be delivered, and the platform refuses switching them on.
+    expect(screen.getByRole("switch", { name: /Ask for a code/ })).toHaveAccessibleDescription(expect.stringContaining("refused until one is set up"));
+
+    // Saving another rule leaves the bot guard unset, so it keeps following the platform.
+    await user.click(screen.getByRole("switch", { name: /Only accept real mobile numbers/ }));
+    await user.click(await screen.findByRole("button", { name: "Save rules" }));
+    await waitFor(() => expect(saves()).toHaveLength(1));
+    const rules = (saves()[0].body as { settings: { fraud_rules: Record<string, unknown> } }).settings.fraud_rules;
+    expect(rules.bot_protection).toBeNull();
+  });
+
   it("only shows the rules to a role that cannot change them", async () => {
     serve();
     renderWithProviders(<FraudPage />, { route: "/fraud", workspace: { currentWorkspace: { ...testWorkspace, role: "confirmation_agent", settings: {} } }, locale: "ar" });

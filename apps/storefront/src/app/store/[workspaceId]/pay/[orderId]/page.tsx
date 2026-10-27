@@ -2,11 +2,12 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import type { ShopperPaymentStatus, StorefrontPaymentMethod } from "@store-builder/api-client";
+import { isApiErrorCode, type CheckoutOtpChallenge, type ShopperPaymentStatus, type StorefrontPaymentMethod } from "@store-builder/api-client";
 import { CheckIcon } from "@/components/Icons";
 import { StoreLink, useStoreBasePath } from "@/components/StoreRoute";
 import { btnPrimary, btnSecondary, card, container } from "@/components/ui";
 import { createStorefrontApiClient } from "@/lib/apiClient";
+import { otpChallengeOf } from "@/lib/checkoutOtp";
 import { getPaymentToken, paymentPageUrl, usePreviewToken } from "@/lib/payments";
 import { useIsClient } from "@/lib/useIsClient";
 import { orderErrorMessage } from "@/lib/placeOrder";
@@ -57,6 +58,9 @@ function PaymentPage() {
   const [status, setStatus] = useState<ShopperPaymentStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  // The store wants the phone verified before cash on delivery: the code sent to the order's phone.
+  const [codChallenge, setCodChallenge] = useState<CheckoutOtpChallenge | null>(null);
+  const [codCode, setCodCode] = useState("");
   const startedAt = useRef<number | null>(null);
   const preview = usePreviewToken(workspaceId);
 
@@ -136,6 +140,31 @@ function PaymentPage() {
     if (url) {
       setBusy("redirect");
       window.location.assign(url);
+    }
+  }
+
+  /**
+   * Cash on delivery instead. A store that verifies phones answers 428 OTP_REQUIRED and sends a code to
+   * the order's phone; the code goes back in the same switch (the shopper may not have the number here).
+   */
+  async function switchToCod(otpCode?: string) {
+    if (!token) return;
+    setBusy("cod");
+    setError(null);
+    try {
+      setStatus(await client.switchOrderToCod(workspaceId, orderId, token, preview, otpCode));
+      setCodChallenge(null);
+    } catch (err) {
+      const challenge = otpChallengeOf(err);
+      if (challenge) {
+        setCodChallenge(challenge);
+        setCodCode("");
+      } else if (isApiErrorCode(err, "INVALID_CODE")) setError(t.payment.codCodeInvalid);
+      else if (isApiErrorCode(err, "EXPIRED")) setError(t.payment.codCodeExpired);
+      else if (isApiErrorCode(err, "TOO_MANY_ATTEMPTS")) setError(t.payment.codCodeTooMany);
+      else setError(orderErrorMessage(err, t.form.errors));
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -222,17 +251,40 @@ function PaymentPage() {
                       {busy === m.id || busy === "redirect" ? t.payment.redirecting : t.payment.retryWith(methodName(m))}
                     </button>
                   ))}
-                {status.canSwitchToCod && token && (
-                  <button
-                    type="button"
-                    disabled={busy !== null}
-                    onClick={() =>
-                      void act("cod", () => client.switchOrderToCod(workspaceId, orderId, token, preview))
-                    }
-                    className={btnSecondary}
-                  >
+                {status.canSwitchToCod && token && !codChallenge && (
+                  <button type="button" disabled={busy !== null} onClick={() => void switchToCod()} className={btnSecondary}>
                     {busy === "cod" ? t.payment.switching : t.payment.switchToCod}
                   </button>
+                )}
+                {status.canSwitchToCod && token && codChallenge && (
+                  <form
+                    className="space-y-3 rounded-xl border border-line p-4"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (codCode.trim()) void switchToCod(codCode.trim());
+                    }}
+                  >
+                    <p className="font-semibold text-ink">{t.payment.codCodeTitle}</p>
+                    <p className="text-sm text-ink-soft">{t.payment.codCodeHint(codChallenge.phoneHint)}</p>
+                    <label className="block space-y-1.5 text-sm">
+                      <span className="text-ink-soft">{t.payment.codCodeLabel}</span>
+                      <input
+                        value={codCode}
+                        onChange={(e) => setCodCode(e.target.value.replace(/\D/g, "").slice(0, codChallenge.codeLength))}
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        dir="ltr"
+                        maxLength={codChallenge.codeLength}
+                        className="h-12 w-full rounded-xl border border-line bg-paper px-3 text-center text-lg tracking-[0.4em] tabular-nums"
+                      />
+                    </label>
+                    <button type="submit" disabled={busy !== null || codCode.length !== codChallenge.codeLength} className={btnPrimary}>
+                      {busy === "cod" ? t.payment.switching : t.payment.codCodeConfirm}
+                    </button>
+                    <button type="button" disabled={busy !== null} onClick={() => void switchToCod()} className={btnSecondary}>
+                      {t.payment.codCodeResend}
+                    </button>
+                  </form>
                 )}
               </div>
             </div>

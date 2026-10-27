@@ -34,6 +34,7 @@ export const NOTIFICATION_STRINGS = {
     type_suggestion: "New suggestion",
     type_wallet_fallback: "Store moved to pay per order",
     type_traffic_cap: "Store over its daily analytics limit",
+    type_sms_cap: "Daily SMS cap reached",
   },
   ar: {
     title: "الإشعارات",
@@ -67,6 +68,7 @@ export const NOTIFICATION_STRINGS = {
     type_suggestion: "اقتراح جديد",
     type_wallet_fallback: "متجر انتقل إلى الدفع لكل طلب",
     type_traffic_cap: "متجر تجاوز حده اليومي من بيانات الزيارات",
+    type_sms_cap: "بلوغ الحد اليومي للرسائل النصية",
   },
 };
 
