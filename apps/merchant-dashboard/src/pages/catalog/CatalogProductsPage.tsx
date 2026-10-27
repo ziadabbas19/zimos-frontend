@@ -14,6 +14,7 @@ import { primaryImage } from "@/lib/media";
 import { useT, fmt, type Messages } from "@/i18n/LocaleContext";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
+import { ListSkeleton } from "@/components/list";
 import { FilterTabs } from "@/components/FilterTabs";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ProductImage } from "@/components/ProductImage";
@@ -366,6 +367,7 @@ export function CatalogProductsPage() {
       />
 
       <DataState
+        skeleton={view === "list" ? <ListSkeleton /> : undefined}
         loading={list.loading}
         error={list.items.length ? null : list.error}
         empty={filtered.length === 0}

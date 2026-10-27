@@ -1,4 +1,4 @@
-import { Button, Spinner } from "@store-builder/ui";
+import { Button, ZLoader } from "@store-builder/ui";
 import { useT, type Messages } from "@/i18n/LocaleContext";
 
 const STRINGS = {
@@ -20,7 +20,7 @@ export function LoadMore({ hasMore, loading, onClick }: LoadMoreProps) {
   return (
     <div className="flex justify-center pt-4">
       <Button variant="outline" onClick={onClick} disabled={loading} className="min-h-11">
-        {loading ? <Spinner className="size-4" aria-label={t.loading} /> : t.loadMore}
+        {loading ? <ZLoader size="sm" label={t.loading} /> : t.loadMore}
       </Button>
     </div>
   );

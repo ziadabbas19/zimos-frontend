@@ -19,6 +19,7 @@ import { createStorefrontApiClient } from "@/lib/apiClient";
 import { useStore } from "@/lib/StoreContext";
 import { StoreLink } from "./StoreRoute";
 import { btnPrimary, btnSecondary, card, container, input, label } from "./ui";
+import { StoreLoader } from "@/components/StoreLoader";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api/v1";
 
@@ -241,9 +242,7 @@ export function LearnHome({ workspaceId }: { workspaceId: string }) {
         </button>
       </div>
       {courses === null ? (
-        <p role="status" className="text-sm text-ink-soft">
-          {t.loading}
-        </p>
+        <StoreLoader label={t.loading} />
       ) : courses.length === 0 ? (
         <p className="text-sm text-ink-soft">{t.noCourses}</p>
       ) : (
@@ -382,9 +381,7 @@ export function LearnCourse({ workspaceId, slug }: { workspaceId: string; slug: 
   if (!outline) {
     return (
       <div className={`${container} py-10`}>
-        <p role="status" className="text-center text-sm text-ink-soft">
-          {t.loading}
-        </p>
+        <StoreLoader label={t.loading} className="mx-auto" />
       </div>
     );
   }
@@ -443,9 +440,7 @@ export function LearnCourse({ workspaceId, slug }: { workspaceId: string; slug: 
           {!current ? (
             <p className="text-sm text-ink-soft">{t.choose}</p>
           ) : !lesson ? (
-            <p role="status" className="text-sm text-ink-soft">
-              {t.loading}
-            </p>
+            <StoreLoader label={t.loading} />
           ) : (
             <div className="space-y-4">
               <h2 dir="auto" className="text-lg font-semibold text-ink">

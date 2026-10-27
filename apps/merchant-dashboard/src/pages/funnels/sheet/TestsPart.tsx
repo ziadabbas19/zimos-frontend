@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
-import { Alert, Button, Input, Label } from "@store-builder/ui";
+import { Alert, Button, Input, Label, ZLoader } from "@store-builder/ui";
 import {
   splitTestsChooseWinner,
   splitTestsCreate,
@@ -493,7 +493,7 @@ function TestDetail({
             {test.variants.map((v) => {
               const r = results?.variants.find((x) => x.key === v.key);
               const waiting = !r && detail.loading;
-              const figure = (value: string | undefined) => (waiting ? "…" : (value ?? "—"));
+              const figure = (value: string | undefined) => (waiting ? <ZLoader size="sm" aria-hidden /> : (value ?? "—"));
               return (
                 <li key={v.key} data-slot="funnel-test-version" data-mark={markKey === v.key ? "" : undefined} className="rounded-2xl bg-paper-raised p-3 ring-1 ring-line">
                   <div className="flex flex-wrap items-center gap-2">

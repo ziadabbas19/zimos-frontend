@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Button, Spinner } from "@store-builder/ui";
+import { Alert, Button, ZLoader } from "@store-builder/ui";
 import { exportFileStartOrders, type OrderExportParams, type OrderStage } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -175,7 +175,7 @@ export function ExportAcceptedOrdersDialog({
     >
       {supported === null && !error ? (
         <div className="flex justify-center py-8">
-          <Spinner />
+          <ZLoader size="sm" />
         </div>
       ) : supported === false ? (
         <Alert variant="destructive">{t.unavailable}</Alert>

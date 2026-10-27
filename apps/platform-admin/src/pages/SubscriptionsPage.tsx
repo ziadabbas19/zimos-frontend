@@ -4,7 +4,7 @@ import { RefreshCw } from "lucide-react";
 import { Button, Table, TableBody, TableFooter, TableHeader, TableRow, cn } from "@store-builder/ui";
 import type { SubscriptionStatus } from "@store-builder/api-client";
 import { PageHeader } from "@/components/PageHeader";
-import { DataState, EmptyBlock } from "@/components/DataState";
+import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { FilterChips, SearchInput } from "@/components/forms";
 import { Panel, SortHead, Td, Th, compareValues, type SortState } from "@/components/Panel";
 import { PricingBadge, Status } from "@/components/StatusBadge";
@@ -144,7 +144,7 @@ export function SubscriptionsPage() {
           </Button>
         }
       />
-      <DataState loading={loading} error={error} onRetry={() => void refresh()}>
+      <DataState skeleton={<ListSkeleton variant="table" />} loading={loading} error={error} onRetry={() => void refresh()}>
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-3">
             <FilterChips options={options} value={filter} onChange={setFilter} />

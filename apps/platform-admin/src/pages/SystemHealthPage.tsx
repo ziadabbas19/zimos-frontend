@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Info, RefreshCw } from "lucide-react";
-import { Alert, Button, Spinner } from "@store-builder/ui";
+import { Alert, Button, ZLoader } from "@store-builder/ui";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
 import { Mono, Panel } from "@/components/Panel";
@@ -110,7 +110,7 @@ export function SystemHealthPage() {
   const busy = loading || rechecking;
 
   // A re-check refreshes silently so the current readings stay on screen
-  // instead of collapsing to a spinner — but `useAsync` leaves `loading`
+  // instead of collapsing to the Z loader — but `useAsync` leaves `loading`
   // false throughout a silent refresh, so the button needs its own busy
   // state. Without it the control looks inert, and an admin who clicks
   // again fires a second round of real third-party probes.
@@ -132,7 +132,7 @@ export function SystemHealthPage() {
         description={sourceDescription(data)}
         actions={
           <Button variant="outline" size="sm" onClick={() => void recheck()} disabled={busy}>
-            {busy ? <Spinner /> : <RefreshCw />} {busy ? "Checking…" : "Re-check"}
+            {busy ? <ZLoader size="sm" /> : <RefreshCw />} {busy ? "Checking…" : "Re-check"}
           </Button>
         }
       />

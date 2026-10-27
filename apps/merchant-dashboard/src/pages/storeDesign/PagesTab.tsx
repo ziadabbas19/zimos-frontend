@@ -13,6 +13,7 @@ import { useAsync } from "@/lib/useAsync";
 import { useErrorMessage } from "@/lib/errorMessages";
 import { useT, type Messages } from "@/i18n/LocaleContext";
 import { DataState } from "@/components/DataState";
+import { ListSkeleton } from "@/components/list";
 import { DataTable, type Column } from "@/components/DataTable";
 import { EmptyState } from "@/components/EmptyState";
 import { Section } from "@/components/Section";
@@ -147,7 +148,7 @@ export function PagesTab() {
   ];
 
   return (
-    <DataState loading={state.loading} error={state.error} onRetry={() => void state.refresh()}>
+    <DataState skeleton={<ListSkeleton rows={4} />} loading={state.loading} error={state.error} onRetry={() => void state.refresh()}>
       {state.data && !state.data.website ? (
         <EmptyState
           icon={<FileText />}

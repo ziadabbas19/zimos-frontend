@@ -100,6 +100,8 @@ export function CustomerLoyaltyCard({ customerId, frame }: { customerId: string;
           {data.worth !== null && <span className="text-sm text-ink-soft">{fmt(t.worth, { amount: formatMoney(data.worth, data.currency) })}</span>}
         </p>
         {data.expiresAt && <p className="mt-1 text-xs text-ink-soft">{fmt(t.expiresOn, { date: formatDate(data.expiresAt) })}</p>}
+        {/* Frozen (the plan, or an unpaid subscription): the balance waits, it is not lost. */}
+        {data.frozen && <p className="mt-1 text-xs font-medium text-accent-dark">{t.cardFrozen}</p>}
       </div>
       <h3 className="px-4 pb-2 text-xs font-semibold text-ink-soft">{t.history}</h3>
       <BalanceHistory rows={rows} empty={t.historyEmpty} />

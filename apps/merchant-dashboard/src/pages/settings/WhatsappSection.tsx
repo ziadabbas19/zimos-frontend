@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Copy, MessageCircle, RefreshCw } from "lucide-react";
-import { Alert, Button, Card, Spinner, cn } from "@store-builder/ui";
+import { Alert, Button, Card, cn, ZLoader } from "@store-builder/ui";
 import type { WhatsappIntegrationConnected } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useAsync } from "@/lib/useAsync";
@@ -406,7 +406,7 @@ function ConnectForm({ appSecretSaved, onCancel, onDone }: { appSecretSaved: boo
         >
           {saving ? (
             <>
-              <Spinner className="size-4" /> {t.connecting}
+              <ZLoader size="sm" aria-hidden /> {t.connecting}
             </>
           ) : (
             t.connect

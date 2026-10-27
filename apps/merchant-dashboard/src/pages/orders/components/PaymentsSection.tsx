@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { RefundLinesPicker } from "./FulfillAndRefundLines";
 import { RefreshCw } from "lucide-react";
-import { Alert, Button, Card, CardContent, Spinner } from "@store-builder/ui";
+import { Alert, Button, Card, CardContent, ZLoader } from "@store-builder/ui";
 import type { Order, Payment, PaymentTimeline, Refund } from "@store-builder/api-client";
 import { ordersRefundWithNotify } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
@@ -244,9 +244,9 @@ export function PaymentsSection({ order, onChanged }: { order: Order; onChanged:
 
 
         {timeline.loading && !data ? (
-          <p className="flex items-center gap-2 text-sm text-ink-soft">
-            <Spinner /> {t.loading}
-          </p>
+          <div className="flex min-h-11 items-center">
+            <ZLoader label={t.loading} />
+          </div>
         ) : timeline.error ? (
           <Alert variant="danger">{errorMessage(timeline.error)}</Alert>
         ) : data ? (

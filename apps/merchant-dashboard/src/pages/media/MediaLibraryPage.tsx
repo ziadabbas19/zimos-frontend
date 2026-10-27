@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Image as ImageIcon, ImageOff, Trash2, Upload } from "lucide-react";
-import { Alert, Button, Spinner } from "@store-builder/ui";
+import { Alert, Button, ZLoader } from "@store-builder/ui";
 import type { MediaAsset } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useCursorList } from "@/lib/useCursorList";
@@ -226,7 +226,7 @@ export function MediaLibraryPage() {
         description={t.description}
         actions={
           <Button disabled={uploading} onClick={() => inputRef.current?.click()}>
-            {uploading ? <Spinner className="size-4" /> : <Upload aria-hidden />}
+            {uploading ? <ZLoader size="sm" /> : <Upload aria-hidden />}
             {uploading ? (progressText ?? t.uploading) : t.upload}
           </Button>
         }

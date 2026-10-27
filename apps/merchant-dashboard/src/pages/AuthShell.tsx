@@ -1,6 +1,6 @@
 import { useId, useState, type ComponentProps, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Input, Label, Spinner, cn } from "@store-builder/ui";
+import { Input, Label, cn, ZLoader } from "@store-builder/ui";
 import { IconArrowLeft, IconEye, IconEyeOff } from "@/components/icons";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { ZimosLogo } from "@/components/ZimosLogo";
@@ -239,11 +239,11 @@ export function AuthDivider({ children }: { children: ReactNode }) {
   );
 }
 
-/** Something is on its way: a spinner and what is happening, announced once. */
+/** Something is on its way: the Z loader and what is happening, announced once. */
 export function AuthBusy({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div role="status" aria-live="polite" className={cn("flex min-h-11 items-center justify-center gap-3 text-sm text-ink-soft", className)}>
-      <Spinner className="size-5" />
+      <ZLoader aria-hidden />
       <span>{children}</span>
     </div>
   );

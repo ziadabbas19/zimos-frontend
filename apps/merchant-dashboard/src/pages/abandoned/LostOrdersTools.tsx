@@ -8,6 +8,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  ZLoader,
 } from "@store-builder/ui";
 import type { LostOrderFilters } from "@store-builder/api-client";
 import {
@@ -16,7 +17,6 @@ import {
   IconClock,
   IconDocument,
   IconRefresh,
-  IconSpinner,
   IconTool,
 } from "@/components/icons";
 import { fmt, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
@@ -88,7 +88,7 @@ export function LostOrdersTools({
           render={<Button type="button" variant="outline" title={t.tools} className="h-11 gap-2 rounded-full px-3 sm:h-10 sm:px-4" />}
         >
           {exporter.busy ? (
-            <IconSpinner className="size-5 animate-spin motion-reduce:animate-none" aria-hidden />
+            <ZLoader size="sm" className="size-5" aria-hidden />
           ) : (
             <IconTool className="size-5" aria-hidden />
           )}

@@ -1,5 +1,5 @@
-import { Check, CircleAlert, Loader2 } from "lucide-react";
-import { Input, Label, cn } from "@store-builder/ui";
+import { Check, CircleAlert } from "lucide-react";
+import { Input, Label, cn, ZLoader } from "@store-builder/ui";
 import { ROOT_DOMAIN, slugRejectionMessage } from "@/lib/storeAddress";
 import type { SlugCheckState } from "@/lib/useSlugCheck";
 
@@ -76,7 +76,7 @@ export function StoreAddressField({
       >
         {state.status === "checking" && (
           <>
-            <Loader2 className="size-3.5 animate-spin" aria-hidden />
+            <ZLoader size="sm" className="size-3.5" aria-hidden />
             Checking availability…
           </>
         )}

@@ -1,7 +1,7 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
-import { Button, Input, Label, Alert, Spinner } from "@store-builder/ui";
+import { Button, Input, Label, Alert, ZLoader } from "@store-builder/ui";
 import {
   isApiErrorCode,
   type BillingCycle,
@@ -269,8 +269,8 @@ export function RegisterPage() {
       )}
 
       {loadingOptions ? (
-        <div className="flex items-center gap-2 text-sm text-ink-soft" role="status">
-          <Spinner className="size-4" /> {t.loading}
+        <div className="flex min-h-11 items-center justify-center">
+          <ZLoader label={t.loading} />
         </div>
       ) : step === "code" && challenge ? (
         <VerifyCodePanel

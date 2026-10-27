@@ -18,6 +18,7 @@ import { pluralOf } from "@/lib/plural";
 import { fmt, getIntlLocale, useT } from "@/i18n/LocaleContext";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
+import { PlanFeatureNotice } from "@/components/PlanFeatureNotice";
 import { ReportKpiStrip } from "@/components/report/ReportKpiStrip";
 import { SettingsGroup, SettingsLinkRow, SettingsRow, SettingsSwitch } from "@/components/settings";
 import { KpiCard } from "@/components/KpiCard";
@@ -37,10 +38,11 @@ interface Draft {
   value: string;
   minPoints: string;
   maxPercent: string;
+  maxPerOrder: string;
   expiry: string;
 }
 
-const FIELDS = ["earn", "value", "minPoints", "maxPercent", "expiry"] as const;
+const FIELDS = ["earn", "value", "minPoints", "maxPercent", "maxPerOrder", "expiry"] as const;
 type FieldKey = (typeof FIELDS)[number];
 
 const toDraft = (s: LoyaltySettings): Draft => ({
@@ -49,6 +51,7 @@ const toDraft = (s: LoyaltySettings): Draft => ({
   value: s.pointValue === null ? "" : minorToMajorInput(s.pointValue),
   minPoints: String(s.minRedeemPoints),
   maxPercent: String(s.maxRedeemPercent),
+  maxPerOrder: s.maxRedeemPointsPerOrder == null ? "" : String(s.maxRedeemPointsPerOrder),
   expiry: s.expiryDays === null ? "" : String(s.expiryDays),
 });
 
@@ -82,6 +85,11 @@ const count = (n: number) => new Intl.NumberFormat(getIntlLocale()).format(n);
  *
  * The rules are settings groups (the switch, earning, spending, expiry); a
  * change shows the save bar, and leaving with one unsaved asks first.
+ *
+ * A plan without loyalty points (the API's LOYALTY_REQUIRE_PLAN_FEATURE):
+ * the switch can't go on and the plan notice says why; a store whose points
+ * are frozen (that plan, or an unpaid subscription) is told its customers'
+ * balances wait, untouched.
  */
 export function LoyaltyProgramPage() {
   const t = useT(LOYALTY_STRINGS);
@@ -128,6 +136,8 @@ export function LoyaltyProgramPage() {
     const value = parseValue(draft.value);
     const minPoints = parseWhole(draft.minPoints, 1, LOYALTY_LIMITS.minRedeemMax);
     const maxPercent = parseWhole(draft.maxPercent, 1, 100);
+    const noPerOrder = toAsciiDigits(draft.maxPerOrder) === "";
+    const maxPerOrder = noPerOrder ? null : parseWhole(draft.maxPerOrder, 1, LOYALTY_LIMITS.maxPerOrderMax);
     const noExpiry = toAsciiDigits(draft.expiry) === "";
     const expiry = noExpiry ? null : parseWhole(draft.expiry, LOYALTY_LIMITS.expiryMin, LOYALTY_LIMITS.expiryMax);
 
@@ -137,6 +147,7 @@ export function LoyaltyProgramPage() {
     if (value === undefined || (draft.enabled && value === null)) found.value = t.valueError;
     if (minPoints === null) found.minPoints = t.minPointsError;
     if (maxPercent === null) found.maxPercent = t.maxPercentError;
+    if (!noPerOrder && maxPerOrder === null) found.maxPerOrder = t.maxPerOrderError;
     if (!noExpiry && expiry === null) found.expiry = t.expiryError;
     setErrors(found);
     if (FIELDS.some((k) => found[k])) {
@@ -152,6 +163,7 @@ export function LoyaltyProgramPage() {
       pointValue: value ?? null,
       minRedeemPoints: minPoints ?? 1,
       maxRedeemPercent: maxPercent ?? 100,
+      maxRedeemPointsPerOrder: maxPerOrder,
       expiryDays: expiry,
     };
     setSaving(true);
@@ -159,7 +171,7 @@ export function LoyaltyProgramPage() {
     try {
       const next = await loyaltySave(apiClient, workspaceId, body);
       overview.setData({ ...data, settings: next.settings, active: next.active });
-      // What the outstanding points are worth follows the new point value: read it again.
+      // What the outstanding points are worth follows the new point value, and the frozen state the switch: read it again.
       void overview.refresh({ silent: true });
       toast.success(next.active ? t.savedOn : next.settings.enabled ? t.saved : t.savedOff);
     } catch (err) {
@@ -170,7 +182,9 @@ export function LoyaltyProgramPage() {
   }
 
   const badge = data ? (
-    data.active ? (
+    data.frozen && data.settings.enabled ? (
+      <StatusBadge value="frozen" tone="warning" text={t.stateFrozen} />
+    ) : data.active ? (
       <StatusBadge value="active" tone="success" text={t.stateOn} />
     ) : data.settings.enabled ? (
       <StatusBadge value="pending" tone="warning" text={t.stateIncomplete} />
@@ -184,6 +198,8 @@ export function LoyaltyProgramPage() {
   const liveValue = draft ? parseValue(draft.value) : null;
   const examplePoints = liveEarn ? Math.floor(1000 * liveEarn) : 0;
   const field = (key: FieldKey) => `${formId}-${key}`;
+  // The plan lacks loyalty points: the switch may go off, never on (the API refuses it with 403 PLAN_FEATURE_REQUIRED).
+  const cannotSwitchOn = Boolean(data?.planLocked) && !data?.settings.enabled && !draft?.enabled;
 
   return (
     <div>
@@ -194,6 +210,16 @@ export function LoyaltyProgramPage() {
       <DataState loading={overview.loading} error={overview.error} onRetry={() => void overview.refresh()} skeleton={<ProgrammeSkeleton tiles={3} groups={[1, 2, 2, 1]} />}>
         {data && draft && (
           <form id={formId} onSubmit={submit} noValidate className="max-w-3xl space-y-5">
+            {data.planLocked ? (
+              <PlanFeatureNotice feature="loyalty" message={data.frozenReason === "plan" && data.settings.enabled ? t.frozenPlan : undefined} />
+            ) : (
+              data.frozenReason === "subscription" &&
+              data.settings.enabled && (
+                <ProgrammeNote to="/subscription" action={t.frozenSubscriptionAction}>
+                  {t.frozenSubscription}
+                </ProgrammeNote>
+              )
+            )}
             {accounts.data && !accounts.data.enabled && (data.settings.enabled || draft.enabled) && (
               <ProgrammeNote to="/store-settings/customer-accounts" action={t.accountsOffAction}>
                 {t.accountsOff}
@@ -206,7 +232,7 @@ export function LoyaltyProgramPage() {
                 onChange={(next) => set("enabled", next)}
                 label={t.enable}
                 hint={draft.enabled ? t.enableHintOn : t.enableHintOff}
-                disabled={saving}
+                disabled={saving || cannotSwitchOn}
               />
             </SettingsGroup>
 
@@ -306,6 +332,23 @@ export function LoyaltyProgramPage() {
                     unit={t.percentUnit}
                     unitHidden
                     onChange={(v) => set("maxPercent", v)}
+                  />
+                }
+              />
+              <SettingsRow
+                label={t.maxPerOrder}
+                hint={t.maxPerOrderHint}
+                htmlFor={field("maxPerOrder")}
+                error={errors.maxPerOrder}
+                control={
+                  <NumberControl
+                    id={field("maxPerOrder")}
+                    maxLength={8}
+                    value={draft.maxPerOrder}
+                    disabled={saving}
+                    invalid={Boolean(errors.maxPerOrder)}
+                    unit={t.pointsUnit}
+                    onChange={(v) => set("maxPerOrder", v)}
                   />
                 }
               />

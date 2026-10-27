@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
-import { cn } from "@store-builder/ui";
+import { cn, ZLoader } from "@store-builder/ui";
 import type { LostOrder, LostOrderRecoveryStatus } from "@store-builder/api-client";
 import { SkeletonBar } from "@/components/DataState";
-import { IconCheck, IconEye, IconMinus, IconOrders, IconPhone, IconSpinner, IconWhatsApp } from "@/components/icons";
+import { IconCheck, IconEye, IconMinus, IconOrders, IconPhone, IconWhatsApp } from "@/components/icons";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ViewLink } from "@/components/ViewLink";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
@@ -181,7 +181,7 @@ export function LostOrderAction({ session, actions }: { session: LostOrder; acti
         className={cn(PILL, PILL_LABELLED, PILL_WHATSAPP)}
       >
         {busy ? (
-          <IconSpinner className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+          <ZLoader size="sm" aria-hidden />
         ) : (
           <IconWhatsApp className="size-4" aria-hidden />
         )}
@@ -204,7 +204,7 @@ export function LostOrderAction({ session, actions }: { session: LostOrder; acti
         className={cn(PILL, PILL_LABELLED, PILL_QUIET)}
       >
         {busy ? (
-          <IconSpinner className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+          <ZLoader size="sm" aria-hidden />
         ) : (
           <IconEye className="size-4" aria-hidden />
         )}

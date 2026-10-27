@@ -1,7 +1,7 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CreateWebsitePayload, Website, WebsiteTemplateSummary } from "@store-builder/api-client";
-import { Alert, Button, Spinner, cn } from "@store-builder/ui";
+import { Alert, Button, cn, ZLoader } from "@store-builder/ui";
 import { IconCheck, IconFileAdd, IconStyle, IconWarning, type IconComponent } from "@/components/icons";
 import { TextField } from "@/components/Field";
 import { Sheet } from "@/components/Sheet";
@@ -359,9 +359,7 @@ export function TemplateSheet({
           <p className="text-xs leading-5 text-ink-soft">{t.catalogueNote}</p>
           <div className="text-sm">
             {detail.loading ? (
-              <span className="flex items-center gap-2 text-ink-soft">
-                <Spinner className="size-4" /> {t.loadingDetails}
-              </span>
+              <ZLoader size="sm" label={t.loadingDetails} />
             ) : detail.error ? (
               <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-ink-soft">
                 {t.detailError}

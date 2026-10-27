@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { CornerDownLeft, Search } from "lucide-react";
-import { Spinner, cn } from "@store-builder/ui";
+import { cn, ZLoader } from "@store-builder/ui";
 import { Status } from "@/components/StatusBadge";
 import { fmt, useT } from "@/i18n/LocaleContext";
 import * as adminApi from "@/lib/adminApi";
@@ -161,7 +161,7 @@ export function GlobalSearch() {
               <div id="global-search-results" role="listbox" aria-label={t.searchLabel} className="flex-1 overflow-y-auto p-2">
                 {loading ? (
                   <p role="status" className="flex items-center justify-center gap-2 px-3 py-8 text-sm text-ink-soft">
-                    <Spinner /> {t.searching}
+                    <ZLoader size="sm" aria-hidden /> {t.searching}
                   </p>
                 ) : results.length === 0 ? (
                   <p role="status" className="px-3 py-8 text-center text-sm text-ink-soft">

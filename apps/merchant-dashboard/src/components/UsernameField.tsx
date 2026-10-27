@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from "react";
-import { Check, Loader2, X } from "lucide-react";
-import { Input, Label, cn } from "@store-builder/ui";
+import { Check, X } from "lucide-react";
+import { Input, Label, cn, ZLoader } from "@store-builder/ui";
 import { ApiError } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { isUsernameFormatValid, normalizeUsername, type UsernameStatus } from "@/lib/username";
@@ -134,7 +134,7 @@ export function UsernameField({
           placeholder="your.name"
         />
         <span className="pointer-events-none absolute inset-y-0 end-0 flex items-center px-3" aria-hidden>
-          {status === "checking" && <Loader2 className="size-4 animate-spin text-ink-soft" />}
+          {status === "checking" && <ZLoader size="sm" className="text-ink-soft" aria-hidden />}
           {(status === "available" || status === "current") && <Check className="size-4 text-success" />}
           {bad && <X className="size-4 text-danger" />}
         </span>

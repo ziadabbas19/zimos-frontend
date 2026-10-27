@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { IconArrowDown, IconArrowUp, IconCaretDown, IconClick, IconDelete, IconDivider, IconHeading, IconImage, IconMedia, IconParagraph, IconPlus, IconTable } from "@/components/icons";
-import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Input, Label, Spinner, cn } from "@store-builder/ui";
+import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Input, Label, cn, ZLoader } from "@store-builder/ui";
 import { EMAIL_BLOCKS_MAX, type EmailBlockType, type MediaAsset } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -761,7 +761,7 @@ function MediaLibraryPicker({ t, selected, onPick }: { t: T; selected: string; o
       )}
       {loading && (
         <p className="flex justify-center p-2" role="status">
-          <Spinner className="size-5" aria-hidden />
+          <ZLoader aria-hidden />
         </p>
       )}
       {!loading && cursor && !error && (

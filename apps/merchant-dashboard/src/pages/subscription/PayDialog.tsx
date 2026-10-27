@@ -1,5 +1,5 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
-import { Alert, Button, Input, Label, Spinner, cn } from "@store-builder/ui";
+import { Alert, Button, Input, Label, cn, ZLoader } from "@store-builder/ui";
 import type { BillingPaymentMethod, BillingPaymentProof, OpenBillingInvoiceResult } from "@store-builder/api-client";
 import { apiErrorCode } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
@@ -75,9 +75,9 @@ function PayBody({
   if (loadError) return <Alert variant="danger">{loadError}</Alert>;
   if (!invoice) {
     return (
-      <p className="flex items-center gap-2 text-sm text-ink-soft">
-        <Spinner className="size-4" /> {t.loading}
-      </p>
+      <div className="flex min-h-11 items-center justify-center">
+        <ZLoader label={t.loading} />
+      </div>
     );
   }
 

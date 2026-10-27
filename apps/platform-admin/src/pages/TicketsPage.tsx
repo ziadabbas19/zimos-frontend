@@ -4,7 +4,7 @@ import { RefreshCw } from "lucide-react";
 import { Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import type { SupportTicketPriority, SupportTicketStatus } from "@store-builder/api-client";
 import { PageHeader } from "@/components/PageHeader";
-import { DataState, EmptyBlock } from "@/components/DataState";
+import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { FilterChips, NativeSelect, SearchInput } from "@/components/forms";
 import { Panel, Td, Th } from "@/components/Panel";
 import { Status, StatusBadge } from "@/components/StatusBadge";
@@ -88,7 +88,7 @@ export function TicketsPage() {
         </div>
       </div>
 
-      <DataState loading={loading && !data} error={error} onRetry={() => void refresh()}>
+      <DataState skeleton={<ListSkeleton variant="table" />} loading={loading && !data} error={error} onRetry={() => void refresh()}>
         {tickets.length === 0 ? (
           <EmptyBlock message={status === "open" ? "Nothing is waiting on the platform team." : "No tickets match."} />
         ) : (

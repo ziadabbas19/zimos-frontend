@@ -20,6 +20,7 @@ import { formatDate, formatDateTime, humanize } from "@/lib/format";
 import { useT, fmt, type Messages } from "@/i18n/LocaleContext";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
+import { ListSkeleton } from "@/components/list";
 import { FilterTabs, type FilterTab } from "@/components/FilterTabs";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
@@ -267,6 +268,7 @@ export function ReturnsPage() {
       </div>
 
       <DataState
+        skeleton={<ListSkeleton variant="card" rows={4} />}
         loading={list.loading}
         error={list.error}
         empty={returns.length === 0}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { StoreLoader } from "@/components/StoreLoader";
 
 /**
  * Turns a product's GLB file into something the shopper can spin with a finger.
@@ -187,7 +188,7 @@ export function ModelViewer({
 
       {state !== "ready" && (
         <p className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-ink-soft">
-          {state === "loading" ? loadingLabel : errorLabel}
+          {state === "loading" ? <StoreLoader label={loadingLabel} /> : errorLabel}
         </p>
       )}
 

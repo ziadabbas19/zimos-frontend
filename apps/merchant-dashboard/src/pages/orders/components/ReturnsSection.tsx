@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Alert, Button, Card, CardContent, Spinner } from "@store-builder/ui";
+import { Alert, Button, Card, CardContent, ZLoader } from "@store-builder/ui";
 import { returnDecide, returnPhotosOf, returnSourceOf, type Order, type ReturnReasonCode, type ReturnRequest, type ReturnStatus } from "@store-builder/api-client";
 import { SHOPPER_RETURNS_ENABLED } from "@/lib/features";
 import { ReturnDecisionSheet } from "@/pages/returns/ReturnDecisionSheet";
@@ -184,9 +184,8 @@ export function ReturnsSection({ order, onOrderMaybeChanged }: Props) {
         <h2 className="mb-3 font-display text-lg font-medium text-ink">{t.title}</h2>
 
         {returns.loading ? (
-          <div role="status" className="flex items-center gap-2 text-sm text-ink-soft">
-            <Spinner className="size-5" role="presentation" aria-hidden="true" aria-label={undefined} />
-            {t.loading}
+          <div className="flex min-h-11 items-center">
+            <ZLoader label={t.loading} />
           </div>
         ) : returns.error ? (
           <Alert variant="danger">{errorMessage(returns.error)}</Alert>

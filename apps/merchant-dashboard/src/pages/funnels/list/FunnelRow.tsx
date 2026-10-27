@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Spinner, cn } from "@store-builder/ui";
+import { cn, ZLoader } from "@store-builder/ui";
 import type { FunnelAnalyticsRow, FunnelDto, FunnelStatus } from "@store-builder/api-client";
 import { ContextMenu, type ContextMenuItem } from "@/components/ContextMenu";
 import { ListRowCard } from "@/components/list";
@@ -73,8 +73,8 @@ export function FunnelRow({ t, funnel: f, compact, stepCount, stats, showStats, 
   const edited = fmt(t.edited, { date: formatDate(f.updatedAt) });
   const hadTraffic = stats !== undefined && (stats.sessions > 0 || stats.orders > 0);
   const more = busy ? (
-    <span className="flex size-11 items-center justify-center pointer-fine:size-9" role="status">
-      <Spinner className="size-4" />
+    <span className="flex size-11 items-center justify-center pointer-fine:size-9">
+      <ZLoader size="sm" />
     </span>
   ) : (
     <ItemMenu items={menu} label={menuLabel} />

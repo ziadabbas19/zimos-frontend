@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ShoppingCart, Workflow } from "lucide-react";
-import { Button, Card, Spinner, cn } from "@store-builder/ui";
+import { Button, Card, cn, ZLoader } from "@store-builder/ui";
 import type { Order } from "@store-builder/api-client";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -181,7 +181,7 @@ export function DashboardHomePage() {
       <div className="mt-8">
         {loading ? (
           <div className="flex min-h-[7rem] items-center justify-center text-ink-soft">
-            <Spinner className="size-6" />
+            <ZLoader />
           </div>
         ) : error ? (
           <div className="flex flex-wrap items-center gap-3">
@@ -266,7 +266,7 @@ function AnalyticsOverview({
             {recent === null ? (
               extraLoading ? (
                 <div className="flex h-24 items-center justify-center text-ink-soft">
-                  <Spinner className="size-5" />
+                  <ZLoader />
                 </div>
               ) : (
                 <p className="text-sm text-ink-soft">—</p>

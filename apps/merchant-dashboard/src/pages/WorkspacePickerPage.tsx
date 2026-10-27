@@ -1,7 +1,7 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { ExternalLink, PartyPopper, PencilRuler } from "lucide-react";
-import { Button, Card, CardContent, Input, Label, Alert, Spinner } from "@store-builder/ui";
+import { Button, Card, CardContent, Input, Label, Alert, ZLoader } from "@store-builder/ui";
 import { apiErrorDetails, isApiErrorCode, type PublicPlan, type Workspace } from "@store-builder/api-client";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { useAuth } from "@/context/AuthContext";
@@ -197,7 +197,7 @@ export function WorkspacePickerPage() {
 
         {loading ? (
           <div className="mt-10 flex justify-center text-ink-soft">
-            <Spinner className="size-6" />
+            <ZLoader />
           </div>
         ) : (
           <>

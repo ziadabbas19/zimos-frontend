@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   cn,
+  ZLoader,
 } from "@store-builder/ui";
 import {
   IconArrowLeft,
@@ -20,7 +21,6 @@ import {
   IconRedo,
   IconSections,
   IconSliders,
-  IconSpinner,
   IconTablet,
   IconUndo,
   IconWarning,
@@ -131,7 +131,7 @@ export function EditorToolbar({
     ) : (
       <span className="hidden items-center gap-1.5 px-1 text-xs whitespace-nowrap text-ink-soft lg:inline-flex">
         {saveState === "saving" ? (
-          <IconSpinner className="size-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden />
+          <ZLoader size="sm" className="shrink-0" aria-hidden />
         ) : (
           <IconCheck className="size-4 shrink-0 text-success" aria-hidden />
         )}

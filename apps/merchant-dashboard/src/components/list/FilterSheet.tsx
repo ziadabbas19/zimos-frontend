@@ -18,7 +18,7 @@ export interface FilterSheetProps {
   activeCount: number;
   onReset: () => void;
   /** e.g. «اعرض ٤٢ أوردر». The primary button; closing the sheet is its only job (filters apply as they change). */
-  applyLabel: string;
+  applyLabel: ReactNode;
   /** `<FilterGroup>`s. */
   children: ReactNode;
 }

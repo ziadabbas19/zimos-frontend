@@ -1,13 +1,13 @@
 import type { ConfirmationChannel, ConfirmationOutcome } from "@store-builder/api-client";
-import { cn } from "@store-builder/ui";
-import { IconArrowRight, IconNote, IconPhone, IconSpinner, IconWhatsApp, type IconComponent } from "@/components/icons";
+import { cn, ZLoader } from "@store-builder/ui";
+import { IconArrowRight, IconNote, IconPhone, IconWhatsApp, type IconComponent } from "@/components/icons";
 import { ViewOrderButton } from "@/components/ViewOrderButton";
 import { OUTCOME_ICON } from "../queueModel";
 import { useStationStrings } from "./stationStrings";
 import { STATION_KEYCAPS } from "./useStationKeys";
 
 type ButtonKind = "confirm" | "call" | "whatsapp" | "quiet" | "danger";
-/** What is on its way to the server: the control that started it shows the spinner, the rest wait. */
+/** What is on its way to the server: the control that started it shows the Z loader, the rest wait. */
 export type StationPending = "call" | "whatsapp" | "skip" | ConfirmationOutcome;
 
 // The big buttons. The solid look (glass off) is here; glass/confirm.css gives the brand fill its sheen,
@@ -50,7 +50,7 @@ function Keycap({ children, onFill = false }: { children: string; onFill?: boole
   );
 }
 
-/** What is inside a big button: its icon (a spinner while its call is in flight), its word, its keycap. */
+/** What is inside a big button: its icon (the Z loader while its call is in flight), its word, its keycap. */
 function Face({
   icon: Icon,
   label,
@@ -70,7 +70,7 @@ function Face({
   return (
     <>
       {busy ? (
-        <IconSpinner className={cn(glyph, "animate-spin motion-reduce:animate-none")} aria-hidden />
+        <ZLoader size="sm" className={glyph} aria-hidden />
       ) : (
         <Icon className={glyph} aria-hidden />
       )}
@@ -263,7 +263,7 @@ export function StationActions({
           className={cn(QUIET_LINK, "shrink-0")}
         >
           {pending === "skip" && (
-            <IconSpinner className="size-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden />
+            <ZLoader size="sm" className="shrink-0" aria-hidden />
           )}
           {t.skip}
           <IconArrowRight className="size-4 shrink-0 rtl:rotate-180" aria-hidden />

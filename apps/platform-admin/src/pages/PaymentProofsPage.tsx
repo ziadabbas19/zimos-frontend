@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import { PageHeader } from "@/components/PageHeader";
-import { DataState, EmptyBlock } from "@/components/DataState";
+import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { FilterChips } from "@/components/forms";
 import { Panel, Td, Th } from "@/components/Panel";
 import { Status } from "@/components/StatusBadge";
@@ -97,7 +97,7 @@ export function PaymentProofsPage() {
           { value: "all", label: t.all },
         ]}
       />
-      <DataState loading={loading && !data} error={error} onRetry={() => void refresh()}>
+      <DataState skeleton={<ListSkeleton variant="table" />} loading={loading && !data} error={error} onRetry={() => void refresh()}>
         {proofs.length === 0 ? (
           <EmptyBlock message={status === "pending" ? t.emptyPending : t.emptyOther} />
         ) : (

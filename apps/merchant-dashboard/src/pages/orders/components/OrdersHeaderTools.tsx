@@ -7,9 +7,10 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  ZLoader,
 } from "@store-builder/ui";
 import { ordersManifestPdf } from "@store-builder/api-client";
-import { IconColumns, IconDocument, IconDownload, IconFileUp, IconMoreActions, IconRefresh, IconSpinner } from "@/components/icons";
+import { IconColumns, IconDocument, IconDownload, IconFileUp, IconMoreActions, IconRefresh } from "@/components/icons";
 import { useToast } from "@/components/Toast";
 import { useLocale, useT, type Messages } from "@/i18n/LocaleContext";
 import { apiClient } from "@/lib/apiClient";
@@ -110,7 +111,7 @@ export function OrdersHeaderTools({
             }
           >
             {working ? (
-              <IconSpinner className="size-5 animate-spin motion-reduce:animate-none" aria-hidden />
+              <ZLoader size="sm" className="size-5" aria-hidden />
             ) : (
               <IconMoreActions className="size-5" aria-hidden />
             )}

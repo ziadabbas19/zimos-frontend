@@ -98,3 +98,13 @@ export const STORE_SIDEBAR_ENABLED = process.env.NEXT_PUBLIC_STORE_SIDEBAR_ENABL
  * TRAFFIC_DETAILS_ENABLED (without it the reports are dropped).
  */
 export const DWELL_TRACKING_ENABLED = process.env.NEXT_PUBLIC_DWELL_TRACKING_ENABLED === "true";
+
+/**
+ * Loading shapes while the store moves between its main pages: a click on a
+ * link to the front page, all products, a product or the cart shows that
+ * page's skeleton (components/Skeleton) in place of the page being left, until
+ * the new one is drawn. Only on a navigation inside the store: the first
+ * load is the server's whole page as before, so its HTML, status codes and
+ * largest paint are untouched. Off, links and pages are exactly as before.
+ */
+export const STORE_SKELETONS_ENABLED = process.env.NEXT_PUBLIC_STORE_SKELETONS_ENABLED === "true";

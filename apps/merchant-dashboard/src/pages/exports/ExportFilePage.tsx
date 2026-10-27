@@ -1,9 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Alert, Button } from "@store-builder/ui";
+import { Alert, Button, ZLoader } from "@store-builder/ui";
 import { exportFileDownload, exportFileGet, type ExportFile } from "@store-builder/api-client";
 import { DataState, SkeletonBar } from "@/components/DataState";
-import { IconClock, IconDownload, IconFileDown, IconSpinner, IconWarning } from "@/components/icons";
+import { IconClock, IconDownload, IconFileDown, IconWarning } from "@/components/icons";
 import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
@@ -207,7 +207,7 @@ export function ExportFilePage() {
         return (
           <FilePane
             live
-            icon={<IconSpinner className="animate-spin motion-reduce:animate-none" aria-hidden />}
+            icon={<ZLoader size="sm" aria-hidden />}
             title={item.status === "queued" ? t.queuedTitle : t.runningTitle}
             badge={badge}
             description={t.working}
@@ -226,7 +226,7 @@ export function ExportFilePage() {
             action={
               <Button className={pill} onClick={() => void download()} disabled={busy} aria-busy={busy || undefined}>
                 {busy ? (
-                  <IconSpinner className="size-5 animate-spin motion-reduce:animate-none" aria-hidden />
+                  <ZLoader size="sm" className="size-5" aria-hidden />
                 ) : (
                   <IconDownload className="size-5" aria-hidden />
                 )}

@@ -4,7 +4,7 @@ import { RefreshCw } from "lucide-react";
 import { Alert, Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import type { AdminWalletRefund, WalletRefundStatus } from "@store-builder/api-client";
 import { PageHeader } from "@/components/PageHeader";
-import { DataState, EmptyBlock } from "@/components/DataState";
+import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { FilterChips, TextField } from "@/components/forms";
 import { Modal } from "@/components/Modal";
 import { Panel, Td, Th } from "@/components/Panel";
@@ -160,7 +160,7 @@ export function WalletRefundsPage() {
           { value: "all", label: t.all },
         ]}
       />
-      <DataState loading={loading && !data} error={error} onRetry={() => void refresh()}>
+      <DataState skeleton={<ListSkeleton variant="table" />} loading={loading && !data} error={error} onRetry={() => void refresh()}>
         {refunds.length === 0 ? (
           <EmptyBlock message={status === "requested" ? t.emptyWaiting : t.emptyOther} />
         ) : (

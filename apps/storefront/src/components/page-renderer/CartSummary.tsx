@@ -4,6 +4,7 @@ import { StoreLink } from "@/components/StoreRoute";
 import { btnPrimary } from "@/components/ui";
 import { useCart } from "@/lib/CartProvider";
 import { useStore } from "@/lib/StoreContext";
+import { StoreLoader } from "@/components/StoreLoader";
 
 /**
  * The `cart` element. The real cart — quantities, totals, checkout — lives on
@@ -20,7 +21,7 @@ export function CartSummary({ title }: { title: string }) {
       <h3 className="text-lg font-semibold text-ink">{title || t.renderer.yourCart}</h3>
       <p className="mt-1 text-sm text-ink-soft">
         {isLoading
-          ? t.renderer.cartLoading
+          ? <StoreLoader size="sm" label={t.renderer.cartLoading} className="inline-block align-middle" />
           : itemCount === 0
             ? t.renderer.cartEmpty
             : t.renderer.cartCount(itemCount)}

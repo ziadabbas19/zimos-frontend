@@ -855,7 +855,7 @@ function DockButton({
 
 /**
  * The editor while the funnel is on its way: its own shape — the bar, the
- * steps pane, a few cards on the map, the phone's bottom bar — never a spinner
+ * steps pane, a few cards on the map, the phone's bottom bar — never the Z loader
  * on a white page, and nothing jumps when the funnel arrives.
  */
 function EditorSkeleton({ label }: { label: string }) {

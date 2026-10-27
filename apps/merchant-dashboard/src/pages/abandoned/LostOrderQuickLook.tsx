@@ -1,6 +1,6 @@
 import type { KeyboardEvent, ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Button, buttonVariants, cn } from "@store-builder/ui";
+import { Button, buttonVariants, cn, ZLoader } from "@store-builder/ui";
 import type { LostOrder, LostOrderRecoveryStatus } from "@store-builder/api-client";
 import { LOST_ORDER_RECOVERY_STATUSES } from "@store-builder/api-client";
 import {
@@ -12,7 +12,6 @@ import {
   IconOrders,
   IconPhone,
   IconPlace,
-  IconSpinner,
   IconSuccess,
   IconUndo,
   IconWhatsApp,
@@ -192,7 +191,7 @@ function PeekCustomer({ session, actions }: { session: LostOrder; actions: LostO
               className={cn(PILL, PILL_LABELLED, PILL_QUIET)}
             >
               {revealing ? (
-                <IconSpinner className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+                <ZLoader size="sm" aria-hidden />
               ) : (
                 <IconEye className="size-4" aria-hidden />
               )}
@@ -217,7 +216,7 @@ function PeekCustomer({ session, actions }: { session: LostOrder; actions: LostO
               className={cn(PILL, PILL_LABELLED, PILL_WHATSAPP)}
             >
               {sending ? (
-                <IconSpinner className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+                <ZLoader size="sm" aria-hidden />
               ) : (
                 <IconWhatsApp className="size-4" aria-hidden />
               )}

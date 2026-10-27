@@ -17,7 +17,8 @@ export type PlanFeatureKey =
   | "advanced_analytics"
   | "visitor_insights"
   | "remove_branding"
-  | "priority_support";
+  | "priority_support"
+  | "loyalty";
 
 export interface PublicPlan {
   id: string;

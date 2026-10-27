@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Button, Spinner } from "@store-builder/ui";
+import { Button, ZLoader } from "@store-builder/ui";
+import { PageLoader } from "@/components/DataState";
 
 export function ProtectedRoute() {
   const { status } = useAuth();
@@ -9,8 +10,8 @@ export function ProtectedRoute() {
 
   if (status === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-paper text-ink-soft">
-        <Spinner className="size-6" />
+      <div className="min-h-screen bg-paper">
+        <PageLoader />
       </div>
     );
   }
@@ -47,7 +48,7 @@ function AccountUnavailable() {
           You're still signed in. The connection to Zimos dropped or the server is busy. Try again in a moment.
         </p>
         <Button onClick={tryAgain} disabled={busy} className="mt-5 w-full">
-          {busy ? <Spinner className="size-4" /> : null}
+          {busy ? <ZLoader size="sm" /> : null}
           Try again
         </Button>
       </div>

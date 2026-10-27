@@ -23,6 +23,7 @@ import { GiftCardPaidNote } from "@/components/giftCards/GiftCardPaidNote";
 import { GIFT_CARDS_ENABLED } from "@/lib/features";
 import { trackPurchaseOnce } from "@/lib/track";
 import { useIsClient } from "@/lib/useIsClient";
+import { StorePageLoader } from "@/components/StoreLoader";
 
 function Confirmation() {
   const { workspaceId, orderId } = useParams<{ workspaceId: string; orderId: string }>();
@@ -190,7 +191,7 @@ function Confirmation() {
 
 export default function OrderConfirmationPage() {
   return (
-    <Suspense fallback={<main className="flex-1 px-6 py-16 text-center text-sm text-ink-soft">…</main>}>
+    <Suspense fallback={<StorePageLoader />}>
       <Confirmation />
     </Suspense>
   );

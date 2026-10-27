@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, FileUp, Link2 } from "lucide-react";
-import { Alert, Button, Input, Label, Spinner } from "@store-builder/ui";
+import { Alert, Button, Input, Label, ZLoader } from "@store-builder/ui";
 import {
   catalogExportProducts,
   catalogGetImport,
@@ -333,7 +333,7 @@ export function ProductTransferDialog({ onClose, onImported }: { onClose: () => 
               />
               <div className="flex flex-wrap gap-2">
                 <Button type="button" disabled={busy} onClick={() => fileInput.current?.click()}>
-                  {busy ? <Spinner className="size-4" /> : <FileUp className="size-4" aria-hidden />}
+                  {busy ? <ZLoader size="sm" /> : <FileUp className="size-4" aria-hidden />}
                   {busy ? t.uploading : t.chooseFile}
                 </Button>
                 <Button
@@ -372,7 +372,7 @@ export function ProductTransferDialog({ onClose, onImported }: { onClose: () => 
                 <p className="text-xs text-ink-soft">{t.linkHint}</p>
               </div>
               <Button type="submit" disabled={busy || !link.trim()}>
-                {busy ? <Spinner className="size-4" /> : <Link2 className="size-4" aria-hidden />}
+                {busy ? <ZLoader size="sm" /> : <Link2 className="size-4" aria-hidden />}
                 {t.importLink}
               </Button>
             </form>
@@ -391,7 +391,7 @@ export function ProductTransferDialog({ onClose, onImported }: { onClose: () => 
                   )
                 }
               >
-                {busy ? <Spinner className="size-4" /> : <Download className="size-4" aria-hidden />}
+                {busy ? <ZLoader size="sm" /> : <Download className="size-4" aria-hidden />}
                 {busy ? t.exporting : t.exportButton}
               </Button>
             </div>
@@ -447,7 +447,7 @@ function ImportStatus({
     return (
       <div className="space-y-2">
         <p role="status" className="flex items-center gap-3 text-sm text-ink">
-          <Spinner className="size-4" />
+          <ZLoader size="sm" aria-hidden />
           {job.status === "queued" ? t.waiting : fmt(t.working, { total: job.total })}
         </p>
         {done > 0 && <p className="text-sm text-ink-soft">{fmt(t.progress, { done, total: job.total })}</p>}

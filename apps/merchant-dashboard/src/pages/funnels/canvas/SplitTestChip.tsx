@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { splitTestsGet, type SplitTest, type SplitTestResults } from "@store-builder/api-client";
-import { cn } from "@store-builder/ui";
+import { cn, ZLoader } from "@store-builder/ui";
 import { IconExperiment, IconTrophy } from "@/components/icons";
 import { TriggerPopover as Popover } from "@/components/TriggerPopover";
 import { apiClient } from "@/lib/apiClient";
@@ -118,7 +118,7 @@ export function SplitTestChip({ test, stepName }: { test: SplitTest; stepName: s
           })}
         </ul>
         <p className="text-xs leading-5 text-ink-soft" aria-live="polite">
-          {results === "loading" ? t.abLoading : results === "failed" ? t.abNoNumbers : t.abManage}
+          {results === "loading" ? <ZLoader size="sm" label={t.abLoading} /> : results === "failed" ? t.abNoNumbers : t.abManage}
         </p>
       </div>
     </Popover>

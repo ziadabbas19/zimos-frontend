@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import { apiErrorCode } from "@store-builder/api-client";
-import { Alert, Button, Spinner, cn } from "@store-builder/ui";
+import { Alert, Button, SkeletonBar, cn, ZLoader } from "@store-builder/ui";
 import { isPermissionError } from "@/lib/errors";
 import { useErrorMessage } from "@/lib/errorMessages";
-import { useT, type Messages } from "@/i18n/LocaleContext";
+import { useCommon, useT, type Messages } from "@/i18n/LocaleContext";
 import { PlanFeatureNotice } from "./PlanFeatureNotice";
 
 const STRINGS = {
@@ -28,7 +28,7 @@ interface DataStateProps {
   empty?: boolean;
   emptyMessage?: string;
   onRetry?: () => void;
-  /** Shown while loading in place of the spinner: placeholders in the shape of the content. */
+  /** Shown while loading in place of the Z loader: placeholders in the shape of the content. */
   skeleton?: ReactNode;
   children: ReactNode;
 }
@@ -43,6 +43,12 @@ const TABLE_ROWS = [
 ];
 
 /** A header line and five rows, for a page whose body is a list. */
+/** The whole page is on its way (the session, the workspace): the Z over the page, announced in the page's language. */
+export function PageLoader() {
+  const common = useCommon();
+  return <ZLoader size="lg" label={common.loading} />;
+}
+
 export function TableSkeleton() {
   return (
     <div data-slot="skeleton-card" className="rounded-[var(--radius-card)] border border-line bg-card p-5">
@@ -62,10 +68,8 @@ export function TableSkeleton() {
   );
 }
 
-/** One grey bar of a loading placeholder; size it with `h-*` / `w-*`. */
-export function SkeletonBar({ className }: { className?: string }) {
-  return <div className={cn("relative h-3 animate-pulse overflow-hidden rounded-full bg-paper-sunken motion-reduce:animate-none", className)} />;
-}
+/** One grey bar of a loading placeholder; size it with `h-*` / `w-*`. Shared with the console (@store-builder/ui). */
+export { SkeletonBar };
 
 const SKELETON_CARD = "rounded-[var(--radius-card)] bg-paper-raised p-4 shadow-[var(--shadow-card)] ring-1 ring-line";
 
@@ -139,7 +143,7 @@ export function StateMessage({ icon, title, description, action, tone = "neutral
 
 /**
  * Standard loading / error / empty wrapper for a data region. Uses the shared
- * Spinner + Alert; permission (403) errors get their own copy.
+ * ZLoader + Alert; permission (403) errors get their own copy.
  */
 export function DataState({
   loading,
@@ -162,7 +166,7 @@ export function DataState({
         aria-live="polite"
         className="flex min-h-[30vh] items-center justify-center text-ink-soft"
       >
-        <Spinner className="size-6" role="presentation" aria-hidden="true" aria-label={undefined} />
+        <ZLoader aria-hidden />
         <span className="sr-only">{t.loading}</span>
       </div>
     );

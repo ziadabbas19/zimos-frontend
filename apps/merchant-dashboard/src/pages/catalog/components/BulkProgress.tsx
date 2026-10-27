@@ -1,4 +1,4 @@
-import { Spinner } from "@store-builder/ui";
+import { ZLoader } from "@store-builder/ui";
 
 /**
  * The progress bar of a bulk action on products (edit, delete), shown for any
@@ -11,7 +11,7 @@ export function BulkProgress({ label, done, total }: { label: string; done?: num
   return (
     <div className="space-y-2" data-slot="bulk-progress">
       <p role="status" className="flex items-center gap-3 text-sm text-ink">
-        <Spinner className="size-4" />
+        <ZLoader size="sm" aria-hidden />
         {label}
       </p>
       <progress className="h-2 w-full accent-primary" aria-label={label} max={Math.max(total, 1)} value={value} />

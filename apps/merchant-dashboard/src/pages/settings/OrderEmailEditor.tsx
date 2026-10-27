@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { IconArrowLeft, IconDesktop, IconPhoneDevice, IconSend } from "@/components/icons";
-import { Alert, Button, Spinner, cn } from "@store-builder/ui";
+import { Alert, Button, cn, ZLoader } from "@store-builder/ui";
 import {
   apiFieldProblems,
   orderEmailDesignPreview,
@@ -412,7 +412,7 @@ export function OrderEmailEditor(props: OrderEmailEditorProps) {
             />
             {previewState === "loading" && (
               <p role="status" className="absolute inset-x-0 top-3 mx-auto flex w-fit items-center gap-2 rounded-full bg-paper-raised px-3 py-1 text-xs text-ink-soft shadow-[var(--shadow-card)]">
-                <Spinner className="size-3.5" aria-hidden />
+                <ZLoader size="sm" className="size-3.5" aria-hidden />
                 {t.previewUpdating}
               </p>
             )}
@@ -451,7 +451,7 @@ export function OrderEmailEditor(props: OrderEmailEditorProps) {
     <>
       <OrderEmailTestRecipientField state={testRecipient} disabled={testing || saving} />
       <Button type="button" variant="ghost" className="min-h-11 sm:min-h-9" onClick={() => void sendTest()} disabled={testing || saving}>
-        {testing ? <Spinner className="size-4" aria-hidden /> : <IconSend className="size-4 rtl:-scale-x-100" aria-hidden />}
+        {testing ? <ZLoader size="sm" aria-hidden /> : <IconSend className="size-4 rtl:-scale-x-100" aria-hidden />}
         {t.sendTest}
       </Button>
       <Button type="button" variant="outline" className="min-h-11 sm:min-h-9" onClick={onClose} disabled={saving}>

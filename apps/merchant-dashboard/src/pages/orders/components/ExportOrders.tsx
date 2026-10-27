@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Download } from "lucide-react";
-import { Alert, Button, Spinner } from "@store-builder/ui";
+import { Alert, Button, ZLoader } from "@store-builder/ui";
 import { exportFileStartOrders, type OrderExportCatalogue, type OrderExportParams } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -212,7 +212,7 @@ export function ExportOrdersDialog({ filters, onClose }: { filters: ExportOrders
         <Alert variant="destructive">{loadError}</Alert>
       ) : !catalogue ? (
         <div className="flex justify-center py-8">
-          <Spinner />
+          <ZLoader size="sm" />
         </div>
       ) : (
         <div className="space-y-5">

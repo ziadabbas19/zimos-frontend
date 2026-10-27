@@ -127,7 +127,9 @@ export function useCheckoutTenders({
   const pointsCap = programHere
     ? Math.min(Math.floor((total * programHere.maxRedeemPercent) / 100), Math.max(0, total - cardOff - creditOff))
     : 0;
-  const pointsUsed = pointsReady && programHere && asked !== null ? Math.min(asked, Math.floor(pointsCap / programHere.pointValue)) : 0;
+  // The store's cap per order too (maxRedeemPointsPerOrder), as the API's own planFor takes it.
+  const perOrder = programHere?.maxRedeemPointsPerOrder || Infinity;
+  const pointsUsed = pointsReady && programHere && asked !== null ? Math.min(asked, Math.floor(pointsCap / programHere.pointValue), perOrder) : 0;
   const pointsOff = programHere ? pointsUsed * programHere.pointValue : 0;
   const anyOff = cardOff > 0 || creditOff > 0 || pointsOff > 0;
   const rest = Math.max(0, total - cardOff - creditOff - pointsOff);
@@ -178,7 +180,11 @@ export function useCheckoutTenders({
           ? copy.refusedLoyaltyOff
           : points === "too_few"
             ? copy.refusedTooFew(programHere?.minRedeemPoints ?? 1)
-            : copy.refusedNotEnough;
+            : points === "unavailable"
+              ? copy.refusedUnavailable
+              : points === "device_limit"
+                ? copy.refusedDeviceLimit
+                : copy.refusedNotEnough;
       text = `${why} ${copy.pointsRemoved}`;
     } else {
       setCreditOn(false);
@@ -324,6 +330,7 @@ export function CheckoutTenders({ state }: { state: CheckoutTendersState }) {
                     ? `${copy.pointsWorth(state.pointsTyped, amount(state.pointsTyped * program.pointValue))} · `
                     : ""}
                   {program.maxRedeemPercent < 100 ? `${copy.pointsShare(program.maxRedeemPercent)} ` : ""}
+                  {program.maxRedeemPointsPerOrder ? `${copy.pointsCap(program.maxRedeemPointsPerOrder)} ` : ""}
                   {copy.pointsTaken}
                 </p>
               )}

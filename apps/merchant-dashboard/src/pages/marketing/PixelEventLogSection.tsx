@@ -11,6 +11,7 @@ import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { formatRelativeTime } from "@/lib/relativeTime";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { DataState } from "@/components/DataState";
+import { ListSkeleton } from "@/components/list";
 import { DataTable, type Column } from "@/components/DataTable";
 import { EmptyState } from "@/components/EmptyState";
 import { FilterTabs } from "@/components/FilterTabs";
@@ -201,7 +202,7 @@ export function PixelEventLogSection({ reloadKey = 0 }: { reloadKey?: number }) 
       />
 
       <div className="mt-3">
-        <DataState loading={loading} error={error} onRetry={() => void load(null)}>
+        <DataState skeleton={<ListSkeleton />} loading={loading} error={error} onRetry={() => void load(null)}>
           {events.length === 0 ? (
             <EmptyState
               icon={<ListChecks className="size-6" aria-hidden />}

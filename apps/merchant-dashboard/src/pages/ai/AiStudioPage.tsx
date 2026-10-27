@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { FileText, Languages, LayoutTemplate, Megaphone, PackagePlus, ScanSearch, Sparkles, Store } from "lucide-react";
-import { Alert, Button, Card, Spinner } from "@store-builder/ui";
+import { Alert, Button, Card, ZLoader } from "@store-builder/ui";
 import {
   AI_DIALECTS,
   ApiError,
@@ -264,7 +264,7 @@ export function ToolLayout({ form, result, busy, error }: { form: ReactNode; res
           {error && <Alert variant="danger">{error}</Alert>}
           {busy && (
             <div role="status" className="flex min-h-40 items-center justify-center gap-2 text-sm text-ink-soft">
-              <Spinner className="size-5" aria-hidden="true" />
+              <ZLoader aria-hidden />
               {t.generating}
             </div>
           )}

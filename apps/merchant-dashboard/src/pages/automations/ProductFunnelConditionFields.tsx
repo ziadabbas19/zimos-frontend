@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { funnelsList } from "@store-builder/api-client";
-import { Spinner } from "@store-builder/ui";
+import { ZLoader } from "@store-builder/ui";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
@@ -129,7 +129,7 @@ function PickList({
       </legend>
       {state.loading && !state.data ? (
         <div className="flex justify-center rounded-[0.5rem] border border-line py-4 text-ink-soft">
-          <Spinner className="size-4" />
+          <ZLoader size="sm" />
         </div>
       ) : state.error ? (
         <p className="text-sm text-ink-soft">{isPermissionError(state.error) ? t.noAccess : t.failed}</p>

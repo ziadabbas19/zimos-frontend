@@ -9,6 +9,7 @@ import { btnPrimary, btnSecondary, card, container } from "@/components/ui";
 import { createStorefrontApiClient } from "@/lib/apiClient";
 import { pickText } from "@/lib/i18n";
 import { useStore } from "@/lib/StoreContext";
+import { StorePageLoader } from "@/components/StoreLoader";
 
 const COPY = {
   en: {
@@ -114,7 +115,7 @@ function UnsubscribePage() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<main className="flex-1 px-6 py-16 text-center text-sm text-ink-soft">…</main>}>
+    <Suspense fallback={<StorePageLoader />}>
       <UnsubscribePage />
     </Suspense>
   );

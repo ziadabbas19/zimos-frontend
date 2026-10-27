@@ -23,6 +23,7 @@ import { formatDateTime } from "@/lib/format";
 import { fmt, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
+import { ListSkeleton } from "@/components/list";
 import { DataTable } from "@/components/DataTable";
 import { EmptyState } from "@/components/EmptyState";
 import { FilterTabs } from "@/components/FilterTabs";
@@ -442,7 +443,7 @@ export function AutomationsPage() {
             ]}
           />
         </div>
-        <DataState loading={runsLoading} error={runsError} onRetry={() => void loadRuns(null)}>
+        <DataState skeleton={<ListSkeleton rows={4} />} loading={runsLoading} error={runsError} onRetry={() => void loadRuns(null)}>
           {runs.length === 0 ? (
             <div className="px-4 pb-4">
               <EmptyState icon={<ListChecks aria-hidden />} title={t.noRuns} description={t.noRunsDesc} />

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import { PageHeader } from "@/components/PageHeader";
-import { DataState, EmptyBlock } from "@/components/DataState";
+import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { FilterChips, NativeSelect, SearchInput } from "@/components/forms";
 import { Panel, SortHead, Td, Th, compareValues, type SortState } from "@/components/Panel";
 import { WorkspaceStatus } from "@/components/workspace";
@@ -160,7 +160,7 @@ export function WorkspacesPage() {
           </Button>
         }
       />
-      <DataState loading={loading} error={error} onRetry={() => void refresh()}>
+      <DataState skeleton={<ListSkeleton variant="table" />} loading={loading} error={error} onRetry={() => void refresh()}>
         <div className="mb-4 flex flex-col gap-3">
           <FilterChips options={statusOptions} value={status} onChange={setStatus} />
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">

@@ -5,6 +5,7 @@ import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useErrorMessage } from "@/lib/errorMessages";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { countOf } from "@/lib/plural";
+import { ZLoaderHold } from "@store-builder/ui";
 
 const STRINGS = {
   en: {
@@ -118,7 +119,7 @@ export function useSelectMatching({
         <span>{fmt(t.shownSelected, { orders: countOf("order", shownCount) })}</span>
         <button type="button" className={LINK} onClick={() => void selectAll()} disabled={busy}>
           {busy
-            ? t.loading
+            ? <ZLoaderHold label={t.loading}>{t.loading}</ZLoaderHold>
             : total === undefined
               ? t.selectAllUnknown
               : total > MAX

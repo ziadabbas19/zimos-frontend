@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import { adminThemeUpdate, adminThemesList, type CatalogTheme } from "@store-builder/api-client";
 import { PageHeader } from "@/components/PageHeader";
-import { DataState, EmptyBlock } from "@/components/DataState";
+import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { Panel, Td, Th } from "@/components/Panel";
 import { Modal } from "@/components/Modal";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -120,7 +120,7 @@ export function ThemesPage() {
         title={t.title}
         description={t.description}
       />
-      <DataState loading={loading && !data} error={error} onRetry={() => void refresh()}>
+      <DataState skeleton={<ListSkeleton variant="table" />} loading={loading && !data} error={error} onRetry={() => void refresh()}>
         {data && data.length === 0 ? (
           <EmptyBlock message={t.empty} />
         ) : (

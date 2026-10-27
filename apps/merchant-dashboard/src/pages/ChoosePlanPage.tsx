@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Alert, Button, Spinner } from "@store-builder/ui";
+import { Alert, Button, ZLoader } from "@store-builder/ui";
 import { isApiErrorCode, type PublicPlan } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
@@ -121,8 +121,8 @@ export function ChoosePlanPage() {
                 </Button>
               </div>
             ) : !plans ? (
-              <div className="flex items-center gap-2 text-sm text-ink-soft" role="status">
-                <Spinner className="size-4" /> {t.loading}
+              <div className="flex min-h-11 items-center">
+                <ZLoader label={t.loading} />
               </div>
             ) : (
               <PlanPicker plans={plans} value={choice} onChange={setChoice} disabled={saving} labelledBy={headingId} />

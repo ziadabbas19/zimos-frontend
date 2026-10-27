@@ -13,6 +13,7 @@ import { useIsClient } from "@/lib/useIsClient";
 import { orderErrorMessage } from "@/lib/placeOrder";
 import { useStore } from "@/lib/StoreContext";
 import { storeHref } from "@/lib/storeHref";
+import { StorePageLoader } from "@/components/StoreLoader";
 
 // While the latest attempt is open, ask again this often, for this long. Each
 // ask may make the server check with the gateway (throttled there too).
@@ -302,7 +303,7 @@ function PaymentPage() {
 
 export default function PayPage() {
   return (
-    <Suspense fallback={<main className="flex-1 px-6 py-16 text-center text-sm text-ink-soft">…</main>}>
+    <Suspense fallback={<StorePageLoader />}>
       <PaymentPage />
     </Suspense>
   );

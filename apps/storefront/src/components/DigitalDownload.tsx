@@ -5,6 +5,7 @@ import { ApiError, storeDownloadFileUrl, storeGetDownload, type PublicDownload }
 import { createStorefrontApiClient } from "@/lib/apiClient";
 import { useStore } from "@/lib/StoreContext";
 import { btnPrimary, card, container } from "./ui";
+import { StoreLoader } from "@/components/StoreLoader";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api/v1";
 
@@ -103,9 +104,7 @@ export function DigitalDownload({ workspaceId, token }: { workspaceId: string; t
             )}
           </div>
         ) : !download ? (
-          <p role="status" className="text-center text-sm text-ink-soft">
-            {t.loading}
-          </p>
+          <StoreLoader label={t.loading} className="mx-auto" />
         ) : (
           <div className="space-y-5">
             <h1 dir="auto" className="text-xl font-semibold text-ink">

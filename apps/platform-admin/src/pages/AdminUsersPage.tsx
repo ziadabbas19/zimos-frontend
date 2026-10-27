@@ -3,7 +3,7 @@ import { Pencil, UserMinus, UserPlus } from "lucide-react";
 import { Alert, Button, Table, TableBody, TableHeader, TableRow, cn } from "@store-builder/ui";
 import type { AdminPlatformAdmin as Admin, AdminPlatformRole, AdminRolesResponse } from "@store-builder/api-client";
 import { PageHeader } from "@/components/PageHeader";
-import { DataState, EmptyBlock } from "@/components/DataState";
+import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { Modal } from "@/components/Modal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { SelectField, TextField } from "@/components/forms";
@@ -67,7 +67,7 @@ export function AdminUsersPage() {
           )
         }
       />
-      <DataState loading={loading && !data} error={error} onRetry={() => void refresh()}>
+      <DataState skeleton={<ListSkeleton variant="table" />} loading={loading && !data} error={error} onRetry={() => void refresh()}>
         {admins.length === 0 ? (
           <EmptyBlock message="No platform users." />
         ) : (
