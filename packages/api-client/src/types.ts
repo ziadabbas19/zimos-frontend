@@ -2661,6 +2661,8 @@ export interface AdminWorkspaceOverview {
   restricted?: boolean;
   /** Who owns it. */
   owner?: { id: string; username: string | null; fullName: string; email: string } | null;
+  /** The link that opens the store: its primary domain when that can be served, else its platform subdomain. Missing from an older API. */
+  storeUrl?: string | null;
 }
 
 /** What set a store's current subscription period. */
@@ -2807,6 +2809,10 @@ export interface AdminUserStore {
   role: string;
   /** This store is what matched the search. */
   matched: boolean;
+  /** Missing from an older API. */
+  createdAt?: string;
+  /** The link that opens the store: its primary domain when that can be served, else its platform subdomain. Missing from an older API. */
+  storeUrl?: string | null;
   subscription: {
     status: string;
     phase: BillingPhase | string;
@@ -2852,15 +2858,34 @@ export interface AdminUserAcquisition {
   secondsBeforeSignup: number;
 }
 
+/**
+ * Where an account was when it signed up: the country and governorate on the
+ * marketing-site visits of the session it signed up from (Cloudflare's headers,
+ * the IP's region, approximate). No city is kept.
+ */
+export interface AdminUserLocation {
+  /** ISO 3166-1 alpha-2, e.g. "EG". */
+  country: string | null;
+  /** One of the 27 governorate codes (the shipping list's), Egypt only. */
+  governorate: string | null;
+  source: "signup_visit";
+  /** The latest of those visits. */
+  seenAt: string;
+}
+
 /** GET /admin/users/:id */
 export interface AdminUserDetail extends AdminUserRow {
   phone: string | null;
+  /** Missing from an older API. */
+  phoneVerified?: boolean;
   usernameChangedAt: string | null;
   suspendedAt?: string | null;
   suspendedReason?: string | null;
   deletedAt?: string | null;
   /** Null when the account signed up without a tracked site visit (or before site analytics). */
   acquisition?: AdminUserAcquisition | null;
+  /** Null when no visit they signed up from carries a country or governorate; missing from an older API. */
+  location?: AdminUserLocation | null;
 }
 
 /** POST /admin/users/:id/{suspend,unsuspend,delete} */
