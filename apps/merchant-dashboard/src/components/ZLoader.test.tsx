@@ -6,30 +6,93 @@ import { Button, ZLoader, ZLoaderHold } from "@store-builder/ui";
 
 afterEach(cleanup);
 
+/** The seconds of a CSS time ("-1.600s"). */
+const seconds = (el: Element) => parseFloat((el as SVGElement).style.animationDelay);
+
 describe("ZLoader: the one loader", () => {
-  it("is the Z outlined twice (the faint letter and the running light), announced with its label", () => {
+  it("is the mark's three strips outlined faintly, announced with its label", () => {
     const { container } = render(<ZLoader label="Loading the orders…" />);
     const svg = screen.getByRole("status", { name: "Loading the orders…" });
     expect(svg.getAttribute("data-slot")).toBe("z-loader");
     expect(svg.getAttribute("data-size")).toBe("md");
     expect(svg.getAttribute("width")).toBe("32");
-    const paths = container.querySelectorAll("path");
-    expect(paths).toHaveLength(2);
-    expect(paths[0].getAttribute("d")).toBe(paths[1].getAttribute("d"));
-    expect(paths[1].getAttribute("class")).toBe("zimos-zl-trace");
-    expect(paths[1].getAttribute("pathLength")).toBe("100");
     expect(svg.getAttribute("fill")).toBe("none");
+    const strips = container.querySelectorAll(".zimos-zl-base");
+    expect(strips).toHaveLength(3);
+    expect(new Set(Array.from(strips, (p) => p.getAttribute("d"))).size).toBe(3);
   });
 
-  it("takes the brand colour in a section and the text colour in a button, unless told", () => {
+  it("runs a comet on each strip: a white-cyan glowing head, then a trail that thins and fades out", () => {
+    const { container } = render(<ZLoader />);
+    const heads = container.querySelectorAll(".zimos-zl-head");
+    expect(heads).toHaveLength(3);
+    const headGroup = heads[0].parentElement as Element;
+    expect(headGroup.getAttribute("stroke")).toBe("#effdff");
+    expect(headGroup.getAttribute("stroke-linecap")).toBe("round");
+    const glow = headGroup.getAttribute("filter")?.match(/^url\(#(.+)\)$/)?.[1];
+    expect(container.querySelector(`filter[id="${glow}"] feGaussianBlur`)).not.toBeNull();
+
+    const strip = container.querySelector(".zimos-zl-base")?.parentElement as Element;
+    const trail = Array.from(strip.querySelectorAll(".zimos-zl-run"));
+    expect(trail).toHaveLength(7);
+    const opacity = trail.map((p) => Number(p.getAttribute("stroke-opacity")));
+    const width = trail.map((p) => Number(p.getAttribute("stroke-width")));
+    expect(opacity[0]).toBe(1);
+    expect(opacity[6]).toBeLessThan(0.1);
+    expect(opacity).toEqual([...opacity].sort((a, b) => b - a));
+    expect(width).toEqual([...width].sort((a, b) => b - a));
+    expect(width[6]).toBeLessThan(width[0]);
+    // Each dash a little further behind the head, so they run as one trail.
+    const lag = trail.map(seconds);
+    expect(lag).toEqual([...lag].sort((a, b) => a - b));
+    expect(new Set(lag).size).toBe(7);
+  });
+
+  it("passes the head over the three strips in turn, in one cycle", () => {
+    const { container } = render(<ZLoader />);
+    const heads = Array.from(container.querySelectorAll(".zimos-zl-head"), seconds);
+    expect(heads).toEqual([-2.4, -1.6, -0.8]);
+  });
+
+  it("draws a longer trail at lg than at sm", () => {
+    const trailLength = (size: "sm" | "lg") => {
+      const { container, unmount } = render(<ZLoader size={size} aria-hidden />);
+      const strip = container.querySelector(".zimos-zl-base")?.parentElement as Element;
+      const dashes = Array.from(strip.querySelectorAll(".zimos-zl-run"));
+      const total = dashes.reduce((sum, p) => sum + Number(p.getAttribute("stroke-dasharray")?.split(" ")[0]), 0);
+      unmount();
+      return total;
+    };
+    expect(trailLength("lg")).toBeGreaterThan(trailLength("sm"));
+  });
+
+  it("takes the mark's own cyan-to-blue in a section and the text colour in a button, unless told", () => {
     const { container, rerender } = render(<ZLoader />);
     const svg = () => container.querySelector("svg") as SVGSVGElement;
-    expect(svg().style.getPropertyValue("--zl-c")).toBe("var(--color-primary, #0080e0)");
+    expect(svg().getAttribute("data-tone")).toBeNull();
+    expect(svg().style.getPropertyValue("--zl-c")).toBe("");
     rerender(<ZLoader size="sm" />);
+    expect(svg().getAttribute("data-tone")).toBe("own");
     expect(svg().style.getPropertyValue("--zl-c")).toBe("currentColor");
     expect(svg().getAttribute("width")).toBe("16");
     rerender(<ZLoader size="sm" color="#ff00aa" />);
     expect(svg().style.getPropertyValue("--zl-c")).toBe("#ff00aa");
+  });
+
+  it("gives every loader its own gradients, so two colours on one page do not mix", () => {
+    const { container } = render(
+      <>
+        <ZLoader />
+        <ZLoader color="#ff00aa" />
+      </>
+    );
+    const [first, second] = Array.from(container.querySelectorAll("svg"));
+    const refs = (svg: SVGSVGElement) =>
+      Array.from(svg.querySelectorAll(".zimos-zl-base"), (p) => p.parentElement?.getAttribute("stroke")?.match(/^url\(#(.+)\)$/)?.[1]);
+    for (const svg of [first, second]) {
+      for (const id of refs(svg)) expect(svg.querySelector(`linearGradient[id="${id}"]`)).not.toBeNull();
+    }
+    expect(refs(first).some((id) => refs(second).includes(id))).toBe(false);
   });
 
   it("says nothing when decorative, and keeps a caller's size class", () => {
@@ -60,15 +123,15 @@ describe("ZLoader: the one loader", () => {
     expect(screen.getByRole("status", { name: "Deleting…" }).getAttribute("data-size")).toBe("sm");
   });
 
-  it("brings its own CSS: the running light, and a still glow under reduced motion", () => {
+  it("brings its own CSS: the running comet, and a still glowing outline under reduced motion", () => {
     render(<ZLoader />);
     const css = Array.from(document.querySelectorAll("style"))
       .map((s) => s.textContent ?? "")
       .join("\n");
-    expect(css).toContain("@keyframes zimos-zl-trace");
-    expect(css).toContain("stroke-dashoffset");
+    expect(css).toContain("@keyframes zimos-zl-run{to{stroke-dashoffset:-300}}");
+    expect(css).toContain(".zimos-zl-base{opacity:.25}");
     expect(css).toContain("drop-shadow");
-    expect(css).toMatch(/@media \(prefers-reduced-motion:reduce\)\{\.zimos-zl-trace\{animation:none;stroke-dasharray:none\}\}/);
+    expect(css).toContain("@media (prefers-reduced-motion:reduce){.zimos-zl-run{display:none}.zimos-zl-base{opacity:1}}");
   });
 });
 
