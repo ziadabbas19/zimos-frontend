@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import { PageHeader } from "@/components/PageHeader";
+import { StoreLink } from "@/components/StoreLink";
 import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { FilterChips, NativeSelect, SearchInput } from "@/components/forms";
 import { Panel, SortHead, Td, Th, compareValues, type SortState } from "@/components/Panel";
@@ -220,7 +221,8 @@ export function WorkspacesPage() {
                         >
                           {workspace.name}
                         </Link>
-                        <span className="text-xs text-ink-soft">{workspace.slug}</span>
+                        <span className="block text-xs text-ink-soft">{workspace.slug}</span>
+                        <StoreLink url={workspace.storeUrl} name={workspace.name} />
                       </Td>
                       <Td>
                         {workspace.owner ? (
@@ -232,6 +234,9 @@ export function WorkspacesPage() {
                             >
                               <bdi>{workspace.owner.fullName}</bdi>
                             </Link>
+                            <bdi dir="ltr" className="block break-all text-xs text-ink-soft">
+                              {workspace.owner.email}
+                            </bdi>
                             {workspace.owner.username && (
                               <span dir="ltr" className="text-xs text-ink-soft">
                                 @{workspace.owner.username}
