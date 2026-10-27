@@ -1,5 +1,5 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
-import { Alert, Button, cn } from "@store-builder/ui";
+import { Alert, Button, cn, ZLoader } from "@store-builder/ui";
 import { apiFieldProblems, lostOrdersConvert, type LostOrder } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -7,7 +7,7 @@ import { useErrorMessage } from "@/lib/errorMessages";
 import { formatMoney } from "@/lib/format";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { TextField } from "@/components/Field";
-import { IconEye, IconSpinner } from "@/components/icons";
+import { IconEye } from "@/components/icons";
 import { Modal } from "@/components/Modal";
 import { PILL, PILL_LABELLED, PILL_QUIET } from "./LostOrderParts";
 import { isMasked, useLast } from "./lostOrderModel";
@@ -202,7 +202,7 @@ export function LostOrderConvertModal({
                 className={cn(PILL, PILL_LABELLED, PILL_QUIET, "mt-2")}
               >
                 {revealing ? (
-                  <IconSpinner className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+                  <ZLoader size="sm" aria-hidden />
                 ) : (
                   <IconEye className="size-4" aria-hidden />
                 )}

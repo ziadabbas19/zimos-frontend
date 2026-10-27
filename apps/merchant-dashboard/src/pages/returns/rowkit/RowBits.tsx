@@ -1,5 +1,5 @@
-import { Button, cn } from "@store-builder/ui";
-import { IconSpinner, type Icon } from "@/components/icons";
+import { Button, cn, ZLoader } from "@store-builder/ui";
+import { type Icon } from "@/components/icons";
 import { quickLookRowProps, type QuickLookRowProps } from "@/components/QuickLook";
 
 /**
@@ -27,7 +27,7 @@ export interface RowActionProps {
   label: string;
   icon?: Icon;
   onClick: () => void;
-  /** The request is out: the glyph gives way to a spinner and the pill takes no second press. */
+  /** The request is out: the glyph gives way to the Z loader and the pill takes no second press. */
   busy?: boolean;
   disabled?: boolean;
   /** `primary` is the brand pill; `quiet` a small pane; `danger` the same pane written in the danger colour. */
@@ -56,7 +56,7 @@ export function RowAction({ label, icon: ActionIcon, onClick, busy = false, disa
       )}
     >
       {busy ? (
-        <IconSpinner className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+        <ZLoader size="sm" aria-hidden />
       ) : ActionIcon ? (
         <ActionIcon className="size-4" aria-hidden />
       ) : null}

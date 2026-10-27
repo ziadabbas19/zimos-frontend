@@ -12,7 +12,7 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
-import { Alert, Button, Input, Spinner, cn } from "@store-builder/ui";
+import { Alert, Button, Input, cn, ZLoader } from "@store-builder/ui";
 import type {
   WhatsappConversation,
   WhatsappConversationStatus,
@@ -394,7 +394,7 @@ function InboxView() {
           <div className="min-h-0 flex-1 overflow-y-auto">
             {loading ? (
               <div className="flex justify-center p-6">
-                <Spinner className="size-5" />
+                <ZLoader />
               </div>
             ) : error ? (
               <div className="space-y-3 p-4">
@@ -697,7 +697,7 @@ function Thread({
       >
         {loading ? (
           <div className="flex justify-center p-6">
-            <Spinner className="size-5" />
+            <ZLoader />
           </div>
         ) : error ? (
           <div className="space-y-3">
@@ -711,7 +711,7 @@ function Thread({
             {olderCursor && (
               <div className="flex justify-center">
                 <Button size="sm" variant="ghost" onClick={loadOlder} disabled={loadingOlder}>
-                  {loadingOlder ? <Spinner className="size-4" /> : t.loadOlder}
+                  {loadingOlder ? <ZLoader size="sm" /> : t.loadOlder}
                 </Button>
               </div>
             )}

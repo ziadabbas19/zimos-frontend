@@ -1,9 +1,9 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
-import { Alert, Button, Input } from "@store-builder/ui";
+import { Alert, Button, Input, ZLoader } from "@store-builder/ui";
 import { waBotGet, waBotPreview, waBotSave, type WaBotDialect, type WaBotSettings } from "@store-builder/api-client";
 import { AccordionSection } from "@/components/Accordion";
 import { CardSkeleton, DataState } from "@/components/DataState";
-import { IconInfo, IconLock, IconRobot, IconSpinner } from "@/components/icons";
+import { IconInfo, IconLock, IconRobot } from "@/components/icons";
 import { PageHeader } from "@/components/PageHeader";
 import { SaveBar } from "@/components/SaveBar";
 import { Segmented } from "@/components/Segmented";
@@ -439,7 +439,7 @@ function WaBotSettings() {
                     className="h-11 min-w-0 flex-1"
                   />
                   <Button type="submit" aria-busy={asking || undefined} disabled={asking || !question.trim()} className="h-11 shrink-0 gap-1.5 rounded-full px-5">
-                    {asking && <IconSpinner className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />}
+                    {asking && <ZLoader size="sm" aria-hidden />}
                     {asking ? t.asking : t.ask}
                   </Button>
                 </form>

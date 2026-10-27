@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Alert, Button, Input, Label, cn } from "@store-builder/ui";
+import { Alert, Button, Input, Label, cn, ZLoader } from "@store-builder/ui";
 import {
   funnelExtrasImport,
   funnelExtrasShare,
@@ -498,7 +498,7 @@ export function FunnelShareDialog({ funnel, onClose }: { funnel: FunnelDto | nul
             aria-label={code.loading ? t.codeLoading : undefined}
             className="zimos-funnel-code flex min-h-12 items-center rounded-[0.875rem] bg-paper-sunken px-4 font-mono text-xl tracking-widest text-ink ring-1 ring-line"
           >
-            {code.loading ? "…" : (code.data ?? "—")}
+            {code.loading ? <ZLoader size="sm" aria-hidden /> : (code.data ?? "—")}
           </bdi>
           {code.data && <CopyButton value={code.data} label={t.copy} />}
         </div>

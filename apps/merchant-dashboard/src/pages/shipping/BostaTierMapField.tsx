@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { Label } from "@store-builder/ui";
+import { Label, ZLoader } from "@store-builder/ui";
 import {
   BOSTA_PACKAGE_TYPES,
   BOSTA_PARCEL_SIZES,
@@ -82,7 +82,7 @@ export function BostaTierMapField({
     <fieldset className="space-y-2">
       <legend className="text-sm font-medium text-ink">{t.heading}</legend>
       {loading ? (
-        <p className="text-sm text-ink-soft">{t.loading}</p>
+        <ZLoader size="sm" label={t.loading} />
       ) : !tiers || tiers.length === 0 ? (
         <p className="text-sm text-ink-soft">{t.noTiers}</p>
       ) : (

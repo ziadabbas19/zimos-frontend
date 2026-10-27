@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { IconArrowDown, IconArrowUp, IconCaretDown, IconClick, IconDelete, IconDivider, IconHeading, IconImage, IconListView, IconPackage, IconParagraph, IconPlus, IconQuote, IconSearch } from "@/components/icons";
-import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Input, cn } from "@store-builder/ui";
+import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Input, cn, ZLoader } from "@store-builder/ui";
 import { ApiError, BLOG_BLOCKS_MAX, BLOG_BLOCK_TYPES, type BlogBlockType, type ProductListParams } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -586,7 +586,7 @@ function ProductField({
           </Select>
         )}
       </Field>
-      {list.loading && !list.data && <p className="text-xs text-ink-soft">{t.productLoading}</p>}
+      {list.loading && !list.data && <ZLoader size="sm" label={t.productLoading} />}
       {Boolean(list.error) && <p className="text-xs text-danger">{t.productFailed}</p>}
       {list.data && list.data.length === 0 && debounced && <p className="text-xs text-ink-soft">{t.productNoMatch}</p>}
     </div>

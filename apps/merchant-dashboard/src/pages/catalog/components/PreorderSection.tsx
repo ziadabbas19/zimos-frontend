@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { IconLock, IconSchedule } from "@/components/icons";
-import { Alert, Button, Input, Spinner, cn } from "@store-builder/ui";
+import { Alert, Button, Input, cn, ZLoader } from "@store-builder/ui";
 import {
   PREORDER_LIMIT_MAX,
   PREORDER_MESSAGE_MAX,
@@ -129,9 +129,8 @@ export function PreorderSection({ productId }: { productId: string }) {
   return (
     <ProductPageCard title={t.title} description={t.description}>
       {data.loading && !data.data ? (
-        <div role="status" className="flex min-h-11 items-center gap-2 text-sm text-ink-soft">
-          <Spinner className="size-5" role="presentation" aria-hidden="true" aria-label={undefined} />
-          {t.loading}
+        <div className="flex min-h-11 items-center">
+          <ZLoader label={t.loading} />
         </div>
       ) : data.error || !data.data ? (
         isPermissionError(data.error) ? (

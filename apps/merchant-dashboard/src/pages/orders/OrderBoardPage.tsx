@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type DragEvent } from "react";
 import { Link } from "react-router-dom";
-import { Button, cn } from "@store-builder/ui";
+import { Button, cn, ZLoader } from "@store-builder/ui";
 import {
   ordersChangeStatus,
   ordersNextStages,
@@ -11,7 +11,7 @@ import {
 import { ContextMenu, type ContextMenuItem } from "@/components/ContextMenu";
 import { DataState } from "@/components/DataState";
 import { EmptyState } from "@/components/EmptyState";
-import { IconColumns, IconCopy, IconOrders, IconPhone, IconPlus, IconRefresh, IconSpinner, IconSwap, IconWhatsApp } from "@/components/icons";
+import { IconColumns, IconCopy, IconOrders, IconPhone, IconPlus, IconRefresh, IconSwap, IconWhatsApp } from "@/components/icons";
 import { ChipRow, ListRowCard, ListSkeleton, type ChipItem } from "@/components/list";
 import { LoadMore } from "@/components/LoadMore";
 import { PageHeader } from "@/components/PageHeader";
@@ -541,7 +541,7 @@ export function OrderBoardPage() {
             className="size-11 rounded-full p-0 md:w-auto md:gap-2 md:ps-3.5 md:pe-4"
           >
             {refreshing ? (
-              <IconSpinner className="size-5 animate-spin motion-reduce:animate-none" aria-hidden />
+              <ZLoader size="sm" className="size-5" aria-hidden />
             ) : (
               <IconRefresh className="size-5" aria-hidden />
             )}
@@ -821,7 +821,7 @@ function BoardColumn({
                             className="zimos-row-action h-11 gap-1.5 rounded-full px-3.5 text-[13px] pointer-fine:h-9 pointer-fine:px-3"
                           >
                             {busy ? (
-                              <IconSpinner className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+                              <ZLoader size="sm" aria-hidden />
                             ) : (
                               <IconSwap className="size-4" aria-hidden />
                             )}

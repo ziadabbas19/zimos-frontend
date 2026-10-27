@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Alert, Button, cn } from "@store-builder/ui";
+import { Alert, Button, cn, ZLoader } from "@store-builder/ui";
 import {
   shipmentBatchGet,
   shipmentBatchRetry,
@@ -11,7 +11,7 @@ import {
 import { ContextMenu, type ContextMenuItem } from "@/components/ContextMenu";
 import { CardSkeleton, DataState } from "@/components/DataState";
 import { EmptyState } from "@/components/EmptyState";
-import { IconCopy, IconCourier, IconMapPinned, IconOrders, IconSearch, IconSend, IconSpinner, IconSuccess, IconWarning } from "@/components/icons";
+import { IconCopy, IconCourier, IconMapPinned, IconOrders, IconSearch, IconSend, IconSuccess, IconWarning } from "@/components/icons";
 import { ChipRow, ListRowCard, ListSkeleton, ListToolbar, type ChipItem } from "@/components/list";
 import { PageHeader } from "@/components/PageHeader";
 import { Sheet } from "@/components/Sheet";
@@ -315,7 +315,7 @@ export function ShipmentBatchPage() {
     done && failed.length > 0 ? (
       <Button className="min-h-11 rounded-full px-5" onClick={() => void retry()} disabled={busy} aria-busy={busy || undefined}>
         {busy ? (
-          <IconSpinner className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+          <ZLoader size="sm" aria-hidden />
         ) : (
           <IconSend className="size-4 rtl:-scale-x-100" aria-hidden />
         )}
@@ -546,7 +546,7 @@ function BatchProgress({ data, failed, t }: { data: ShipmentBatch; failed: numbe
             <IconSuccess className="size-5 shrink-0 text-success" aria-hidden />
           )
         ) : (
-          <IconSpinner className="size-5 shrink-0 animate-spin text-primary motion-reduce:animate-none" aria-hidden />
+          <ZLoader size="sm" className="size-5 shrink-0 text-primary" aria-hidden />
         )}
         <p role="status" aria-live="polite" className="min-w-0 flex-1 text-[15px] leading-6 font-semibold text-ink">
           {sentence}

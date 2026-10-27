@@ -214,7 +214,6 @@ export {
   LogOut as IconSignOut,
   SlidersHorizontal as IconSliders,
   Sparkles as IconSparkle,
-  LoaderCircle as IconSpinner,
   Star as IconStar,
   Store as IconStore,
   Store as IconStoreSettings,

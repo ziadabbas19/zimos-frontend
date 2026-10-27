@@ -1,6 +1,6 @@
 import { useId, type ReactNode } from "react";
-import { cn } from "@store-builder/ui";
-import { IconCaretRight, IconExternal, IconSpinner, type IconComponent } from "@/components/icons";
+import { cn, ZLoader } from "@store-builder/ui";
+import { IconCaretRight, IconExternal, type IconComponent } from "@/components/icons";
 import { ViewLink } from "@/components/ViewLink";
 import { useT, type Messages } from "@/i18n/LocaleContext";
 import { SettingsIconTile, type SettingsTone } from "./SettingsPane";
@@ -241,7 +241,7 @@ export interface SettingsSwitchProps {
   hint?: string;
   /** Cannot be changed here (a role without the right, a plan without the feature): dimmed, out of the Tab order. */
   disabled?: boolean;
-  /** The change is being saved: the thumb shows a spinner and a second press waits. The row keeps the focus. */
+  /** The change is being saved: the thumb shows the Z loader and a second press waits. The row keeps the focus. */
   busy?: boolean;
   className?: string;
   /** Marks the block for the dashboard's search: brought into view and marked when a search result opens it (lib/search/reveal.ts). */
@@ -306,8 +306,8 @@ export function SettingsSwitch({ checked, onChange, label, hint, disabled = fals
             checked && "translate-x-5 rtl:-translate-x-5"
           )}
         >
-          {/* The thumb is white in both themes, so the spinner is a fixed dark grey, not a theme ink. */}
-          {busy && <IconSpinner className="size-3.5 animate-spin text-black/55 motion-reduce:animate-none" aria-hidden />}
+          {/* The thumb is white in both themes, so the Z loader is a fixed dark grey, not a theme ink. */}
+          {busy && <ZLoader size="sm" className="size-3.5 text-black/55" aria-hidden />}
         </span>
       </span>
     </button>

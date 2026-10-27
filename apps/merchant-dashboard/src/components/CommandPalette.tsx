@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useGuardedLeave } from "@/lib/useUnsavedGuard";
 import { CornerDownLeft, History, Package, Route, Search, ShoppingBag, User, type LucideIcon } from "lucide-react";
-import { cn } from "@store-builder/ui";
+import { cn, ZLoader } from "@store-builder/ui";
 import { dashboardSearch, type DashboardSearchResult } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspace } from "@/context/WorkspaceContext";
@@ -379,7 +379,16 @@ export function CommandPalette() {
             <div ref={listRef} id="command-palette-list" role="listbox" aria-label={t.open} className="flex-1 overflow-y-auto p-2">
               {rows.length === 0 ? (
                 <p role="status" className="px-3 py-8 text-center text-sm text-ink-soft">
-                  {searching ? t.searching : term ? t.nothing.replace("{q}", term) : t.hint}
+                  {searching ? (
+                    <>
+                      <ZLoader size="sm" className="mx-auto" aria-hidden />
+                      <span className="sr-only">{t.searching}</span>
+                    </>
+                  ) : term ? (
+                    t.nothing.replace("{q}", term)
+                  ) : (
+                    t.hint
+                  )}
                 </p>
               ) : (
                 rows.map((row, index) => {
@@ -419,7 +428,7 @@ export function CommandPalette() {
             </div>
 
             <div className="flex items-center justify-between gap-2 border-t border-line px-4 py-2 text-xs text-ink-soft">
-              <span>{searching ? t.searching : " "}</span>
+              <span>{searching ? <ZLoader size="sm" aria-hidden /> : " "}</span>
               <span className="flex items-center gap-1.5">
                 <kbd className="rounded border border-line px-1.5">↵</kbd> {t.toSelect}
                 <kbd className="ms-2 rounded border border-line px-1.5">Esc</kbd>

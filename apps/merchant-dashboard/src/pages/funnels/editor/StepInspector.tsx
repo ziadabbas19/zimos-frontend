@@ -10,7 +10,7 @@ import {
   IconPlus,
   IconWarning,
 } from "@/components/icons";
-import { Button, Input, Label, Spinner, cn } from "@store-builder/ui";
+import { Button, Input, Label, cn, ZLoader } from "@store-builder/ui";
 import { splitTestsList, type FunnelProblem, type SplitTest } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -314,9 +314,7 @@ function StepInspectorBody({
         {(needsOffer || step.offerId) && (
           <Group title={t.offer}>
             {catalogLoading ? (
-              <p className="flex items-center gap-2 text-xs text-ink-soft">
-                <Spinner className="size-4" /> {t.offersLoading}
-              </p>
+              <ZLoader size="sm" label={t.offersLoading} />
             ) : catalogError ? (
               <p className="text-xs leading-5 text-danger">{t.offersError}</p>
             ) : entries.length === 0 ? (

@@ -1,5 +1,5 @@
 import { memo, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
-import { cn } from "@store-builder/ui";
+import { cn, ZLoader } from "@store-builder/ui";
 import { IconDocument, IconPlay, IconTag, IconWarning } from "@/components/icons";
 import { ContextMenu, type ContextMenuItem } from "@/components/ContextMenu";
 import { fmt, useLocale, useT } from "@/i18n/LocaleContext";
@@ -146,7 +146,7 @@ export const StepCard = memo(function StepCard({
             <p className={cn("mt-1 flex min-w-0 items-center gap-1.5 text-xs leading-4", step.offerId && (offer || !catalogLoaded) ? "text-ink-soft" : "text-danger")}>
               <IconTag className="size-3.5 shrink-0" aria-hidden />
               <span className="truncate" dir="auto">
-                {!step.offerId ? pinned.noOffer : offer ? fmt(pinned.offerOf, { offer: offer.offerName, product: offer.productName }) : catalogLoaded ? pinned.offerUnknown : "…"}
+                {!step.offerId ? pinned.noOffer : offer ? fmt(pinned.offerOf, { offer: offer.offerName, product: offer.productName }) : catalogLoaded ? pinned.offerUnknown : <ZLoader size="sm" className="inline-block align-middle" aria-hidden />}
               </span>
             </p>
           )}

@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import { DirectionProvider } from "@base-ui/react/direction-provider";
-import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@store-builder/ui";
-import { IconMoreActions, IconSpinner, type IconComponent } from "@/components/icons";
+import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, ZLoader } from "@store-builder/ui";
+import { IconMoreActions, type IconComponent } from "@/components/icons";
 import { useLocale } from "@/i18n/LocaleContext";
 import { useViewNavigate } from "@/lib/viewTransition";
 
@@ -44,7 +44,7 @@ export function HeaderMenu({ label, items, busy = false }: { label: string; item
           render={<Button type="button" variant="outline" aria-label={label} title={label} className="size-11 shrink-0 rounded-full p-0 pointer-fine:size-10" />}
         >
           {busy ? (
-            <IconSpinner className="size-5 animate-spin motion-reduce:animate-none" aria-hidden />
+            <ZLoader size="sm" className="size-5" aria-hidden />
           ) : (
             <IconMoreActions className="size-5" aria-hidden />
           )}

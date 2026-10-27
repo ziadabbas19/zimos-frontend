@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FlaskConical, Pause, Play, Trash2, Upload } from "lucide-react";
-import { Alert, Badge, Button, Card, CardContent, Spinner } from "@store-builder/ui";
+import { Alert, Badge, Button, Card, CardContent, ZLoader } from "@store-builder/ui";
 import {
   ApiError,
   productTestChooseWinner,
@@ -208,9 +208,9 @@ export function ProductTestSection({
         </div>
 
         {tests.loading ? (
-          <p role="status" className="flex items-center gap-2 text-sm text-ink-soft">
-            <Spinner className="size-4" aria-hidden /> {t.loading}
-          </p>
+          <div className="flex min-h-11 items-center">
+            <ZLoader label={t.loading} />
+          </div>
         ) : tests.error ? (
           forbidden(tests.error) ? (
             <Alert>{t.noPermission}</Alert>
@@ -402,7 +402,7 @@ function NewTestForm({
             })}
           </ul>
           <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-[0.5rem] border border-line px-4 text-sm font-medium text-ink hover:border-primary has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40">
-            {uploading ? <Spinner className="size-4" /> : <Upload className="size-4" aria-hidden />}
+            {uploading ? <ZLoader size="sm" /> : <Upload className="size-4" aria-hidden />}
             {uploading ? t.uploading : t.addPicture}
             <input
               type="file"
@@ -557,8 +557,8 @@ function OpenTest({
                       {results?.leaderKey === v.key && <Badge className="ms-2" variant="secondary">{t.leading}</Badge>}
                     </td>
                     <td className="py-2 text-ink-soft">{changesOf(v.key)}</td>
-                    <td className="py-2 text-end tabular-nums text-ink-soft">{detail.loading ? "…" : (r?.visits ?? 0)}</td>
-                    <td className="py-2 text-end tabular-nums text-ink-soft">{detail.loading ? "…" : (r?.orders ?? 0)}</td>
+                    <td className="py-2 text-end tabular-nums text-ink-soft">{detail.loading ? <ZLoader size="sm" className="ms-auto" aria-hidden /> : (r?.visits ?? 0)}</td>
+                    <td className="py-2 text-end tabular-nums text-ink-soft">{detail.loading ? <ZLoader size="sm" className="ms-auto" aria-hidden /> : (r?.orders ?? 0)}</td>
                     <td className="py-2 text-end tabular-nums text-ink-soft">{r ? `${(r.conversionRateBp / 100).toFixed(2)}%` : "—"}</td>
                     <td className="py-2 text-end tabular-nums text-ink-soft">{r ? formatMoney(r.revenueAmount, currency) : "—"}</td>
                     <td className="py-2 text-end tabular-nums text-ink-soft">{r ? formatMoney(r.revenuePerVisitAmount, currency) : "—"}</td>

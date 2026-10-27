@@ -1,7 +1,7 @@
 import { useCallback, useId, useMemo, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { IconCalendar, IconDownload, IconMoreReports, IconWarning } from "@/components/icons";
-import { Button, Card, Spinner, cn } from "@store-builder/ui";
+import { Button, Card, cn, ZLoader } from "@store-builder/ui";
 import { storeReportCsv, storeReportRangeRefused, type StoreReportName, type StoreReportQuery } from "@store-builder/api-client";
 import { PageHeader } from "@/components/PageHeader";
 import { ReportLinks, ReportTab, ReportTabState } from "@/components/report";
@@ -325,7 +325,7 @@ export function StoreReportCsvButton({
 
   return (
     <Button type="button" variant="outline" className={cn("min-h-11 gap-2 rounded-full px-4 md:min-h-10", className)} onClick={download} disabled={disabled || busy}>
-      {busy ? <Spinner className="size-4" aria-label={t.downloading} /> : <IconDownload className="size-4" aria-hidden />}
+      {busy ? <ZLoader size="sm" label={t.downloading} /> : <IconDownload className="size-4" aria-hidden />}
       {t.downloadCsv}
     </Button>
   );

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Trash2, Upload } from "lucide-react";
-import { Button, Card, CardContent, Spinner } from "@store-builder/ui";
+import { Button, Card, CardContent, ZLoader } from "@store-builder/ui";
 import type { ProductMedia } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -108,7 +108,7 @@ export function ProductVideoSection({ productId, media, onChanged }: { productId
           </ul>
         )}
         <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-[0.5rem] border border-line px-4 text-sm font-medium text-ink hover:border-primary has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40">
-          {busy ? <Spinner className="size-4" /> : <Upload className="size-4" aria-hidden />}
+          {busy ? <ZLoader size="sm" /> : <Upload className="size-4" aria-hidden />}
           {busy ? t.uploading : t.upload}
           <input
             type="file"

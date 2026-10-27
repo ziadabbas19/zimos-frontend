@@ -1,11 +1,10 @@
 import { useState, type ReactNode } from "react";
 import type { WebAnalyticsFilterKey, WebAnalyticsMetricRow, WebAnalyticsMetricType, WebAnalyticsRangeParams } from "@store-builder/api-client";
-import { Card, cn } from "@store-builder/ui";
+import { Card, cn, ZLoader } from "@store-builder/ui";
 import { apiClient } from "@/lib/apiClient";
 import { useAsync } from "@/lib/useAsync";
 import { formatCount } from "@/lib/analytics";
 import { Modal } from "@/components/Modal";
-import { Spinner } from "@store-builder/ui";
 import { useT, type Messages } from "@/i18n/LocaleContext";
 
 const STRINGS = {
@@ -46,7 +45,7 @@ function Rows({
   if (loading && rows.length === 0) {
     return (
       <div className="flex h-40 items-center justify-center text-ink-soft">
-        <Spinner className="size-5" />
+        <ZLoader />
       </div>
     );
   }

@@ -1,11 +1,11 @@
 import { useLayoutEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { Button, cn } from "@store-builder/ui";
+import { Button, cn, ZLoader } from "@store-builder/ui";
 import type { SupportTicket, SupportTicketStatus, SupportTicketThread } from "@store-builder/api-client";
 import { ContextMenu, type ContextMenuItem } from "@/components/ContextMenu";
 import { DataState } from "@/components/DataState";
 import { EmptyState } from "@/components/EmptyState";
-import { IconEye, IconLock, IconPlus, IconSearch, IconSend, IconSpinner, IconSuccess, IconSupport, IconTicket } from "@/components/icons";
+import { IconEye, IconLock, IconPlus, IconSearch, IconSend, IconSuccess, IconSupport, IconTicket } from "@/components/icons";
 import { ChipRow, ListRowCard, ListSkeleton, ListToolbar, type ChipItem } from "@/components/list";
 import { PageHeader } from "@/components/PageHeader";
 import { useMediaQuery } from "@/components/report/useMediaQuery";
@@ -563,7 +563,7 @@ function TicketView({ ticketId }: { ticketId: string }) {
                     className="h-11 shrink-0 gap-1.5 rounded-full px-4 max-sm:w-11 max-sm:px-0"
                   >
                     {busy ? (
-                      <IconSpinner className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+                      <ZLoader size="sm" aria-hidden />
                     ) : (
                       <IconSend className="size-[18px] rtl:-scale-x-100" aria-hidden />
                     )}

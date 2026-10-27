@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { IconClose, IconDelete, IconImage, IconMedia, IconUpload } from "@/components/icons";
-import { Alert, Button, Label, Spinner } from "@store-builder/ui";
+import { Alert, Button, Label, ZLoader } from "@store-builder/ui";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { getErrorMessage } from "@/lib/errors";
@@ -147,7 +147,7 @@ export function ImageField({
   const openLibrary = useLibraryRequest(onRequestImage, onChange);
   const uploadButton = (
     <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => inputRef.current?.click()}>
-      {busy ? <Spinner className="size-4" /> : <IconUpload className="size-4" aria-hidden />}
+      {busy ? <ZLoader size="sm" /> : <IconUpload className="size-4" aria-hidden />}
       {value ? ui.replace : ui.upload}
     </Button>
   );
@@ -244,7 +244,7 @@ export function ImageListField({
           disabled={busy}
           onClick={() => inputRef.current?.click()}
         >
-          {busy ? <Spinner className="size-4" /> : <IconUpload className="size-4" aria-hidden />}
+          {busy ? <ZLoader size="sm" /> : <IconUpload className="size-4" aria-hidden />}
           {ui.addImages}
         </Button>
         {openLibrary && <LibraryButton onClick={openLibrary} />}

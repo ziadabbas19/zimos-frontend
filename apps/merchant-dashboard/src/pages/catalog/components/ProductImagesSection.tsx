@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type DragEvent } from "react";
 import { ChevronDown, ChevronUp, Star, Trash2, Upload } from "lucide-react";
-import { Alert, Button, Card, CardContent, Spinner, cn } from "@store-builder/ui";
+import { Alert, Button, Card, CardContent, cn, ZLoader } from "@store-builder/ui";
 import type { ProductMedia } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -265,14 +265,14 @@ export function ProductImagesSection(props: Props) {
 
         {preparing > 0 && (
           <p className="mt-3 flex items-center gap-2 text-sm text-ink-soft">
-            <Spinner className="size-4" />{" "}
+            <ZLoader size="sm" />{" "}
             {preparing === 1 ? t.preparingOne : fmt(t.preparingMany, { n: preparing })}
           </p>
         )}
 
         {uploading > 0 && (
           <p className="mt-3 flex items-center gap-2 text-sm text-ink-soft">
-            <Spinner className="size-4" />{" "}
+            <ZLoader size="sm" />{" "}
             {uploading === 1 ? t.uploadingOne : fmt(t.uploadingMany, { n: uploading })}
           </p>
         )}

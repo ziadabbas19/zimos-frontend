@@ -1,5 +1,5 @@
 import { useId, useMemo, useRef, useState, type FormEvent, type SyntheticEvent } from "react";
-import { Alert, Button, Input, Label, Spinner } from "@store-builder/ui";
+import { Alert, Button, Input, Label, ZLoader } from "@store-builder/ui";
 import type { CreateDiscountPayload, Discount, DiscountType, Product, UpdateDiscountPayload } from "@store-builder/api-client";
 import { IconArchive, IconLink, IconMagic, IconPause, IconPlay } from "@/components/icons";
 import { apiClient } from "@/lib/apiClient";
@@ -495,7 +495,7 @@ function ProductScopePicker({ selected, onChange }: { selected: string[]; onChan
     onChange(selectedSet.has(id) ? selected.filter((x) => x !== id) : [...selected, id]);
   }
 
-  if (products.loading) return <Spinner className="size-4" aria-label={t.loading} />;
+  if (products.loading) return <ZLoader size="sm" label={t.loading} />;
   if (products.error) return <p className="text-sm text-danger">{getErrorMessage(products.error)}</p>;
 
   return (

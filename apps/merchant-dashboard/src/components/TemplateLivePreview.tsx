@@ -8,7 +8,7 @@ import {
   type SyntheticEvent,
 } from "react";
 import type { PageTree } from "@store-builder/api-client";
-import { Spinner, cn } from "@store-builder/ui";
+import { cn, ZLoader } from "@store-builder/ui";
 import { apiClient } from "@/lib/apiClient";
 import type { ColorMode, PreviewTheme } from "@/lib/previewBridge";
 import { STOREFRONT_URL } from "@/lib/storefrontUrl";
@@ -276,7 +276,7 @@ export function TemplateLivePreview({
       )}
       {!card && phase === "loading" && (
         <div className="pointer-events-none absolute inset-x-0 top-6 z-10 flex justify-center">
-          <Spinner className="size-5 text-ink-soft" />
+          <ZLoader />
         </div>
       )}
 

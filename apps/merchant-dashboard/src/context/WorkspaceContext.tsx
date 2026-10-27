@@ -33,7 +33,7 @@ interface WorkspaceContextValue {
   /**
    * Re-read the workspace list. `silent` keeps the current list on screen —
    * without it `loading` flips and RequireWorkspace swaps the whole layout
-   * for a spinner, which is wrong after an in-page save.
+   * for the Z loader, which is wrong after an in-page save.
    */
   refresh: (opts?: { silent?: boolean }) => Promise<void>;
   /**

@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { Link } from "react-router-dom";
 import { ExternalLink, Rocket, X } from "lucide-react";
-import { Alert, Button, Spinner } from "@store-builder/ui";
+import { Alert, Button, ZLoader } from "@store-builder/ui";
 import { ApiError, apiErrorDetails, type WorkspaceBilling } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { closeGoLive, getGoLiveState, subscribeGoLive } from "@/lib/goLive";
@@ -231,8 +231,8 @@ function GoLivePanel({ holding }: { holding: boolean }) {
               </Button>
             </div>
           ) : !billing ? (
-            <div className="flex justify-center py-6 text-ink-soft" role="status">
-              <Spinner className="size-5" />
+            <div className="flex justify-center py-6">
+              <ZLoader />
             </div>
           ) : !plan ? (
             <p className="text-sm text-ink">{t.noPlan}</p>

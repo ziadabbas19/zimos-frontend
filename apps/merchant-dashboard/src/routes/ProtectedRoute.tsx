@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Button, Spinner } from "@store-builder/ui";
+import { Button, ZLoader } from "@store-builder/ui";
 import { SignOutButton } from "@/components/SignOutButton";
+import { PageLoader } from "@/components/DataState";
 import { useT, type Messages } from "@/i18n/LocaleContext";
 
 const STRINGS = {
@@ -26,8 +27,8 @@ export function ProtectedRoute() {
 
   if (status === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-paper text-ink-soft">
-        <Spinner className="size-6" />
+      <div className="min-h-screen bg-paper">
+        <PageLoader />
       </div>
     );
   }
@@ -76,7 +77,7 @@ function AccountUnavailable() {
         <p className="mt-2 text-sm text-ink-soft">{t.body}</p>
         <div className="mt-5 flex flex-col items-center gap-2">
           <Button onClick={tryAgain} disabled={busy} className="w-full">
-            {busy ? <Spinner className="size-4" /> : null}
+            {busy ? <ZLoader size="sm" /> : null}
             {t.retry}
           </Button>
           <SignOutButton className="min-h-11 cursor-pointer text-sm text-ink-soft hover:text-danger hover:underline">{t.signOut}</SignOutButton>

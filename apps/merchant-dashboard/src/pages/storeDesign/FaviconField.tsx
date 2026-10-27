@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Image as ImageIcon, Trash2, Upload } from "lucide-react";
-import { Alert, Button, Spinner } from "@store-builder/ui";
+import { Alert, Button, ZLoader } from "@store-builder/ui";
 import type { MediaAsset } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -128,7 +128,7 @@ export function FaviconField({
 
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" variant="outline" disabled={locked} onClick={() => inputRef.current?.click()}>
-          {busy ? <Spinner className="size-4" /> : <Upload aria-hidden />}
+          {busy ? <ZLoader size="sm" /> : <Upload aria-hidden />}
           {busy === "preparing" ? t.preparing : busy === "uploading" ? t.uploading : t.upload}
         </Button>
         <Button size="sm" variant="outline" disabled={locked} onClick={() => setLibraryOpen(true)}>
@@ -211,7 +211,7 @@ function LibraryPicker({
         <Alert variant="danger">{t.libraryError}</Alert>
       ) : images === null ? (
         <div className="flex justify-center py-6">
-          <Spinner className="size-5" />
+          <ZLoader />
         </div>
       ) : images.length === 0 ? (
         <p className="py-6 text-center text-sm text-ink-soft">{t.libraryEmpty}</p>

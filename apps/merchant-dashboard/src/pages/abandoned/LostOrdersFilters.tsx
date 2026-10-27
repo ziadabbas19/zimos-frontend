@@ -7,6 +7,7 @@ import {
   type LostOrderReviewStatus,
   type LostOrderTab,
 } from "@store-builder/api-client";
+import type { ReactNode } from "react";
 import { TextField } from "@/components/Field";
 import { IconClose } from "@/components/icons";
 import { FilterChoice, FilterGroup, FilterSheet } from "@/components/list";
@@ -134,7 +135,7 @@ export function LostOrdersFilterSheet({
   onChange: (next: LostOrderFilterState) => void;
   products: readonly LostOrderProductOption[];
   /** «اعرض ٢٠ أوردر»: what is waiting behind the sheet. */
-  applyLabel: string;
+  applyLabel: ReactNode;
 }) {
   const t = useT(STRINGS);
   const labels = useLostOrderLabels();

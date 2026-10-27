@@ -12,7 +12,7 @@ import {
 } from "react";
 import { recordLatency, type EditKind } from "@/lib/previewLatency";
 import { IconClose, IconDesktop, IconInspect, IconMoon, IconPhoneDevice, IconRefresh, IconSun, IconTablet } from "@/components/icons";
-import { Button, Spinner, cn } from "@store-builder/ui";
+import { Button, cn, ZLoader } from "@store-builder/ui";
 import type { PageElementType, PageTree } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { STOREFRONT_URL } from "@/lib/storefrontUrl";
@@ -984,7 +984,7 @@ export function StorefrontPreview({
               title={labels.refresh}
               onClick={() => void post(serialized)}
             >
-              <IconRefresh className={cn("size-4", loading && "animate-spin motion-reduce:animate-none")} aria-hidden />
+              {loading ? <ZLoader size="sm" aria-hidden /> : <IconRefresh className="size-4" aria-hidden />}
             </Button>
             {onClose && (
               <Button type="button" size="icon-sm" variant="ghost" aria-label={labels.close} onClick={onClose}>
@@ -1006,7 +1006,7 @@ export function StorefrontPreview({
       >
         {loading && (
           <div className="pointer-events-none absolute inset-x-0 top-4 z-10 flex justify-center">
-            <Spinner className="size-5 text-ink-soft" />
+            <ZLoader />
           </div>
         )}
         {fit ? (

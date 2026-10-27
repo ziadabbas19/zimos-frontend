@@ -1,14 +1,14 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { Spinner } from "@store-builder/ui";
+import { PageLoader } from "@/components/DataState";
 
 export function RequireWorkspace() {
   const { loading, workspaces, currentWorkspace } = useWorkspace();
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-paper text-ink-soft">
-        <Spinner className="size-6" />
+      <div className="min-h-screen bg-paper">
+        <PageLoader />
       </div>
     );
   }

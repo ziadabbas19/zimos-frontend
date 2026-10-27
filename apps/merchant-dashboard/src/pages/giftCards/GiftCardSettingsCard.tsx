@@ -1,6 +1,6 @@
 import { useId, useMemo, useState, type FormEvent } from "react";
 import { IconGift, IconSearch } from "@/components/icons";
-import { Alert, Button, Input, Spinner } from "@store-builder/ui";
+import { Alert, Button, Input, ZLoader } from "@store-builder/ui";
 import {
   GIFT_CARD_MAX_PRODUCTS,
   giftCardSettingsGet,
@@ -54,9 +54,8 @@ export function GiftCardSettingsCard() {
   if (settings.loading) {
     return (
       <AccordionSection {...frame} summary={t.settingsLoading}>
-        <div role="status" className="flex min-h-11 items-center gap-2 text-sm text-ink-soft">
-          <Spinner className="size-5" role="presentation" aria-hidden="true" aria-label={undefined} />
-          {t.settingsLoading}
+        <div className="flex min-h-11 items-center">
+          <ZLoader label={t.settingsLoading} />
         </div>
       </AccordionSection>
     );
@@ -231,7 +230,7 @@ function SettingsDialog({
           <legend className="text-sm font-medium text-ink">{t.chooseProducts}</legend>
           {productsLoading ? (
             <div role="status" className="flex min-h-11 items-center gap-2 text-sm text-ink-soft">
-              <Spinner className="size-4" role="presentation" aria-hidden="true" aria-label={undefined} />
+              <ZLoader size="sm" aria-hidden />
             </div>
           ) : productsError ? (
             <p className="text-sm text-danger">{errorMessage(productsError)}</p>

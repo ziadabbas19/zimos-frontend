@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { IconExternal, IconSearch } from "@/components/icons";
-import { Input } from "@store-builder/ui";
+import { Input, ZLoader } from "@store-builder/ui";
 import type { ProductListParams } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -129,7 +129,7 @@ export function ProductPickerField({
               </option>
             ))}
           </Select>
-          {list.loading && !list.data && <p className="text-xs text-ink-soft">{t.loading}</p>}
+          {list.loading && !list.data && <ZLoader size="sm" label={t.loading} />}
           {Boolean(list.error) && <p className="text-xs text-danger">{t.failed}</p>}
           {list.data && options.length === 0 && query.trim() && <p className="text-xs text-ink-soft">{t.noMatch}</p>}
           {editHref && (kind === "collection" || value) && (

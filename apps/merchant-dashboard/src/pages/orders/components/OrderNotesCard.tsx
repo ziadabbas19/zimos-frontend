@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Trash2 } from "lucide-react";
-import { Button } from "@store-builder/ui";
+import { Button, ZLoader } from "@store-builder/ui";
 import { ordersAddNote, ordersDeleteNote, ordersListNotes, type Order } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -127,7 +127,7 @@ export function OrderNotesCard({ order, onChanged }: { order: Order; onChanged: 
 
       <div className="mt-4 border-t border-line pt-3">
         {notes.loading && !notes.data ? (
-          <p className="text-sm text-ink-soft">{t.loading}</p>
+          <ZLoader size="sm" label={t.loading} />
         ) : notes.error ? (
           <p className="flex flex-wrap items-center gap-2 text-sm text-danger" role="alert">
             {t.failed}

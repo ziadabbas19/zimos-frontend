@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Alert, Button, Spinner, cn } from "@store-builder/ui";
+import { Alert, Button, cn, ZLoader } from "@store-builder/ui";
 import type {
   BillingCycle,
   PlanSwitch,
@@ -192,9 +192,9 @@ function SwitchBody({
     return (
       <div className="space-y-3">
         {notice && <Alert role="status">{notice}</Alert>}
-        <p className="flex items-center gap-2 text-sm text-ink-soft">
-          <Spinner className="size-4" /> {s.loading}
-        </p>
+        <div className="flex min-h-11 items-center">
+          <ZLoader label={s.loading} />
+        </div>
       </div>
     );
   }

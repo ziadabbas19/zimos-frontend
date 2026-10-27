@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
-import { Alert, Button, Input } from "@store-builder/ui";
+import { Alert, Button, Input, ZLoader } from "@store-builder/ui";
 import {
   ApiError,
   shoppableImagesCreate,
@@ -8,7 +8,7 @@ import {
   type ShoppableImage,
 } from "@store-builder/api-client";
 import { Field } from "@/components/Field";
-import { IconClose, IconImageAdd, IconSpinner, IconUpload } from "@/components/icons";
+import { IconClose, IconImageAdd, IconUpload } from "@/components/icons";
 import { Modal } from "@/components/Modal";
 import { Select } from "@/components/Select";
 import { useToast } from "@/components/Toast";
@@ -346,7 +346,7 @@ export function LookEditor({
 
             <Button type="button" variant="outline" className="min-h-11 rounded-full px-4 pointer-fine:min-h-10" disabled={busy || uploading} onClick={() => fileInput.current?.click()}>
               {uploading ? (
-                <IconSpinner className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+                <ZLoader size="sm" aria-hidden />
               ) : (
                 <IconUpload className="size-4" aria-hidden />
               )}

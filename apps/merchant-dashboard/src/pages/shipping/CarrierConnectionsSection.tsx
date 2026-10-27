@@ -1,5 +1,5 @@
 import { useId, useState, type FormEvent } from "react";
-import { Alert, Button, Input, Label, cn } from "@store-builder/ui";
+import { Alert, Button, Input, Label, cn, ZLoaderHold } from "@store-builder/ui";
 import {
   ApiError,
   BOSTA_PACKAGE_TYPES,
@@ -694,7 +694,7 @@ function CarrierCard({
         <div className="mt-4 flex flex-wrap gap-2">
           {hasSettings && (
             <Button variant="outline" className="min-h-11" disabled={busy !== null} onClick={startEditSettings}>
-              {busy === "load" ? t.loadingLocations : t[guide.editSettings]}
+              {busy === "load" ? <ZLoaderHold label={t.loadingLocations}>{t[guide.editSettings]}</ZLoaderHold> : t[guide.editSettings]}
             </Button>
           )}
           <Button

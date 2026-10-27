@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
-import { Button, Spinner } from "@store-builder/ui";
+import { Button, ZLoader } from "@store-builder/ui";
 import { ApiError, aiStart, aiWaitForJob } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -59,7 +59,7 @@ export function SuggestReplyButton({ conversationId, onSuggest }: { conversation
 
   return (
     <Button type="button" size="icon" variant="ghost" aria-label={busy ? t.suggesting : t.suggest} title={busy ? t.suggesting : t.suggest} disabled={busy} onClick={() => void suggest()}>
-      {busy ? <Spinner className="size-4" /> : <Sparkles className="size-4" aria-hidden />}
+      {busy ? <ZLoader size="sm" /> : <Sparkles className="size-4" aria-hidden />}
     </Button>
   );
 }

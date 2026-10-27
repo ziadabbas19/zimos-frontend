@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Button, Alert } from "@store-builder/ui";
+import { Button, Alert, ZLoaderHold } from "@store-builder/ui";
 import { Modal } from "./Modal";
 import { getErrorMessage } from "@/lib/errors";
 
@@ -68,7 +68,7 @@ export function ConfirmDialog({
             onClick={handleConfirm}
             disabled={busy}
           >
-            {busy ? busyLabel : confirmLabel}
+            {busy ? <ZLoaderHold label={busyLabel}>{confirmLabel}</ZLoaderHold> : confirmLabel}
           </Button>
         </>
       }

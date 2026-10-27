@@ -31,8 +31,8 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Spinner,
   cn,
+  ZLoader,
 } from "@store-builder/ui";
 import { funnelsListRevisions, funnelsRollback, type FunnelProblem, type FunnelRevisionDto, type FunnelStatus } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
@@ -351,7 +351,7 @@ export function EditorHeader({
             </button>
           )}
           <Button type="button" variant="outline" onClick={onSave} disabled={!dirty || busy} className={cn(BAR_BUTTON, "zimos-editor-soft px-3 md:px-4")}>
-            {saving ? <Spinner className="size-4" /> : <IconSave className="hidden size-4 md:block" aria-hidden />}
+            {saving ? <ZLoader size="sm" /> : <IconSave className="hidden size-4 md:block" aria-hidden />}
             {c.save}
           </Button>
           <Button
@@ -363,7 +363,7 @@ export function EditorHeader({
             title={mayPublish ? undefined : t.publishNotAllowed}
             className={cn(BAR_BUTTON, "ms-1 px-3.5 md:ms-0 md:px-5", !mayPublish && "opacity-50")}
           >
-            {statusBusy ? <Spinner className="size-4" /> : <IconLaunch className="hidden size-4 md:block" aria-hidden />}
+            {statusBusy ? <ZLoader size="sm" /> : <IconLaunch className="hidden size-4 md:block" aria-hidden />}
             <span className="md:hidden">{t.publishShort}</span>
             <span className="hidden md:inline">{publishLabel}</span>
           </Button>
@@ -539,7 +539,7 @@ function SaveWords({ dirty, saving, progress }: { dirty: boolean; saving: boolea
       className={cn("inline-flex min-w-0 items-center gap-1.5 text-xs whitespace-nowrap", state === "dirty" ? "font-medium text-ink" : "text-ink-soft")}
     >
       {state === "saving" ? (
-        <Spinner className="size-3.5 shrink-0" />
+        <ZLoader size="sm" className="size-3.5 shrink-0" />
       ) : state === "dirty" ? (
         <span aria-hidden className="size-2 shrink-0 rounded-full bg-accent" />
       ) : (

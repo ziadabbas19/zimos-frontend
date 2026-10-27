@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
-import { Alert, Button, Spinner } from "@store-builder/ui";
+import { Alert, Button, ZLoader } from "@store-builder/ui";
 import { whatsappTemplatesList, whatsappTemplatesSync, type WhatsappTemplateRow } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -165,14 +165,14 @@ export function WhatsappTemplatesPanel() {
           <p className="mt-1 text-xs text-ink-soft">{syncedAt ? fmt(t.synced, { at: formatDateTime(syncedAt) }) : t.neverSynced}</p>
         </div>
         <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void sync()}>
-          {busy ? <Spinner className="size-4" /> : <RefreshCw className="size-4" aria-hidden />}
+          {busy ? <ZLoader size="sm" /> : <RefreshCw className="size-4" aria-hidden />}
           {busy ? t.syncing : t.sync}
         </Button>
       </div>
       {syncError && <Alert variant="danger">{syncError}</Alert>}
       {templates === null ? (
         <div className="flex justify-center py-4 text-ink-soft">
-          <Spinner className="size-5" />
+          <ZLoader />
         </div>
       ) : error && isPermissionError(error) ? (
         <p className="text-sm text-ink-soft">{t.noPermission}</p>

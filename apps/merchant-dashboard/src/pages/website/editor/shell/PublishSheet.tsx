@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Button } from "@store-builder/ui";
+import { Alert, Button, ZLoader } from "@store-builder/ui";
 import { websiteRevisionsList, type PublishProblem, type Website, type WebsitePage } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
-import { IconHome, IconPage, IconSpinner } from "@/components/icons";
+import { IconHome, IconPage } from "@/components/icons";
 import { Sheet } from "@/components/Sheet";
 import { StatusBadge } from "@/components/StatusBadge";
 import { pluralOf } from "@/lib/plural";
@@ -118,7 +118,7 @@ export function PublishSheet({
       <div className="space-y-4">
         {checking ? (
           <p role="status" className="flex items-center gap-2 text-sm text-ink-soft">
-            <IconSpinner className="size-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden />
+            <ZLoader size="sm" className="shrink-0" aria-hidden />
             {t.checking}
           </p>
         ) : firstPublish ? (

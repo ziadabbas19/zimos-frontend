@@ -9,8 +9,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   cn,
+  ZLoader,
 } from "@store-builder/ui";
-import { IconEye, IconMoreActions, IconSpinner } from "@/components/icons";
+import { IconEye, IconMoreActions } from "@/components/icons";
 import { ContextMenu, type ContextMenuItem } from "@/components/ContextMenu";
 import { DataState } from "@/components/DataState";
 import { PageHeader } from "@/components/PageHeader";
@@ -111,7 +112,7 @@ interface OfferSwitchProps {
   onChange: (next: boolean) => void;
   /** What the switch turns on or off, for a screen reader and the tooltip. */
   label: string;
-  /** The change is being saved: the thumb shows a spinner and a second press waits. */
+  /** The change is being saved: the thumb shows the Z loader and a second press waits. */
   busy?: boolean;
   disabled?: boolean;
   className?: string;
@@ -157,7 +158,7 @@ export function OfferSwitch({ checked, onChange, label, busy = false, disabled =
             checked && "translate-x-5 rtl:-translate-x-5"
           )}
         >
-          {busy && <IconSpinner className="size-3.5 animate-spin text-black/55 motion-reduce:animate-none" aria-hidden />}
+          {busy && <ZLoader size="sm" className="size-3.5 text-black/55" aria-hidden />}
         </span>
       </span>
     </button>

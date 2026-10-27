@@ -1,6 +1,6 @@
 import { useDeferredValue, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Button, cn } from "@store-builder/ui";
+import { Button, cn, ZLoaderHold } from "@store-builder/ui";
 import { LOST_ORDER_TABS, lostOrdersStats, type LostOrderStats, type LostOrderTab } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -227,7 +227,7 @@ export function LostOrdersPage() {
   const removingName = removingShown?.customerName?.trim() ?? "";
 
   const applyLabel = list.loading
-    ? t.showLoading
+    ? <ZLoaderHold label={t.showLoading}>{t.showLoading}</ZLoaderHold>
     : shown.length === 0
       ? t.showNone
       : fmt(list.hasMore ? t.showMore : t.show, { count: countOf("order", shown.length) });

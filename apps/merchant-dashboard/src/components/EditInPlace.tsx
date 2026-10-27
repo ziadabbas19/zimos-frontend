@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Button, Input, cn } from "@store-builder/ui";
-import { IconEdit, IconSpinner } from "@/components/icons";
+import { Button, Input, cn, ZLoader } from "@store-builder/ui";
+import { IconEdit } from "@/components/icons";
 import { TriggerPopover as Popover } from "@/components/TriggerPopover";
 import { useToast } from "@/components/Toast";
 import { useErrorMessage } from "@/lib/errorMessages";
@@ -217,7 +217,7 @@ export function EditInPlace({
             {shown}
           </span>
           {saving ? (
-            <IconSpinner className="size-3.5 shrink-0 animate-spin text-ink-soft motion-reduce:animate-none" aria-hidden />
+            <ZLoader size="sm" className="size-3.5 shrink-0 text-ink-soft" aria-hidden />
           ) : (
             <IconEdit
               className="size-3.5 shrink-0 text-ink-soft opacity-0 transition-opacity duration-[var(--dur-fade)] ease-[var(--ease-out)] group-hover/eip:opacity-100 group-focus-visible/eip:opacity-100 group-data-[popup-open]/eip:opacity-100 motion-reduce:transition-none pointer-coarse:opacity-100"

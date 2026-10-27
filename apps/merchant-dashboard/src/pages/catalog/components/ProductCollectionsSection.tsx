@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Button, Card, CardContent, Spinner } from "@store-builder/ui";
+import { Button, Card, CardContent, ZLoader } from "@store-builder/ui";
 import type { CollectionSummary } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -114,7 +114,7 @@ export function ProductCollectionsSection({ productId, memberships, onChanged }:
 
         <div className="mt-4 flex items-center gap-2">
           {all.loading ? (
-            <Spinner className="size-4" />
+            <ZLoader size="sm" />
           ) : all.error ? (
             <span className="text-sm text-danger">{errorMessage(all.error)}</span>
           ) : available.length === 0 ? (

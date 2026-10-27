@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { DirectionProvider } from "@base-ui/react/direction-provider";
-import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, cn } from "@store-builder/ui";
-import { IconCaretUp, IconClose, IconSpinner, type IconComponent } from "@/components/icons";
+import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, cn, ZLoader } from "@store-builder/ui";
+import { IconCaretUp, IconClose, type IconComponent } from "@/components/icons";
 import { useLocale, useT, type Messages } from "@/i18n/LocaleContext";
 
 const STRINGS = {
@@ -223,7 +223,7 @@ function BulkPane({ open, label, onClear, actions, maxInline, extra, busy }: Bul
           <span className="min-w-0 truncate">{label}</span>
           {busy && (
             <>
-              <IconSpinner className="size-4 shrink-0 animate-spin text-ink-soft motion-reduce:animate-none" aria-hidden />
+              <ZLoader size="sm" className="shrink-0 text-ink-soft" aria-hidden />
               <span className="sr-only">{t.working}</span>
             </>
           )}

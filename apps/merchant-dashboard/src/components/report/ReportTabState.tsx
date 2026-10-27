@@ -43,7 +43,7 @@ export interface ReportTabStateProps {
 /**
  * The gate around a tab's parts, for its main request:
  *
- * - loading → the tab-shaped skeleton (never a spinner);
+ * - loading → the tab-shaped skeleton (never the Z loader);
  * - a 403 → the dashboard's no-permission state (DataState's own: a lock, who
  *   to ask, no retry — trying again cannot grant a role);
  * - any other error → DataState's error with «جرّب تاني» when `onRetry` is given;

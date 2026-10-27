@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Upload, X } from "lucide-react";
-import { Button, Input, Spinner } from "@store-builder/ui";
+import { Button, Input, ZLoader } from "@store-builder/ui";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { getErrorMessage } from "@/lib/errors";
@@ -86,7 +86,7 @@ export function ImageUrlInput({
           disabled={disabled || busy}
           onClick={() => input.current?.click()}
         >
-          {busy ? <Spinner className="size-4" /> : <Upload className="size-4" aria-hidden />}
+          {busy ? <ZLoader size="sm" /> : <Upload className="size-4" aria-hidden />}
           {t.upload}
         </Button>
         {value && (

@@ -31,7 +31,7 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
-import { Alert, Button, Spinner, cn } from "@store-builder/ui";
+import { Alert, Button, cn, ZLoader } from "@store-builder/ui";
 import type { CollectionDetail, CollectionSummary, CreateCollectionPayload } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -561,7 +561,7 @@ function ProductOrderDialog({ collection, onClose }: { collection: CollectionSum
     >
       {error && <Alert variant="danger" className="mb-3">{error}</Alert>}
       {detail.loading ? (
-        <Spinner className="size-5" />
+        <ZLoader />
       ) : detail.error ? (
         <Alert variant="danger">{errorMessage(detail.error)}</Alert>
       ) : products.length === 0 ? (

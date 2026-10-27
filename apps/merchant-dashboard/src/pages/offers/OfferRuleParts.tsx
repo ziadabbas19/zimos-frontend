@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Input, Label, cn } from "@store-builder/ui";
+import { Input, Label, cn, ZLoader } from "@store-builder/ui";
 import type { Product } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -117,7 +117,7 @@ export function ProductChecklist({
         className="h-11 text-base md:h-10 md:text-sm"
       />
       <ul data-slot="offer-checklist" className="zimos-offer-checklist max-h-52 divide-y divide-line overflow-y-auto overscroll-contain rounded-[0.875rem] bg-paper-raised ring-1 ring-line">
-        {shown.length === 0 && <li className="px-3 py-3 text-sm text-ink-soft">{loading ? t.loading : t.noMatch}</li>}
+        {shown.length === 0 && <li className="px-3 py-3 text-sm text-ink-soft">{loading ? <ZLoader size="sm" label={t.loading} /> : t.noMatch}</li>}
         {shown.map((p) => {
           const checked = value.includes(p.id);
           return (

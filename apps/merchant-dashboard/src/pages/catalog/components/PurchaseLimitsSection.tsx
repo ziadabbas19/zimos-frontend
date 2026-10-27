@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { IconLock } from "@/components/icons";
-import { Alert, Button, Input, Spinner, cn } from "@store-builder/ui";
+import { Alert, Button, Input, cn, ZLoader } from "@store-builder/ui";
 import {
   PURCHASE_LIMIT_MAX,
   apiFieldProblems,
@@ -93,9 +93,8 @@ export function PurchaseLimitsSection({ productId }: { productId: string }) {
   return (
     <ProductPageCard title={t.title} description={t.description}>
       {data.loading && !data.data ? (
-        <div role="status" className="flex min-h-11 items-center gap-2 text-sm text-ink-soft">
-          <Spinner className="size-5" role="presentation" aria-hidden="true" aria-label={undefined} />
-          {t.loading}
+        <div className="flex min-h-11 items-center">
+          <ZLoader label={t.loading} />
         </div>
       ) : data.error || !data.data ? (
         isPermissionError(data.error) ? (
