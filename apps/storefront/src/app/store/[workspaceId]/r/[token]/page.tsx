@@ -10,6 +10,7 @@ import { useCart } from "@/lib/CartProvider";
 import { saveRecoveryPrefill } from "@/lib/recoveryPrefill";
 import { useStore } from "@/lib/StoreContext";
 import { storeHref } from "@/lib/storeHref";
+import { StoreLoader } from "@/components/StoreLoader";
 
 const COPY = {
   en: {
@@ -75,7 +76,7 @@ export default function RecoveryPage() {
           </>
         ) : (
           <div aria-busy="true">
-            <p className="text-sm text-ink-soft">{t.loading}</p>
+            <StoreLoader label={t.loading} className="mx-auto" />
             <span className={`${skeleton} mx-auto mt-4 block h-3 w-40`} />
           </div>
         )}

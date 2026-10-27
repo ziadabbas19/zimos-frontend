@@ -14,6 +14,7 @@ import { createStorefrontApiClient } from "@/lib/apiClient";
 import { pickText, type Locale } from "@/lib/i18n";
 import { useStore } from "@/lib/StoreContext";
 import { SPEC_TEXT, specName, specValue } from "./specText";
+import { StoreButtonLoader } from "@/components/StoreLoader";
 
 /**
  * The product listing's specification filters. Around
@@ -233,7 +234,7 @@ export function SpecFilteredResults({
               {current.products.length < current.total && (
                 <div className="mt-6 flex justify-center">
                   <button type="button" disabled={loadingMore} onClick={() => void more()} className={btnSecondary}>
-                    {loadingMore ? text.loadingMore : text.more}
+                    {loadingMore ? <StoreButtonLoader label={text.loadingMore}>{text.more}</StoreButtonLoader> : text.more}
                   </button>
                 </div>
               )}

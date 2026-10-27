@@ -8,6 +8,7 @@ import { useCart } from "@/lib/CartProvider";
 import { latestOrderSnapshot } from "@/lib/commerce";
 import { useStore } from "@/lib/StoreContext";
 import { useIsClient } from "@/lib/useIsClient";
+import { StoreLoader } from "@/components/StoreLoader";
 
 /**
  * The interactive halves of the SPEC §9.3 builder elements. Each is a small
@@ -66,7 +67,7 @@ export function CheckoutSummaryBlock({ title, buttonLabel }: { title: string; bu
     <div className="zt-card rounded-2xl border border-line bg-paper-raised p-5">
       <h3 className="text-lg font-semibold text-ink">{title || t.checkout.summary}</h3>
       {isLoading ? (
-        <p className="mt-2 text-sm text-ink-soft">{t.renderer.cartLoading}</p>
+        <StoreLoader size="sm" label={t.renderer.cartLoading} className="mt-3" />
       ) : items.length === 0 ? (
         <p className="mt-2 text-sm text-ink-soft">{t.renderer.cartEmpty}</p>
       ) : (

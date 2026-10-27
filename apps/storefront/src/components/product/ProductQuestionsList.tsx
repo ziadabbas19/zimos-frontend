@@ -13,6 +13,7 @@ import { createStorefrontApiClient } from "@/lib/apiClient";
 import { pickText } from "@/lib/i18n";
 import { useStore } from "@/lib/StoreContext";
 import { btnPrimary, btnSecondary, card, input, label as labelClass } from "../ui";
+import { StoreButtonLoader } from "@/components/StoreLoader";
 
 /**
  * «أسئلة وأجوبة» on the product page: the questions
@@ -293,7 +294,7 @@ export function ProductQuestionsList({
       {questions.length > 0 && questions.length < total && (
         <div className="mt-4 flex justify-center">
           <button type="button" disabled={loadingMore} className={btnSecondary} onClick={() => void more()}>
-            {loadingMore ? text.loading : text.more}
+            {loadingMore ? <StoreButtonLoader label={text.loading}>{text.more}</StoreButtonLoader> : text.more}
           </button>
         </div>
       )}
