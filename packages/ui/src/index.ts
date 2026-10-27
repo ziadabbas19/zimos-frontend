@@ -16,7 +16,7 @@ export {
   CardFooter,
 } from "./components/card";
 export { Alert, AlertTitle, AlertDescription, AlertAction } from "./components/alert";
-export { Spinner } from "./components/spinner";
+export { ZLoader, ZLoaderHold, type ZLoaderHoldProps, type ZLoaderProps, type ZLoaderSize } from "./z-loader";
 export { SkeletonBar, ListSkeleton, type ListSkeletonProps } from "./components/skeleton";
 
 export { Badge, badgeVariants } from "./components/badge";
