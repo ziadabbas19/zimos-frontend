@@ -15,13 +15,15 @@ import { DetailRow } from "@/components/Drawer";
 import { Panel, Td, Th } from "@/components/Panel";
 import { Status, StatusBadge } from "@/components/StatusBadge";
 import { CopyId } from "@/components/CopyId";
+import { StoreLink } from "@/components/StoreLink";
 import { UserModerationActions, UserStateBadge } from "@/components/userModeration";
 import { useAsync } from "@/lib/useAsync";
 import * as adminApi from "@/lib/adminApi";
 import { formatDate, formatDateTime, formatRelative } from "@/lib/format";
 import { fmt, useLocale, useT } from "@/i18n/LocaleContext";
 import { SITE_TRAFFIC_STRINGS, formatDuration } from "@/lib/siteTrafficStrings";
-import type { AdminUserAcquisition, AdminUserDetail } from "@store-builder/api-client";
+import { countryName, governorateName } from "@/lib/storeTrafficStrings";
+import type { AdminUserAcquisition, AdminUserDetail, AdminUserLocation } from "@store-builder/api-client";
 
 /** Where the account came from on the marketing site (backend user_acquisition). */
 function AcquisitionPanel({ acquisition }: { acquisition: AdminUserAcquisition | null }) {
@@ -52,6 +54,34 @@ function AcquisitionPanel({ acquisition }: { acquisition: AdminUserAcquisition |
         <DetailRow label={t.beforeSignup}>{formatDuration(acquisition.secondsBeforeSignup, locale)}</DetailRow>
       </dl>
     </Panel>
+  );
+}
+
+/**
+ * Where they were when they signed up, as the marketing site kept it (backend
+ * site_visits, from Cloudflare's headers): the IP's region, approximate, and
+ * no city. "Not recorded" when they signed up without a tracked visit.
+ */
+function LocationRow({ location }: { location: AdminUserLocation | null }) {
+  const { locale } = useLocale();
+  if (!location) {
+    return (
+      <DetailRow label="Location">
+        <span className="text-ink-soft">Not recorded</span>
+      </DetailRow>
+    );
+  }
+  const place = [
+    location.governorate ? governorateName(location.governorate, locale, location.governorate) : null,
+    location.country ? countryName(location.country, locale) : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  return (
+    <DetailRow label="Location">
+      <bdi>{place}</bdi>
+      <span className="ms-2 text-xs text-ink-soft">approximate, at sign-up · {formatDate(location.seenAt)}</span>
+    </DetailRow>
   );
 }
 
@@ -137,7 +167,15 @@ export function UserDetailPage() {
                     </StatusBadge>
                   )}
                 </DetailRow>
-                <DetailRow label="Phone">{user.phone ? <bdi dir="ltr">{user.phone}</bdi> : "—"}</DetailRow>
+                <DetailRow label="Phone">
+                  {user.phone ? <bdi dir="ltr">{user.phone}</bdi> : "—"}
+                  {user.phone && user.phoneVerified !== undefined && (
+                    <StatusBadge tone={user.phoneVerified ? "success" : "warning"} className="ms-2">
+                      {user.phoneVerified ? "Verified" : "Not verified"}
+                    </StatusBadge>
+                  )}
+                </DetailRow>
+                {user.location !== undefined && <LocationRow location={user.location} />}
                 <DetailRow label="User ID">
                   <CopyId value={user.id} full />
                 </DetailRow>
@@ -172,6 +210,7 @@ export function UserDetailPage() {
                       <Th>Store</Th>
                       <Th>Role</Th>
                       <Th>Subscription</Th>
+                      <Th>Created</Th>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -181,7 +220,8 @@ export function UserDetailPage() {
                           <Link to={`/workspaces/${s.id}`} className="block font-medium text-ink hover:text-primary">
                             <bdi>{s.name}</bdi>
                           </Link>
-                          <span className="text-xs text-ink-soft">{s.slug}</span>
+                          <span className="block text-xs text-ink-soft">{s.slug}</span>
+                          <StoreLink url={s.storeUrl} name={s.name} />
                         </Td>
                         <Td className="capitalize">{s.role.replace(/_/g, " ")}</Td>
                         <Td>
@@ -196,6 +236,7 @@ export function UserDetailPage() {
                             "—"
                           )}
                         </Td>
+                        <Td className="text-ink-soft">{s.createdAt ? formatDate(s.createdAt) : "—"}</Td>
                       </TableRow>
                     ))}
                   </TableBody>
