@@ -1,28 +1,27 @@
-import { protectionNetworkScores, type Customer, type NetworkScore } from "@store-builder/api-client";
+import type { Customer } from "@store-builder/api-client";
 import { cn } from "@store-builder/ui";
 import { fmt } from "@/i18n/LocaleContext";
 import { apiClient } from "@/lib/apiClient";
 import { isPermissionError } from "@/lib/errors";
-import { formatPercentValue } from "@/lib/format";
-import { countOf, pluralOf } from "@/lib/plural";
+import { countOf } from "@/lib/plural";
 import { useCachedAsync } from "@/lib/useCachedAsync";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useOrderLabels } from "@/pages/orders/orderLabels";
 import { useStationStrings } from "./stationStrings";
 
 /*
- * A role that may not read customers (or the network score) is told so once:
- * after the first 403 in a store the station stops asking for the rest of the
- * visit, instead of failing two requests on every order.
+ * A role that may not read customers is told so once: after the first 403 in
+ * a store the station stops asking for the rest of the visit, instead of
+ * failing a request on every order.
  */
 const customersDenied = new Set<string>();
-const networkDenied = new Set<string>();
 
 /**
  * What the store already knows about the customer on the line, from data that
  * exists and was never shown here: their record in this store (orders so far,
- * rejected, blocked) and their delivery record across the platform. Kept for
- * the session per customer, so going back to an order shows it at once.
+ * rejected, blocked). Kept for the session per customer, so going back to an
+ * order shows it at once. Nothing from other stores: the server keeps no
+ * delivery rate across stores and takes no spam reports.
  *
  * Mount it per customer (a `key`): the cache hook keeps the last answer while
  * the next one loads, and one customer's history must never stand under
@@ -46,29 +45,10 @@ function useCustomerHistory(customerId: string) {
     [workspaceId, customerId]
   );
 
-  const network = useCachedAsync<NetworkScore | null>(
-    customerId ? `confirm-network:${workspaceId}:${customerId}` : null,
-    async () => {
-      if (!customerId || networkDenied.has(workspaceId)) return null;
-      try {
-        const result = await protectionNetworkScores(apiClient, workspaceId, [customerId]);
-        // Off for the store: no score, and no bar pretending there is one.
-        return result.enabled ? (result.scores[customerId] ?? null) : null;
-      } catch (err) {
-        if (!isPermissionError(err)) throw err;
-        networkDenied.add(workspaceId);
-        return null;
-      }
-    },
-    [workspaceId, customerId]
-  );
-
   return {
     // An error is not a history: nothing is shown for it.
     customer: customer.error ? null : customer.data,
-    score: network.error ? null : network.data,
-    pending:
-      (customer.loading && !customersDenied.has(workspaceId)) || (network.loading && !networkDenied.has(workspaceId)),
+    pending: customer.loading && !customersDenied.has(workspaceId),
   };
 }
 
@@ -113,7 +93,7 @@ export function CustomerHistory({
 }) {
   const t = useStationStrings();
   const orderLabels = useOrderLabels();
-  const { customer, score, pending } = useCustomerHistory(customerId);
+  const { customer, pending } = useCustomerHistory(customerId);
 
   const chips: HistoryChip[] = [];
 
@@ -135,21 +115,7 @@ export function CustomerHistory({
             : fmt(t.before, { orders: countOf("order", before) }),
       });
     }
-    if (customer.reliabilityScore < 100) {
-      chips.push({ id: "reliability", tone: "warn", label: fmt(t.reliability, { n: customer.reliabilityScore, max: 100 }) });
-    }
-  }
-  if (score) {
-    if (score.rate !== null) {
-      chips.push({
-        id: "rate",
-        tone: score.rate < 50 ? "danger" : score.rate < 75 ? "warn" : "good",
-        label: fmt(t.receives, { rate: formatPercentValue(score.rate / 100, 0) }),
-        title: fmt(t.receivesTitle, { delivered: score.delivered, finished: score.finished }),
-      });
-    }
-    if (score.recommendDeposit) chips.push({ id: "deposit", tone: "danger", label: t.deposit, title: t.depositTitle });
-    if (score.spamReports > 0) chips.push({ id: "spam", tone: "danger", label: pluralOf(t, "spam", score.spamReports) });
+    // No reliability chip: customers.reliability_score is never computed (always 100).
   }
 
   const flagNames = riskFlags.map((flag) => orderLabels.riskFlag(flag));

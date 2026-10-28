@@ -37,7 +37,7 @@ const STRINGS = {
   en: {
     customer: "Customer",
     back: "Contacts",
-    summary: "{orders} orders · reliability {score}",
+    summary: "{orders} orders",
     ordersTitle: "Orders",
     ordersDescription: "Every order this customer has placed, newest first.",
     ordersEmpty: "No orders from this customer yet.",
@@ -101,7 +101,7 @@ const STRINGS = {
   ar: {
     customer: "عميل",
     back: "جهات الاتصال",
-    summary: "عدد الطلبات: {orders} · درجة الموثوقية: {score}",
+    summary: "عدد الطلبات: {orders}",
     ordersTitle: "الطلبات",
     ordersDescription: "كل طلبات هذا العميل، الأحدث أولًا.",
     ordersEmpty: "لا توجد طلبات من هذا العميل بعد.",
@@ -183,11 +183,9 @@ export function CustomerDetailPage() {
             : t.customer
         }
         back={{ to: "/customers", label: t.back }}
-        description={
-          customer
-            ? fmt(t.summary, { orders: customer.totalOrders, score: customer.reliabilityScore })
-            : undefined
-        }
+        // The order count only: customers.reliability_score is never
+        // computed by the server (always 100), so it is not shown.
+        description={customer ? fmt(t.summary, { orders: customer.totalOrders }) : undefined}
       />
 
       <DataState loading={detail.loading} error={detail.error} onRetry={() => detail.refresh()}>

@@ -303,59 +303,9 @@ export async function protectionCheckoutGuard(client: ApiClient, workspaceId: st
 }
 
 // ---------------------------------------------------- network delivery rate --
-
-/** A customer's delivery numbers across every store on the platform. Counters only. */
-export interface NetworkScore {
-  /** Delivered share of finished orders, 0–100; null for a customer with no finished order yet. */
-  rate: number | null;
-  isNew: boolean;
-  ordersTotal: number;
-  /** delivered + returned + cancelledAfterConfirm. */
-  finished: number;
-  delivered: number;
-  returned: number;
-  cancelledAfterConfirm: number;
-  rejected: number;
-  spamReports: number;
-  /** Filled segments of the 4-segment bar. */
-  segments: number;
-  /** Below 50%: suggest asking for a deposit or the shipping fee upfront. */
-  recommendDeposit: boolean;
-}
-
-/** `enabled: false` (and no score) while the feature is off for the store. */
-export async function protectionNetworkScore(
-  client: ApiClient,
-  workspaceId: string,
-  customerId: string
-): Promise<{ enabled: boolean; score: NetworkScore | null }> {
-  return client.request<{ enabled: boolean; score: NetworkScore | null }>(
-    `/workspaces/${workspaceId}/customers/${customerId}/network-score`
-  );
-}
-
-/** The scores of up to 200 customers at once, keyed by customer id (orders list). */
-export async function protectionNetworkScores(
-  client: ApiClient,
-  workspaceId: string,
-  customerIds: string[]
-): Promise<{ enabled: boolean; scores: Record<string, NetworkScore> }> {
-  return client.request<{ enabled: boolean; scores: Record<string, NetworkScore> }>(`${fraudBase(workspaceId)}/network-scores`, {
-    method: "POST",
-    body: { customerIds },
-  });
-}
-
-/** One report per store and customer; `reported: false` when this store already reported them. */
-export async function protectionReportSpam(
-  client: ApiClient,
-  workspaceId: string,
-  customerId: string
-): Promise<{ reported: boolean }> {
-  return client.request<{ reported: boolean }>(`/workspaces/${workspaceId}/customers/${customerId}/report-spam`, {
-    method: "POST",
-  });
-}
+// A customer's delivery rate across stores and "report as spam" are not served
+// by the backend (fraud/capabilities.js networkDeliveryRate.available is
+// false): there is no client call for them until they are.
 
 // ------------------------------------------------------------ checkout OTP --
 

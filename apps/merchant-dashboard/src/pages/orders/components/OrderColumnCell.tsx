@@ -4,7 +4,6 @@ import { providerName } from "@/lib/providers";
 import { fmt, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
 import { StatusBadge } from "@/components/StatusBadge";
 import { RiskBadge } from "@/pages/fraud/RiskBadge";
-import { OrderNetworkRate } from "@/pages/fraud/NetworkRate";
 import { STAGE_TONE, useOrderLabels } from "../orderLabels";
 import { OrderTimelineLines } from "./OrderTimelineLines";
 import { useSourceLabel, type OrderColumn } from "./OrderListFilters";
@@ -104,7 +103,6 @@ export function OrderColumnCell({
             )}
             {flagged && <StatusBadge value="flagged" tone="danger" text={labels.flagged} />}
             <RiskBadge order={order} />
-            <OrderNetworkRate order={order} />
           </div>
         </td>
       );

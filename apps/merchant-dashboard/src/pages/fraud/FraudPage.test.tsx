@@ -87,7 +87,9 @@ describe("the protection page", () => {
     const vpn = await screen.findByRole("switch", { name: /VPN and server addresses/ });
     await waitFor(() => expect(vpn).toBeDisabled());
     expect(vpn).toHaveAccessibleDescription(expect.stringContaining("No effect for now"));
-    expect(screen.getByRole("switch", { name: /Low delivery rate/ })).toBeDisabled();
+    const networkRate = screen.getByRole("switch", { name: /Low delivery rate/ });
+    expect(networkRate).toBeDisabled();
+    expect(networkRate).toHaveAccessibleDescription(expect.stringContaining("delivery rates across stores are not computed yet"));
     // Unset, the bot guard follows the platform default, here on — and says so.
     const bot = screen.getByRole("switch", { name: /Bot protection/ });
     expect(bot).toBeChecked();
