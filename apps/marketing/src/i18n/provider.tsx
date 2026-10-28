@@ -7,8 +7,13 @@ import type { Dictionary } from "./dictionary";
 export interface I18n {
   locale: Locale;
   dir: Direction;
-  /** The active locale's dictionary. */
-  dict: Dictionary;
+  /**
+   * The part of the active locale's dictionary that client code reads: the
+   * header's and the switches' words. The rest stays on the server, out of
+   * every page's HTML (the home page's questions name the carriers and
+   * gateways, which the features page must not carry).
+   */
+  dict: Pick<Dictionary, "nav">;
 }
 
 const I18nContext = createContext<I18n | null>(null);
