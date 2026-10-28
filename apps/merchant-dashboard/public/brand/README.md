@@ -39,10 +39,27 @@ Two things to know:
   - `favicon.ico` is a PNG-in-ICO container at 16/32/48, so it carries alpha.
   - iOS does not honour alpha in `apple-touch-icon`: it composites the 180 over
     black, so a home-screen shortcut shows the blue Z on a black tile. Point
-    `apple-touch-icon` at a tile-based export if that matters.
+    `apple-touch-icon` at a tile-based export if that matters. The dashboard
+    does since 2026-10-28: see "The dashboard's app icons" below.
 
 Apps serve these two ways. The Next apps (marketing, storefront) use the file
 convention — `src/app/icon.png`, `apple-icon.png`, `favicon.ico` — and need no
 `<link>` tags. The Vite apps (merchant-dashboard, platform-admin) have no such
 convention, so they carry `public/icon.png` and `public/apple-icon.png` and link
 them explicitly from `index.html`.
+
+## The dashboard's app icons
+
+The merchant dashboard's home-screen shortcut and installed app, in
+`apps/merchant-dashboard/public/` (made from `zimos-mark.png` with lanczos3):
+
+| file | size | background | the Z | used by |
+| --- | --- | --- | --- | --- |
+| `apple-touch-icon.png` | 180 | solid white `#FFFFFF`, no alpha channel | 55% of the side, centred | `<link rel="apple-touch-icon">` (iOS) |
+| `icon-192.png`, `icon-512.png` | 192, 512 | transparent | 55%, centred | manifest, `purpose: "any"` |
+| `icon-maskable-512.png` | 512 | solid white, no alpha channel | 45%, centred (inside the circle Android cuts) | manifest, `purpose: "maskable"` |
+
+The dashboard links `/apple-touch-icon.png` instead of `public/apple-icon.png`,
+which stays for nothing that links it. The console and the store's own app icon
+(Store settings → Store app) are not affected. `src/lib/appIcons.test.ts` checks
+the manifest, the link, the sizes and which files carry alpha.
