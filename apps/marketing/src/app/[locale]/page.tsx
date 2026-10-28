@@ -4,6 +4,7 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { Benefits } from "@/components/benefits";
 import { DashboardShow } from "@/components/dashboard-show";
 import { Faq } from "@/components/faq";
+import { FeaturesSummary } from "@/components/features-summary";
 import { FinalCta } from "@/components/final-cta";
 import { Hero } from "@/components/hero";
 import { Journey } from "@/components/journey";
@@ -16,9 +17,10 @@ import { WorksWith } from "@/components/works-with";
 
 /**
  * The landing (app/landing.css): real stores in the hero, the platforms
- * strip, the template gallery, benefits, the five steps, the dashboard, what
- * should reassure you, the questions and the closing band — laid out like
- * the Zemam landing. Plans and prices live on /pricing.
+ * strip, the template gallery, benefits, eight of the features with the way
+ * to /features, the five steps, the dashboard, what should reassure you, the
+ * questions and the closing band — laid out like the Zemam landing. Plans
+ * and prices live on /pricing.
  */
 
 // Rebuilt at most every 5 minutes, as before the landing: the footer reads the
@@ -44,6 +46,7 @@ export default async function MarketingHome({
         <WorksWith copy={dict.integrations} />
         <TemplatesGallery copy={dict.templates} />
         <Benefits copy={dict.benefits} />
+        <FeaturesSummary locale={locale} />
         <Journey copy={dict.journey} />
         <DashboardShow copy={dict.dashboard} locale={locale} />
         <Trust copy={dict.trust} locale={locale} />
