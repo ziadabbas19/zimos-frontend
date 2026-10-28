@@ -11,6 +11,7 @@ import { SubscriptionCharges } from "@/components/charges";
 import { StoreAccessPanel } from "@/components/storeAccess";
 import { FeatureOverridesPanel, ManualSubscriptionPanel, StoreAuditPanel } from "@/components/storeBilling";
 import { StoreWalletPanel } from "@/components/storeWallet";
+import { WorkspaceReferralsPanel } from "@/components/storeReferrals";
 import { useAuth } from "@/context/AuthContext";
 import { P } from "@/lib/permissions";
 import { useAsync } from "@/lib/useAsync";
@@ -231,6 +232,13 @@ export function WorkspaceDetailPage() {
             Activating, changing the plan, extending or ending the subscription by hand never
             creates a charge or an agent commission.
           </p>
+
+          {can(P.AGENTS_VIEW) && (
+            <div className="mt-8">
+              <h2 className="mb-3 font-display text-lg font-medium text-ink">Referral codes and agent</h2>
+              <WorkspaceReferralsPanel workspaceId={id} />
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

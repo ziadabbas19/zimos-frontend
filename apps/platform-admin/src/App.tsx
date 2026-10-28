@@ -42,6 +42,8 @@ import { AdminUsersPage } from "@/pages/AdminUsersPage";
 import { AgentsPage } from "@/pages/AgentsPage";
 import { AgentDetailPage } from "@/pages/AgentDetailPage";
 import { MyReferralsPage } from "@/pages/MyReferralsPage";
+import { ReferralCodesPage } from "@/pages/ReferralCodesPage";
+import { ReferralCodeDetailPage } from "@/pages/ReferralCodeDetailPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { PlatformSettingsPage } from "@/pages/PlatformSettingsPage";
 import { P } from "@/lib/permissions";
@@ -85,6 +87,8 @@ export default function App() {
                   <Route path="/payment-methods" element={gated(P.PAYMENTS_RECORD, <PaymentMethodsPage />)} />
                   <Route path="/agents" element={gated(P.AGENTS_VIEW, <AgentsPage />)} />
                   <Route path="/agents/:id" element={gated(P.AGENTS_VIEW, <AgentDetailPage />)} />
+                  <Route path="/referral-codes" element={gated(P.AGENTS_VIEW, <ReferralCodesPage />)} />
+                  <Route path="/referral-codes/:id" element={gated(P.AGENTS_VIEW, <ReferralCodeDetailPage />)} />
                   <Route path="/my-referrals" element={gated(P.REFERRALS_VIEW_OWN, <MyReferralsPage />)} />
                   <Route path="/templates" element={gated(P.TEMPLATES_VIEW, <TemplatesPage />)} />
                   <Route path="/themes" element={gated(P.TEMPLATES_VIEW, <ThemesPage />)} />
