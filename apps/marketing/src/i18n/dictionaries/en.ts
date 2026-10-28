@@ -23,6 +23,7 @@ export const en: Dictionary = {
     templates: "Templates",
     benefits: "Benefits",
     howItWorks: "How it works",
+    features: "Features",
     pricing: "Pricing",
     faq: "FAQ",
     switchLanguage: "العربية",
@@ -342,6 +343,7 @@ export const en: Dictionary = {
   footer: {
     navLabel: "Footer",
     links: [
+      { label: "Features", href: "/features" },
       { label: "Pricing", href: "/pricing" },
       { label: "FAQ", href: "#faq" },
       { label: "Contact us", href: "/contact" },
