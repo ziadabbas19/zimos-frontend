@@ -1,10 +1,11 @@
-import { useEffect, useId, useState, type KeyboardEvent } from "react";
+import { useId, useState, type KeyboardEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Alert, cn } from "@store-builder/ui";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
 import { useWorkspace } from "@/context/WorkspaceContext";
+import { useStoreFromLink } from "@/lib/useStoreFromLink";
 import { useT } from "@/i18n/LocaleContext";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
@@ -16,20 +17,6 @@ import { InvoicesTab } from "./InvoicesTab";
 import { SUBSCRIPTION_STRINGS } from "./subscriptionStrings";
 
 type Tab = "plans" | "usage" | "invoices";
-
-/**
- * A link that names one of the user's stores (?workspace=<id>, as on the way
- * back from Fawaterak) opens that store, since the current store is whichever
- * was picked last in this browser.
- */
-function useStoreFromLink() {
-  const [params] = useSearchParams();
-  const { workspaces, currentWorkspace, selectWorkspace } = useWorkspace();
-  const wanted = params.get("workspace");
-  useEffect(() => {
-    if (wanted && wanted !== currentWorkspace?.id && workspaces.some((w) => w.id === wanted)) selectWorkspace(wanted);
-  }, [wanted, currentWorkspace?.id, workspaces, selectWorkspace]);
-}
 
 /**
  * The Subscription section (owner and accountant: billing.manage): the
