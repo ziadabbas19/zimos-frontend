@@ -227,6 +227,8 @@ export * from "./endpoints/domainRedirect";
 export * from "./endpoints/twoFactor";
 // The look of the dashboard, kept on the account so it follows its owner across devices.
 export * from "./endpoints/uiPreferences";
+// The link in a team invite email: read it, then accept it signed in.
+export * from "./endpoints/invites";
 export * from "./endpoints/websiteRevisions";
 // AI module: generation jobs, usage, apply as draft; the WhatsApp reply bot.
 // The dashboard shows none of it unless VITE_AI_ENABLED is "true".

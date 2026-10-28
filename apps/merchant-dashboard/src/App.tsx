@@ -36,6 +36,7 @@ import { ConfirmEmailDialog } from "@/components/ConfirmEmailDialog";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { VerifyEmailPage } from "@/pages/VerifyEmailPage";
+import { InviteAcceptPage } from "@/pages/InviteAcceptPage";
 import { WorkspacePickerPage } from "@/pages/WorkspacePickerPage";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { EditorLayout } from "@/components/EditorLayout";
@@ -163,6 +164,8 @@ export default function App() {
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route path="/verify-email" element={<VerifyEmailPage />} />
+                {/* The link in a team invite email; read signed out, accepted signed in. */}
+                <Route path="/invites" element={<InviteAcceptPage />} />
 
                 <Route element={<ProtectedRoute />}>
                   <Route path="/choose-username" element={<ChooseUsernamePage />} />

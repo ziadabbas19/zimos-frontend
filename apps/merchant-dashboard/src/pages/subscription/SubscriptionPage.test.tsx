@@ -5,6 +5,7 @@ import { ApiError } from "@store-builder/api-client";
 import { api, fake, workspaceMock } from "@/test/mocks";
 import { currentPath, renderWithProviders } from "@/test/renderWithProviders";
 import { NAV_ITEMS, isNavItemVisible } from "@/lib/navigation";
+import { SYSTEM_ROLE_PERMISSIONS } from "@/test/systemRoles";
 import { SettingsPage } from "@/pages/settings/SettingsPage";
 import { SubscriptionPage } from "./SubscriptionPage";
 
@@ -66,8 +67,8 @@ describe("SubscriptionPage", () => {
 
     const item = NAV_ITEMS.find((i) => i.key === "subscription")!;
     expect(item.to).toBe("/subscription");
-    expect(["owner", "accountant"].every((r) => isNavItemVisible(item, r))).toBe(true);
-    expect(["workspace_manager", "editor", "order_operator", "confirmation_agent"].some((r) => isNavItemVisible(item, r))).toBe(false);
+    expect(["owner", "accountant"].every((r) => isNavItemVisible(item, SYSTEM_ROLE_PERMISSIONS[r]))).toBe(true);
+    expect(["workspace_manager", "editor", "order_operator", "confirmation_agent"].some((r) => isNavItemVisible(item, SYSTEM_ROLE_PERMISSIONS[r]))).toBe(false);
   });
 
   it("marks the current plan, shows what annual saves, and keeps pay-per-order as coming soon", async () => {

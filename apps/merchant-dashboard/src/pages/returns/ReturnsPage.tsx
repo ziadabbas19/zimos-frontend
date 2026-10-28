@@ -32,7 +32,10 @@ import { ReturnExchangeBadge, ReturnHandling } from "./ReturnHandling";
 import { ReturnSettingsSheet, useShopperReturnsSettings } from "./ReturnSettingsSheet";
 
 /** "" is the All tab — the backend simply omits the status filter. */
-type StatusFilter = "" | ReturnStatus;
+// No "refunded" tab: the server never moves a return to that status (a refund
+// is taken from the order's payments, apart from the return), so it would
+// always be empty.
+type StatusFilter = "" | Exclude<ReturnStatus, "refunded">;
 
 const STRINGS = {
   en: {
@@ -44,7 +47,6 @@ const STRINGS = {
     tabApproved: "Approved",
     tabRejected: "Rejected",
     tabReceived: "Received",
-    tabRefunded: "Refunded",
     tabAll: "All",
     statusRequested: "Requested",
     statusApproved: "Approved",
@@ -55,7 +57,6 @@ const STRINGS = {
     emptyApproved: "No approved returns are waiting to be restocked.",
     emptyRejected: "No returns have been rejected.",
     emptyReceived: "Nothing has been received back yet.",
-    emptyRefunded: "No returns have been refunded.",
     emptyAll: "No returns yet. One can be opened from an order once it has been delivered.",
     openOrder: "View order",
     itemsLabel: "Items",
@@ -87,7 +88,6 @@ const STRINGS = {
     tabApproved: "مقبولة",
     tabRejected: "مرفوضة",
     tabReceived: "مستلمة",
-    tabRefunded: "مستردة",
     tabAll: "الكل",
     statusRequested: "مطلوب",
     statusApproved: "مقبول",
@@ -98,7 +98,6 @@ const STRINGS = {
     emptyApproved: "لا توجد مرتجعات مقبولة تنتظر إعادة التخزين.",
     emptyRejected: "لا توجد مرتجعات مرفوضة.",
     emptyReceived: "لم يتم استلام أي مرتجع بعد.",
-    emptyRefunded: "لا توجد مرتجعات تم ردّ قيمتها.",
     emptyAll: "لا توجد مرتجعات بعد. يمكن فتح مرتجع من الأوردر بعد تسليمه.",
     openOrder: "فتح الأوردر",
     itemsLabel: "العناصر",
@@ -235,7 +234,6 @@ export function ReturnsPage() {
     { value: "approved", label: t.tabApproved },
     { value: "rejected", label: t.tabRejected },
     { value: "received", label: t.tabReceived },
-    { value: "refunded", label: t.tabRefunded },
     { value: "", label: t.tabAll },
   ];
 
@@ -244,7 +242,6 @@ export function ReturnsPage() {
     approved: t.emptyApproved,
     rejected: t.emptyRejected,
     received: t.emptyReceived,
-    refunded: t.emptyRefunded,
     "": t.emptyAll,
   }[status];
 

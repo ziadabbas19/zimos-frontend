@@ -5,11 +5,12 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { NAV_GROUPS, NAV_LABELS, isNavItemVisible } from "@/lib/navigation";
 import { api, authMock, fake, workspaceMock } from "@/test/mocks";
 import { renderWithProviders } from "@/test/renderWithProviders";
+import { SYSTEM_ROLE_PERMISSIONS } from "@/test/systemRoles";
 
 const GROUPS_KEY = "zimos.nav.groups.collapsed.v2";
 
 function store(role: string) {
-  workspaceMock.currentWorkspace = fake<Workspace>({ id: "ws_1", name: "Nile Store", slug: "nile", role });
+  workspaceMock.currentWorkspace = fake<Workspace>({ id: "ws_1", name: "Nile Store", slug: "nile", role, permissions: SYSTEM_ROLE_PERMISSIONS[role] });
   workspaceMock.workspaces = [workspaceMock.currentWorkspace];
 }
 
@@ -41,7 +42,7 @@ function rowNames(menu: HTMLElement): string[] {
 /** What lib/navigation.ts says this role sees, in its order, the last group at the foot. */
 function expectedRows(role: string): string[] {
   const groups = [...NAV_GROUPS.filter((group) => group.id !== "config"), ...NAV_GROUPS.filter((group) => group.id === "config")];
-  return groups.flatMap((group) => group.items.filter((item) => isNavItemVisible(item, role)).map((item) => NAV_LABELS.en[item.key]));
+  return groups.flatMap((group) => group.items.filter((item) => isNavItemVisible(item, SYSTEM_ROLE_PERMISSIONS[role])).map((item) => NAV_LABELS.en[item.key]));
 }
 
 describe("the side menu", () => {

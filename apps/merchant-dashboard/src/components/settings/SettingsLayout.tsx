@@ -205,6 +205,7 @@ export function SettingsLayout({
   const { locale } = useLocale();
   const { currentWorkspace } = useWorkspace();
   const role = currentWorkspace?.role;
+  const permissions = currentWorkspace?.permissions;
   const isDesktop = useIsDesktop();
   const navId = useId();
   const headingBase = useId();
@@ -236,9 +237,9 @@ export function SettingsLayout({
 
   // This page's part of the index, for this role: each section, and the single settings in it.
   const targets = useMemo(() => {
-    const entries = searchScope ? entriesInScope(searchScope).filter((entry) => isEntryShown(entry, role)) : [];
+    const entries = searchScope ? entriesInScope(searchScope).filter((entry) => isEntryShown(entry, role, permissions)) : [];
     return entries.map((entry) => ({ entry, searchable: withinPage(entry) }));
-  }, [searchScope, role]);
+  }, [searchScope, role, permissions]);
   const searching = query.trim() !== "";
   const locked = usePlanLocks(currentWorkspace?.id, searching && targets.some(({ entry }) => entry.plan));
 

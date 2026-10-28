@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { LOST_ORDER_TABS } from "@store-builder/api-client";
 import appSource from "../../App.tsx?raw";
+import { SYSTEM_ROLE_PERMISSIONS } from "@/test/systemRoles";
 
 type SiteIndex = typeof import("./siteIndex");
 
@@ -190,7 +191,8 @@ describe("what a build leaves out", () => {
 describe("who sees what", () => {
   it("hides from a role what the side menu and the settings hide from it", async () => {
     const index = await indexWith(true);
-    const shown = (id: string, role: string) => index.isEntryShown(index.findEntry(id)!, role);
+    // Each role with the permissions the store list sends for it.
+    const shown = (id: string, role: string) => index.isEntryShown(index.findEntry(id)!, role, SYSTEM_ROLE_PERMISSIONS[role]);
 
     // Analytics: hidden for an editor, with everything under it.
     expect(shown("page:/analytics", "editor")).toBe(false);
@@ -206,10 +208,18 @@ describe("who sees what", () => {
     expect(shown("settings:billing", "editor")).toBe(false);
     expect(shown("settings:billing", "owner")).toBe(true);
 
-    // Payments' sections: the owner and the store manager; the page itself stays, as in the menu.
+    // Payments and its sections: the owner and the store manager (workspace.manage), as in the menu.
     expect(shown("payments:gateways", "accountant")).toBe(false);
     expect(shown("payments:gateways", "workspace_manager")).toBe(true);
-    expect(shown("page:/payments", "accountant")).toBe(true);
+    expect(shown("page:/payments", "accountant")).toBe(false);
+    expect(shown("page:/payments", "workspace_manager")).toBe(true);
+
+    // A page the role's permissions don't open, with what sits under it.
+    expect(shown("page:/catalog", "accountant")).toBe(false);
+    expect(shown("page:/catalog", "editor")).toBe(true);
+    expect(shown("page:/inbox", "workspace_manager")).toBe(false);
+    // Permissions not sent (an older API): only the role rules apply.
+    expect(index.isEntryShown(index.findEntry("page:/catalog")!, "accountant")).toBe(true);
   });
 
   it("says which entries the plan holds back", async () => {

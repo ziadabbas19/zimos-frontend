@@ -1,5 +1,4 @@
 import { useState, type ReactNode } from "react";
-import type { NetworkScore } from "@store-builder/api-client";
 import { ContactActions } from "@/components/ContactActions";
 import { ContextMenu, type ContextMenuItem } from "@/components/ContextMenu";
 import { ListRowCard } from "@/components/list";
@@ -8,7 +7,6 @@ import { fmt, getIntlLocale, useT, type Messages } from "@/i18n/LocaleContext";
 import { formatDateTime } from "@/lib/format";
 import { formatRelative } from "@/lib/orderTimeline";
 import { useNow } from "@/pages/confirmation/confirmationRoles";
-import { NetworkRateBar } from "@/pages/fraud/NetworkRate";
 import { STAGE_TONE } from "../orderLabels";
 import { OrderFlag, type OrderRowView } from "./orderRow";
 
@@ -38,8 +36,6 @@ export interface OrderCardsProps {
   rows: readonly OrderRowView[];
   selected: ReadonlySet<string>;
   onToggle: (orderId: string) => void;
-  /** Delivery rates by customer id (useNetworkScores). */
-  scores: Record<string, NetworkScore>;
   menuFor: (view: OrderRowView) => ContextMenuItem[];
   /** Quick Look. */
   onPeek: (view: OrderRowView) => void;
@@ -56,7 +52,7 @@ export interface OrderCardsProps {
  * A tap opens Quick Look; a long press, the order's menu; Enter on a focused
  * card, the order's page. The tick box selects it for the bulk bar.
  */
-export function OrderCards({ rows, selected, onToggle, scores, menuFor, onPeek, onOpen }: OrderCardsProps) {
+export function OrderCards({ rows, selected, onToggle, menuFor, onPeek, onOpen }: OrderCardsProps) {
   const t = useT(STRINGS);
   // One clock for the whole list, so every card's "3 hours ago" moves together.
   const now = useNow(60_000);
@@ -68,7 +64,6 @@ export function OrderCards({ rows, selected, onToggle, scores, menuFor, onPeek, 
           view={view}
           selected={selected.has(view.order.id)}
           onToggle={onToggle}
-          score={scores[view.order.customerId]}
           menu={menuFor(view)}
           onPeek={onPeek}
           onOpen={onOpen}
@@ -84,7 +79,6 @@ function OrderCard({
   view,
   selected,
   onToggle,
-  score,
   menu,
   onPeek,
   onOpen,
@@ -94,7 +88,6 @@ function OrderCard({
   view: OrderRowView;
   selected: boolean;
   onToggle: (orderId: string) => void;
-  score: NetworkScore | undefined;
   menu: ContextMenuItem[];
   onPeek: (view: OrderRowView) => void;
   onOpen: (view: OrderRowView) => void;
@@ -109,7 +102,6 @@ function OrderCard({
     ...flags.map((flag) => <OrderFlag key={flag.id} flag={flag} />),
     ...meta.tags.map((tag) => <StatusBadge key={`tag:${tag}`} value={tag} tone="info" text={tag} />),
   ];
-  if (score) chips.push(<NetworkRateBar key="rate" score={score} />);
   const shown = allChips ? chips : chips.slice(0, CHIPS_SHOWN);
   const hidden = chips.length - shown.length;
 

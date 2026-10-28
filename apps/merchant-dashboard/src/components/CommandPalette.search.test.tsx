@@ -4,9 +4,10 @@ import type { Workspace } from "@store-builder/api-client";
 import { CommandPalette } from "@/components/CommandPalette";
 import { api, fake, workspaceMock } from "@/test/mocks";
 import { currentPath, renderWithProviders } from "@/test/renderWithProviders";
+import { SYSTEM_ROLE_PERMISSIONS } from "@/test/systemRoles";
 
 function store(role = "owner") {
-  workspaceMock.currentWorkspace = fake<Workspace>({ id: "ws_1", name: "Nile Store", slug: "nile", role });
+  workspaceMock.currentWorkspace = fake<Workspace>({ id: "ws_1", name: "Nile Store", slug: "nile", role, permissions: SYSTEM_ROLE_PERMISSIONS[role] });
   workspaceMock.workspaces = [workspaceMock.currentWorkspace];
 }
 

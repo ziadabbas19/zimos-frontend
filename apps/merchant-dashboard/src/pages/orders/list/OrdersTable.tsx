@@ -1,4 +1,3 @@
-import type { NetworkScore } from "@store-builder/api-client";
 import { cn } from "@store-builder/ui";
 import { ContactActions } from "@/components/ContactActions";
 import { ContextMenu, type ContextMenuItem } from "@/components/ContextMenu";
@@ -10,7 +9,6 @@ import { formatDateTime } from "@/lib/format";
 import { formatRelative } from "@/lib/orderTimeline";
 import { markViewSource } from "@/lib/viewTransition";
 import { useNow } from "@/pages/confirmation/confirmationRoles";
-import { NetworkRateBar } from "@/pages/fraud/NetworkRate";
 import { OrderColumnCell } from "../components/OrderColumnCell";
 import { useColumnLabel, type OrderColumn } from "../components/OrderListFilters";
 import { STAGE_TONE } from "../orderLabels";
@@ -61,8 +59,6 @@ export interface OrdersTableProps {
   onToggle: (orderId: string) => void;
   allSelected: boolean;
   onToggleAll: () => void;
-  /** Delivery rates by customer id (useNetworkScores). */
-  scores: Record<string, NetworkScore>;
   menuFor: (view: OrderRowView) => ContextMenuItem[];
   /** Quick Look. */
   onPeek: (view: OrderRowView) => void;
@@ -95,7 +91,7 @@ function isRowPress(target: EventTarget, row: HTMLElement): boolean {
  * Material (the row under the pointer, the selected tint, the small chips) is
  * in glass/orders.css; without the glass layer it is a solid raised sheet.
  */
-export function OrdersTable({ rows, columns, selected, onToggle, allSelected, onToggleAll, scores, menuFor, onPeek, onOpen }: OrdersTableProps) {
+export function OrdersTable({ rows, columns, selected, onToggle, allSelected, onToggleAll, menuFor, onPeek, onOpen }: OrdersTableProps) {
   const t = useT(STRINGS);
   const columnLabel = useColumnLabel();
   // One clock for the whole list, so every row's "3 hours ago" moves together.
@@ -160,7 +156,6 @@ export function OrdersTable({ rows, columns, selected, onToggle, allSelected, on
               columns={columns}
               selected={selected.has(view.order.id)}
               onToggle={onToggle}
-              score={scores[view.order.customerId]}
               menu={menuFor(view)}
               onPeek={onPeek}
               onOpen={onOpen}
@@ -179,7 +174,6 @@ function OrderTableRow({
   columns,
   selected,
   onToggle,
-  score,
   menu,
   onPeek,
   onOpen,
@@ -190,7 +184,6 @@ function OrderTableRow({
   columns: readonly OrderColumn[];
   selected: boolean;
   onToggle: (orderId: string) => void;
-  score: NetworkScore | undefined;
   menu: ContextMenuItem[];
   onPeek: (view: OrderRowView) => void;
   onOpen: (view: OrderRowView) => void;
@@ -289,8 +282,6 @@ function OrderTableRow({
           ) : (
             <span className="text-ink-soft">{t.none}</span>
           )}
-          {/* The customer's delivery rate: only when there is one. */}
-          <div className="mt-1 flex flex-wrap items-center gap-1 empty:hidden">{score && <NetworkRateBar score={score} />}</div>
         </td>
 
         <td className="max-w-44 px-3 text-[13px] leading-5 text-ink-soft">

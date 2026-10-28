@@ -29,7 +29,6 @@ import { OrdersStageChips } from "./list/OrdersStageChips";
 import { OrdersTable } from "./list/OrdersTable";
 import { OrdersToolbar } from "./list/OrdersToolbar";
 import { useIsDesktop } from "./list/useIsDesktop";
-import { useNetworkScores } from "./list/useNetworkScores";
 import { useOrderBulk } from "./list/useOrderBulk";
 import { useOrderMenu } from "./list/useOrderMenu";
 import { useOrdersData } from "./list/useOrdersData";
@@ -128,7 +127,6 @@ export function OrdersListPage() {
   const { rows } = data;
 
   const views = useOrderRowViews(rows);
-  const scores = useNetworkScores(rows);
   const shownIds = useMemo(() => rows.map((order) => order.id), [rows]);
 
   // ---- selection: orders ticked for a bulk action; a different list starts a fresh one ----
@@ -326,13 +324,12 @@ export function OrdersListPage() {
             onToggle={toggleSelected}
             allSelected={allSelected}
             onToggleAll={toggleAll}
-            scores={scores}
             menuFor={menuFor}
             onPeek={peekOrder}
             onOpen={openOrder}
           />
         ) : (
-          <OrderCards rows={views} selected={selected} onToggle={toggleSelected} scores={scores} menuFor={menuFor} onPeek={peekOrder} onOpen={openOrder} />
+          <OrderCards rows={views} selected={selected} onToggle={toggleSelected} menuFor={menuFor} onPeek={peekOrder} onOpen={openOrder} />
         )}
         {data.loadMoreError != null && (
           <Alert variant="danger" className="mt-4 flex flex-wrap items-center justify-between gap-3">

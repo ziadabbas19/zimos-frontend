@@ -55,7 +55,6 @@ function serve(orders: Order[], routes: Record<string, unknown> = {}) {
   api.getOrderPipeline.mockResolvedValue(pipeline);
   api.listCarriers.mockResolvedValue(fake({ carriers: [] }));
   return fakeBackend({
-    "POST /network-scores": { enabled: false, scores: {} },
     "GET /saved-views": { views: [] },
     ...routes,
   });

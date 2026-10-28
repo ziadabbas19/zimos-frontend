@@ -1,4 +1,4 @@
-import type { PlanFeatureKey } from "@store-builder/api-client";
+import type { Permission, PlanFeatureKey } from "@store-builder/api-client";
 import {
   IconAccount,
   IconBlock,
@@ -74,6 +74,7 @@ import {
   VISITORS_ENABLED,
 } from "@/lib/features";
 import { NAV_GROUPS, NAV_GROUP_LABELS, NAV_ITEMS, NAV_LABELS, findNavItem, type NavKey } from "@/lib/navigation";
+import { hasAnyPermission } from "@/lib/permissions";
 import { STORE_REPORT_ROUTES, STORE_REPORT_STRINGS, STORE_REPORTS_INDEX, storeReportPath } from "@/pages/analytics/storeReports/storeReportStrings";
 import { VISITORS_STRINGS } from "@/pages/analytics/visitors/visitorsStrings";
 import { BLOG_WORDS } from "@/pages/blog/blogStrings";
@@ -150,8 +151,10 @@ interface EntryDef {
   icon: IconComponent;
   /** The entry it sits under (its breadcrumb). Its role rules apply to this one too. */
   parent?: string;
-  /** Roles that don't see it (as a menu entry's hiddenForRoles). */
+  /** Roles that don't see it. */
   hiddenForRoles?: ReadonlySet<string>;
+  /** The permissions its page asks for, one of which the member must hold (as a menu entry's requires). */
+  requires?: readonly Permission[];
   /** The only roles that see it. */
   onlyForRoles?: ReadonlySet<string>;
   plan?: SearchPlanRule;
@@ -243,7 +246,7 @@ const MENU: EntryDef[] = NAV_GROUPS.flatMap((group) =>
       keywords: PAGE_WORDS[item.key],
       to: item.to,
       icon: item.icon,
-      hiddenForRoles: item.hiddenForRoles,
+      requires: item.requires,
       plan: PAGE_PLAN[item.key],
     };
   })
@@ -455,6 +458,7 @@ export const ROUTES_NOT_IN_SEARCH: ReadonlyMap<string, string> = new Map([
   ["/forgot-password", "signed out"],
   ["/reset-password", "signed out"],
   ["/verify-email", "signed out"],
+  ["/invites", "the link in a team invite email"],
   ["/choose-username", "before the dashboard"],
   ["/choose-plan", "before the dashboard"],
   ["/workspaces", "the store switcher"],
@@ -487,6 +491,7 @@ function build(defs: readonly EntryDef[]): SearchEntry[] {
       icon: def.icon,
       parent: def.parent,
       hiddenForRoles: def.hiddenForRoles,
+      requires: def.requires,
       onlyForRoles: def.onlyForRoles,
       plan: def.plan,
       scope: def.scope,
@@ -513,12 +518,21 @@ export function findEntry(id: string): SearchEntry | undefined {
   return BY_ID.get(id);
 }
 
-/** Whether a role sees an entry: neither it nor a place it sits in is hidden from the role. */
-export function isEntryShown(entry: SearchEntry, role: string | null | undefined): boolean {
+/**
+ * Whether a member sees an entry: neither it nor a place it sits in is hidden
+ * from their role, and their permissions (Workspace.permissions) open every
+ * page on the way (lib/permissions; unknown permissions open them).
+ */
+export function isEntryShown(
+  entry: SearchEntry,
+  role: string | null | undefined,
+  permissions?: readonly string[] | null
+): boolean {
   const key = role ?? "";
   for (let at: SearchEntry | undefined = entry; at; at = at.parent ? BY_ID.get(at.parent) : undefined) {
     if (at.hiddenForRoles?.has(key)) return false;
     if (at.onlyForRoles && !at.onlyForRoles.has(key)) return false;
+    if (!hasAnyPermission(permissions, at.requires)) return false;
   }
   return true;
 }

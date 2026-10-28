@@ -71,7 +71,7 @@ export function SidebarShortcuts({ onNavigate, variant = "rail" }: SidebarShortc
   const location = useLocation();
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id;
-  const role = currentWorkspace?.role;
+  const permissions = currentWorkspace?.permissions;
   const { shortcuts } = useSyncExternalStore(subscribe, snapshot);
   const counts = useWorkCounts(workspaceId);
   const sheet = variant === "sheet";
@@ -85,7 +85,7 @@ export function SidebarShortcuts({ onNavigate, variant = "rail" }: SidebarShortc
   const current = findNavItem(location.pathname);
   const pinned = shortcuts
     .map((to) => NAV_ITEMS.find((item) => item.to === to))
-    .filter((item): item is (typeof NAV_ITEMS)[number] => Boolean(item && isNavItemVisible(item, role)));
+    .filter((item): item is (typeof NAV_ITEMS)[number] => Boolean(item && isNavItemVisible(item, permissions)));
   const isPinned = Boolean(current && shortcuts.includes(current.to));
   const canPin = Boolean(current && current.to !== "/" && (isPinned || shortcuts.length < MAX));
 
