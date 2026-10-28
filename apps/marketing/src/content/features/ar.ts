@@ -1,8 +1,9 @@
 import type { FeaturesCopy } from "./types";
 
 /**
- * Egyptian Arabic, as in the owner's list (owner, 2026-10-28): this page and
- * the home page's summary of it, unlike the rest of the site.
+ * The features page in Egyptian Arabic, as in the owner's list (owner,
+ * 2026-10-28), unlike the rest of the site; its summary on the home page
+ * (`home`) in the home page's Modern Standard Arabic.
  */
 export const ar: FeaturesCopy = {
   meta: {
@@ -346,26 +347,28 @@ export const ar: FeaturesCopy = {
     secondaryCta: "عندي حساب، دخول",
   },
 
+  // The home page's summary: Modern Standard Arabic without diacritics, like
+  // the rest of the home page (i18n/dictionaries/ar.ts).
   home: {
     kicker: "المميزات",
-    heading: "كل اللي محتاجه عشان تبيع وتكبر",
-    intro: "لمحة عن أهم أدوات ZIMOS، والتفاصيل كلها في صفحة المميزات.",
+    heading: "كل ما تحتاجه لتبيع وتنمو",
+    intro: "لمحة عن أهم أدوات ZIMOS، وكل التفاصيل في صفحة المميزات.",
     cards: {
       orders: {
         title: "الطلبات والتأكيد",
-        body: "قائمة تأكيد للفريق، وطلبات مفقودة، وطباعة جماعية للبوالص.",
+        body: "قائمة تأكيد لفريقك، ومتابعة الطلبات المفقودة، وطباعة البوالص دفعة واحدة.",
       },
-      shipping: { title: "الشحن", body: "بتشتغل مع كل شركات الشحن، بربط مباشر أو يدوي." },
+      shipping: { title: "الشحن", body: "يعمل مع كل شركات الشحن، بربط مباشر أو يدوي." },
       payments: { title: "الدفع", body: "كل طرق الدفع في متجر واحد." },
       fraud: {
         title: "الحماية من الاحتيال",
-        body: "درجة خطورة لكل طلب، وتأكيد الرقم بكود، وقائمة حظر.",
+        body: "مستوى خطورة لكل طلب، وتأكيد رقم الهاتف برمز، وقائمة حظر.",
       },
-      marketing: { title: "التسويق", body: "بيكسلات، وأكواد خصم، وأتمتة جاهزة بضغطة." },
-      store: { title: "المتجر", body: "محرر مرئي بتعدّل فيه المتجر الحقيقي قدامك." },
-      reports: { title: "التقارير", body: "أرباحك الحقيقية بعد تكلفة المنتج والشحن والإعلانات." },
-      loyalty: { title: "الولاء", body: "نقاط ومستويات VIP، ورصيد متجر، وكروت هدايا." },
+      marketing: { title: "التسويق", body: "بيكسلات الإعلانات، وأكواد الخصم، وأتمتة جاهزة بنقرة واحدة." },
+      store: { title: "المتجر", body: "محرر مرئي لتعديل متجرك الحقيقي وأنت تراه." },
+      reports: { title: "التقارير", body: "أرباحك الحقيقية بعد خصم تكلفة المنتج والشحن والإعلانات." },
+      loyalty: { title: "الولاء", body: "نقاط ومستويات VIP، ورصيد في المتجر، وبطاقات هدايا." },
     },
-    cta: "شوف كل المميزات",
+    cta: "شاهد كل المميزات",
   },
 };

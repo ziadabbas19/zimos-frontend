@@ -83,7 +83,7 @@ describe("the features copy", () => {
   it("states the trial and the five minutes from the owner's rules", () => {
     expect(ar.hero.cta).toBe("ابدأ تجربتك المجانية 7 أيام");
     expect(ar.cta.heading).toBe("افتح متجرك في أقل من 5 دقايق");
-    expect(ar.home.cta).toBe("شوف كل المميزات");
+    expect(ar.home.cta).toBe("شاهد كل المميزات");
   });
 });
 

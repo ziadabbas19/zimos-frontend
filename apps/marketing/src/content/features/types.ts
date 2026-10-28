@@ -1,11 +1,11 @@
 /**
  * The words of the features page (/features) and of its summary on the home
- * page. They live here, not in the site dictionary: the dictionary goes to the
- * browser on every page (i18n/provider.tsx), and this list is only read by
- * these two Server Components.
+ * page. They live here, not in the site dictionary, and only these two Server
+ * Components read them.
  *
- * Source: the owner's list of what a merchant gets (2026-10-28), in its
- * Egyptian Arabic, shortened where a line was long. Not on these pages: brand
+ * Source: the owner's list of what a merchant gets (2026-10-28), shortened
+ * where a line was long: the page keeps the list's Egyptian Arabic, the home
+ * summary is in the home page's Modern Standard Arabic. Not on these pages: brand
  * names of shipping companies or payment gateways, prices, AI, device
  * notifications, total counts of features, and what the list marks as not
  * built (features.test.ts checks the words).
