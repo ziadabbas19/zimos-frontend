@@ -39,6 +39,20 @@ describe('the "Push" column of My notifications', () => {
     expect(await screen.findByRole("columnheader", { name: "Push" })).toBeInTheDocument();
   });
 
+  it("a push-only type (WhatsApp messages) has only its Push box", async () => {
+    const withWhatsapp: MerchantNotificationPreferences = {
+      ...PREFERENCES,
+      types: [...PREFERENCES.types, { type: "whatsapp.message", inApp: false, email: false, push: true, whatsapp: false, only: ["push"] }],
+    };
+    pushBackend({ other: (path) => (path.endsWith("/notifications/preferences") ? Promise.resolve(withWhatsapp) : new Promise(() => undefined)) });
+    renderWithProviders(<NotificationPreferencesSection />);
+    const row = (await screen.findByRole("rowheader", { name: "New WhatsApp messages" })).closest("tr") as HTMLElement;
+    const boxes = within(row).getAllByRole("checkbox");
+    expect(boxes).toHaveLength(1);
+    expect(boxes[0]).toHaveAccessibleName("Push: New WhatsApp messages");
+    expect(boxes[0]).toBeChecked();
+  });
+
   it("is hidden when the API answers 404 for /me/push/config, even if it offers the channel", async () => {
     pushBackend({ config: 404, other: preferences });
     renderWithProviders(<NotificationPreferencesSection />);
