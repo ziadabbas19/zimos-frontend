@@ -213,3 +213,15 @@ export const VISITORS_ENABLED = import.meta.env.VITE_VISITORS_ENABLED === "true"
  * has. Turn on only once the API runs with REALTIME_ENABLED.
  */
 export const REALTIME_ENABLED = import.meta.env.VITE_REALTIME_ENABLED === "true";
+
+/**
+ * Device notifications (Web Push): "Notifications on this device" and "My
+ * devices" in Settings → My notifications, the "Push" column there, the
+ * install advice (a banner on an iPhone or iPad), the app's manifest and its
+ * service worker (public/sw.js, notifications only — no fetch handler, no
+ * cache). Shown only while the API's /me/push/config answers too (its
+ * PUSH_ENABLED and VAPID keys): a 404 there hides all of it. Off: none of it,
+ * the "Push" column stays hidden even if the API offers it, and a service
+ * worker a browser kept from an earlier build is unregistered (lib/push).
+ */
+export const PUSH_ENABLED = import.meta.env.VITE_PUSH_ENABLED === "true";
