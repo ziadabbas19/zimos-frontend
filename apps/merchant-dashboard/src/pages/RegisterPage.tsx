@@ -20,6 +20,7 @@ import { PlanPicker, PlanSummary, type PlanChoice } from "@/components/plans/Pla
 import { TermsConsent } from "@/components/plans/TermsConsent";
 import { VerifyCodePanel } from "@/components/VerifyCodePanel";
 import { rememberPlanChoice } from "@/lib/planChoice";
+import { afterSignInPath, readPendingInvite } from "@/lib/pendingInvite";
 
 // Same shape the API accepts for siteSessionId; anything else is not sent.
 const SITE_SESSION_PATTERN = /^[A-Za-z0-9-]{8,64}$/;
@@ -136,7 +137,10 @@ export function RegisterPage() {
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle");
-  const [email, setEmail] = useState("");
+  // Sent here from a team invite (pages/InviteAcceptPage): its address, and
+  // no plan to choose — the server asks none of someone invited to a store.
+  const [invite] = useState(readPendingInvite);
+  const [email, setEmail] = useState(invite?.email ?? "");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -148,7 +152,9 @@ export function RegisterPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const unmetRules = unmetPasswordRules(password);
-  const planStep = Boolean(options?.planRequired && plans.length > 0);
+  // While the form still holds the invited address (another one needs a plan as usual).
+  const invitedAddress = Boolean(invite?.email && email.trim().toLowerCase() === invite.email.toLowerCase());
+  const planStep = Boolean(options?.planRequired && plans.length > 0 && !invitedAddress);
   const selectedPlan = plans.find((p) => p.id === choice.planId) ?? null;
 
   useEffect(() => {
@@ -164,13 +170,14 @@ export function RegisterPage() {
         ...current,
         planId: nextPlans.some((p) => p.id === current.planId) ? current.planId : null,
       }));
-      if (nextOptions?.planRequired && nextPlans.length > 0) setStep("plan");
+      if (nextOptions?.planRequired && nextPlans.length > 0 && !invite?.email) setStep("plan");
       setLoadingOptions(false);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+    // The invite is read once, when the page opens (useState above).
+  }, [invite?.email]);
 
   function handleGoogleLogin() {
     // Kept for the plan page an account made through Google lands on.
@@ -245,7 +252,7 @@ export function RegisterPage() {
       // Without sign-up codes the account is already signed in (AuthContext):
       // straight into the store setup, with a code on its way to confirm the
       // email (the dashboard's banner asks for it).
-      navigate("/workspaces", { replace: true });
+      navigate(afterSignInPath(), { replace: true });
     } catch (err) {
       if (isApiErrorCode(err, "PLAN_NOT_AVAILABLE") || isApiErrorCode(err, "PLAN_REQUIRED")) setStep(planStep ? "plan" : "account");
       setError(describe(err));
@@ -277,7 +284,7 @@ export function RegisterPage() {
           challenge={challenge}
           onVerified={async () => {
             await refreshUser();
-            navigate("/workspaces", { replace: true });
+            navigate(afterSignInPath(), { replace: true });
           }}
         />
       ) : step === "plan" ? (

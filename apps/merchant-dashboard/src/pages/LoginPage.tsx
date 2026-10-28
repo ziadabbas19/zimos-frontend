@@ -71,7 +71,10 @@ export function LoginPage() {
   const [twoFactor, setTwoFactor] = useState<TwoFactorChallenge | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: Location })?.from?.pathname ?? "/";
+  // Back where the visitor was sent from, its query included (the invite
+  // page's ?token=, pages/InviteAcceptPage).
+  const fromLocation = (location.state as { from?: Location })?.from;
+  const from = fromLocation?.pathname ? `${fromLocation.pathname}${fromLocation.search ?? ""}` : "/";
 
   // The email or the username, as typed; the server tells them apart.
   const [identifier, setIdentifier] = useState("");

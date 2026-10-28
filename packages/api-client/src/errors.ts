@@ -51,6 +51,12 @@ export type ApiErrorCode =
   | "TASK_ASSIGNED_TO_OTHER" // 403, details = { assignedTo } — only the assignee or a manager may take it
   | "ASSIGNEE_NOT_MEMBER" // 422 — not an active member of this workspace
   | "ASSIGNEE_CANNOT_CONFIRM" // 422 — their role lacks orders.confirm
+  // team invites (workspaces/inviteAcceptance.js)
+  | "INVITE_INVALID" // 404 — unknown link, or replaced by a newer one
+  | "INVITE_EXPIRED" // 410
+  | "INVITE_ALREADY_ACCEPTED" // 409
+  | "INVITE_EMAIL_MISMATCH" // 403 — signed in with another address
+  | "ALREADY_MEMBER" // 409
   // custom fields and shoppers' photos
   | "CUSTOM_FIELDS_INVALID" // 422, details = [{ field: "customizations.<id>", code }]
   | "FILE_TOO_LARGE" // 413

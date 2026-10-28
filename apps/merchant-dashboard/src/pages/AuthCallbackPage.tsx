@@ -7,6 +7,7 @@ import { TwoFactorStep } from "@/components/TwoFactorStep";
 import { TWO_FACTOR_ENABLED } from "@/lib/features";
 import { AuthBusy, AuthHeading, AuthShell } from "./AuthShell";
 import { GoogleCallbackError } from "./auth/GoogleCallbackError";
+import { afterSignInPath } from "@/lib/pendingInvite";
 import { googleCallbackChallenge } from "./auth/googleCallbackChallenge";
 
 const STRINGS = {
@@ -50,7 +51,7 @@ export function AuthCallbackPage() {
 
     apiClient.setTokens({ accessToken, refreshToken });
     refreshUser()
-      .then(() => navigate("/workspaces", { replace: true }))
+      .then(() => navigate(afterSignInPath(), { replace: true }))
       .catch(() => setRefreshFailed(true));
   }, [accessToken, refreshToken, navigate, refreshUser]);
 
@@ -64,7 +65,7 @@ export function AuthCallbackPage() {
           onBack={() => navigate("/login", { replace: true })}
           onVerified={async () => {
             await refreshUser();
-            navigate("/workspaces", { replace: true });
+            navigate(afterSignInPath(), { replace: true });
           }}
         />
       </AuthShell>

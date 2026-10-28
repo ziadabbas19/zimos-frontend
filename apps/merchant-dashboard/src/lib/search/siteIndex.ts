@@ -455,6 +455,7 @@ export const ROUTES_NOT_IN_SEARCH: ReadonlyMap<string, string> = new Map([
   ["/forgot-password", "signed out"],
   ["/reset-password", "signed out"],
   ["/verify-email", "signed out"],
+  ["/invites", "the link in a team invite email"],
   ["/choose-username", "before the dashboard"],
   ["/choose-plan", "before the dashboard"],
   ["/workspaces", "the store switcher"],
