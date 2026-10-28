@@ -276,6 +276,8 @@ export function ReferralCodeFormModal({
     let input: AdminReferralCodeInput & { code?: string };
     try {
       input = toCodeInput(form, { creating });
+      // The agent only when it changes: a code whose agent has since lost the role stays editable.
+      if (!creating && (input.agentId ?? null) === (code.agentId ?? null)) delete input.agentId;
     } catch (err) {
       setError(getErrorMessage(err));
       return;
