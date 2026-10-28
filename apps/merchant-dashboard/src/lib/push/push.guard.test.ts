@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -30,13 +30,9 @@ describe("the service worker and the manifest", () => {
     // Reads every source file: on a busy machine that is far past the default 5 s.
   }, 120_000);
 
-  it("the manifest: the dashboard at /, standalone, the two existing icons with purpose any", () => {
+  // The manifest's icons (four since the app icons got their tiles): src/lib/appIcons.test.ts.
+  it("the manifest: the dashboard at /, standalone", () => {
     const manifest = JSON.parse(readFileSync(join(PUBLIC, "manifest.webmanifest"), "utf8"));
     expect(manifest).toMatchObject({ start_url: "/", scope: "/", display: "standalone", short_name: "Zimos" });
-    expect(manifest.icons).toHaveLength(2);
-    for (const icon of manifest.icons) {
-      expect(icon.purpose).toBe("any");
-      expect(existsSync(join(PUBLIC, icon.src))).toBe(true);
-    }
   });
 });

@@ -19,6 +19,7 @@ import { SetupGuideCard } from "@/pages/home/SetupGuideCard";
 import { SiteAnalytics } from "@/pages/home/SiteAnalytics";
 import { QuickActions } from "@/pages/home/QuickActions";
 import { LockedOrdersBanner } from "@/components/OrdersLock";
+import { PushPrompt } from "@/components/push/PushPrompt";
 import { fmt, useCommon, useT, type Messages } from "@/i18n/LocaleContext";
 
 const STRINGS = {
@@ -171,6 +172,8 @@ export function DashboardHomePage() {
 
   return (
     <div className="min-w-0 max-w-6xl">
+      {/* Device notifications in one press (VITE_PUSH_ENABLED); here only, never on other pages. */}
+      <PushPrompt className="mb-6" />
       <h1 className="font-display text-2xl font-medium text-ink">
         {currentWorkspace ? fmt(t.welcomeNamed, { name: currentWorkspace.name }) : t.welcome}
       </h1>
