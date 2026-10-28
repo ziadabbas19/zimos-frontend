@@ -5,6 +5,7 @@ import type {
   BillingCycle,
   PlanPrice,
   PlanSwitchStartResult,
+  ReferralSchedulePayment,
   SubscriptionPlan,
   SubscriptionPlans,
   WorkspaceBilling,
@@ -25,6 +26,8 @@ import { PAY_STRINGS } from "./payStrings";
 import { PAY_NOW_LINK, PlanSwitchBanner, PlanSwitchDialog, type SwitchTarget } from "./PlanSwitch";
 import { selfServeSwitch, supportReasonText } from "./planSwitchMode";
 import { PLAN_SWITCH_STRINGS } from "./planSwitchStrings";
+import { REFERRAL_CODE_STRINGS, referralErrorMap, scheduleLabel } from "./referralCodeStrings";
+import { ScheduleTable } from "./ReferralSchedule";
 import { SUBSCRIPTION_STRINGS } from "./subscriptionStrings";
 import { WALLET_STRINGS } from "./walletStrings";
 
@@ -89,6 +92,7 @@ export function PlansTab({
   const t = useT(SUBSCRIPTION_STRINGS);
   const bt = useT(BILLING_STRINGS);
   const s = useT(PLAN_SWITCH_STRINGS);
+  const rt = useT(REFERRAL_CODE_STRINGS);
   const toast = useToast();
   const navigate = useNavigate();
   const [cycle, setCycle] = useState<BillingCycle>(view.subscription.billingCycle);
@@ -148,7 +152,7 @@ export function PlansTab({
       {code && (
         <p className="text-sm text-ink" dir="auto">
           {code.active
-            ? fmt(t.storeCode, { code: code.code, discount: codeDiscountLabel(code, bt) })
+            ? fmt(t.storeCode, { code: code.code, discount: scheduleLabel(code, cycle, rt) ?? codeDiscountLabel(code, bt) })
             : fmt(t.codeInactive, { code: code.code })}
         </p>
       )}
@@ -296,7 +300,9 @@ function PlanCard({
         <p className="mt-1 text-sm font-medium text-success">{fmt(t.saveYearly, { amount: formatMinorMoney(yearlySaving, plan.currency) })}</p>
       )}
 
-      {!view.referralCode && (action === "trial" || action === "choose") && (
+      {/* Before the first payment, as before; with REFERRAL_CODES_V2_ENABLED also a paid
+          store on its current plan (a code for its next renewal; a plan change takes one in its dialog). */}
+      {((!view.referralCode && (action === "trial" || action === "choose")) || (view.referralCodeEntry?.enabled && plan.isCurrent && action === "current")) && (
         <CodeField plan={plan} cycle={cycle} onApplied={onPlansChange} onChanged={onChanged} />
       )}
 
@@ -461,17 +467,16 @@ function CodeField({
   onChanged: () => void;
 }) {
   const t = useT(SUBSCRIPTION_STRINGS);
-  const bt = useT(BILLING_STRINGS);
+  const rt = useT(REFERRAL_CODE_STRINGS);
   const id = useId();
   const workspaceId = useWorkspaceId();
   const toast = useToast();
   const errorMessage = useErrorMessage();
   const [code, setCode] = useState("");
-  const [preview, setPreview] = useState<{ code: string; price: PlanPrice } | null>(null);
+  const [preview, setPreview] = useState<{ code: string; price: PlanPrice; schedule: ReferralSchedulePayment[] | null } | null>(null);
   const [busy, setBusy] = useState<"check" | "apply" | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const describe = (err: unknown) =>
-    errorMessage(err, { REFERRAL_CODE_INVALID: bt.invalid, REFERRAL_CODE_ALREADY_SET: bt.alreadySet });
+  const describe = (err: unknown) => errorMessage(err, referralErrorMap(rt));
 
   async function check(e: FormEvent) {
     e.preventDefault();
@@ -479,9 +484,10 @@ function CodeField({
     setError(null);
     setPreview(null);
     try {
-      const result = await apiClient.previewReferralCode(workspaceId, code.trim());
+      // Judged against this card's plan and cycle (its restrictions, migration 725).
+      const result = await apiClient.previewReferralCode(workspaceId, code.trim(), { planId: plan.id, billingCycle: cycle });
       const mine = result.plans.find((p) => p.planId === plan.id);
-      if (mine) setPreview({ code: result.code.code, price: priceFor(mine.prices, cycle) });
+      if (mine) setPreview({ code: result.code.code, price: priceFor(mine.prices, cycle), schedule: mine.schedule?.[cycle] ?? null });
     } catch (err) {
       setError(describe(err));
     } finally {
@@ -494,7 +500,7 @@ function CodeField({
     setBusy("apply");
     setError(null);
     try {
-      await apiClient.attachReferralCode(workspaceId, preview.code);
+      await apiClient.attachReferralCode(workspaceId, preview.code, { planId: plan.id, billingCycle: cycle });
       toast.success(t.codeApplied);
       onApplied(await apiClient.getSubscriptionPlans(workspaceId));
       onChanged();
@@ -532,6 +538,7 @@ function CodeField({
           <p className="text-sm text-ink" dir="auto">
             {fmt(t.withCode, { code: preview.code, price: formatMinorMoney(preview.price.net, plan.currency) })}
           </p>
+          {preview.schedule && <ScheduleTable rows={preview.schedule} currency={plan.currency} />}
           <Button type="button" variant="outline" className="min-h-10 w-full" disabled={busy !== null} onClick={() => void apply()}>
             {busy === "apply" ? t.applying : t.applyCode}
           </Button>

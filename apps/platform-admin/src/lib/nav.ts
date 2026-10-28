@@ -22,6 +22,7 @@ import {
   Receipt,
   ScrollText,
   Settings2,
+  TicketPercent,
   ShieldAlert,
   Truck,
   Undo2,
@@ -79,6 +80,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Referrals",
     items: [
       { label: "Agents", to: "/agents", icon: Handshake, permission: P.AGENTS_VIEW },
+      { label: "Referral codes", to: "/referral-codes", icon: TicketPercent, permission: P.AGENTS_VIEW },
       { label: "My referrals", to: "/my-referrals", icon: Handshake, permission: P.REFERRALS_VIEW_OWN },
     ],
   },

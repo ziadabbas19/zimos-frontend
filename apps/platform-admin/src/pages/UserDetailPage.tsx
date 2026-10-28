@@ -5,6 +5,7 @@ import { twoFactorRecoveryAdminReset, twoFactorRecoveryOfUser } from "@store-bui
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useToast } from "@/components/Toast";
 import { useAuth } from "@/context/AuthContext";
+import { UserReferralsPanel } from "@/components/storeReferrals";
 import { apiClient } from "@/lib/apiClient";
 import { TWO_FACTOR_ENABLED } from "@/lib/features";
 import { P } from "@/lib/permissions";
@@ -131,6 +132,7 @@ function TwoFactorRow({ user, onReset }: { user: AdminUserDetail; onReset: () =>
 export function UserDetailPage() {
   const { id = "" } = useParams();
   const { data: user, loading, error, refresh } = useAsync(() => adminApi.getUser(id), [id]);
+  const { can } = useAuth();
 
   return (
     <div>
@@ -244,6 +246,11 @@ export function UserDetailPage() {
               )}
             </Panel>
             <AcquisitionPanel acquisition={user.acquisition ?? null} />
+            {can(P.AGENTS_VIEW) && (
+              <Panel title="Referral codes">
+                <UserReferralsPanel userId={user.id} />
+              </Panel>
+            )}
           </div>
         )}
       </DataState>

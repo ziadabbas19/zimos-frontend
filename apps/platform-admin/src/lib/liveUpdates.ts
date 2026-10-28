@@ -12,7 +12,8 @@ import { CONSOLE_REALTIME_ENABLED } from "@/lib/features";
 
 export type ConsoleLiveStatus = RealtimeStatus | "off";
 
-export const CONSOLE_EVENTS = ["merchant.created", "subscription.paid", "ticket.created"];
+// referral.used: a store entered a referral code (migration 725).
+export const CONSOLE_EVENTS = ["merchant.created", "subscription.paid", "ticket.created", "referral.used"];
 
 /**
  * Opens the connection while mounted and calls `onEvent` for each console

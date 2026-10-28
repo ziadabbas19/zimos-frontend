@@ -379,7 +379,7 @@ export function MerchantsTable({ merchants, linkWorkspaces }: { merchants: Admin
         </TableHeader>
         <TableBody>
           {merchants.map((m) => (
-            <TableRow key={m.workspace.id}>
+            <TableRow key={`${m.workspace.id}:${m.code.id ?? m.via ?? ""}`}>
               <Td className="font-medium">
                 {linkWorkspaces ? (
                   <Link to={`/workspaces/${m.workspace.id}`} className="hover:text-primary hover:underline">
@@ -390,7 +390,8 @@ export function MerchantsTable({ merchants, linkWorkspaces }: { merchants: Admin
                 )}
               </Td>
               <Td>
-                <Mono>{m.code.code}</Mono>
+                {/* A store linked by hand has no code (migration 725). */}
+                {m.code.code ? <Mono>{m.code.code}</Mono> : <span className="text-sm text-ink-soft">Linked by hand</span>}
               </Td>
               <Td className="whitespace-nowrap text-sm">{formatDate(m.attachedAt)}</Td>
               <Td className="text-sm">

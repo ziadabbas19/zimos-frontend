@@ -146,6 +146,7 @@ export const NAV_LABELS_AR: Record<string, string> = {
   Referrals: "الإحالات",
   Agents: "الوكلاء",
   "My referrals": "إحالاتي",
+  "Referral codes": "أكواد الإحالة",
   Marketplace: "السوق",
   Templates: "القوالب",
   Themes: "الثيمات",
