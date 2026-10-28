@@ -10,6 +10,9 @@ import { fmt, type Messages } from "@/i18n/LocaleContext";
 export const NOTIFICATION_STRINGS = {
   en: {
     type_order_new: "New orders",
+    type_order_paid: "Paid orders (online or by transfer)",
+    type_lost_order_new: "New lost orders",
+    type_whatsapp_message: "New WhatsApp messages",
     type_order_suspicious: "Suspicious orders",
     type_stock_low: "Low stock",
     type_integration_failed: "A connected service failed",
@@ -43,6 +46,9 @@ export const NOTIFICATION_STRINGS = {
     limitStorageBody: "Delete files you don't need, or change the plan, to upload new ones.",
     orderNewTitle: "New order {orderNumber}",
     orderSuspiciousTitle: "Suspicious order {orderNumber}",
+    orderPaidTitle: "Order {orderNumber} was paid",
+    lostOrderTitle: "A new lost order",
+    lostOrderBody: "A customer did not finish an order. You will find it under Lost orders.",
     orderSuspiciousBody: "The protection rules flagged this order for review before it is confirmed.",
     stockLowTitle: "Running low: {label}",
     stockLowBody: "{available} left in stock.",
@@ -61,6 +67,9 @@ export const NOTIFICATION_STRINGS = {
   },
   ar: {
     type_order_new: "الطلبات الجديدة",
+    type_order_paid: "الطلبات المدفوعة (أونلاين أو بالتحويل)",
+    type_lost_order_new: "الطلبات المفقودة الجديدة",
+    type_whatsapp_message: "رسائل واتساب الجديدة",
     type_order_suspicious: "الطلبات المشتبه بها",
     type_stock_low: "قرب نفاد المخزون",
     type_integration_failed: "تعطّل خدمة مربوطة",
@@ -94,6 +103,9 @@ export const NOTIFICATION_STRINGS = {
     limitStorageBody: "امسح ملفات مش محتاجها أو غيّر الباقة علشان ترفع ملفات جديدة.",
     orderNewTitle: "طلب جديد {orderNumber}",
     orderSuspiciousTitle: "طلب مشتبه به {orderNumber}",
+    orderPaidTitle: "تم دفع الطلب {orderNumber}",
+    lostOrderTitle: "طلب مفقود جديد",
+    lostOrderBody: "لم يكتمل طلب أحد العملاء. تجده في صفحة الطلبات المفقودة.",
     orderSuspiciousBody: "قواعد الحماية علّمت هذا الطلب للمراجعة قبل تأكيده.",
     stockLowTitle: "المخزون قارب على النفاد: {label}",
     stockLowBody: "المتاح {available} قطعة.",
@@ -129,6 +141,11 @@ export function notificationText(t: NotificationStrings, n: MerchantNotification
         title: fmt(t.orderNewTitle, { orderNumber: str(d.orderNumber) }),
         body: [str(d.customerName), str(d.total)].filter(Boolean).join(" — ") || null,
       };
+    case "order.paid":
+      if (!d.orderNumber) break;
+      return { title: fmt(t.orderPaidTitle, { orderNumber: str(d.orderNumber) }), body: str(d.total) || null };
+    case "lost_order.new":
+      return { title: t.lostOrderTitle, body: t.lostOrderBody };
     case "order.suspicious":
       if (!d.orderNumber) break;
       return { title: fmt(t.orderSuspiciousTitle, { orderNumber: str(d.orderNumber) }), body: t.orderSuspiciousBody };
