@@ -10,6 +10,7 @@ import {
 } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { listenForConfirmation, noteCodeSent } from "@/lib/emailConfirm";
+import { leavePushOnSignOut } from "@/lib/push/pushClient";
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -189,6 +190,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return null;
       },
       async logout() {
+        // This browser stops receiving the account's device notifications first
+        // (a moment at most; nothing while VITE_PUSH_ENABLED is off).
+        await leavePushOnSignOut();
         // Signed out here even when the server can't be told: the client has
         // already dropped the tokens (ApiClient.logout).
         try {
@@ -204,6 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // A guest only once the server has ended the sessions: a failure
         // leaves this device signed in, and the screen says it did not work.
         await apiClient.signOutEverywhere();
+        await leavePushOnSignOut();
         setUser(null);
         setNeedsPlan(false);
         setConfirmed(true);

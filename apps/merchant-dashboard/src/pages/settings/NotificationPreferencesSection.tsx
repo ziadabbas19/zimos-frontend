@@ -16,6 +16,7 @@ import { useT, type Messages } from "@/i18n/LocaleContext";
 import { DataState } from "@/components/DataState";
 import { useToast } from "@/components/Toast";
 import { useAuth } from "@/context/AuthContext";
+import { usePushConfig } from "@/lib/push/usePush";
 
 const STRINGS = {
   en: {
@@ -98,6 +99,11 @@ export function NotificationPreferencesSection() {
     channel === "inApp" ? t.inApp : channel === "push" ? t.push : channel === "whatsapp" ? t.whatsapp : t.email;
   const { user } = useAuth();
   const phoneVerified = Boolean(user?.phoneVerifiedAt);
+  // The "Push" column only while device notifications are on here (VITE_PUSH_ENABLED)
+  // and at the API (/me/push/config): an API that offers it before this dashboard can
+  // turn them on would show a column with no way to use it.
+  const pushConfig = usePushConfig();
+  const channels = (data?.channels ?? []).filter((channel) => channel !== "push" || pushConfig.status === "on");
 
   return (
     <section ref={ref} id="notifications" className="scroll-mt-6 rounded-[var(--radius-card)] border border-line p-5">
@@ -114,7 +120,7 @@ export function NotificationPreferencesSection() {
                       <th scope="col" className="py-2 pe-3 text-start font-medium">
                         {t.type}
                       </th>
-                      {data.channels.map((channel) => (
+                      {channels.map((channel) => (
                         <th key={channel} scope="col" className="px-3 py-2 text-center font-medium">
                           {channelLabel(channel)}
                         </th>
@@ -129,7 +135,7 @@ export function NotificationPreferencesSection() {
                           <th scope="row" className="py-3 pe-3 text-start font-normal text-ink">
                             {label}
                           </th>
-                          {data.channels.map((channel) => (
+                          {channels.map((channel) => (
                             <td key={channel} className="px-3 py-3 text-center">
                               <input
                                 type="checkbox"

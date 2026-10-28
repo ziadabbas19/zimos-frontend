@@ -60,6 +60,8 @@ export * from "./endpoints/live";
 export * from "./endpoints/visitors";
 // Merchant notifications (the header bell and its preferences).
 export * from "./endpoints/notifications";
+// Device notifications (Web Push): my browsers, under /me/push.
+export * from "./endpoints/push";
 // Orders: status changes, history, notes, tags, bulk actions.
 export * from "./endpoints/orders";
 // Contacts, segments and form submissions.

@@ -58,6 +58,10 @@ export type ApiErrorCode =
   | "IMAGE_UNREADABLE" // 422
   | "TOO_MANY_PENDING_UPLOADS" // 429
   | "VISITOR_ID_REQUIRED" // 400
+  // device notifications (/me/push)
+  | "PUSH_ENDPOINT_NOT_ALLOWED" // 422 — the browser's push service is not one the API sends to
+  | "PUSH_NO_DEVICE" // 404 — this browser has not subscribed
+  | "PUSH_DEVICE_DISABLED" // 409 — the device is switched off
   // storefront checkout / fraud / autosave
   | "ORDER_REJECTED"
   | "INVALID_PHONE"
