@@ -15,6 +15,10 @@ import type { ApiClient } from "../client";
 
 export type MerchantNotificationType =
   | "order.new"
+  // The three below exist only while the API's device notifications are on (PUSH_ENABLED).
+  | "order.paid" // paid online or by an approved transfer, not cash on delivery
+  | "lost_order.new"
+  | "whatsapp.message" // device notifications only: never a bell row
   | "order.suspicious"
   | "stock.low"
   | "integration.failed"
@@ -65,6 +69,8 @@ export interface MerchantNotificationTypePreference {
   push: boolean;
   /** WhatsApp to the person's verified phone; false until turned on. */
   whatsapp: boolean;
+  /** The only channels this type has (`["push"]` for whatsapp.message); absent = every channel. */
+  only?: MerchantNotificationChannel[];
 }
 
 export interface MerchantNotificationPreferences {
