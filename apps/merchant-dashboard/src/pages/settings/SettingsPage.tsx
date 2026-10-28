@@ -39,6 +39,7 @@ import { AppearanceSection } from "./AppearanceSection";
 import { AccountSettingsSection } from "./AccountSettingsSection";
 import { DevelopersSection } from "./DevelopersSection";
 import { NotificationPreferencesSection } from "./NotificationPreferencesSection";
+import { PushDeviceSection } from "./PushDeviceSection";
 import { OrderEmailsSection } from "./OrderEmailsSection";
 import { BILLING_ROLES } from "@/pages/subscription/billingText";
 import { SUBSCRIPTION_STRINGS } from "@/pages/subscription/subscriptionStrings";
@@ -314,6 +315,8 @@ function SectionBody({ id }: { id: Exclude<SectionId, "security"> }): ReactNode 
     case "notifications":
       return (
         <>
+          {/* Device notifications for this browser and "My devices" (VITE_PUSH_ENABLED and the API's /me/push). */}
+          <PushDeviceSection />
           <NotificationPreferencesSection />
           {/* A daily or weekly email of the store's numbers to chosen team members (lib/features). */}
           {STORE_REPORTS_ENABLED && <SummaryReportsSection />}

@@ -13,6 +13,8 @@ import { StoreLinkBar } from "@/components/StoreLinkBar";
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import { LiveUpdates } from "@/components/LiveUpdates";
+import { PushBridge } from "@/components/push/PushBridge";
+import { PushInstallBanner } from "@/components/push/PushInstallBanner";
 import { CommandPalette } from "@/components/CommandPalette";
 import { SidebarShortcuts } from "@/components/SidebarShortcuts";
 import { MobileTabBar } from "@/components/MobileTabBar";
@@ -149,6 +151,8 @@ export function DashboardLayout() {
             <NotificationsBell />
             {/* The live updates' connection, toasts and sound (VITE_REALTIME_ENABLED); renders nothing. */}
             <LiveUpdates />
+            {/* Device notifications in this browser (VITE_PUSH_ENABLED); renders nothing. */}
+            <PushBridge />
             <AccountMenu />
           </div>
         </header>
@@ -156,6 +160,8 @@ export function DashboardLayout() {
         <main className="flex-1 p-4 sm:p-6">
           {/* The account's email still to confirm. */}
           <EmailConfirmBanner />
+          {/* An iPhone or iPad in the browser: add Zimos to the Home Screen for notifications (VITE_PUSH_ENABLED). */}
+          <PushInstallBanner />
           {/* Subscription expiring / expired, or the store suspended. */}
           <AccessBanner />
           {/* One crashing page shows an error here; the side menu and the
