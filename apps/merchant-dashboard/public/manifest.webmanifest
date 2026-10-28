@@ -1,0 +1,17 @@
+{
+  "id": "/",
+  "name": "Zimos — لوحة التاجر",
+  "short_name": "Zimos",
+  "description": "Zimos merchant dashboard",
+  "lang": "ar",
+  "dir": "auto",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0B1F66",
+  "icons": [
+    { "src": "/brand/zimos-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/brand/zimos-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
