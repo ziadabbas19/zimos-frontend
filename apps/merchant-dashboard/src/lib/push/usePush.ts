@@ -52,8 +52,8 @@ export function usePushHere(userId: string | null, active: boolean): PushHere {
   const [on, setOn] = useState<boolean | null>(null);
   const [devices, setDevices] = useState<PushDevice[] | null>(null);
 
-  const refresh = useCallback(async () => {
-    if (!active || !userId) return;
+  const read = useCallback(async () => {
+    if (!active || !userId) return null;
     const [here, list] = await Promise.all([
       isOnHere(userId).catch(() => false),
       pushListDevices(apiClient, "dashboard").then(
@@ -61,14 +61,28 @@ export function usePushHere(userId: string | null, active: boolean): PushHere {
         () => null
       ),
     ]);
-    setPermission(permissionNow());
-    setOn(here);
-    setDevices(list);
+    return { permission: permissionNow(), on: here, devices: list };
   }, [active, userId]);
 
+  const apply = useCallback((state: { permission: Permission; on: boolean; devices: PushDevice[] | null } | null) => {
+    if (!state) return;
+    setPermission(state.permission);
+    setOn(state.on);
+    setDevices(state.devices);
+  }, []);
+
+  const refresh = useCallback(async () => apply(await read()), [read, apply]);
+
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    let live = true;
+    read().then(
+      (state) => live && apply(state),
+      () => undefined
+    );
+    return () => {
+      live = false;
+    };
+  }, [read, apply]);
 
   return {
     support: pushSupport(facts),
