@@ -44,8 +44,9 @@ import {
   Wallet,
   Route,
 } from "lucide-react";
+import type { Permission } from "@store-builder/api-client";
 import type { Messages } from "@/i18n/LocaleContext";
-import { NO_ANALYTICS_ROLES } from "@/lib/analyticsAccess";
+import { hasAnyPermission } from "@/lib/permissions";
 import {
   AI_ENABLED,
   BLOG_ENABLED,
@@ -69,12 +70,6 @@ const REWARDS_HOME = LOYALTY_ENABLED
       : STORE_CREDIT_ENABLED
         ? "/store-credit"
         : null;
-
-/**
- * System roles without billing.manage (owner '*' and accountant hold it, see
- * the backend's core/security/permissions.js): they don't see Subscription.
- */
-const NO_BILLING_ROLES: ReadonlySet<string> = new Set(["workspace_manager", "editor", "order_operator", "confirmation_agent"]);
 
 export type NavKey =
   | "overview"
@@ -139,11 +134,12 @@ export interface NavItem {
   to: string;
   icon: LucideIcon;
   /**
-   * Role keys that don't see this entry: the system roles the backend refuses
-   * for the page's API (the page still handles a 403 for any other role).
-   * Entries without it are shown to everyone, as before.
+   * The permissions the page's own API asks for (its route's requirePermission,
+   * or one of a requireAnyPermission list, in the backend): the entry shows
+   * only to a role holding one of them (lib/permissions, on the permissions
+   * the store list sent). Entries without it are shown to everyone.
    */
-  hiddenForRoles?: ReadonlySet<string>;
+  requires?: readonly Permission[];
   /**
    * The entry this one sits under: it is left out of the side menu and its
    * pages light the parent's row. No entry uses it today.
@@ -180,10 +176,10 @@ export const NAV_GROUPS: NavGroup[] = [
     id: "orders",
     labelKey: "orders",
     items: [
-      { key: "orders", to: "/orders", icon: ShoppingBag, badge: "toShip" },
-      { key: "confirmationQueue", to: "/confirmation-queue", icon: PhoneCall, badge: "toConfirm" },
-      { key: "abandonedCarts", to: "/abandoned-carts", icon: ShoppingCart },
-      { key: "returns", to: "/returns", icon: Undo2 },
+      { key: "orders", to: "/orders", icon: ShoppingBag, badge: "toShip", requires: ["orders.view"] },
+      { key: "confirmationQueue", to: "/confirmation-queue", icon: PhoneCall, badge: "toConfirm", requires: ["orders.confirm", "orders.manage"] },
+      { key: "abandonedCarts", to: "/abandoned-carts", icon: ShoppingCart, requires: ["orders.view"] },
+      { key: "returns", to: "/returns", icon: Undo2, requires: ["orders.view"] },
       { key: "fraud", to: "/fraud", icon: ShieldAlert },
     ],
   },
@@ -191,86 +187,86 @@ export const NAV_GROUPS: NavGroup[] = [
     id: "products",
     labelKey: "products",
     items: [
-      { key: "catalog", to: "/catalog", icon: Package },
-      { key: "reviews", to: "/reviews", icon: Star },
+      { key: "catalog", to: "/catalog", icon: Package, requires: ["products.view"] },
+      { key: "reviews", to: "/reviews", icon: Star, requires: ["products.manage"] },
       // Shoppers' questions and size charts, each only while its feature is switched on (lib/features).
-      ...(PRODUCT_QUESTIONS_ENABLED ? [{ key: "productQuestions" as const, to: "/questions", icon: CircleQuestionMark }] : []),
-      ...(SIZE_CHARTS_ENABLED ? [{ key: "sizeCharts" as const, to: "/size-charts", icon: Ruler }] : []),
-      { key: "digital", to: "/digital", icon: Download },
-      { key: "courses", to: "/courses", icon: GraduationCap },
-      { key: "media", to: "/media", icon: Images },
+      ...(PRODUCT_QUESTIONS_ENABLED ? [{ key: "productQuestions" as const, to: "/questions", icon: CircleQuestionMark, requires: ["products.view"] as Permission[] }] : []),
+      ...(SIZE_CHARTS_ENABLED ? [{ key: "sizeCharts" as const, to: "/size-charts", icon: Ruler, requires: ["products.view"] as Permission[] }] : []),
+      { key: "digital", to: "/digital", icon: Download, requires: ["products.view"] },
+      { key: "courses", to: "/courses", icon: GraduationCap, requires: ["products.view"] },
+      { key: "media", to: "/media", icon: Images, requires: ["products.manage"] },
     ],
   },
   {
     id: "customers",
     labelKey: "customers",
     items: [
-      { key: "customers", to: "/customers", icon: Users },
+      { key: "customers", to: "/customers", icon: Users, requires: ["customers.view"] },
       // Points, levels, invites and store credit: one entry, only while one of them is switched on (lib/features).
-      ...(REWARDS_HOME ? [{ key: "loyalty" as const, to: REWARDS_HOME, icon: Medal }] : []),
-      { key: "inbox", to: "/inbox", icon: MessageCircleMore, badge: "unread" },
+      ...(REWARDS_HOME ? [{ key: "loyalty" as const, to: REWARDS_HOME, icon: Medal, requires: ["customers.view"] as Permission[] }] : []),
+      { key: "inbox", to: "/inbox", icon: MessageCircleMore, badge: "unread", requires: ["orders.confirm"] },
     ],
   },
   {
     id: "marketing",
     labelKey: "marketing",
     items: [
-      { key: "marketing", to: "/marketing", icon: Megaphone },
-      { key: "offers", to: "/offers", icon: Gift },
-      { key: "discounts", to: "/discounts", icon: Tag },
+      { key: "marketing", to: "/marketing", icon: Megaphone, requires: ["workspace.manage"] },
+      { key: "offers", to: "/offers", icon: Gift, requires: ["products.view"] },
+      { key: "discounts", to: "/discounts", icon: Tag, requires: ["discounts.manage"] },
       // Gift cards only while the feature is switched on (lib/features).
-      ...(GIFT_CARDS_ENABLED ? [{ key: "giftCards" as const, to: "/gift-cards", icon: Ticket }] : []),
-      { key: "automations", to: "/automations", icon: Bot },
+      ...(GIFT_CARDS_ENABLED ? [{ key: "giftCards" as const, to: "/gift-cards", icon: Ticket, requires: ["discounts.manage"] as Permission[] }] : []),
+      { key: "automations", to: "/automations", icon: Bot, requires: ["automations.manage"] },
       // AI studio only while the AI features are switched on (lib/features).
-      ...(AI_ENABLED ? [{ key: "ai" as const, to: "/ai", icon: Sparkles }] : []),
+      ...(AI_ENABLED ? [{ key: "ai" as const, to: "/ai", icon: Sparkles, requires: ["products.manage", "website.edit", "funnels.manage", "orders.confirm"] as Permission[] }] : []),
     ],
   },
   {
     id: "store",
     labelKey: "store",
     items: [
-      { key: "website", to: "/website", icon: Globe },
+      { key: "website", to: "/website", icon: Globe, requires: ["website.edit"] },
       // The store blog only while the feature is switched on (lib/features).
-      ...(BLOG_ENABLED ? [{ key: "blog" as const, to: "/blog", icon: Newspaper }] : []),
-      { key: "funnels", to: "/funnels", icon: Route },
-      { key: "shoppableImages", to: "/shoppable-images", icon: MousePointerClick },
-      { key: "storeSettings", to: "/store-settings", icon: Store },
+      ...(BLOG_ENABLED ? [{ key: "blog" as const, to: "/blog", icon: Newspaper, requires: ["website.edit"] as Permission[] }] : []),
+      { key: "funnels", to: "/funnels", icon: Route, requires: ["funnels.manage"] },
+      { key: "shoppableImages", to: "/shoppable-images", icon: MousePointerClick, requires: ["products.view"] },
+      { key: "storeSettings", to: "/store-settings", icon: Store, requires: ["website.edit"] },
     ],
   },
   {
     id: "analytics",
     labelKey: "analytics",
     items: [
-      { key: "analytics", to: "/analytics", icon: BarChart3, hiddenForRoles: NO_ANALYTICS_ROLES },
-      { key: "realtime", to: "/analytics/realtime", icon: Activity, hiddenForRoles: NO_ANALYTICS_ROLES },
-      { key: "webAnalytics", to: "/analytics/web", icon: LineChart, hiddenForRoles: NO_ANALYTICS_ROLES },
+      { key: "analytics", to: "/analytics", icon: BarChart3, requires: ["analytics.view"] },
+      { key: "realtime", to: "/analytics/realtime", icon: Activity, requires: ["analytics.view"] },
+      { key: "webAnalytics", to: "/analytics/web", icon: LineChart, requires: ["analytics.view"] },
       // The store's visitors, only while the feature is switched on (lib/features).
       ...(VISITORS_ENABLED
-        ? [{ key: "visitors" as const, to: "/analytics/visitors", icon: Footprints, hiddenForRoles: NO_ANALYTICS_ROLES }]
+        ? [{ key: "visitors" as const, to: "/analytics/visitors", icon: Footprints, requires: ["analytics.view"] as Permission[] }]
         : []),
-      { key: "attribution", to: "/analytics/attribution", icon: Target, hiddenForRoles: NO_ANALYTICS_ROLES },
-      { key: "profit", to: "/profit", icon: PiggyBank, hiddenForRoles: NO_ANALYTICS_ROLES },
-      { key: "ads", to: "/ads", icon: CircleDollarSign, hiddenForRoles: NO_ANALYTICS_ROLES },
+      { key: "attribution", to: "/analytics/attribution", icon: Target, requires: ["analytics.view"] },
+      { key: "profit", to: "/profit", icon: PiggyBank, requires: ["financial_reports.view"] },
+      { key: "ads", to: "/ads", icon: CircleDollarSign, requires: ["financial_reports.view"] },
     ],
   },
   {
     id: "money",
     labelKey: "money",
     items: [
-      { key: "payments", to: "/payments", icon: Wallet },
-      { key: "settlements", to: "/settlements", icon: Banknote },
-      { key: "shipping", to: "/shipping", icon: Truck },
+      { key: "payments", to: "/payments", icon: Wallet, requires: ["workspace.manage"] },
+      { key: "settlements", to: "/settlements", icon: Banknote, requires: ["financial_reports.view"] },
+      { key: "shipping", to: "/shipping", icon: Truck, requires: ["shipping.manage", "tax.manage"] },
     ],
   },
   {
     id: "config",
     labelKey: null,
     items: [
-      { key: "subscription", to: "/subscription", icon: CreditCard, hiddenForRoles: NO_BILLING_ROLES },
+      { key: "subscription", to: "/subscription", icon: CreditCard, requires: ["billing.manage"] },
       { key: "settings", to: "/settings", icon: Settings },
-      { key: "activity", to: "/activity", icon: History },
+      { key: "activity", to: "/activity", icon: History, requires: ["audit_log.view"] },
       { key: "services", to: "/services", icon: Handshake },
-      { key: "support", to: "/support", icon: LifeBuoy },
+      { key: "support", to: "/support", icon: LifeBuoy, requires: ["workspace.manage"] },
       { key: "suggestions", to: "/suggestions", icon: Lightbulb },
     ],
   },
@@ -294,9 +290,13 @@ export function findNavGroup(item: NavItem): NavGroup | undefined {
   return NAV_GROUPS.find((group) => group.items.includes(item));
 }
 
-/** Whether a role sees an entry (see NavItem.hiddenForRoles). */
-export function isNavItemVisible(item: NavItem, role: string | null | undefined): boolean {
-  return !item.hiddenForRoles?.has(role ?? "");
+/**
+ * Whether a member sees an entry: their role's permissions (Workspace.permissions)
+ * hold one the page's API asks for (NavItem.requires). Unknown permissions
+ * show it (lib/permissions).
+ */
+export function isNavItemVisible(item: NavItem, permissions: readonly string[] | null | undefined): boolean {
+  return hasAnyPermission(permissions, item.requires);
 }
 
 /** Flat list, for anything that iterates items without caring about grouping. */

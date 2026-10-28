@@ -56,12 +56,12 @@ function readCollapsedGroups(): Record<string, boolean> {
 }
 
 /**
- * A group's rows for this role. Entries the role cannot use are left out, and
+ * A group's rows for this member. Entries their role cannot open are left out, and
  * so is anything in `skip` — the phone menu passes the dock's own pages there,
  * so nothing is listed twice.
  */
-export function visibleNavItems(group: NavGroup, role: string | null | undefined, skip?: ReadonlySet<string>): NavItem[] {
-  return group.items.filter((item) => isSidebarItem(item) && isNavItemVisible(item, role) && !skip?.has(item.to));
+export function visibleNavItems(group: NavGroup, permissions: readonly string[] | null | undefined, skip?: ReadonlySet<string>): NavItem[] {
+  return group.items.filter((item) => isSidebarItem(item) && isNavItemVisible(item, permissions) && !skip?.has(item.to));
 }
 
 const ROW =
@@ -153,7 +153,7 @@ export function SidebarNav({ shortcuts }: { shortcuts?: ReactNode }) {
   const groupLabels = useT(NAV_GROUP_LABELS);
   const counts = useWorkCounts(currentWorkspace?.id);
   const storeName = currentWorkspace?.name;
-  const role = currentWorkspace?.role;
+  const permissions = currentWorkspace?.permissions;
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(readCollapsedGroups);
   useEffect(() => {
@@ -192,7 +192,7 @@ export function SidebarNav({ shortcuts }: { shortcuts?: ReactNode }) {
   );
 
   const footGroup = NAV_GROUPS.find((group) => group.id === FOOT_GROUP_ID);
-  const footItems = footGroup ? visibleNavItems(footGroup, role) : [];
+  const footItems = footGroup ? visibleNavItems(footGroup, permissions) : [];
 
   return (
     <>
@@ -225,7 +225,7 @@ export function SidebarNav({ shortcuts }: { shortcuts?: ReactNode }) {
             // A group without a heading has nothing to click, so it is never folded away.
             const isClosed = Boolean(heading && collapsed[group.id]);
             // Entries this role cannot use are left out; a group left empty goes too.
-            const visible = visibleNavItems(group, role);
+            const visible = visibleNavItems(group, permissions);
             if (visible.length === 0) return null;
             // Folding hides everything in the group except the page you are on.
             const items = isClosed ? visible.filter((item) => item.to === activeTo) : visible;

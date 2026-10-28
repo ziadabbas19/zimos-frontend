@@ -981,9 +981,13 @@ export class ApiClient {
     // The API returns { workspaces: [{ workspace, role }] } — flatten to
     // Workspace[] with the role key attached.
     const { workspaces } = await this.request<{
-      workspaces: Array<{ workspace: Workspace; role?: { key: string; name: string } }>;
+      workspaces: Array<{ workspace: Workspace; role?: { key: string; name: string; permissions?: string[] } }>;
     }>("/workspaces");
-    return workspaces.map((entry) => ({ ...entry.workspace, role: entry.role?.key }));
+    return workspaces.map((entry) => ({
+      ...entry.workspace,
+      role: entry.role?.key,
+      ...(Array.isArray(entry.role?.permissions) ? { permissions: entry.role.permissions } : {}),
+    }));
   }
 
   /**

@@ -119,7 +119,7 @@ function PhoneMenuSheet({ onClose }: { onClose: () => void }) {
   const navLabels = useT(NAV_LABELS);
   const groupLabels = useT(NAV_GROUP_LABELS);
   const counts = useWorkCounts(currentWorkspace?.id);
-  const role = currentWorkspace?.role;
+  const permissions = currentWorkspace?.permissions;
   const sheet = useRef<HTMLDivElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
   const titleId = useId();
@@ -146,9 +146,9 @@ function PhoneMenuSheet({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const onDock = new Set(tabRoutesFor(role));
+  const onDock = new Set(tabRoutesFor(permissions));
   const activeTo = sidebarHome(findNavItem(location.pathname));
-  const groups = NAV_GROUPS.map((group) => ({ group, items: visibleNavItems(group, role, onDock) })).filter(({ items }) => items.length > 0);
+  const groups = NAV_GROUPS.map((group) => ({ group, items: visibleNavItems(group, permissions, onDock) })).filter(({ items }) => items.length > 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:hidden">

@@ -146,9 +146,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       },
       refresh,
       applySavedWorkspace(saved) {
-        // A PATCH response carries no `role`; keep the one the list read gave,
-        // or every role-gated screen would treat the merchant as a non-owner.
-        setWorkspaces((prev) => prev.map((w) => (w.id === saved.id ? { ...w, ...saved, role: w.role } : w)));
+        // A PATCH response carries no `role` or `permissions`; keep the ones the
+        // list read gave, or every role-gated screen would treat the merchant
+        // as a non-owner.
+        setWorkspaces((prev) =>
+          prev.map((w) => (w.id === saved.id ? { ...w, ...saved, role: w.role, permissions: w.permissions } : w))
+        );
       },
     }),
     [workspaces, currentWorkspaceId, loading]

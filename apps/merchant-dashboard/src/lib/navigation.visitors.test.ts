@@ -19,11 +19,11 @@ describe("the Visitors menu entry", () => {
     expect(nav.NAV_ITEMS.map((item) => item.key)).not.toContain("visitors");
   });
 
-  it("sits under Analytics with the switch on, hidden from the roles without analytics", async () => {
+  it("sits under Analytics with the switch on, for the roles that read analytics", async () => {
     const nav = await navWith({ VISITORS_ENABLED: true });
     const item = nav.NAV_ITEMS.find((i) => i.key === "visitors");
     expect(item?.to).toBe("/analytics/visitors");
-    expect([...(item?.hiddenForRoles ?? [])].sort()).toEqual(["confirmation_agent", "editor", "order_operator"]);
+    expect(item?.requires).toEqual(["analytics.view"]);
     expect(nav.NAV_GROUPS.find((g) => g.items.some((i) => i.key === "visitors"))?.id).toBe("analytics");
     expect(nav.NAV_LABELS.en.visitors).toBe("Visitors");
     expect(nav.NAV_LABELS.ar.visitors).toBe("الزوار");

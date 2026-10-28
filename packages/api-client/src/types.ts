@@ -194,6 +194,44 @@ export interface WorkspaceSettings {
   [key: string]: unknown;
 }
 
+/**
+ * The permission names of the backend (core/security/permissions.js
+ * PERMISSIONS); a role holds a list of them, or '*' for every one.
+ */
+export type Permission =
+  | "workspace.manage"
+  | "users.manage"
+  | "roles.manage"
+  | "website.edit"
+  | "website.publish"
+  | "template.manage"
+  | "domain.manage"
+  | "products.manage"
+  | "products.view"
+  | "inventory.manage"
+  | "inventory.view"
+  | "funnels.manage"
+  | "funnels.publish"
+  | "orders.view"
+  | "orders.manage"
+  | "orders.confirm"
+  | "customers.view"
+  | "customers.manage"
+  | "customers.reveal_sensitive"
+  | "form_submissions.view"
+  | "shipping.manage"
+  | "tax.manage"
+  | "refunds.manage"
+  | "discounts.manage"
+  | "analytics.view"
+  | "financial_reports.view"
+  | "profit.manage"
+  | "api_keys.manage"
+  | "webhooks.manage"
+  | "automations.manage"
+  | "billing.manage"
+  | "audit_log.view";
+
 export interface Workspace {
   id: string;
   name: string;
@@ -201,6 +239,11 @@ export interface Workspace {
   createdAt: string;
   /** The current user's role key in this workspace (e.g. "owner"), when known. */
   role?: string;
+  /**
+   * That role's permissions as the server checks them ('*' = every one), from
+   * GET /workspaces; absent from an API that doesn't send them yet.
+   */
+  permissions?: readonly string[];
   status?: string;
   defaultCurrency?: string;
   ownerUserId: string;

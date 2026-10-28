@@ -42,31 +42,29 @@ interface Tab {
 }
 
 /**
- * The dock's slots: four entries of the side menu (lib/navigation.ts gives
- * each its address, its icon and who sees it), and the system roles that have
- * no use for one (backend core/security/permissions.js SYSTEM_ROLES: an editor
- * can't open orders; editors and accountants don't make confirmation calls;
- * confirmation agents and accountants can't open products). A custom role
- * sees every slot; the server still decides what it may do.
+ * The dock's slots: four entries of the side menu. lib/navigation.ts gives
+ * each its address, its icon and the permissions its page asks for, so a slot
+ * shows only to a role that can open it (an editor has no orders slot, an
+ * accountant no confirmation or products slot).
  */
-const SLOTS: { key: TabKey; nav: NavKey; end?: boolean; hiddenFor: readonly string[] }[] = [
-  { key: "home", nav: "overview", end: true, hiddenFor: [] },
-  { key: "orders", nav: "orders", hiddenFor: ["editor"] },
-  { key: "confirm", nav: "confirmationQueue", hiddenFor: ["editor", "accountant"] },
-  { key: "products", nav: "catalog", hiddenFor: ["confirmation_agent", "accountant"] },
+const SLOTS: { key: TabKey; nav: NavKey; end?: boolean }[] = [
+  { key: "home", nav: "overview", end: true },
+  { key: "orders", nav: "orders" },
+  { key: "confirm", nav: "confirmationQueue" },
+  { key: "products", nav: "catalog" },
 ];
 
-function tabsFor(role: string | null | undefined): Tab[] {
+function tabsFor(permissions: readonly string[] | null | undefined): Tab[] {
   return SLOTS.flatMap((slot) => {
     const item = NAV_ITEMS.find((entry) => entry.key === slot.nav);
-    if (!item || !isNavItemVisible(item, role) || slot.hiddenFor.includes(role ?? "")) return [];
+    if (!item || !isNavItemVisible(item, permissions)) return [];
     return [{ key: slot.key, to: item.to, end: slot.end, icon: item.icon }];
   });
 }
 
-/** The routes the dock shows for this role; the phone menu leaves them out so nothing is listed twice. */
-export function tabRoutesFor(role: string | null | undefined): string[] {
-  return tabsFor(role).map((tab) => tab.to);
+/** The routes the dock shows for this member; the phone menu leaves them out so nothing is listed twice. */
+export function tabRoutesFor(permissions: readonly string[] | null | undefined): string[] {
+  return tabsFor(permissions).map((tab) => tab.to);
 }
 
 function onTab(pathname: string, tab: { to: string; end?: boolean }): boolean {
@@ -130,7 +128,7 @@ export function MobileTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpe
   const { currentWorkspace } = useWorkspace();
   const { pathname } = useLocation();
   const morePress = usePressSwell<HTMLButtonElement>();
-  const tabs = tabsFor(currentWorkspace?.role);
+  const tabs = tabsFor(currentWorkspace?.permissions);
   const showsConfirm = tabs.some((tab) => tab.key === "confirm");
   // Calls that are due now (not ones booked for later), from the shell's one shared poll.
   // A role with no confirm slot asks for nothing; one that can't read the queue gets null: no badge.

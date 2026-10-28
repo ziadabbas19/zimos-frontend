@@ -88,12 +88,12 @@ export function KeyboardShortcuts() {
   const t = useT(STRINGS);
   const navigate = useNavigate();
   const { currentWorkspace } = useWorkspace();
-  const role = currentWorkspace?.role;
+  const permissions = currentWorkspace?.permissions;
   const [open, setOpen] = useState(false);
   // The handler reads the latest role and dialog state without re-subscribing.
   const leave = useGuardedLeave();
-  const state = useRef({ role, open, leave });
-  state.current = { role, open, leave };
+  const state = useRef({ permissions, open, leave });
+  state.current = { permissions, open, leave };
 
   useEffect(() => {
     let waitingForSecondKey = false;
@@ -101,7 +101,7 @@ export function KeyboardShortcuts() {
 
     const go = (to: string) => {
       const item = findNavItem(to);
-      if (item && !isNavItemVisible(item, state.current.role)) return;
+      if (item && !isNavItemVisible(item, state.current.permissions)) return;
       // Unsaved changes on the page: asks before going.
       state.current.leave(() => navigate(to));
     };

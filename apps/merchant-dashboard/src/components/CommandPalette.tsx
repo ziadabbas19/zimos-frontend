@@ -103,6 +103,7 @@ export function CommandPalette() {
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id;
   const role = currentWorkspace?.role;
+  const permissions = currentWorkspace?.permissions;
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -169,7 +170,7 @@ export function CommandPalette() {
     };
   }, [open, workspaceId, term]);
 
-  const shown = useMemo(() => SEARCH_INDEX.filter((entry) => isEntryShown(entry, role)), [role]);
+  const shown = useMemo(() => SEARCH_INDEX.filter((entry) => isEntryShown(entry, role, permissions)), [role, permissions]);
   // Read when the window opens: what was opened since the last time is in it.
   const recent = useMemo(() => (open && workspaceId ? readRecent(workspaceId) : null), [open, workspaceId]);
 
@@ -178,7 +179,7 @@ export function CommandPalette() {
     const placeRow = (entry: SearchEntry, group: string): Row => {
       const held = locked(entry);
       // Held back by the plan: to the plans, for a role that sees them; otherwise the page says it itself.
-      const plans = held && plansPage !== undefined && isEntryShown(plansPage, role);
+      const plans = held && plansPage !== undefined && isEntryShown(plansPage, role, permissions);
       return {
         id: entry.id,
         group,
@@ -201,7 +202,7 @@ export function CommandPalette() {
       const places: Row[] = (recent?.places ?? [])
         .filter((id) => id !== here?.id)
         .map((id) => findEntry(id))
-        .filter((entry): entry is SearchEntry => entry !== undefined && isEntryShown(entry, role))
+        .filter((entry): entry is SearchEntry => entry !== undefined && isEntryShown(entry, role, permissions))
         .slice(0, 5)
         .map((entry) => placeRow(entry, ui.recentPages));
       const actions = shown.filter((entry) => entry.kind === "action").map((entry) => placeRow(entry, ui.actions));
@@ -269,7 +270,7 @@ export function CommandPalette() {
     ];
 
     return [...places, ...records.map((row) => ({ ...row, record: true }))];
-  }, [term, results, t, ui, locale, shown, recent, here, locked, role]);
+  }, [term, results, t, ui, locale, shown, recent, here, locked, role, permissions]);
 
   useEffect(() => {
     setActive(0);

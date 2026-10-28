@@ -51,10 +51,10 @@ const ACTIONS: Array<{ key: Key; to: string; icon: LucideIcon; primary?: boolean
 export function QuickActions({ awaiting }: { awaiting: number | null }) {
   const t = useT(STRINGS);
   const { currentWorkspace } = useWorkspace();
-  const role = currentWorkspace?.role;
+  const permissions = currentWorkspace?.permissions;
   const actions = ACTIONS.filter((action) => {
     const item = findNavItem(action.to);
-    return !item || isNavItemVisible(item, role);
+    return !item || isNavItemVisible(item, permissions);
   });
 
   return (
