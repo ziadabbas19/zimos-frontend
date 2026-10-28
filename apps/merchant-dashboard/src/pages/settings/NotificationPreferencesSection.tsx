@@ -137,14 +137,21 @@ export function NotificationPreferencesSection() {
                           </th>
                           {channels.map((channel) => (
                             <td key={channel} className="px-3 py-3 text-center">
-                              <input
-                                type="checkbox"
-                                className="size-4 cursor-pointer accent-primary"
-                                checked={row[channel]}
-                                disabled={saving}
-                                aria-label={t.channelFor.replace("{channel}", channelLabel(channel)).replace("{type}", label)}
-                                onChange={(e) => toggle(row.type, channel, e.target.checked)}
-                              />
+                              {/* A type with only some channels (WhatsApp messages: device only) has no box for the others. */}
+                              {row.only && !row.only.includes(channel) ? (
+                                <span aria-hidden className="text-ink-soft">
+                                  —
+                                </span>
+                              ) : (
+                                <input
+                                  type="checkbox"
+                                  className="size-4 cursor-pointer accent-primary"
+                                  checked={row[channel]}
+                                  disabled={saving}
+                                  aria-label={t.channelFor.replace("{channel}", channelLabel(channel)).replace("{type}", label)}
+                                  onChange={(e) => toggle(row.type, channel, e.target.checked)}
+                                />
+                              )}
                             </td>
                           ))}
                         </tr>
