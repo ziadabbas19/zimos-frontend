@@ -22,6 +22,8 @@ import { useToast } from "@/components/Toast";
 import { Modal } from "@/components/Modal";
 import { PLAN_SWITCH_STRINGS, type PlanSwitchText } from "./planSwitchStrings";
 import { SUBSCRIPTION_STRINGS } from "./subscriptionStrings";
+import { REFERRAL_CODE_STRINGS, referralErrorMap } from "./referralCodeStrings";
+import { ScheduleTable } from "./ReferralSchedule";
 
 /**
  * Changing plan by itself (the backend's /billing/plan-switch,
@@ -130,17 +132,33 @@ function SwitchBody({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [timing, setTiming] = useState<PlanSwitchTiming>("now");
+  // A code entered with the change (REFERRAL_CODES_V2_ENABLED): read into the preview, sent with the confirmation.
+  const rt = useT(REFERRAL_CODE_STRINGS);
+  const errorMessage = useErrorMessage();
+  const [codeInput, setCodeInput] = useState("");
+  const [code, setCode] = useState<string | null>(null);
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const codeEntry = Boolean(view.referralCodeEntry?.enabled);
 
   useEffect(() => {
     let live = true;
     apiClient
-      .previewPlanSwitch(workspaceId, { planId: target.plan.id, billingCycle: target.cycle })
+      .previewPlanSwitch(workspaceId, { planId: target.plan.id, billingCycle: target.cycle, ...(code ? { referralCode: code } : {}) })
       .then(({ preview: next }) => live && setPreview(next))
-      .catch((err) => live && setLoadError({ message: describeError(err), support: SUPPORT_CODES.has(apiErrorCode(err) ?? "") }));
+      .catch((err) => {
+        if (!live) return;
+        // A refused code is told beside the field; the change is previewed again without it.
+        if (code && (apiErrorCode(err) ?? "").startsWith("REFERRAL_")) {
+          setCodeError(errorMessage(err, referralErrorMap(rt)));
+          setCode(null);
+          return;
+        }
+        setLoadError({ message: describeError(err), support: SUPPORT_CODES.has(apiErrorCode(err) ?? "") });
+      });
     return () => {
       live = false;
     };
-  }, [workspaceId, target.plan.id, target.cycle, asked, describeError]);
+  }, [workspaceId, target.plan.id, target.cycle, asked, describeError, code, errorMessage, rt]);
 
   // The timings to choose between (an upgrade), and the preview as it reads for the one chosen.
   const choices = preview ? timingChoices(preview) : null;
@@ -157,7 +175,9 @@ function SwitchBody({
         billingCycle: target.cycle,
         // Sent only when there was a choice: any other switch has one timing.
         ...(choices && shown.timing ? { timing: shown.timing } : {}),
-        expectedAmount: shown.amountDue,
+        // With a code, what is due now is the preview's price after it.
+        expectedAmount: preview.referralCode && shown.amountDue > 0 ? preview.referralCode.after : shown.amountDue,
+        ...(preview.referralCode ? { referralCode: preview.referralCode.code.code } : {}),
       });
       onDone(result);
     } catch (err) {
@@ -208,6 +228,31 @@ function SwitchBody({
         <TimingChoice preview={preview} choices={choices} value={shown.timing} disabled={busy} onChange={setTiming} />
       )}
       <PreviewDetails preview={shown} view={view} />
+      {codeEntry && shown.kind !== "none" && (
+        <SwitchCode
+          applied={preview.referralCode ?? null}
+          chargedNow={shown.amountDue > 0}
+          input={codeInput}
+          error={codeError}
+          disabled={busy}
+          onInput={(v) => {
+            setCodeInput(v);
+            setCodeError(null);
+          }}
+          onCheck={() => {
+            setCodeError(null);
+            setPreview(null);
+            setCode(codeInput.trim());
+          }}
+          onRemove={() => {
+            setCodeInput("");
+            setPreview(null);
+            setCode(null);
+          }}
+          rt={rt}
+          cycle={target.cycle}
+        />
+      )}
       {shown.blockedBy && (
         <Alert variant="danger" role="alert">
           {blockedText(shown, s)} {shown.blockedBy === "NO_PAYMENT_METHOD" && <SupportLink />}
@@ -229,6 +274,89 @@ function SwitchBody({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * The code field of a plan change, and once checked the payment it applies to
+ * (this payment, or the next renewal), before and after, with its first
+ * payments when it has a schedule.
+ */
+function SwitchCode({
+  applied,
+  chargedNow,
+  input,
+  error,
+  disabled,
+  onInput,
+  onCheck,
+  onRemove,
+  rt,
+  cycle,
+}: {
+  applied: PlanSwitchPreview["referralCode"] | null;
+  chargedNow: boolean;
+  input: string;
+  error: string | null;
+  disabled: boolean;
+  onInput: (v: string) => void;
+  onCheck: () => void;
+  onRemove: () => void;
+  rt: Record<keyof (typeof REFERRAL_CODE_STRINGS)["en"], string>;
+  cycle: "monthly" | "yearly";
+}) {
+  const id = useId();
+  if (applied) {
+    return (
+      <div className="space-y-2 rounded-[var(--radius-card)] border border-line p-3" aria-live="polite">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <span className="text-ink-soft">{chargedNow ? rt.appliesNow : rt.appliesRenewal}</span>
+          <span dir="auto">
+            <span className="text-ink-soft line-through">{formatMinorMoney(applied.before, applied.currency)}</span>{" "}
+            <span className="font-medium text-ink">
+              {fmt(rt.after, { code: applied.code.code })}: {formatMinorMoney(applied.after, applied.currency)}
+            </span>
+          </span>
+        </div>
+        {applied.schedule && <ScheduleTable rows={applied.schedule[cycle]} currency={applied.currency} />}
+        <Button type="button" variant="ghost" size="sm" onClick={onRemove} disabled={disabled}>
+          {rt.remove}
+        </Button>
+      </div>
+    );
+  }
+  return (
+    <form
+      className="space-y-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (input.trim().length >= 3) onCheck();
+      }}
+    >
+      <label htmlFor={id} className="text-xs text-ink-soft">
+        {rt.codeLabel}
+      </label>
+      <div className="flex gap-2">
+        <input
+          id={id}
+          value={input}
+          onChange={(e) => onInput(e.target.value.toUpperCase())}
+          maxLength={32}
+          dir="ltr"
+          disabled={disabled}
+          className="h-10 min-w-0 flex-1 rounded-md border border-line bg-paper px-3 font-mono text-sm"
+        />
+        <Button type="submit" variant="outline" className="min-h-10 shrink-0" disabled={disabled || input.trim().length < 3}>
+          {rt.check}
+        </Button>
+      </div>
+      <p className="text-xs text-ink-soft">{rt.codeHint}</p>
+      {error && (
+        <Alert variant="danger" role="alert">
+          {error}
+        </Alert>
+      )}
+    </form>
   );
 }
 

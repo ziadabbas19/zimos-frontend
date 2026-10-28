@@ -15,6 +15,7 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { PlanPicker, type PlanChoice } from "@/components/plans/PlanPicker";
 import { useT, fmt, type Messages } from "@/i18n/LocaleContext";
 import { AuthShell } from "./AuthShell";
+import { REFERRAL_CODE_STRINGS, referralErrorMap } from "./subscription/referralCodeStrings";
 
 const STRINGS = {
   en: {
@@ -138,6 +139,7 @@ export function WorkspacePickerPage() {
     navigate("/");
   }
 
+  const rt = useT(REFERRAL_CODE_STRINGS);
   function describe(err: unknown): string {
     if (isApiErrorCode(err, "PLAN_LIMIT_REACHED")) {
       const details = apiErrorDetails<{ limit?: string; max?: number; used?: number }>(err);
@@ -146,7 +148,8 @@ export function WorkspacePickerPage() {
     }
     if (isApiErrorCode(err, "PLAN_NOT_AVAILABLE")) return t.planGone;
     if (isApiErrorCode(err, "PLAN_REQUIRED")) return t.planRequired;
-    return errorMessage(err) || t.createFailed;
+    // A refused referral code says why (expired, used, for existing merchants only, ...).
+    return errorMessage(err, referralErrorMap(rt)) || t.createFailed;
   }
 
   async function handleCreate(event: FormEvent) {
