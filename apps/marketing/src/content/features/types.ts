@@ -6,9 +6,10 @@
  * Source: the owner's list of what a merchant gets (2026-10-28), shortened
  * where a line was long: the page keeps the list's Egyptian Arabic, the home
  * summary is in the home page's Modern Standard Arabic. Not on these pages: brand
- * names of shipping companies or payment gateways, prices, AI, device
- * notifications, total counts of features, and what the list marks as not
- * built (features.test.ts checks the words).
+ * names of shipping companies or payment gateways, prices, AI or "smart",
+ * Shopify, device notifications, total counts of features, numbers that read
+ * as a plan's limit (the page does not tell plans apart), and what the list
+ * marks as not built (features.test.ts checks the words).
  */
 
 /** The sections, in page order; each id is its anchor (`/features#orders`). */

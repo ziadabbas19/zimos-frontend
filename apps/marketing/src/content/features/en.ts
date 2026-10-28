@@ -31,28 +31,28 @@ export const en: FeaturesCopy = {
       title: "Products and catalogue",
       intro: "Your whole catalogue — sizes, photos and offers — run from one place.",
       items: [
-        { title: "Unlimited products", body: "No limit on the number of products in the plan." },
+        { title: "Unlimited products", body: "No limit on the number of products." },
         {
           title: "Full variants",
           body: "Sizes and colours, each variant with its own price, cost, SKU, weight, image and stock.",
         },
         { title: "Product photos and video", body: "Drag to upload, reorder, and automatic resizing." },
         {
-          title: "Three-level category tree",
+          title: "Category tree",
           body: "Drag to reorder, each category with its own image, description and SEO.",
         },
         {
           title: "Import and export",
-          body: "Import from CSV or Excel (up to 2,000 products) or from a Shopify product link, and export your catalogue.",
+          body: "Import from CSV or Excel, and export your catalogue.",
         },
-        { title: "Bulk edit", body: "Change the price, status or shipping of up to 200 products at once." },
+        { title: "Bulk edit", body: "Change the price, status or shipping of many products at once." },
         {
           title: "Product offers",
           body: "Fixed-price bundles, quantity discounts and a countdown to the end of the offer.",
         },
         {
           title: "Paid custom fields",
-          body: "Up to 5 fields, text or a photo from the customer, for gift notes or embroidery, for example.",
+          body: "Text or a photo from the customer, for gift notes or embroidery, for example.",
         },
         { title: "Restaurant menu options", body: "Sizes and add-ons with a minimum, a maximum and a price." },
         {
@@ -176,7 +176,7 @@ export const en: FeaturesCopy = {
       intro: "Spot suspicious orders and stop them, without bothering your real customers.",
       items: [
         {
-          title: "Smart rules",
+          title: "Automatic rules",
           body: "For repeated or rapid orders from the same number or IP, unusual quantities and customers who often refuse orders.",
         },
         { title: "A risk level for every order", body: "Low, medium or high, with the reasons." },
@@ -223,13 +223,13 @@ export const en: FeaturesCopy = {
       items: [
         {
           title: "Ad pixels",
-          body: "Meta, TikTok, Snapchat, Google, GTM and Clarity, up to 30 pixels, per funnel or product.",
+          body: "Meta, TikTok, Snapchat, Google, GTM and Clarity, per funnel or product.",
         },
         { title: "Server-side events (Conversions API)", body: "For Meta, TikTok, Snapchat and GA4." },
         { title: "The source of every order", body: "First and last touch, UTMs and ad click IDs." },
         {
           title: "Discount codes",
-          body: "Percentage, amount, free shipping or “Buy X, get Y”, with usage limits and dates, a share link that applies the code by itself, and up to 500 codes generated at once.",
+          body: "Percentage, amount, free shipping or “Buy X, get Y”, with usage limits and dates, a share link that applies the code by itself, and many codes generated at once.",
         },
         { title: "Automatic discounts", body: "A discount that applies without a code." },
         {
@@ -264,7 +264,7 @@ export const en: FeaturesCopy = {
         },
         {
           title: "Sections, templates and themes",
-          body: "A library of ready sections (about 107), and templates and themes previewed with your products.",
+          body: "A library of ready sections, and templates and themes previewed with your products.",
         },
         {
           title: "A layout per device",
@@ -274,7 +274,7 @@ export const en: FeaturesCopy = {
         { title: "Your brand", body: "Colours, fonts and logo saved live, with light and dark modes." },
         {
           title: "Sales funnels",
-          body: "Landing, checkout, upsell/downsell and thank-you pages, with 7 templates and A/B testing.",
+          body: "Landing, checkout, upsell/downsell and thank-you pages, with ready templates and A/B testing.",
         },
         { title: "Blog and redirects", body: "A blog, and 301/302 redirects." },
         { title: "Full SEO", body: "And an automatic sitemap." },
@@ -345,7 +345,7 @@ export const en: FeaturesCopy = {
       intro: "Work with your team, each person seeing what is theirs.",
       items: [
         {
-          title: "6 ready roles",
+          title: "Ready roles",
           body: "Owner, manager, editor, order operator, confirmation agent and accountant, each seeing what concerns them.",
         },
         { title: "Team invites", body: "And an activity log of every change." },
