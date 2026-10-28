@@ -160,8 +160,9 @@ export function DashboardLayout() {
         <main className="flex-1 p-4 sm:p-6">
           {/* The account's email still to confirm. */}
           <EmailConfirmBanner />
-          {/* An iPhone or iPad in the browser: add Zimos to the Home Screen for notifications (VITE_PUSH_ENABLED). */}
-          <PushInstallBanner />
+          {/* An iPhone or iPad in the browser: add Zimos to the Home Screen for notifications (VITE_PUSH_ENABLED).
+              Not on the home page, where the notifications prompt (PushPrompt) says the same. */}
+          {location.pathname !== "/" && <PushInstallBanner />}
           {/* Subscription expiring / expired, or the store suspended. */}
           <AccessBanner />
           {/* One crashing page shows an error here; the side menu and the
