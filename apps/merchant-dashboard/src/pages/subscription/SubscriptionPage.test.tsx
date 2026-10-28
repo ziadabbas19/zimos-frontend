@@ -191,10 +191,11 @@ describe("SubscriptionPage", () => {
     const pro = await screen.findByRole("article", { name: "Pro" });
     await user.type(within(pro).getByLabelText("Discount or voucher code"), "save10");
     await user.click(within(pro).getByRole("button", { name: "Check" }));
-    await waitFor(() => expect(api.previewReferralCode).toHaveBeenCalledWith("ws_1", "SAVE10"));
+    // Judged against the card's plan and cycle (the code's restrictions, migration 725).
+    await waitFor(() => expect(api.previewReferralCode).toHaveBeenCalledWith("ws_1", "SAVE10", { planId: "plan_pro", billingCycle: "monthly" }));
     expect(await within(pro).findByText(/With SAVE10: .*720/)).toBeInTheDocument();
     await user.click(within(pro).getByRole("button", { name: "Apply to my store" }));
-    await waitFor(() => expect(api.attachReferralCode).toHaveBeenCalledWith("ws_1", "SAVE10"));
+    await waitFor(() => expect(api.attachReferralCode).toHaveBeenCalledWith("ws_1", "SAVE10", { planId: "plan_pro", billingCycle: "monthly" }));
   });
 
   it("explains a code that can't be used", async () => {
