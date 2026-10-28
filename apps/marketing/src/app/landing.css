@@ -2801,6 +2801,29 @@ html {
   }
 }
 
+/* Without the phones (the features page): the words in the middle. After
+   the rules above, so it wins at every width. */
+.lz-end--plain {
+  justify-content: center;
+  min-block-size: 0;
+  text-align: center;
+}
+
+.lz-end--plain .lz-end__copy {
+  max-inline-size: 40rem;
+}
+
+.lz-end--plain .lz-ctas {
+  justify-content: center;
+}
+
+@media (max-width: 900px) {
+  .lz-end--plain {
+    align-items: center;
+    padding-block-end: clamp(30px, 6vw, 80px);
+  }
+}
+
 /* ══ Footer ══════════════════════════════════════════════════════════ */
 .lz-foot {
   border-block-start: 1px solid var(--lz-line);

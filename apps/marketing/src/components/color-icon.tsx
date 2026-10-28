@@ -9,9 +9,12 @@ import type { CSSProperties } from "react";
  */
 export type ColorIconName =
   | "apps"
+  | "bell"
   | "brush"
+  | "card"
   | "chat"
   | "check"
+  | "code"
   | "delivery"
   | "edit"
   | "gift"
@@ -19,6 +22,8 @@ export type ColorIconName =
   | "growth"
   | "link"
   | "lock"
+  | "megaphone"
+  | "package"
   | "phone"
   | "profit"
   | "receipt"
@@ -26,6 +31,7 @@ export type ColorIconName =
   | "shield"
   | "store"
   | "sync"
+  | "team"
   | "tracking"
   | "vault"
   | "verified";
