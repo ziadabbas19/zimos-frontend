@@ -3898,13 +3898,65 @@ export interface PlanPrice {
   net: number;
 }
 
+// ---------------------------------------------------------------------------
+// Referral code schedules (migration 725, REFERRAL_CODES_V2_ENABLED)
+// ---------------------------------------------------------------------------
+
+/**
+ * One step of a code's discount: `count` payments (null = every payment from
+ * here on, last step only). percentage: `value` basis points; fixed: minor
+ * units of `currency`; free_months: `value` months of the plan's monthly price.
+ */
+export interface ReferralDiscountStep {
+  count: number | null;
+  type: "percentage" | "fixed" | "free_months";
+  value: number;
+  currency?: string;
+}
+
+/** One step of a commission schedule: `rateBp` on `count` payments (null = every payment after). */
+export interface ReferralCommissionStep {
+  count: number | null;
+  rateBp: number;
+}
+
+export interface ReferralCycleTerms {
+  discount: ReferralDiscountStep[];
+  commission: ReferralCommissionStep[];
+}
+
+/** A code's schedules, separately for monthly and yearly billing. */
+export interface ReferralTerms {
+  monthly: ReferralCycleTerms;
+  yearly: ReferralCycleTerms;
+}
+
+export type ReferralAudience = "new" | "existing" | "any";
+export type ReferralGrantType = "trial_days" | "wallet_credit" | "free_orders";
+export type ReferralCommissionBasis = "paid" | "list";
+export type ReferralCodeState = "active" | "inactive" | "scheduled" | "expired" | "full";
+
+/** One payment of a code's schedule as the merchant sees it: no commission. */
+export interface ReferralSchedulePayment {
+  paymentNo: number;
+  listPrice: number;
+  discount: number;
+  merchantPays: number;
+}
+
 /** A referral code as the merchant sees it: the discount, never the agent. */
 export interface MerchantReferralCode {
   code: string;
+  /** The first kind's one discount, on every payment ("none" for a code with a schedule). */
   discountType: ReferralDiscountType;
   discountValue: number | null;
   discountCurrency: string | null;
   active: boolean;
+  /** A code with a schedule: its discount steps per cycle; null for the first kind. Absent from an older API. */
+  discountSchedule?: { monthly: ReferralDiscountStep[]; yearly: ReferralDiscountStep[] } | null;
+  /** A one-time benefit given when it is entered. Absent from an older API. */
+  grant?: { type: ReferralGrantType; value: number } | null;
+  endsAt?: string | null;
 }
 
 /** One card of the Subscription section. Prices come from the server; annual is 10 × monthly. */
@@ -3938,6 +3990,8 @@ export interface SubscriptionPlans {
   move?: PlanMove | null;
   /** Changing plan by itself (`/billing/plan-switch`, PLAN_SWITCH_ENABLED). Absent from an older API. */
   planSwitch?: PlanSwitchSummary;
+  /** A code can be entered on a paid subscription too, with a plan change (REFERRAL_CODES_V2_ENABLED). Absent from an older API. */
+  referralCodeEntry?: { enabled: boolean };
 }
 
 /**
@@ -4092,6 +4146,8 @@ export interface PlanSwitchPreview {
     toBillingCycle: BillingCycle | null;
     invoiceId: string | null;
   } | null;
+  /** A code entered with the switch (REFERRAL_CODES_V2_ENABLED): the payment it applies to, before and after. Only when one was sent. */
+  referralCode?: PlanSwitchReferralPreview;
 }
 
 /** `POST /workspaces/:id/billing/plan-switch` — 201 with a new switch, 200 otherwise. */
@@ -4136,10 +4192,29 @@ export interface PlanMove {
   otherChargeOpen: boolean;
 }
 
-/** `POST /workspaces/:id/billing/code-preview` — what a code would take off each listed plan. */
+/**
+ * `POST /workspaces/:id/billing/code-preview` — what a code would take off the
+ * next payment of each listed plan; with a schedule, its first payments
+ * before and after per cycle (null for a code of the first kind).
+ */
 export interface ReferralCodePreview {
   code: MerchantReferralCode;
-  plans: { planId: string; prices: { monthly: PlanPrice; yearly: PlanPrice } }[];
+  plans: {
+    planId: string;
+    prices: { monthly: PlanPrice; yearly: PlanPrice };
+    schedule?: { monthly: ReferralSchedulePayment[]; yearly: ReferralSchedulePayment[] } | null;
+  }[];
+}
+
+/** A code entered with a plan switch: the payment it applies to, before and after. */
+export interface PlanSwitchReferralPreview {
+  code: MerchantReferralCode;
+  /** charge_now: the switch's charge; renewal: the next renewal. */
+  appliesTo: "charge_now" | "renewal";
+  before: number;
+  after: number;
+  currency: string;
+  schedule: { monthly: ReferralSchedulePayment[]; yearly: ReferralSchedulePayment[] } | null;
 }
 
 /**
@@ -4379,7 +4454,8 @@ export interface GoLiveResult {
 
 export interface AdminReferralCode {
   id: string;
-  agentId: string;
+  /** Null: a discount only, no agent and no commission (migration 725). */
+  agentId: string | null;
   /** Uppercase; what merchants type. Never changes once created. */
   code: string;
   label: string | null;
@@ -4394,6 +4470,25 @@ export interface AdminReferralCode {
   active: boolean;
   createdAt: string;
   updatedAt: string;
+  // The second kind (migration 725); absent from an older API.
+  /** legacy: no schedule (its one discount and rate on every payment); schedule: `terms` prices it. */
+  kind?: "legacy" | "schedule";
+  state?: ReferralCodeState;
+  audience?: ReferralAudience;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  /** Null: no limit. */
+  maxUses?: number | null;
+  usesCount?: number;
+  allowedPlanIds?: string[];
+  allowedCycles?: BillingCycle[];
+  minPrice?: { amount: number; currency: string } | null;
+  terms?: ReferralTerms | null;
+  /** What prices it either way: `terms`, or the first kind's discount and rate as a schedule. */
+  effectiveTerms?: ReferralTerms;
+  commissionBasis?: ReferralCommissionBasis;
+  linksAgent?: boolean;
+  grant?: { type: ReferralGrantType; value: number } | null;
 }
 
 export interface AdminReferralCodeInput {
@@ -4404,6 +4499,157 @@ export interface AdminReferralCodeInput {
   discountCurrency?: string | null;
   commissionRateBp?: number | null;
   active?: boolean;
+  // The second kind: refused with 409 REFERRAL_V2_DISABLED while REFERRAL_CODES_V2_ENABLED is off.
+  /** Null on a code: no agent. */
+  agentId?: string | null;
+  audience?: ReferralAudience;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  maxUses?: number | null;
+  allowedPlanIds?: string[] | null;
+  allowedCycles?: BillingCycle[] | null;
+  minPriceAmount?: number | null;
+  minPriceCurrency?: string | null;
+  terms?: ReferralTerms | null;
+  commissionBasis?: ReferralCommissionBasis;
+  linksAgent?: boolean;
+  grantType?: ReferralGrantType | null;
+  grantValue?: number | null;
+}
+
+/** A row of Agents -> Referral codes: the code, its agent (null: none) and its numbers. */
+export interface AdminReferralCodeRow extends AdminReferralCodeWithStats {
+  agent: { id: string; fullName: string; email: string } | null;
+}
+
+export interface AdminReferralCodeList {
+  codes: AdminReferralCodeRow[];
+  total: number;
+  limit: number;
+  offset: number;
+  defaultCommissionRateBp: number;
+  v2Enabled: boolean;
+}
+
+export interface AdminReferralCodeParams {
+  q?: string;
+  /** "none": the codes with no agent. */
+  agentId?: string;
+  state?: ReferralCodeState;
+  audience?: ReferralAudience;
+  limit?: number;
+  offset?: number;
+}
+
+export interface AdminReferralCodeDetail {
+  code: AdminReferralCodeRow;
+  /** What switching it off would cost: stores using it, and trials not yet paid with it (they lose its discount). */
+  impact: { currentStores: number; trialingUnpaid: number };
+  defaultCommissionRateBp: number;
+  v2Enabled: boolean;
+}
+
+/** One store's use of a code (referral_code_redemptions). */
+export interface AdminRedemption {
+  id: string;
+  code: { id: string; code?: string; label?: string | null };
+  workspace: { id: string; name?: string };
+  owner: { id: string; fullName?: string; email?: string } | null;
+  agent: { id: string; fullName?: string } | null;
+  source: "signup" | "plan_page" | "plan_switch" | "legacy";
+  merchantKind: "new" | "existing" | null;
+  /** The first code this store ever entered. */
+  isFirst: boolean;
+  current: boolean;
+  endedAt: string | null;
+  endReason: "replaced" | "detached" | null;
+  billingCycle: BillingCycle | null;
+  /** The schedule it was entered with; null = the code as it stands (the first kind). */
+  terms: ReferralTerms | null;
+  commissionBasis: ReferralCommissionBasis | null;
+  grant: { type: ReferralGrantType; value: number; appliedAt: string | null } | null;
+  /** The first payment it was applied to. */
+  firstInvoice: { id: string; paidAt: string; grossAmount: number; discountAmount: number; amount: number; currency: string } | null;
+  paymentsMade: number;
+  subscriptionStatus: SubscriptionStatus | null;
+  createdAt: string;
+}
+
+export interface AdminRedemptionPage {
+  redemptions: AdminRedemption[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface AdminRedemptionParams {
+  q?: string;
+  status?: "current" | "ended";
+  merchantKind?: "new" | "existing";
+  source?: AdminRedemption["source"];
+  limit?: number;
+  offset?: number;
+}
+
+/** Which agent earns on a store's payments (agent_links). */
+export interface AdminAgentLink {
+  id: string;
+  workspaceId: string;
+  agent: { id: string; fullName?: string; email?: string };
+  source: "manual" | "code";
+  code: { id: string; code?: string } | null;
+  redemptionId: string | null;
+  /** From before migration 725: earns as a code did then. */
+  legacy: boolean;
+  startsAt: string;
+  endsAt: string | null;
+  endedAt: string | null;
+  endReason: "replaced" | "ended" | null;
+  open: boolean;
+  /** Commission steps per cycle; null on a legacy link. */
+  terms: { monthly: ReferralCommissionStep[]; yearly: ReferralCommissionStep[] } | null;
+  commissionBasis: ReferralCommissionBasis;
+  note: string | null;
+  createdBy: { id: string; fullName: string } | null;
+  endedBy: { id: string; fullName: string } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminAgentLinkInput {
+  agentId: string;
+  startsAt?: string;
+  endsAt?: string | null;
+  terms: { monthly: ReferralCommissionStep[]; yearly: ReferralCommissionStep[] };
+  commissionBasis?: ReferralCommissionBasis;
+  note?: string | null;
+}
+
+export interface AdminWorkspaceReferrals {
+  redemptions: AdminRedemption[];
+  links: AdminAgentLink[];
+  openLink: AdminAgentLink | null;
+  v2Enabled: boolean;
+}
+
+export interface AdminReferralSimulationRow {
+  paymentNo: number;
+  listPrice: number;
+  discount: number;
+  merchantPays: number;
+  /** Null: no commission on this payment (no agent, or past the schedule). */
+  commissionRateBp: number | null;
+  commission: number;
+  platformNet: number;
+}
+
+export interface AdminReferralSimulation {
+  plan: { id: string; name: string; currency: string };
+  cycle: BillingCycle;
+  currency: string;
+  commissionBasis: ReferralCommissionBasis;
+  rows: AdminReferralSimulationRow[];
+  totals: Omit<AdminReferralSimulationRow, "paymentNo" | "commissionRateBp">;
 }
 
 /** Suggested commission for one currency. Currencies are never added together. */
@@ -4442,7 +4688,11 @@ export interface AdminAgentList {
 
 export interface AdminReferredMerchant {
   workspace: { id: string; name: string | null };
-  code: { id: string; code: string };
+  /** `id` / `code` null for a store linked by hand (`via` "manual"). */
+  code: { id: string | null; code: string | null };
+  /** How the store came to the agent. Absent from an older API. */
+  via?: "code" | "manual";
+  linkOpen?: boolean;
   attachedAt: string;
   subscriptionStatus: SubscriptionStatus;
   planName: string | null;
@@ -4639,9 +4889,17 @@ export interface AdminCommission {
   agentId: string;
   /** Absent in the agent's own view. */
   agentName?: string;
-  code: { id: string; code?: string; label?: string | null };
+  /** `id` null for a store linked by hand (no code). */
+  code: { id: string | null; code?: string; label?: string | null };
   workspace: { id: string; name?: string };
   billingInvoiceId: string;
+  // Migration 725; absent from an older API.
+  agentLinkId?: string | null;
+  /** Which payment of the link it was. */
+  paymentNo?: number | null;
+  /** What the rate was applied to: what was paid, or the list price. */
+  commissionBasis?: ReferralCommissionBasis;
+  baseAmount?: number;
   amountPaid: number;
   currency: string;
   paidAt: string;

@@ -63,6 +63,18 @@ import type {
   AdminPlatformAdmin,
   AdminReferralCode,
   AdminReferralCodeInput,
+  AdminReferralCodeList,
+  AdminReferralCodeParams,
+  AdminReferralCodeDetail,
+  AdminRedemption,
+  AdminRedemptionPage,
+  AdminRedemptionParams,
+  AdminReferralSimulation,
+  AdminWorkspaceReferrals,
+  AdminAgentLink,
+  AdminAgentLinkInput,
+  ReferralTerms,
+  ReferralCommissionBasis,
   AdminRolesResponse,
   WorkspaceBilling,
   OnlinePayment,
@@ -1193,11 +1205,20 @@ export class ApiClient {
     return this.request<SubscriptionPlans>(`/workspaces/${workspaceId}/billing/plans`);
   }
 
-  /** What a referral code would take off each plan, before it is attached. 422 REFERRAL_CODE_INVALID. */
-  async previewReferralCode(workspaceId: string, code: string): Promise<ReferralCodePreview> {
+  /**
+   * What a referral code would take off each plan, before it is attached. 422
+   * REFERRAL_CODE_INVALID, and with REFERRAL_CODES_V2_ENABLED the clearer
+   * refusals (REFERRAL_CODE_EXPIRED, _ALREADY_USED, _NOT_FOR_PLAN, ...).
+   * `plan`: the plan and cycle being chosen with it (its restrictions are judged against them).
+   */
+  async previewReferralCode(
+    workspaceId: string,
+    code: string,
+    plan?: { planId?: string; billingCycle?: BillingCycle }
+  ): Promise<ReferralCodePreview> {
     return this.request<ReferralCodePreview>(`/workspaces/${workspaceId}/billing/code-preview`, {
       method: "POST",
-      body: { code },
+      body: { code, ...(plan?.planId ? { planId: plan.planId } : {}), ...(plan?.billingCycle ? { billingCycle: plan.billingCycle } : {}) },
     });
   }
 
@@ -1238,7 +1259,8 @@ export class ApiClient {
    * 422 PLAN_NOT_AVAILABLE, 409 PLAN_CHANGE_NEEDS_SUPPORT / MANUAL_PRICING /
    * SPECIAL_TERMS_ACTIVE.
    */
-  async previewPlanSwitch(workspaceId: string, payload: { planId: string; billingCycle?: BillingCycle; timing?: PlanSwitchTiming }) {
+  /** `referralCode` (REFERRAL_CODES_V2_ENABLED): `preview.referralCode` shows the payment it applies to, before and after. */
+  async previewPlanSwitch(workspaceId: string, payload: { planId: string; billingCycle?: BillingCycle; timing?: PlanSwitchTiming; referralCode?: string }) {
     return this.request<{ preview: PlanSwitchPreview }>(`/workspaces/${workspaceId}/billing/plan-switch/preview`, {
       method: "POST",
       body: payload,
@@ -1255,7 +1277,7 @@ export class ApiClient {
    */
   async startPlanSwitch(
     workspaceId: string,
-    payload: { planId: string; billingCycle?: BillingCycle; timing?: PlanSwitchTiming; expectedAmount?: number }
+    payload: { planId: string; billingCycle?: BillingCycle; timing?: PlanSwitchTiming; expectedAmount?: number; referralCode?: string }
   ) {
     return this.request<PlanSwitchStartResult>(`/workspaces/${workspaceId}/billing/plan-switch`, {
       method: "POST",
@@ -1295,10 +1317,10 @@ export class ApiClient {
     });
   }
 
-  async attachReferralCode(workspaceId: string, code: string): Promise<WorkspaceBilling> {
+  async attachReferralCode(workspaceId: string, code: string, plan?: { planId?: string; billingCycle?: BillingCycle }): Promise<WorkspaceBilling> {
     const body = await this.request<unknown>(`/workspaces/${workspaceId}/billing/referral-code`, {
       method: "POST",
-      body: { code },
+      body: { code, ...(plan?.planId ? { planId: plan.planId } : {}), ...(plan?.billingCycle ? { billingCycle: plan.billingCycle } : {}) },
     });
     return unwrapObject<WorkspaceBilling>(body, "billing");
   }
@@ -2126,6 +2148,66 @@ export class ApiClient {
   async adminUpdateReferralCode(codeId: string, payload: AdminReferralCodeInput): Promise<AdminReferralCode> {
     const body = await this.request<unknown>(`/admin/referral-codes/${codeId}`, { method: "PATCH", body: payload });
     return unwrapObject<AdminReferralCode>(body, "code");
+  }
+
+  // Agents -> Referral codes (migration 725).
+  async adminListReferralCodes(params: AdminReferralCodeParams = {}): Promise<AdminReferralCodeList> {
+    const body = await this.request<AdminReferralCodeList>(`/admin/referral-codes${buildQuery({ ...params })}`);
+    return { ...body, codes: unwrapList(body, "codes") };
+  }
+
+  /** A code with or without an agent (`agentId` null). */
+  async adminCreateStandaloneReferralCode(payload: AdminReferralCodeInput & { code: string }): Promise<AdminReferralCode> {
+    const body = await this.request<unknown>("/admin/referral-codes", { method: "POST", body: payload });
+    return unwrapObject<AdminReferralCode>(body, "code");
+  }
+
+  async adminGetReferralCode(codeId: string): Promise<AdminReferralCodeDetail> {
+    const body = await this.request<AdminReferralCodeDetail>(`/admin/referral-codes/${codeId}`);
+    return { ...body, code: unwrapObject(body, "code") };
+  }
+
+  async adminListCodeRedemptions(codeId: string, params: AdminRedemptionParams = {}): Promise<AdminRedemptionPage> {
+    const body = await this.request<AdminRedemptionPage>(`/admin/referral-codes/${codeId}/redemptions${buildQuery({ ...params })}`);
+    return { ...body, redemptions: unwrapList(body, "redemptions") };
+  }
+
+  /** The simulator: unsaved terms, nothing written. */
+  async adminSimulateReferralCode(payload: {
+    planId: string;
+    billingCycle: BillingCycle;
+    terms: ReferralTerms;
+    commissionBasis?: ReferralCommissionBasis;
+    hasAgent?: boolean;
+    payments?: number;
+  }): Promise<AdminReferralSimulation> {
+    return this.request<AdminReferralSimulation>("/admin/referral-codes/simulate", { method: "POST", body: payload });
+  }
+
+  async adminGetWorkspaceReferrals(workspaceId: string): Promise<AdminWorkspaceReferrals> {
+    const body = await this.request<AdminWorkspaceReferrals>(`/admin/workspaces/${workspaceId}/referrals`);
+    return { ...body, redemptions: unwrapList(body, "redemptions"), links: unwrapList(body, "links") };
+  }
+
+  async adminGetUserReferrals(userId: string): Promise<{ redemptions: AdminRedemption[] }> {
+    const body = await this.request<{ redemptions: AdminRedemption[] }>(`/admin/users/${userId}/referrals`);
+    return { redemptions: unwrapList(body, "redemptions") };
+  }
+
+  /** Links a store to an agent by hand; the open link, if any, ends as "replaced". */
+  async adminCreateAgentLink(workspaceId: string, payload: AdminAgentLinkInput): Promise<AdminAgentLink> {
+    const body = await this.request<unknown>(`/admin/workspaces/${workspaceId}/agent-links`, { method: "POST", body: payload });
+    return unwrapObject<AdminAgentLink>(body, "link");
+  }
+
+  async adminUpdateAgentLink(linkId: string, payload: Partial<Omit<AdminAgentLinkInput, "agentId" | "startsAt">>): Promise<AdminAgentLink> {
+    const body = await this.request<unknown>(`/admin/agent-links/${linkId}`, { method: "PATCH", body: payload });
+    return unwrapObject<AdminAgentLink>(body, "link");
+  }
+
+  async adminEndAgentLink(linkId: string, note?: string): Promise<AdminAgentLink> {
+    const body = await this.request<unknown>(`/admin/agent-links/${linkId}/end`, { method: "POST", body: note ? { note } : {} });
+    return unwrapObject<AdminAgentLink>(body, "link");
   }
 
   async adminListCommissions(params: AdminCommissionParams = {}): Promise<AdminCommissionPage> {
