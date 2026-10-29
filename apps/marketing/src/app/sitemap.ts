@@ -6,6 +6,7 @@ import { SITE_URL } from "@/lib/urls";
 /** Every page, in both languages, each pointing at its other-language twin. */
 const PAGES: Array<{ path: string; priority: number; lastModified?: string }> = [
   { path: "", priority: 1 },
+  { path: "/features", priority: 0.9 },
   { path: "/pricing", priority: 0.9 },
   { path: "/refund-policy", priority: 0.5, lastModified: POLICIES_LAST_UPDATED },
   { path: "/terms", priority: 0.5, lastModified: POLICIES_LAST_UPDATED },

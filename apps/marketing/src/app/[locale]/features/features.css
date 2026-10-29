@@ -1,0 +1,535 @@
+/* ------------------------------------------------------------------ *
+ * The features page (`ft-*`): a short hero, a bar of the sections that
+ * stays under the floating header, and a section per area — its title on
+ * the side on a computer, its cards beside it. Built on the landing's
+ * tokens and pieces (app/landing.css), so `.dark` and both directions
+ * follow. Loaded by this page only.
+ * ------------------------------------------------------------------ */
+
+.ft-page {
+  /* Right under the header: its 16px gap and its 70px card (landing.css). */
+  --ft-top: 86px;
+  /* The bar's own height, under which a section's title stays on a computer. */
+  --ft-bar: 74px;
+}
+
+/* The search hides cards and sections with `hidden`; nothing here shows them. */
+.ft-page [hidden] {
+  display: none !important;
+}
+
+/* ══ Hero ════════════════════════════════════════════════════════════ */
+.ft-hero {
+  padding-block: clamp(36px, 5vw, 64px) clamp(40px, 5vw, 64px);
+}
+
+.ft-hero .ft-hero__in {
+  position: relative;
+  z-index: 1;
+  max-inline-size: 54rem;
+  text-align: center;
+}
+
+.ft-hero .lz-eye::after {
+  content: "";
+  inline-size: 20px;
+  block-size: 2px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.ft-hero .lz-h1 {
+  font-size: clamp(34px, 4.4vw, 56px);
+  margin-block-end: 16px;
+}
+
+.ft-hero .lz-hero__body {
+  max-inline-size: 40rem;
+  margin-inline: auto;
+  margin-block-end: 28px;
+}
+
+.ft-hero .lz-ctas {
+  justify-content: center;
+}
+
+/* ══ The bar ═════════════════════════════════════════════════════════
+   A card like the header's, sticking right under it: the sections as a
+   row that scrolls sideways when it is too long, and the search. On a
+   phone the row becomes a menu and the search a button that opens the
+   field in the menu's place. */
+.ft-bar {
+  position: sticky;
+  inset-block-start: var(--ft-top);
+  z-index: 40;
+  /* The header's own side gap, so the two cards line up. */
+  padding: 10px 20px;
+  pointer-events: none;
+}
+
+.ft-bar__card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-inline-size: 76rem;
+  margin-inline: auto;
+  padding: 6px;
+  border: 1px solid var(--lz-line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--lz-card) 94%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  box-shadow: 0 16px 36px -28px rgb(var(--lz-sh) / 0.5);
+  pointer-events: auto;
+}
+
+.ft-bar__nav {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+/* The edge the row continues past fades out (`data-more-*`, features-nav.tsx). */
+.ft-bar__links {
+  --ft-fade-start: #000;
+  --ft-fade-end: #000;
+  display: flex;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, var(--ft-fade-start), #000 44px, #000 calc(100% - 44px), var(--ft-fade-end));
+  mask-image: linear-gradient(to right, var(--ft-fade-start), #000 44px, #000 calc(100% - 44px), var(--ft-fade-end));
+}
+
+[dir="rtl"] .ft-bar__links {
+  -webkit-mask-image: linear-gradient(to left, var(--ft-fade-start), #000 44px, #000 calc(100% - 44px), var(--ft-fade-end));
+  mask-image: linear-gradient(to left, var(--ft-fade-start), #000 44px, #000 calc(100% - 44px), var(--ft-fade-end));
+}
+
+.ft-bar__links[data-more-start] {
+  --ft-fade-start: transparent;
+}
+
+.ft-bar__links[data-more-end] {
+  --ft-fade-end: transparent;
+}
+
+.ft-bar__links::-webkit-scrollbar {
+  display: none;
+}
+
+.ft-bar__links a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 40px;
+  padding-inline: 12px;
+  border-radius: 10px;
+  color: var(--lz-text);
+  font-size: 14.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.ft-bar__links a:hover,
+.ft-bar__links a[aria-current] {
+  background: var(--lz-soft);
+  color: var(--lz-accent);
+}
+
+.ft-bar__links a[aria-current] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lz-accent) 22%, transparent);
+}
+
+.ft-bar__links a:focus-visible {
+  outline-offset: -2px;
+}
+
+.ft-bar__search {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  inline-size: 14rem;
+  min-block-size: 40px;
+  padding-inline: 12px 4px;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 10px;
+  background: var(--lz-paper);
+  color: var(--lz-text);
+}
+
+.ft-bar__search:focus-within {
+  border-color: var(--lz-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lz-accent) 18%, transparent);
+}
+
+.ft-bar__glass {
+  flex: none;
+}
+
+/* The field's ring is drawn by its box (`:focus-within` above). */
+.ft-bar__search input {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--lz-ink);
+  font: inherit;
+  font-size: 14.5px;
+}
+
+.ft-bar__search input::placeholder {
+  color: var(--lz-text);
+}
+
+.ft-bar__search input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.ft-bar__clear {
+  display: none;
+  place-items: center;
+  flex: none;
+  inline-size: 32px;
+  block-size: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--lz-text);
+  cursor: pointer;
+}
+
+.ft-bar.has-query .ft-bar__clear {
+  display: inline-grid;
+}
+
+.ft-bar__clear:hover {
+  background: var(--lz-soft);
+  color: var(--lz-accent);
+}
+
+.ft-bar__jump,
+.ft-bar__open {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .ft-bar__nav,
+  .ft-bar__search {
+    display: none;
+  }
+
+  .ft-bar__jump {
+    position: relative;
+    display: block;
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
+  .ft-bar__jump select {
+    inline-size: 100%;
+    min-block-size: 44px;
+    padding-inline: 14px 40px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 10px;
+    background: var(--lz-paper);
+    color: var(--lz-ink);
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  /* The menu's arrow, pointing down in both directions. */
+  .ft-bar__jump::after {
+    content: "";
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-end: 16px;
+    inline-size: 8px;
+    block-size: 8px;
+    border-right: 2px solid var(--lz-ink);
+    border-bottom: 2px solid var(--lz-ink);
+    translate: 0 -70%;
+    rotate: 45deg;
+    pointer-events: none;
+  }
+
+  .ft-bar__open {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    inline-size: 44px;
+    block-size: 44px;
+    padding: 0;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 10px;
+    background: var(--lz-paper);
+    color: var(--lz-ink);
+    cursor: pointer;
+  }
+
+  .ft-bar.is-searching .ft-bar__jump,
+  .ft-bar.is-searching .ft-bar__open {
+    display: none;
+  }
+
+  .ft-bar.is-searching .ft-bar__search {
+    display: flex;
+    flex: 1 1 auto;
+    inline-size: auto;
+    min-block-size: 44px;
+  }
+
+  .ft-bar.is-searching .ft-bar__clear {
+    display: inline-grid;
+  }
+}
+
+@media (max-width: 600px) {
+  .ft-page {
+    --ft-top: 72px;
+  }
+
+  .ft-bar {
+    padding: 8px 12px;
+  }
+}
+
+/* Nothing matches. */
+.ft-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding-block: 56px 72px;
+  text-align: center;
+  color: var(--lz-text);
+}
+
+.ft-empty p {
+  margin: 0;
+  font-size: 17px;
+}
+
+.ft-empty .lz-link {
+  border-inline: 0;
+  border-block-start: 0;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ══ Sections ════════════════════════════════════════════════════════ */
+.ft-sec {
+  padding-block: clamp(44px, 6vw, 80px);
+  border-block-start: 1px solid var(--lz-line);
+  /* Added to the page's scroll-padding (the header): room for the bar. */
+  scroll-margin-block-start: 64px;
+}
+
+.ft-sec__in {
+  display: grid;
+  grid-template-columns: minmax(0, 17rem) minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 56px);
+  align-items: start;
+}
+
+/* On a computer the title stays in view beside its cards. */
+.ft-sec__head {
+  position: sticky;
+  inset-block-start: calc(var(--ft-top) + var(--ft-bar) + 16px);
+}
+
+.ft-sec__head .lz-ico {
+  margin-block-end: 18px;
+}
+
+.ft-sec__head h2 {
+  margin: 0 0 10px;
+  font-size: clamp(24px, 2.4vw, 32px);
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: var(--lz-ink);
+}
+
+[dir="rtl"] .ft-sec__head h2 {
+  line-height: 1.45;
+  letter-spacing: 0;
+}
+
+.ft-sec__head p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--lz-text);
+  text-wrap: pretty;
+}
+
+.ft-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ft-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--lz-line);
+  border-radius: 18px;
+  background: var(--lz-card);
+  box-shadow: 0 1px 2px rgb(var(--lz-sh) / 0.04);
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s;
+}
+
+.ft-card:hover {
+  border-color: var(--lz-pin);
+  box-shadow: 0 18px 36px -28px rgb(var(--lz-sh) / 0.45);
+}
+
+.ft-card__tick {
+  margin-block-start: 4px;
+}
+
+.ft-card h3 {
+  margin: 0 0 4px;
+  font-size: 16.5px;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: 0;
+  color: var(--lz-ink);
+}
+
+.ft-card p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--lz-text);
+}
+
+.ft-shot {
+  margin: 22px 0 0;
+}
+
+.ft-shot img {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  aspect-ratio: 1440 / 900;
+  border: 1px solid var(--lz-line);
+  border-radius: 18px;
+  background: var(--lz-paper);
+  box-shadow: 0 30px 60px -36px rgb(var(--lz-sh) / 0.5);
+}
+
+.ft-shot figcaption {
+  margin-block-start: 10px;
+  font-size: 13px;
+  color: var(--lz-text);
+}
+
+/* Below a computer: the title above its cards, the icon beside it. */
+@media (max-width: 1080px) {
+  .ft-sec__in {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ft-sec__head {
+    position: static;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 16px;
+    align-items: start;
+  }
+
+  .ft-sec__head .lz-ico {
+    grid-row: span 2;
+    margin: 0;
+  }
+
+  .ft-sec__head h2 {
+    margin-block-end: 4px;
+  }
+}
+
+@media (max-width: 680px) {
+  .ft-sec {
+    scroll-margin-block-start: 48px;
+  }
+
+  .ft-sec__head .lz-ico {
+    inline-size: 46px;
+    block-size: 46px;
+    border-radius: 14px;
+  }
+
+  .ft-sec__head h2 {
+    font-size: 22px;
+  }
+
+  .ft-sec__head p {
+    font-size: 15px;
+  }
+
+  .ft-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .ft-card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+}
+
+/* Big screens: the bar widens with the header (landing.css). */
+@media (min-width: 1680px) {
+  .ft-bar__card {
+    max-inline-size: 86rem;
+  }
+
+  .ft-sec__in {
+    grid-template-columns: minmax(0, 19rem) minmax(0, 1fr);
+  }
+
+  .ft-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ft-card p {
+    font-size: 15.5px;
+  }
+}
+
+@media (min-width: 2200px) {
+  .ft-bar__card {
+    max-inline-size: 100rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ft-card {
+    transition: none;
+  }
+}

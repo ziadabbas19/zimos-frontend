@@ -92,7 +92,7 @@ export default async function LocaleLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-dvh bg-paper text-ink">
-        <I18nProvider value={{ locale, dir, dict }}>{children}</I18nProvider>
+        <I18nProvider value={{ locale, dir, dict: { nav: dict.nav } }}>{children}</I18nProvider>
         <SiteAnalytics />
       </body>
     </html>

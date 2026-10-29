@@ -2046,6 +2046,82 @@ html {
   }
 }
 
+/* ══ 3b) The features in short — eight cards to /features ═══════════ */
+.lz-fsum {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lz-fsum > li {
+  display: flex;
+}
+
+.lz-fsum__card {
+  display: flex;
+  flex-direction: column;
+  inline-size: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.lz-fsum__card .lz-ico {
+  inline-size: 48px;
+  block-size: 48px;
+  border-radius: 14px;
+}
+
+.lz-fsum__card h3 {
+  margin-block-start: 16px;
+}
+
+.lz-fsum__more {
+  display: flex;
+  justify-content: center;
+  margin-block-start: clamp(28px, 4vw, 44px);
+}
+
+@media (max-width: 1080px) {
+  .lz-fsum {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* A phone: one column, the icon beside the title, as in the benefits. */
+@media (max-width: 680px) {
+  .lz-fsum {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .lz-fsum__card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 14px;
+    align-items: start;
+    padding: 18px;
+  }
+
+  .lz-fsum__card .lz-ico {
+    grid-row: span 2;
+    inline-size: 46px;
+    block-size: 46px;
+  }
+
+  .lz-fsum__card h3 {
+    margin: 1px 0 4px;
+    font-size: 16.5px;
+  }
+
+  .lz-fsum__more .lz-btn {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+
 /* ══ 4) How it works — the steps and the road ════════════════════════ */
 .lz-journey {
   position: relative;
@@ -2798,6 +2874,29 @@ html {
 
   .lz-end .lz-link {
     margin-inline: auto;
+  }
+}
+
+/* Without the phones (the features page): the words in the middle. After
+   the rules above, so it wins at every width. */
+.lz-end--plain {
+  justify-content: center;
+  min-block-size: 0;
+  text-align: center;
+}
+
+.lz-end--plain .lz-end__copy {
+  max-inline-size: 40rem;
+}
+
+.lz-end--plain .lz-ctas {
+  justify-content: center;
+}
+
+@media (max-width: 900px) {
+  .lz-end--plain {
+    align-items: center;
+    padding-block-end: clamp(30px, 6vw, 80px);
   }
 }
 

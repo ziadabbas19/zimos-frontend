@@ -40,6 +40,8 @@ export interface Dictionary {
     benefits: string;
     templates: string;
     howItWorks: string;
+    /** The features page (/features). */
+    features: string;
     pricing: string;
     faq: string;
     /** Visible label of the footer's language switcher — the name of the OTHER language. */

@@ -28,6 +28,7 @@ export const ar: Dictionary = {
     templates: "القوالب",
     benefits: "المزايا",
     howItWorks: "كيف تعمل",
+    features: "المميزات",
     pricing: "الأسعار",
     faq: "الأسئلة",
     switchLanguage: "English",
@@ -347,6 +348,7 @@ export const ar: Dictionary = {
   footer: {
     navLabel: "روابط الموقع",
     links: [
+      { label: "المميزات", href: "/features" },
       { label: "الأسعار", href: "/pricing" },
       { label: "الأسئلة الشائعة", href: "#faq" },
       { label: "تواصل معنا", href: "/contact" },

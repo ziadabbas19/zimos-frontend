@@ -9,21 +9,25 @@ import { Arrow } from "./duo-icons";
  * The navy closing band: the last push, the way in and the way back for
  * those who already have an account. Its ground moves like the hero's
  * (components/backdrop.tsx), and on the plain side three real stores stand
- * on phones, gently bobbing — decoration only.
+ * on phones, gently bobbing — decoration only. Without `phones` (the
+ * features page, which shows no store and so no design credits) the words
+ * stand in the middle.
  */
-export function FinalCta({ copy }: { copy: Dictionary["finalCta"] }) {
+export function FinalCta({ copy, phones = true }: { copy: Dictionary["finalCta"]; phones?: boolean }) {
   return (
     <section className="lz-sec" aria-labelledby="final-cta-heading">
       <div className="lz-in">
-        <div className="lz-end lz-r">
+        <div className={phones ? "lz-end lz-r" : "lz-end lz-end--plain lz-r"}>
           <Backdrop id="lz-wave-end" />
-          <div className="lz-end__phones" aria-hidden>
-            {END_LOOKS.map((look) => (
-              <span key={look} className="lz-end__phone">
-                <img src={STORE_SHOTS[look].phone} width={390} height={1600} alt="" loading="lazy" decoding="async" />
-              </span>
-            ))}
-          </div>
+          {phones ? (
+            <div className="lz-end__phones" aria-hidden>
+              {END_LOOKS.map((look) => (
+                <span key={look} className="lz-end__phone">
+                  <img src={STORE_SHOTS[look].phone} width={390} height={1600} alt="" loading="lazy" decoding="async" />
+                </span>
+              ))}
+            </div>
+          ) : null}
           <div className="lz-end__copy">
             <h2 id="final-cta-heading">{copy.heading}</h2>
             <p>{copy.body}</p>
