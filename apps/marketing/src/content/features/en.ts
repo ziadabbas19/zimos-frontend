@@ -60,7 +60,10 @@ export const en: FeaturesCopy = {
           body: "Delivered automatically on payment, with chapters, lessons and a student portal.",
         },
         { title: "Product A/B tests", body: "Test the price or the photos; the winner is picked automatically." },
-        { title: "Reviews", body: "Moderate and add reviews with photos, with a “Verified buyer” badge." },
+        {
+          title: "Product and store reviews",
+          body: "Customers rate a product or your whole store with stars, words and photos. Every review reaches you first and you decide what goes live; the stars count only customers who received their order, with a “Verified buyer” badge.",
+        },
         { title: "Interactive photos (Shop the look)", body: "Points on a photo linked to your products." },
         { title: "Customer questions", body: "Customers ask about a product, and you answer." },
         {
@@ -229,7 +232,7 @@ export const en: FeaturesCopy = {
         { title: "The source of every order", body: "First and last touch, UTMs and ad click IDs." },
         {
           title: "Discount codes",
-          body: "Percentage, amount, free shipping or “Buy X, get Y”, with usage limits and dates, a share link that applies the code by itself, and many codes generated at once.",
+          body: "Percentage, amount, free shipping or “Buy X, get Y”, under your full control: when it runs, on which days and hours, on which products, for whom (first order only or returning customers), usage limits overall and per customer, and a report for each code. Plus a share link that applies the code by itself, and many codes generated at once.",
         },
         { title: "Automatic discounts", body: "A discount that applies without a code." },
         {
