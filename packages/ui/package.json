@@ -9,6 +9,7 @@
     ".": "./src/index.ts",
     "./social-links": "./src/social-links/index.ts",
     "./platform-info": "./src/platform-info/index.ts",
+    "./plan-pricing": "./src/plan-pricing/index.ts",
     "./z-loader": "./src/z-loader/index.ts",
     "./appearance": "./src/appearance/index.ts",
     "./styles.css": "./src/styles.css",

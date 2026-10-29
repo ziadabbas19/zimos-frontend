@@ -1,6 +1,7 @@
 import { useId, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Alert, Button, Input, Label, cn } from "@store-builder/ui";
+import { yearlyBreakdown, yearlySaves, type CyclePrices } from "@store-builder/ui/plan-pricing";
 import type {
   BillingCycle,
   PlanPrice,
@@ -65,6 +66,13 @@ function actionFor(plan: SubscriptionPlan, view: SubscriptionPlans, cycle: Billi
 }
 
 const priceFor = (prices: { monthly: PlanPrice; yearly: PlanPrice }, cycle: BillingCycle) => (cycle === "yearly" ? prices.yearly : prices.monthly);
+
+/** A card's prices as the store pays them (after its code), for what yearly saves. */
+const netPrices = (plan: SubscriptionPlan): CyclePrices => ({
+  monthlyPrice: plan.prices.monthly.net,
+  yearlyPrice: plan.prices.yearly.net,
+  currency: plan.currency,
+});
 
 /**
  * The plan cards: features and limits, the store's own plan marked, prices
@@ -160,7 +168,7 @@ export function PlansTab({
       {!move && !selfServe && view.planChange === "support" && billing && paidPlan && paidPlan.monthlyPrice > 0 ? (
         <BillingCycleChoice billing={billing} onChange={onBillingChange} />
       ) : (
-        <CycleSwitch value={cycle} onChange={setCycle} />
+        <CycleSwitch value={cycle} onChange={setCycle} saves={yearlySaves(view.plans.map(netPrices))} />
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -216,7 +224,8 @@ function PlanCard({
   const action = actionFor(plan, view, cycle);
   const moveBlocked = action === "move" && ((view.move?.debt ?? 0) > 0 || Boolean(view.move?.otherChargeOpen));
   const price = priceFor(plan.prices, cycle);
-  const yearlySaving = plan.prices.monthly.net * 12 - plan.prices.yearly.net;
+  const fullYear = yearlyBreakdown(netPrices(plan))?.fullYear ?? null;
+  const yearlySaving = fullYear === null ? 0 : fullYear - plan.prices.yearly.net;
   const titleId = useId();
   // Right after a change the summary may still hold the old plan's charge: shown once it is this plan's.
   const payAmount =

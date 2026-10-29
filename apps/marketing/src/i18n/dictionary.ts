@@ -162,11 +162,20 @@ export interface Dictionary {
     billingCycle: string;
     monthly: string;
     yearly: string;
-    yearlyNote: string;
+    /**
+     * After "Yearly" on the switch, only while yearly saves on some plan. No
+     * number: what a plan saves is worked out from its prices
+     * (@store-builder/ui/plan-pricing), under its yearly price.
+     */
+    yearlySave: string;
     perMonth: string;
     perYear: string;
     /** "{price}" */
     yearlyEquivalent: string;
+    /** Read before the struck-out twelve monthly payments under a yearly price (screen readers only). */
+    fullYearLabel: string;
+    /** "{price}": the yearly price over twelve months, under it. */
+    perMonthEquivalent: string;
     free: string;
     /** "{days}" */
     trial: string;

@@ -1,3 +1,4 @@
+import { yearlyBreakdown, yearlySaves } from "@store-builder/ui/plan-pricing";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionary";
 import { formatDays, formatNumber, formatOrderCount, formatPrice } from "@/lib/format";
@@ -21,6 +22,10 @@ const WHEN_YEARLY_BLOCK = "hidden group-has-[.cycle-yearly:checked]/pricing:bloc
  * is two radio buttons and CSS (`group-has-[…:checked]`), so it works without
  * JavaScript too. Each "Subscribe" goes to the dashboard's sign-up with the
  * plan and the cycle chosen.
+ *
+ * Under a yearly price: twelve monthly payments struck out (only while the
+ * yearly price is less) and what the year comes to a month — both from the
+ * plan's two prices, so a price changed in the console changes them too.
  *
  * `compact` (the home page) leaves out the limits and features; the pricing
  * page shows everything.
@@ -52,6 +57,7 @@ export function PlanCards({
   const yearlyId = `${idPrefix}-yearly`;
   const limit = (value: number | null) => (value === null ? copy.unlimited : formatNumber(value, locale));
   const showYearly = plans.some((plan) => plan.yearlyPrice > 0);
+  const saves = yearlySaves(plans);
   const cards = plans.length + (payPerOrder ? 1 : 0);
 
   return (
@@ -72,7 +78,13 @@ export function PlanCards({
           >
             <input id={yearlyId} type="radio" name={`${idPrefix}-cycle`} className="cycle-yearly sr-only" />
             {copy.yearly}
-            <span className="text-xs font-medium opacity-80">({copy.yearlyNote})</span>
+            {/* The space is for the label's name ("Yearly · Save"); the flex gap does the spacing. */}
+            {saves ? (
+              <>
+                {" "}
+                <span className="text-xs font-medium opacity-80">· {copy.yearlySave}</span>
+              </>
+            ) : null}
           </label>
         </fieldset>
       ) : null}
@@ -81,6 +93,7 @@ export function PlanCards({
         {plans.map((plan) => {
           const free = plan.monthlyPrice === 0;
           const whenMonthly = showYearly ? WHEN_MONTHLY : "";
+          const yearly = yearlyBreakdown(plan);
           return (
             <li
               key={plan.id}
@@ -113,7 +126,17 @@ export function PlanCards({
                           {formatPrice(plan.yearlyPrice, plan.currency, locale)}{" "}
                           <span className="text-base font-medium text-ink-soft">{copy.perYear}</span>
                         </p>
-                        <p className="mt-1 text-sm text-ink-soft">{copy.yearlyNote}</p>
+                        {yearly?.fullYear != null ? (
+                          <p className="mt-1.5 text-base font-medium text-ink-soft">
+                            <span className="sr-only">{copy.fullYearLabel} </span>
+                            <s className="line-through decoration-2">{formatPrice(yearly.fullYear, plan.currency, locale)}</s>
+                          </p>
+                        ) : null}
+                        {yearly ? (
+                          <p className="mt-0.5 text-sm text-ink-soft">
+                            {copy.perMonthEquivalent.replace("{price}", formatPrice(yearly.perMonth, plan.currency, locale))}
+                          </p>
+                        ) : null}
                       </div>
                     ) : null}
                   </>
