@@ -11,12 +11,14 @@ import {
   resolveCheckoutForm,
   resolveCheckoutSettings,
   storefrontDesignMeta,
+  storefrontProductCombos,
   storefrontProductPage,
 } from "@store-builder/api-client";
 import { StoreInfoCards } from "@/components/StoreInfoCards";
 import { ProductJsonLd } from "@/components/product/ProductJsonLd";
 import { canonicalOrigin } from "@/lib/domains";
 import { ProductContent } from "@/components/product/ProductContent";
+import { ProductCombos } from "@/components/combos/ProductCombos";
 import { storefrontExternalReviews, storefrontProductReviews } from "@store-builder/api-client";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { ArrowIcon } from "@/components/Icons";
@@ -137,6 +139,8 @@ export default async function ProductPage({ params }: { params: Params }) {
   // The product page's own settings and content, defaults filled in.
   const page = storefrontProductPage(product);
   const ps = page.pageSettings;
+  // The combos this product is in (sent only while the server's combos are on): none, no section.
+  const combos = storefrontProductCombos(product);
   // With "form above the description" off, the buy box shows the description itself.
   const descriptionInBuyBox = ps.inline_checkout && !ps.checkout_before_description;
   // The store's own shipping / returns / COD cards (lib/storePromises.ts): the
@@ -250,6 +254,9 @@ export default async function ProductPage({ params }: { params: Params }) {
             checkoutSettings={{ ...resolveCheckoutSettings(store.checkout), form: resolveCheckoutForm(store.checkout) } as ReturnType<typeof resolveCheckoutSettings>}
           />
         </div>
+
+        {/* "Buy it as a combo": other products with this one at one price, right under the buy box. */}
+        {combos.length > 0 && <ProductCombos combos={combos} />}
 
         <ProductContent cms={page.cms} locale={locale} />
 
