@@ -44,6 +44,22 @@ export function formatDays(days: number, locale: Locale): string {
   return `${n} يومًا`;
 }
 
+/**
+ * A number of orders after "first" / "أول": "order", "10 orders" in English;
+ * in Arabic the noun agrees with the count as it follows أول — "طلب",
+ * "طلبين", "١٠ طلبات", "١١ طلبا", "١٠٠ طلب".
+ */
+export function formatOrderCount(count: number, locale: Locale): string {
+  const n = formatNumber(count, locale);
+  if (locale === "en") return count === 1 ? "order" : `${n} orders`;
+  if (count === 1) return "طلب";
+  if (count === 2) return "طلبين";
+  const lastTwo = count % 100;
+  if (lastTwo >= 3 && lastTwo <= 10) return `${n} طلبات`;
+  if (lastTwo >= 11) return `${n} طلبا`;
+  return `${n} طلب`;
+}
+
 /** 2026-10-01 → "1 October 2026" / "١ أكتوبر ٢٠٢٦". */
 export function formatLongDate(isoDate: string, locale: Locale): string {
   const date = new Date(`${isoDate}T00:00:00Z`);

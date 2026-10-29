@@ -16,6 +16,15 @@ export function registerUrlFor(planId: string, cycle: "monthly" | "yearly"): str
 }
 
 /**
+ * Sign-up from the pay-per-order card: the same form, with the plan named and
+ * no cycle (it has none). The plan itself is chosen in the dashboard's My Plan
+ * after sign-up: the sign-up form offers the monthly and yearly plans only.
+ */
+export function registerUrlForPayPerOrder(planId: string): string {
+  return `${REGISTER_URL}?${new URLSearchParams({ plan: planId }).toString()}`;
+}
+
+/**
  * The API's public address, the same variable the storefront uses for the
  * same API. The browser's visit counting calls it; the server's own calls
  * start on lib/server-api's address (INTERNAL_API_BASE_URL when set) and fall

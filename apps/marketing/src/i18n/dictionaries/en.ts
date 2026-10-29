@@ -256,6 +256,34 @@ export const en: Dictionary = {
       priority_support: "Priority support",
       loyalty: "Loyalty points",
     },
+    payPerOrder: {
+      badge: "No subscription",
+      tagline: "Pay only for each order, with no monthly or yearly subscription.",
+      perOrder: "/ order",
+      freeOrders: "Your first {orders} free",
+      feeAtConfirmation: "Each order's fee is taken from your prepaid balance when the order is confirmed",
+      feeAtPlacement: "Each order's fee is taken from your prepaid balance when the order comes in, and given back if it's cancelled before shipping",
+      noExpiry: "Your balance never expires",
+      topUp: "Top up your balance from your dashboard at any time",
+      cta: "Get started",
+      howToChoose: "After you sign up, choose pay per order in My Plan in your dashboard.",
+      pageIntro:
+        "ZIMOS is a SaaS platform for building online stores. You subscribe to the platform monthly or yearly, on the plan that fits your store, or pay only for each order, with no subscription.",
+      faq: {
+        kicker: "Pay per order",
+        heading: "Questions about pay per order",
+        afterFreeQuestion: "What happens after the free orders?",
+        afterFreeAnswer: "After your first {orders}, {fee} is taken from your prepaid balance for each order. Top up your balance from your dashboard at any time.",
+        whenQuestion: "When is an order's fee taken?",
+        whenAtConfirmation:
+          "When the order is confirmed, or when its payment arrives if the customer paid online — not when it comes in. An order cancelled before it's confirmed costs nothing; once it's confirmed, the fee isn't given back if the order is cancelled or returned.",
+        whenAtPlacement: "When the order comes in. If it's cancelled or rejected before it ships, the fee goes back to your balance.",
+        expiryQuestion: "Does my balance expire?",
+        expiryAnswer: "No. Your balance never expires and doesn't shrink over time.",
+        chooseQuestion: "How do I choose pay per order?",
+        chooseAnswer: "Create your account, then choose pay per order in My Plan in your dashboard.",
+      },
+    },
   },
 
   service: {
@@ -263,10 +291,20 @@ export const en: Dictionary = {
     heading: "One platform to build your store and run it from the first order",
     body:
       "ZIMOS is software you use online: you build and run your store on it, and pay a monthly or yearly subscription for the platform. We don't sell products or take part in your sales — you sell to your customers, and ZIMOS gives you the store, the funnels, order confirmation, shipping and reports to do it.",
+    bodyWithPayPerOrder:
+      "ZIMOS is software you use online: you build and run your store on it, and pay for the platform with a monthly or yearly subscription, or a fee for each order from a prepaid balance. We don't sell products or take part in your sales — you sell to your customers, and ZIMOS gives you the store, the funnels, order confirmation, shipping and reports to do it.",
     points: [
-      { title: "What you buy", body: "A subscription to the ZIMOS platform, monthly or yearly." },
+      {
+        title: "What you buy",
+        body: "A subscription to the ZIMOS platform, monthly or yearly.",
+        withPayPerOrder: "A subscription to the ZIMOS platform, monthly or yearly, or paying for each order from a prepaid balance.",
+      },
       { title: "What it includes", body: "Your store and website, funnels, order management and the features of your plan." },
-      { title: "How you pay", body: "Currently by manual transfer, activated once the payment is confirmed." },
+      {
+        title: "How you pay",
+        body: "Currently by manual transfer, activated once the payment is confirmed.",
+        withPayPerOrder: "Currently by manual transfer: the subscription is activated, or the balance added, once the payment is confirmed.",
+      },
       { title: "Your data stays yours", body: "Export your orders, customers and products from the dashboard at any time." },
     ],
   },

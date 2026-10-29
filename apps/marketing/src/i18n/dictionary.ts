@@ -185,6 +185,44 @@ export interface Dictionary {
     paymentNote: string;
     refundLink: string;
     features: Record<PlanFeatureKey, string>;
+    /**
+     * The pay-per-order card and its questions, shown only while the API
+     * sends that plan (lib/plans `payPerOrder`). Every number in them — the
+     * fee, the free orders — comes from the plan.
+     */
+    payPerOrder: {
+      /** The pill above the plan's name. */
+      badge: string;
+      tagline: string;
+      /** After the fee, like perMonth. */
+      perOrder: string;
+      /** "{orders}" (lib/format formatOrderCount). */
+      freeOrders: string;
+      /** One of the two, as the API says the fee is taken. */
+      feeAtConfirmation: string;
+      feeAtPlacement: string;
+      noExpiry: string;
+      topUp: string;
+      cta: string;
+      /** Under the button: where the plan is chosen after sign-up. */
+      howToChoose: string;
+      /** The page's intro while the card is shown, in place of pageIntro. */
+      pageIntro: string;
+      faq: {
+        kicker: string;
+        heading: string;
+        afterFreeQuestion: string;
+        /** "{orders}", "{fee}" */
+        afterFreeAnswer: string;
+        whenQuestion: string;
+        whenAtConfirmation: string;
+        whenAtPlacement: string;
+        expiryQuestion: string;
+        expiryAnswer: string;
+        chooseQuestion: string;
+        chooseAnswer: string;
+      };
+    };
   };
 
   /** What the service is and what is sold — said plainly on the pricing page. */
@@ -192,6 +230,9 @@ export interface Dictionary {
     kicker: string;
     heading: string;
     body: string;
+    /** `body` while the pricing page shows the pay-per-order plan. */
+    bodyWithPayPerOrder: string;
+    /** A point's `withPayPerOrder` replaces its body while that plan is shown. */
     points: [TrustPoint, TrustPoint, TrustPoint, TrustPoint];
   };
 
@@ -272,6 +313,8 @@ export interface ShotTab {
 export interface TrustPoint {
   title: string;
   body: string;
+  /** The service section's body for this point while the pay-per-order plan is shown. */
+  withPayPerOrder?: string;
 }
 
 export interface FaqItem {
