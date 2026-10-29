@@ -64,6 +64,10 @@ export const en: FeaturesCopy = {
           title: "Product and store reviews",
           body: "Customers rate a product or your whole store with stars, words and photos. Every review reaches you first and you decide what goes live; the stars count only customers who received their order, with a “Verified buyer” badge.",
         },
+        {
+          title: "Reviews from other sites",
+          body: "Add real reviews that reached you on social media, maps or WhatsApp; they show apart with their source badge and stay out of your stars.",
+        },
         { title: "Interactive photos (Shop the look)", body: "Points on a photo linked to your products." },
         { title: "Customer questions", body: "Customers ask about a product, and you answer." },
         {
@@ -288,6 +292,10 @@ export const en: FeaturesCopy = {
           body: "An app for your store (PWA), and a floating WhatsApp button.",
         },
         { title: "Ready policies", body: "Returns, privacy and terms, from ready templates." },
+        {
+          title: "A photo gallery of your story",
+          body: "Photos with a title and a description on your About page, in Arabic and English, opening large with a tap.",
+        },
         { title: "More than one store", body: "On one account." },
       ],
     },
