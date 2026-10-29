@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore, type MouseEvent } from "react";
+import { animateThemeChange } from "@store-builder/ui/theme-reveal";
 import { useStore } from "@/lib/StoreContext";
 import { iconBtn } from "./ui";
 
@@ -116,13 +117,16 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
     emit();
   }, []);
 
+  // The new theme grows over the old one as a circle from where the button was pressed (@store-builder/ui/theme-reveal).
+  const onClick = useCallback((event: MouseEvent<HTMLButtonElement>) => animateThemeChange(event, toggle), [toggle]);
+
   const { t } = useStore();
   const label = theme === "dark" ? t.common.themeLight : t.common.themeDark;
 
   return (
     <button
       type="button"
-      onClick={toggle}
+      onClick={onClick}
       aria-label={label}
       title={label}
       suppressHydrationWarning
