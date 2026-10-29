@@ -1,9 +1,8 @@
 import type { ReactNode } from "react";
 import type { Review } from "@store-builder/api-client";
 import { ContactActions } from "@/components/ContactActions";
-import { IconCheck, IconDelete, IconEye, IconEyeOff } from "@/components/icons";
+import { IconCheck, IconDelete, IconEye, IconEyeOff, IconStar } from "@/components/icons";
 import { QuickLook } from "@/components/QuickLook";
-import { StatusBadge } from "@/components/StatusBadge";
 import { ViewLink } from "@/components/ViewLink";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { apiClient } from "@/lib/apiClient";
@@ -13,8 +12,8 @@ import { useCachedAsync } from "@/lib/useCachedAsync";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { dialablePhone } from "@/pages/home/today/OrderQuickLook";
 import { InlineBone, RowAction } from "@/pages/returns/rowkit/RowBits";
-import { ReviewPhotos, ReviewSourceBadge, Stars } from "./ReviewBits";
-import { MAX_RATING, REVIEW_STATUS_TONE, REVIEW_WORDS, isMerchantAdded, photosOf, reviewAuthor, type ModerateAction } from "./reviewModel";
+import { PurchaseBadge, ReviewPhotos, ReviewSourceBadge, ReviewStatusBadge, Stars } from "./ReviewBits";
+import { MAX_RATING, REVIEW_WORDS, isMerchantAdded, isStarsOnly, kindOf, photosOf, reviewAuthor, type ModerateAction } from "./reviewModel";
 
 const STRINGS = {
   en: {
@@ -26,11 +25,18 @@ const STRINGS = {
     photos: "Photos",
     who: "Who wrote it",
     openCustomer: "Open the customer's page",
-    openOrder: "Open the order they reviewed",
-    hintPending: "Approve it and it shows on the product's page. Hide it and it stays between you and the customer.",
-    hintApproved: "Shoppers see this review on the product's page.",
+    openOrder: "Open order {number}",
+    openStore: "Open your store's settings",
+    phone: "Phone",
+    email: "E-mail",
+    bought: "Did they buy?",
+    hintPending: "Approve it and it shows in your store. Publish the stars only and its words and photos stay here. Hide it and it stays between you and the customer.",
+    hintApproved: "Shoppers see this review in your store.",
+    hintStars: "Shoppers see its stars only; its words and photos stay here.",
     hintRejected: "Hidden: shoppers don't see this review.",
-    addedNote: "You added this review, so it shows without the “verified buyer” badge.",
+    countedNote: "It comes from a delivered order, so it counts in the stars shoppers see.",
+    notCountedNote: "It does not count in your stars: only published reviews from delivered orders do.",
+    addedNote: "You added this review, so it shows without the “verified buyer” badge and does not count in your stars.",
     remove: "Delete this review",
   },
   ar: {
@@ -42,11 +48,18 @@ const STRINGS = {
     photos: "الصور",
     who: "من كتبه",
     openCustomer: "فتح صفحة العميل",
-    openOrder: "فتح الطلب الذي قيّمه",
-    hintPending: "وافق عليه ليظهر في صفحة المنتج. أخفِه ليبقى بينك وبين العميل.",
-    hintApproved: "يرى العملاء هذا التقييم في صفحة المنتج.",
+    openOrder: "فتح الطلب {number}",
+    openStore: "فتح إعدادات متجرك",
+    phone: "الهاتف",
+    email: "البريد الإلكتروني",
+    bought: "هل اشترى؟",
+    hintPending: "وافق عليه ليظهر في متجرك. انشر النجوم فقط لتبقى كلماته وصوره هنا. أخفِه ليبقى بينك وبين العميل.",
+    hintApproved: "يرى العملاء هذا التقييم في متجرك.",
+    hintStars: "يرى العملاء نجومه فقط، وتبقى كلماته وصوره هنا.",
     hintRejected: "مخفي: لا يرى العملاء هذا التقييم.",
-    addedNote: "هذا التقييم أضفته أنت، لذلك يظهر بدون علامة «مشترٍ موثّق».",
+    countedNote: "صاحبه استلم طلبه، لذلك يدخل في متوسط النجوم الذي يراه العملاء.",
+    notCountedNote: "لا يدخل في متوسط نجومك: المتوسط من التقييمات المنشورة لطلبات تم تسليمها فقط.",
+    addedNote: "هذا التقييم أضفته أنت، لذلك يظهر بدون علامة «مشترٍ موثّق» ولا يدخل في متوسط نجومك.",
     remove: "حذف هذا التقييم",
   },
 } satisfies Messages;
@@ -104,21 +117,27 @@ export function ReviewQuickLook({ review, open, onOpenChange, busy, onModerate, 
   if (!review) return null;
 
   const product = review.product ?? null;
+  const store = kindOf(review) === "store";
   const author = reviewAuthor(review, words.unknownCustomer);
   const added = isMerchantAdded(review);
   const comment = review.comment?.trim() || "";
   const acting = busy !== null;
-  const hint = review.status === "pending" ? t.hintPending : review.status === "approved" ? t.hintApproved : t.hintRejected;
+  const starsOnly = isStarsOnly(review);
+  const hint = review.status === "pending" ? t.hintPending : starsOnly ? t.hintStars : review.status === "approved" ? t.hintApproved : t.hintRejected;
+  // The customer's contact as the list sent it: only to a teammate who may see customers, masked on a locked order.
+  const phone = review.customer?.phone || review.reviewerPhone || null;
+  const email = review.customer?.email || null;
+  const order = review.purchase?.orderId ? review.purchase : null;
 
   return (
     <QuickLook
       open={open}
       onOpenChange={onOpenChange}
-      title={<bdi>{product?.name || words.unknownProduct}</bdi>}
-      status={<StatusBadge value={review.status} tone={REVIEW_STATUS_TONE[review.status]} text={words[`status_${review.status}`]} />}
-      // A product that was deleted has no page: the way out is the list of products.
-      to={product ? `/catalog/${product.id}` : "/catalog"}
-      openLabel={product ? t.openProduct : t.openProducts}
+      title={<bdi>{store ? words.storeReview : product?.name || words.unknownProduct}</bdi>}
+      status={<ReviewStatusBadge review={review} />}
+      // A product that was deleted has no page: the way out is the list of products. A store review opens the store's settings.
+      to={store ? "/settings" : product ? `/catalog/${product.id}` : "/catalog"}
+      openLabel={store ? t.openStore : product ? t.openProduct : t.openProducts}
       actions={
         <>
           {review.status !== "rejected" && (
@@ -132,7 +151,18 @@ export function ReviewQuickLook({ review, open, onOpenChange, busy, onModerate, 
               onClick={() => onModerate("reject")}
             />
           )}
-          {review.status !== "approved" && (
+          {!starsOnly && (
+            <RowAction
+              className={FOOTER_PILL}
+              tone="quiet"
+              label={words.approveStars}
+              icon={IconStar}
+              busy={busy === "approve_stars"}
+              disabled={acting}
+              onClick={() => onModerate("approve_stars")}
+            />
+          )}
+          {(review.status !== "approved" || starsOnly) && (
             <RowAction
               className={FOOTER_PILL}
               tone={review.status === "pending" ? "primary" : "quiet"}
@@ -155,6 +185,20 @@ export function ReviewQuickLook({ review, open, onOpenChange, busy, onModerate, 
           <span>{formatDate(review.createdAt)}</span>
           <ReviewSourceBadge review={review} />
         </p>
+
+        {!added && (
+          <section>
+            <BlockLabel>{t.bought}</BlockLabel>
+            <p className="flex flex-wrap items-center gap-2 text-sm leading-6">
+              <PurchaseBadge review={review} />
+              {order && order.orderNumber && (
+                <ViewLink to={`/orders/${order.orderId}`} className={QUIET_LINK}>
+                  <bdi dir="ltr">{fmt(t.openOrder, { number: order.orderNumber })}</bdi>
+                </ViewLink>
+              )}
+            </p>
+          </section>
+        )}
 
         <section>
           <BlockLabel>{t.rating}</BlockLabel>
@@ -196,36 +240,49 @@ export function ReviewQuickLook({ review, open, onOpenChange, busy, onModerate, 
             {/* Mounted with the preview only: the number is asked for when someone is looking. */}
             {open && !added && review.customerId && <ReviewerContact customerId={review.customerId} name={author} />}
           </div>
+          {(phone || email) && (
+            <dl className="mt-1 grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-0.5 text-sm leading-6">
+              {phone && (
+                <>
+                  <dt className="text-ink-soft">{t.phone}</dt>
+                  <dd className="min-w-0 truncate text-ink">
+                    <bdi dir="ltr">{phone}</bdi>
+                  </dd>
+                </>
+              )}
+              {email && (
+                <>
+                  <dt className="text-ink-soft">{t.email}</dt>
+                  <dd className="min-w-0 truncate text-ink">
+                    <bdi dir="ltr">{email}</bdi>
+                  </dd>
+                </>
+              )}
+            </dl>
+          )}
           <div className="mt-1 flex flex-wrap gap-x-4">
             {!added && review.customerId && (
               <ViewLink to={`/customers/${review.customerId}`} className={QUIET_LINK}>
                 {t.openCustomer}
               </ViewLink>
             )}
-            {review.orderId && (
-              <ViewLink to={`/orders/${review.orderId}`} className={QUIET_LINK}>
-                {t.openOrder}
-              </ViewLink>
-            )}
           </div>
         </section>
 
         <p data-slot="review-hint" className="text-[13px] leading-5 text-ink-soft">
-          {hint}
-          {added && <> {t.addedNote}</>}
+          {hint} {added ? t.addedNote : review.status === "approved" ? (review.counted ? t.countedNote : t.notCountedNote) : null}
         </p>
 
-        {added && (
-          <button
-            type="button"
-            disabled={acting}
-            onClick={onDelete}
-            className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full px-3 text-sm font-medium text-danger transition-[background-color,scale] duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50 motion-safe:active:scale-[0.97] motion-reduce:transition-none"
-          >
-            <IconDelete className="size-4" aria-hidden />
-            {t.remove}
-          </button>
-        )}
+        {/* Any review can be deleted: a shopper's photos go with it. */}
+        <button
+          type="button"
+          disabled={acting}
+          onClick={onDelete}
+          className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full px-3 text-sm font-medium text-danger transition-[background-color,scale] duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50 motion-safe:active:scale-[0.97] motion-reduce:transition-none"
+        >
+          <IconDelete className="size-4" aria-hidden />
+          {t.remove}
+        </button>
       </div>
     </QuickLook>
   );

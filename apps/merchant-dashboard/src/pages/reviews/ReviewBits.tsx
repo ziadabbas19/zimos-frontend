@@ -4,7 +4,7 @@ import type { Review } from "@store-builder/api-client";
 import { IconStar } from "@/components/icons";
 import { StatusBadge } from "@/components/StatusBadge";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
-import { MAX_RATING, REVIEW_WORDS, isMerchantAdded, photosOf, sourceOf } from "./reviewModel";
+import { MAX_RATING, PURCHASE_TONE, REVIEW_STATUS_TONE, REVIEW_WORDS, isMerchantAdded, isStarsOnly, photosOf, purchaseOf, sourceOf } from "./reviewModel";
 
 const STRINGS = {
   en: { photo: "Photo {n} of {total} — opens in a new tab" },
@@ -60,6 +60,21 @@ export function ReviewSourceBadge({ review }: { review: Review }) {
   if (!isMerchantAdded(review)) return null;
   const source = sourceOf(review);
   return <StatusBadge value={source} tone="neutral" text={source === "manual" ? words.source_manual : words.source_import} />;
+}
+
+/** Whether the reviewer bought, and where their order stands; nothing on a review the store added. */
+export function PurchaseBadge({ review }: { review: Review }) {
+  const words = useT(REVIEW_WORDS);
+  const state = purchaseOf(review);
+  if (!state) return null;
+  return <StatusBadge value={state} tone={PURCHASE_TONE[state]} text={words[`purchase_${state}`]} />;
+}
+
+/** Where a review stands, «النجوم فقط» for one published without its words. */
+export function ReviewStatusBadge({ review }: { review: Review }) {
+  const words = useT(REVIEW_WORDS);
+  if (isStarsOnly(review)) return <StatusBadge value="stars" tone="success" text={words.status_stars} />;
+  return <StatusBadge value={review.status} tone={REVIEW_STATUS_TONE[review.status]} text={words[`status_${review.status}`]} />;
 }
 
 /** The photos of a review: each opens whole in a new tab. */

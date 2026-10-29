@@ -1,12 +1,17 @@
-import type { Review } from "@store-builder/api-client";
+import type { Review, ReviewKind } from "@store-builder/api-client";
 import { FilterChoice, FilterGroup, FilterSheet } from "@/components/list";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { pluralOf } from "@/lib/plural";
 import type { ActiveFilter } from "@/pages/returns/rowkit/ActiveFilters";
-import { REVIEW_SOURCES, REVIEW_WORDS, photosOf, sourceOf, type ReviewSource } from "./reviewModel";
+import { REVIEW_SOURCES, REVIEW_WORDS, kindOf, photosOf, sourceOf, type ReviewSource } from "./reviewModel";
 
 const STRINGS = {
   en: {
+    kind: "Reviewing",
+    kindLabel: "Reviews by what they review",
+    kind_product: "A product",
+    kind_store: "Your store",
+    chipKind: "Reviewing: {value}",
     source: "Where it came from",
     sourceHint: "A customer's own review, one you typed in, or one that came with an import.",
     rating: "Rating",
@@ -24,6 +29,11 @@ const STRINGS = {
     show_other: "Show {n} reviews",
   },
   ar: {
+    kind: "موضوع التقييم",
+    kindLabel: "التقييمات حسب موضوعها",
+    kind_product: "منتج",
+    kind_store: "متجرك",
+    chipKind: "الموضوع: {value}",
     source: "المصدر",
     sourceHint: "تقييم كتبه العميل، أو أضفته أنت، أو جاء مع استيراد.",
     rating: "التقييم",
@@ -54,19 +64,24 @@ const BAND_STARS: Record<RatingBand, { a: number; b: number }> = { high: { a: 4,
 
 /** What narrows the list besides the status chips and the search. `null` = that filter is off. */
 export interface ReviewFilterState {
+  kind: ReviewKind | null;
   source: ReviewSource | null;
   rating: RatingBand | null;
   content: ContentFilter | null;
 }
 
-export const NO_REVIEW_FILTERS: ReviewFilterState = { source: null, rating: null, content: null };
+export const NO_REVIEW_FILTERS: ReviewFilterState = { kind: null, source: null, rating: null, content: null };
+
+export function isReviewKind(value: string | null): value is ReviewKind {
+  return value === "product" || value === "store";
+}
 
 export function isReviewSource(value: string | null): value is ReviewSource {
   return value !== null && (REVIEW_SOURCES as readonly string[]).includes(value);
 }
 
 export function countReviewFilters(filters: ReviewFilterState): number {
-  return (filters.source ? 1 : 0) + (filters.rating ? 1 : 0) + (filters.content ? 1 : 0);
+  return (filters.kind ? 1 : 0) + (filters.source ? 1 : 0) + (filters.rating ? 1 : 0) + (filters.content ? 1 : 0);
 }
 
 function inBand(rating: number, band: RatingBand): boolean {
@@ -76,6 +91,7 @@ function inBand(rating: number, band: RatingBand): boolean {
 }
 
 export function matchesReviewFilters(review: Review, filters: ReviewFilterState): boolean {
+  if (filters.kind && kindOf(review) !== filters.kind) return false;
   if (filters.source && sourceOf(review) !== filters.source) return false;
   if (filters.rating && !inBand(review.rating, filters.rating)) return false;
   if (filters.content === "photos" && photosOf(review).length === 0) return false;
@@ -88,6 +104,9 @@ export function useReviewFilterChips(filters: ReviewFilterState, onChange: (next
   const t = useT(STRINGS);
   const words = useT(REVIEW_WORDS);
   const chips: ActiveFilter[] = [];
+  if (filters.kind) {
+    chips.push({ id: "kind", label: fmt(t.chipKind, { value: t[`kind_${filters.kind}`] }), onRemove: () => onChange({ ...filters, kind: null }) });
+  }
   if (filters.source) {
     chips.push({
       id: "source",
@@ -141,6 +160,15 @@ export function ReviewFilterSheet({
       onReset={() => onChange(NO_REVIEW_FILTERS)}
       applyLabel={pluralOf(t, "show", matching)}
     >
+      <FilterGroup label={t.kind}>
+        <FilterChoice
+          label={t.kindLabel}
+          allowClear
+          value={value.kind}
+          onChange={(kind) => onChange({ ...value, kind })}
+          options={(["product", "store"] as const).map((kind) => ({ value: kind, label: t[`kind_${kind}`] }))}
+        />
+      </FilterGroup>
       <FilterGroup label={t.source} hint={t.sourceHint}>
         <FilterChoice
           label={t.source}
