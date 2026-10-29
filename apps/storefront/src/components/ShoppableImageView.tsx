@@ -5,6 +5,7 @@ import type { PublicShoppableImage } from "@store-builder/api-client";
 import { useStore } from "@/lib/StoreContext";
 import { firstImage, priceOf } from "@/lib/product";
 import { StoreLink } from "./StoreRoute";
+import { StoreImage } from "@/components/StoreImage";
 
 const STRINGS = {
   en: { view: "View product", close: "Close", point: (name: string) => `Show ${name}`, products: "In this picture" },
@@ -52,8 +53,7 @@ export function ShoppableImageView({ image, heading }: { image: PublicShoppableI
                 >
                   <div className="flex items-start gap-3">
                     {thumb && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={thumb} alt="" className="size-14 shrink-0 rounded-lg object-cover" />
+                      <StoreImage src={thumb} alt="" width={56} height={56} sizes="56px" className="size-14 shrink-0 rounded-lg object-cover" />
                     )}
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-ink">{spot.product.name}</p>

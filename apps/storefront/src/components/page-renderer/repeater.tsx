@@ -1,6 +1,7 @@
 import { storefrontProductPage, type StorefrontProductDetail } from "@store-builder/api-client";
 import type { Dictionary } from "@/lib/i18n";
 import { type Props, num, safeUrl, str } from "./props";
+import { StoreImage } from "@/components/StoreImage";
 
 /**
  * The `repeater` element (SPEC §9.4): one block per item of a list that
@@ -73,8 +74,7 @@ export function RepeaterElement({
         {items.map((item, i) => (
           <li key={i} className="zt-card flex gap-4 rounded-2xl border border-line bg-paper-raised p-5">
             {item.image && (
-              // eslint-disable-next-line @next/next/no-img-element -- merchant media, any host
-              <img src={item.image} alt="" loading="lazy" className="size-14 shrink-0 rounded-xl object-cover" />
+              <StoreImage src={item.image} alt="" width={56} height={56} sizes="56px" loading="lazy" className="size-14 shrink-0 rounded-xl object-cover" />
             )}
             <div className="min-w-0">
               {item.rating !== null && (
