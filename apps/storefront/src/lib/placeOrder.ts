@@ -12,6 +12,7 @@ import { botGuardFields } from "./botGuard";
 import { adMatchFields } from "./adMatch";
 import { withCheckoutOtp } from "./checkoutOtp";
 import { saveOrderSnapshot, snapshotFromOrder } from "./commerce";
+import { couponRefusalOfError, type CouponMessageContext } from "./couponRefusals";
 import type { Dictionary } from "./i18n";
 import type { OrderFormErrors, OrderFormField } from "./orderForm";
 import { storeHref } from "./storeHref";
@@ -172,13 +173,20 @@ export function cartErrorMessage(err: unknown, copy: OrderErrorCopy, fallback: s
  * the same polite, generic copy: the reason is the merchant's business, and
  * naming it would tell a fraudster which rule to dodge.
  */
-export function orderErrorMessage(err: unknown, copy: OrderErrorCopy): string {
+export function orderErrorMessage(
+  err: unknown,
+  copy: OrderErrorCopy,
+  /** The shopper's language and money: with them, a checkout refused for its coupon says why (lib/couponRefusals). */
+  coupon?: CouponMessageContext
+): string {
   if (isApiErrorCode(err, "ORDER_REJECTED")) return copy.rejected;
   // A custom-field answer that no longer holds (a photo past its 48 hours, a field the merchant changed).
   if (isApiErrorCode(err, "CUSTOM_FIELDS_INVALID")) return copy.customFields;
   if (isOrderBumpRefused(err)) return copy.bumpUnavailable;
   const known = knownRefusal(err, copy);
   if (known) return known;
+  const couponRefused = coupon ? couponRefusalOfError(err, coupon) : null;
+  if (couponRefused) return couponRefused;
   if (err instanceof ApiError && err.message) return err.message;
   if (err instanceof Error && err.message && !/fetch/i.test(err.message)) return err.message;
   return copy.generic;

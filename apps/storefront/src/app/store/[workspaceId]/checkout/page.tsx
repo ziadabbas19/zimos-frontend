@@ -374,7 +374,8 @@ export default function CheckoutPage() {
           giftCard.onError(err) ??
           (TENDERS_ON ? tenders.onError(err) : null) ??
           (PERKS_ON ? perks.onError(err) : null);
-        setFormError(featureRefusal ?? orderErrorMessage(err, t.form.errors));
+        // A code the store refused says why (lib/couponRefusals).
+        setFormError(featureRefusal ?? orderErrorMessage(err, t.form.errors, { locale, money: (n) => money(n, currency) }));
         setSubmitting(false);
       }
       autosave.resume();

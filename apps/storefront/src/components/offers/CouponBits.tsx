@@ -11,6 +11,7 @@ import {
 import { useStore } from "@/lib/StoreContext";
 import { getVisitorId } from "@/lib/visitorId";
 import { pickText } from "@/lib/i18n";
+import { couponRefusalMessage } from "@/lib/couponRefusals";
 
 /*
  * The shopper's side of coupons and order rules (SPEC §10.5–10.6): a
@@ -153,7 +154,10 @@ export function DiscountRows({
       {coupon && !coupon.valid && (
         <div className="text-xs text-ink-soft">
           <dt className="sr-only">{text.coupon(coupon.code)}</dt>
-          <dd>{text.couponInvalid(coupon.code)}</dd>
+          {/* Why, when the server said (lib/couponRefusals); the generic line for a reason this store does not know. */}
+          <dd>
+            {couponRefusalMessage(coupon.reason, coupon.details, { locale, money: (n) => money(n, currency) }) ?? text.couponInvalid(coupon.code)}
+          </dd>
         </div>
       )}
       {extras.automaticDiscount && (
