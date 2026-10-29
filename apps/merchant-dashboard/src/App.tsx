@@ -8,6 +8,7 @@ import { AppearanceSync } from "@/components/AppearanceSync";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { RequireWorkspace } from "@/routes/RequireWorkspace";
 import { LazyRoute } from "@/routes/LazyRoute";
+import { loadDashboardLayout, loadEditorLayout } from "@/routes/prefetch";
 import { RouteCommitSignal } from "@/lib/viewTransition";
 import { UnsavedGuardProvider } from "@/lib/useUnsavedGuard";
 import {
@@ -25,59 +26,69 @@ import {
   VISITORS_ENABLED,
 } from "@/lib/features";
 import { REWARDS_HOME } from "@/pages/loyalty/RewardsTabs";
-import { LoginPage } from "@/pages/LoginPage";
-import { NotFoundPage } from "@/pages/NotFoundPage";
-import { RegisterPage } from "@/pages/RegisterPage";
-import { AuthCallbackPage } from "@/pages/AuthCallbackPage";
-import { ChooseUsernamePage } from "@/pages/ChooseUsernamePage";
-import { ChoosePlanPage } from "@/pages/ChoosePlanPage";
 import { GoLiveDialog } from "@/components/GoLiveDialog";
 import { ConfirmEmailDialog } from "@/components/ConfirmEmailDialog";
-import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
-import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
-import { VerifyEmailPage } from "@/pages/VerifyEmailPage";
-import { InviteAcceptPage } from "@/pages/InviteAcceptPage";
-import { WorkspacePickerPage } from "@/pages/WorkspacePickerPage";
-import { DashboardLayout } from "@/components/DashboardLayout";
-import { EditorLayout } from "@/components/EditorLayout";
-import { DashboardHomePage } from "@/pages/DashboardHomePage";
-import { CatalogProductsPage } from "@/pages/catalog/CatalogProductsPage";
-import { CollectionsPage } from "@/pages/catalog/CollectionsPage";
-import { ProductEditPage } from "@/pages/catalog/ProductEditPage";
-import { OrdersListPage } from "@/pages/orders/OrdersListPage";
-import { OrderDetailPage } from "@/pages/orders/OrderDetailPage";
-import { ManualOrderPage } from "@/pages/orders/ManualOrderPage";
-import { ShipmentBatchPage } from "@/pages/orders/ShipmentBatchPage";
-import { ExportFilePage } from "@/pages/exports/ExportFilePage";
-import { OrderBoardPage } from "@/pages/orders/OrderBoardPage";
-import { ConfirmationQueuePage } from "@/pages/confirmation/ConfirmationQueuePage";
-import { ReturnsPage } from "@/pages/returns/ReturnsPage";
-import { LostOrdersPage } from "@/pages/abandoned/LostOrdersPage";
-import { FraudPage } from "@/pages/fraud/FraudPage";
-import { ReviewsPage } from "@/pages/reviews/ReviewsPage";
-import { ContactsPage } from "@/pages/customers/ContactsPage";
-import { FormSubmissionsPage } from "@/pages/customers/FormSubmissionsPage";
-import { DigitalProductsPage } from "@/pages/digital/DigitalProductsPage";
-import { ServicesPage } from "@/pages/services/ServicesPage";
-import { ShoppableImagesPage } from "@/pages/shoppable/ShoppableImagesPage";
-import { CoursesPage } from "@/pages/courses/CoursesPage";
-import { CustomerDetailPage } from "@/pages/customers/CustomerDetailPage";
-import { DiscountsPage } from "@/pages/discounts/DiscountsPage";
-import { OffersPage } from "@/pages/offers/OffersPage";
-import { BundlesPage } from "@/pages/offers/BundlesPage";
-import { OrderBumpsPage, UpsellsPage } from "@/pages/offers/OrderBumpsPage";
-import { CrossSellPage } from "@/pages/offers/CrossSellPage";
-import { ExitDownsellPage } from "@/pages/offers/ExitDownsellPage";
-import { OrderRulesPage } from "@/pages/offers/OrderRulesPage";
-import { NewsletterPage, ReferralLinksPage, SocialProofPage } from "@/pages/offers/EngagementPages";
-import { ProductFeedPage } from "@/pages/offers/ProductFeedPage";
-import { ShippingTaxPage } from "@/pages/shipping/ShippingTaxPage";
-import { PaymentsPage } from "@/pages/payments/PaymentsPage";
-import { WebsitePage } from "@/pages/website/WebsitePage";
-import { SettingsPage } from "@/pages/settings/SettingsPage";
-import { SubscriptionPage } from "@/pages/subscription/SubscriptionPage";
-import { SupportPage, SupportTicketPage } from "@/pages/support/SupportPage";
-import { SuggestionsPage } from "@/pages/help/SuggestionsPage";
+
+// Every page is code-split: the first load brings the frame and the page
+// asked for, nothing else. The pages that used to come with the main bundle
+// are fetched while the browser is idle after that (routes/prefetch.ts), so
+// moving to them still shows no loader; the editors and analytics, split
+// before, still load only when opened or hovered.
+const LoginPage = lazy(() => import("@/pages/LoginPage").then((m) => ({ default: m.LoginPage })));
+const NotFoundPage = lazy(() => import("@/pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })));
+const RegisterPage = lazy(() => import("@/pages/RegisterPage").then((m) => ({ default: m.RegisterPage })));
+const AuthCallbackPage = lazy(() => import("@/pages/AuthCallbackPage").then((m) => ({ default: m.AuthCallbackPage })));
+const ChooseUsernamePage = lazy(() => import("@/pages/ChooseUsernamePage").then((m) => ({ default: m.ChooseUsernamePage })));
+const ChoosePlanPage = lazy(() => import("@/pages/ChoosePlanPage").then((m) => ({ default: m.ChoosePlanPage })));
+const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage })));
+const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage })));
+const VerifyEmailPage = lazy(() => import("@/pages/VerifyEmailPage").then((m) => ({ default: m.VerifyEmailPage })));
+const InviteAcceptPage = lazy(() => import("@/pages/InviteAcceptPage").then((m) => ({ default: m.InviteAcceptPage })));
+const WorkspacePickerPage = lazy(() => import("@/pages/WorkspacePickerPage").then((m) => ({ default: m.WorkspacePickerPage })));
+const DashboardLayout = lazy(() => loadDashboardLayout().then((m) => ({ default: m.DashboardLayout })));
+const EditorLayout = lazy(() => loadEditorLayout().then((m) => ({ default: m.EditorLayout })));
+const DashboardHomePage = lazy(() => import("@/pages/DashboardHomePage").then((m) => ({ default: m.DashboardHomePage })));
+const CatalogProductsPage = lazy(() => import("@/pages/catalog/CatalogProductsPage").then((m) => ({ default: m.CatalogProductsPage })));
+const CollectionsPage = lazy(() => import("@/pages/catalog/CollectionsPage").then((m) => ({ default: m.CollectionsPage })));
+const ProductEditPage = lazy(() => import("@/pages/catalog/ProductEditPage").then((m) => ({ default: m.ProductEditPage })));
+const OrdersListPage = lazy(() => import("@/pages/orders/OrdersListPage").then((m) => ({ default: m.OrdersListPage })));
+const OrderDetailPage = lazy(() => import("@/pages/orders/OrderDetailPage").then((m) => ({ default: m.OrderDetailPage })));
+const ManualOrderPage = lazy(() => import("@/pages/orders/ManualOrderPage").then((m) => ({ default: m.ManualOrderPage })));
+const ShipmentBatchPage = lazy(() => import("@/pages/orders/ShipmentBatchPage").then((m) => ({ default: m.ShipmentBatchPage })));
+const ExportFilePage = lazy(() => import("@/pages/exports/ExportFilePage").then((m) => ({ default: m.ExportFilePage })));
+const OrderBoardPage = lazy(() => import("@/pages/orders/OrderBoardPage").then((m) => ({ default: m.OrderBoardPage })));
+const ConfirmationQueuePage = lazy(() => import("@/pages/confirmation/ConfirmationQueuePage").then((m) => ({ default: m.ConfirmationQueuePage })));
+const ReturnsPage = lazy(() => import("@/pages/returns/ReturnsPage").then((m) => ({ default: m.ReturnsPage })));
+const LostOrdersPage = lazy(() => import("@/pages/abandoned/LostOrdersPage").then((m) => ({ default: m.LostOrdersPage })));
+const FraudPage = lazy(() => import("@/pages/fraud/FraudPage").then((m) => ({ default: m.FraudPage })));
+const ReviewsPage = lazy(() => import("@/pages/reviews/ReviewsPage").then((m) => ({ default: m.ReviewsPage })));
+const ContactsPage = lazy(() => import("@/pages/customers/ContactsPage").then((m) => ({ default: m.ContactsPage })));
+const FormSubmissionsPage = lazy(() => import("@/pages/customers/FormSubmissionsPage").then((m) => ({ default: m.FormSubmissionsPage })));
+const DigitalProductsPage = lazy(() => import("@/pages/digital/DigitalProductsPage").then((m) => ({ default: m.DigitalProductsPage })));
+const ServicesPage = lazy(() => import("@/pages/services/ServicesPage").then((m) => ({ default: m.ServicesPage })));
+const ShoppableImagesPage = lazy(() => import("@/pages/shoppable/ShoppableImagesPage").then((m) => ({ default: m.ShoppableImagesPage })));
+const CoursesPage = lazy(() => import("@/pages/courses/CoursesPage").then((m) => ({ default: m.CoursesPage })));
+const CustomerDetailPage = lazy(() => import("@/pages/customers/CustomerDetailPage").then((m) => ({ default: m.CustomerDetailPage })));
+const DiscountsPage = lazy(() => import("@/pages/discounts/DiscountsPage").then((m) => ({ default: m.DiscountsPage })));
+const OffersPage = lazy(() => import("@/pages/offers/OffersPage").then((m) => ({ default: m.OffersPage })));
+const BundlesPage = lazy(() => import("@/pages/offers/BundlesPage").then((m) => ({ default: m.BundlesPage })));
+const OrderBumpsPage = lazy(() => import("@/pages/offers/OrderBumpsPage").then((m) => ({ default: m.OrderBumpsPage })));
+const UpsellsPage = lazy(() => import("@/pages/offers/OrderBumpsPage").then((m) => ({ default: m.UpsellsPage })));
+const CrossSellPage = lazy(() => import("@/pages/offers/CrossSellPage").then((m) => ({ default: m.CrossSellPage })));
+const ExitDownsellPage = lazy(() => import("@/pages/offers/ExitDownsellPage").then((m) => ({ default: m.ExitDownsellPage })));
+const OrderRulesPage = lazy(() => import("@/pages/offers/OrderRulesPage").then((m) => ({ default: m.OrderRulesPage })));
+const NewsletterPage = lazy(() => import("@/pages/offers/EngagementPages").then((m) => ({ default: m.NewsletterPage })));
+const ReferralLinksPage = lazy(() => import("@/pages/offers/EngagementPages").then((m) => ({ default: m.ReferralLinksPage })));
+const SocialProofPage = lazy(() => import("@/pages/offers/EngagementPages").then((m) => ({ default: m.SocialProofPage })));
+const ProductFeedPage = lazy(() => import("@/pages/offers/ProductFeedPage").then((m) => ({ default: m.ProductFeedPage })));
+const ShippingTaxPage = lazy(() => import("@/pages/shipping/ShippingTaxPage").then((m) => ({ default: m.ShippingTaxPage })));
+const PaymentsPage = lazy(() => import("@/pages/payments/PaymentsPage").then((m) => ({ default: m.PaymentsPage })));
+const WebsitePage = lazy(() => import("@/pages/website/WebsitePage").then((m) => ({ default: m.WebsitePage })));
+const SettingsPage = lazy(() => import("@/pages/settings/SettingsPage").then((m) => ({ default: m.SettingsPage })));
+const SubscriptionPage = lazy(() => import("@/pages/subscription/SubscriptionPage").then((m) => ({ default: m.SubscriptionPage })));
+const SupportPage = lazy(() => import("@/pages/support/SupportPage").then((m) => ({ default: m.SupportPage })));
+const SupportTicketPage = lazy(() => import("@/pages/support/SupportPage").then((m) => ({ default: m.SupportTicketPage })));
+const SuggestionsPage = lazy(() => import("@/pages/help/SuggestionsPage").then((m) => ({ default: m.SuggestionsPage })));
 
 // Analytics screens and the two editors are code-split: their charts, block
 // library and preview plumbing load only when a merchant opens them, not
@@ -158,42 +169,42 @@ export default function App() {
               {/* Asks before a link, a reload or a closed tab drops unsaved changes (lib/useUnsavedGuard). */}
               <UnsavedGuardProvider>
               <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/auth/callback" element={<AuthCallbackPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
-                <Route path="/verify-email" element={<VerifyEmailPage />} />
+                <Route path="/login" element={<LazyRoute screen><LoginPage /></LazyRoute>} />
+                <Route path="/register" element={<LazyRoute screen><RegisterPage /></LazyRoute>} />
+                <Route path="/auth/callback" element={<LazyRoute screen><AuthCallbackPage /></LazyRoute>} />
+                <Route path="/forgot-password" element={<LazyRoute screen><ForgotPasswordPage /></LazyRoute>} />
+                <Route path="/reset-password" element={<LazyRoute screen><ResetPasswordPage /></LazyRoute>} />
+                <Route path="/verify-email" element={<LazyRoute screen><VerifyEmailPage /></LazyRoute>} />
                 {/* The link in a team invite email; read signed out, accepted signed in. */}
-                <Route path="/invites" element={<InviteAcceptPage />} />
+                <Route path="/invites" element={<LazyRoute screen><InviteAcceptPage /></LazyRoute>} />
 
                 <Route element={<ProtectedRoute />}>
-                  <Route path="/choose-username" element={<ChooseUsernamePage />} />
-                  <Route path="/choose-plan" element={<ChoosePlanPage />} />
-                  <Route path="/workspaces" element={<WorkspacePickerPage />} />
+                  <Route path="/choose-username" element={<LazyRoute screen><ChooseUsernamePage /></LazyRoute>} />
+                  <Route path="/choose-plan" element={<LazyRoute screen><ChoosePlanPage /></LazyRoute>} />
+                  <Route path="/workspaces" element={<LazyRoute screen><WorkspacePickerPage /></LazyRoute>} />
 
                   <Route element={<RequireWorkspace />}>
-                    <Route element={<DashboardLayout />}>
-                      <Route path="/" element={<DashboardHomePage />} />
+                    <Route element={<LazyRoute screen><DashboardLayout /></LazyRoute>}>
+                      <Route path="/" element={<LazyRoute><DashboardHomePage /></LazyRoute>} />
 
-                      <Route path="/orders" element={<OrdersListPage />} />
-                      <Route path="/orders/new" element={<ManualOrderPage />} />
-                      <Route path="/orders/board" element={<OrderBoardPage />} />
-                      <Route path="/orders/shipment-batches/:batchId" element={<ShipmentBatchPage />} />
-                      <Route path="/exports/:exportId" element={<ExportFilePage />} />
-                      <Route path="/orders/:orderId" element={<OrderDetailPage />} />
+                      <Route path="/orders" element={<LazyRoute><OrdersListPage /></LazyRoute>} />
+                      <Route path="/orders/new" element={<LazyRoute><ManualOrderPage /></LazyRoute>} />
+                      <Route path="/orders/board" element={<LazyRoute><OrderBoardPage /></LazyRoute>} />
+                      <Route path="/orders/shipment-batches/:batchId" element={<LazyRoute><ShipmentBatchPage /></LazyRoute>} />
+                      <Route path="/exports/:exportId" element={<LazyRoute><ExportFilePage /></LazyRoute>} />
+                      <Route path="/orders/:orderId" element={<LazyRoute><OrderDetailPage /></LazyRoute>} />
 
-                      <Route path="/confirmation-queue" element={<ConfirmationQueuePage />} />
-                      <Route path="/fraud" element={<FraudPage />} />
-                      <Route path="/returns" element={<ReturnsPage />} />
-                      <Route path="/abandoned-carts" element={<LostOrdersPage />} />
+                      <Route path="/confirmation-queue" element={<LazyRoute><ConfirmationQueuePage /></LazyRoute>} />
+                      <Route path="/fraud" element={<LazyRoute><FraudPage /></LazyRoute>} />
+                      <Route path="/returns" element={<LazyRoute><ReturnsPage /></LazyRoute>} />
+                      <Route path="/abandoned-carts" element={<LazyRoute><LostOrdersPage /></LazyRoute>} />
 
-                      <Route path="/catalog" element={<CatalogProductsPage />} />
-                      <Route path="/catalog/collections" element={<CollectionsPage />} />
-                      <Route path="/catalog/new" element={<ProductEditPage />} />
-                      <Route path="/catalog/:productId" element={<ProductEditPage />} />
+                      <Route path="/catalog" element={<LazyRoute><CatalogProductsPage /></LazyRoute>} />
+                      <Route path="/catalog/collections" element={<LazyRoute><CollectionsPage /></LazyRoute>} />
+                      <Route path="/catalog/new" element={<LazyRoute><ProductEditPage /></LazyRoute>} />
+                      <Route path="/catalog/:productId" element={<LazyRoute><ProductEditPage /></LazyRoute>} />
 
-                      <Route path="/reviews" element={<ReviewsPage />} />
+                      <Route path="/reviews" element={<LazyRoute><ReviewsPage /></LazyRoute>} />
                       {/* Size charts, shoppers' questions and the specifications list (lib/features): off, these addresses go home. */}
                       <Route path="/size-charts" element={SIZE_CHARTS_ENABLED ? <LazyRoute><SizeChartsPage /></LazyRoute> : <Navigate to="/" replace />} />
                       <Route path="/size-charts/new" element={SIZE_CHARTS_ENABLED ? <LazyRoute><SizeChartEditorPage /></LazyRoute> : <Navigate to="/" replace />} />
@@ -201,14 +212,14 @@ export default function App() {
                       <Route path="/questions" element={PRODUCT_QUESTIONS_ENABLED ? <LazyRoute><QuestionsPage /></LazyRoute> : <Navigate to="/" replace />} />
                       <Route path="/products/:productId" element={PRODUCT_QUESTIONS_ENABLED ? <LazyRoute><ProductLinkRedirect /></LazyRoute> : <Navigate to="/" replace />} />
                       <Route path="/catalog/specifications" element={PRODUCT_SPECS_ENABLED ? <LazyRoute><SpecKeysPage /></LazyRoute> : <Navigate to="/catalog" replace />} />
-                      <Route path="/customers" element={<ContactsPage />} />
-                      <Route path="/form-submissions" element={<FormSubmissionsPage />} />
-                      <Route path="/digital" element={<DigitalProductsPage />} />
-                      <Route path="/services" element={<ServicesPage />} />
-                      <Route path="/shoppable-images" element={<ShoppableImagesPage />} />
-                      <Route path="/courses" element={<CoursesPage />} />
-                      <Route path="/customers/:customerId" element={<CustomerDetailPage />} />
-                      <Route path="/discounts" element={<DiscountsPage />} />
+                      <Route path="/customers" element={<LazyRoute><ContactsPage /></LazyRoute>} />
+                      <Route path="/form-submissions" element={<LazyRoute><FormSubmissionsPage /></LazyRoute>} />
+                      <Route path="/digital" element={<LazyRoute><DigitalProductsPage /></LazyRoute>} />
+                      <Route path="/services" element={<LazyRoute><ServicesPage /></LazyRoute>} />
+                      <Route path="/shoppable-images" element={<LazyRoute><ShoppableImagesPage /></LazyRoute>} />
+                      <Route path="/courses" element={<LazyRoute><CoursesPage /></LazyRoute>} />
+                      <Route path="/customers/:customerId" element={<LazyRoute><CustomerDetailPage /></LazyRoute>} />
+                      <Route path="/discounts" element={<LazyRoute><DiscountsPage /></LazyRoute>} />
                       {/* Gift cards and the store blog (lib/features): off, these addresses go home. */}
                       {/* Loyalty & rewards: each programme only while it is switched on; an address that is off opens the first that is on. */}
                       <Route path="/loyalty" element={LOYALTY_ENABLED ? <LazyRoute><LoyaltyProgramPage /></LazyRoute> : <Navigate to={REWARDS_HOME ?? "/"} replace />} />
@@ -221,20 +232,20 @@ export default function App() {
                       <Route path="/blog/new" element={BLOG_ENABLED ? <LazyRoute><BlogPostEditorPage /></LazyRoute> : <Navigate to="/" replace />} />
                       <Route path="/blog/categories" element={BLOG_ENABLED ? <LazyRoute><BlogCategoriesPage /></LazyRoute> : <Navigate to="/" replace />} />
                       <Route path="/blog/:postId" element={BLOG_ENABLED ? <LazyRoute><BlogPostEditorPage /></LazyRoute> : <Navigate to="/" replace />} />
-                      <Route path="/offers" element={<OffersPage />} />
-                      <Route path="/offers/bundles" element={<BundlesPage />} />
-                      <Route path="/offers/order-bumps" element={<OrderBumpsPage />} />
-                      <Route path="/offers/cross-sell" element={<CrossSellPage />} />
-                      <Route path="/offers/upsells" element={<UpsellsPage />} />
-                      <Route path="/offers/exit-popup" element={<ExitDownsellPage />} />
-                      <Route path="/offers/order-rules" element={<OrderRulesPage />} />
-                      <Route path="/offers/social-proof" element={<SocialProofPage />} />
-                      <Route path="/offers/newsletter" element={<NewsletterPage />} />
-                      <Route path="/offers/referrals" element={<ReferralLinksPage />} />
-                      <Route path="/offers/feed" element={<ProductFeedPage />} />
-                      <Route path="/shipping" element={<ShippingTaxPage />} />
-                      <Route path="/payments" element={<PaymentsPage />} />
-                      <Route path="/website" element={<WebsitePage />} />
+                      <Route path="/offers" element={<LazyRoute><OffersPage /></LazyRoute>} />
+                      <Route path="/offers/bundles" element={<LazyRoute><BundlesPage /></LazyRoute>} />
+                      <Route path="/offers/order-bumps" element={<LazyRoute><OrderBumpsPage /></LazyRoute>} />
+                      <Route path="/offers/cross-sell" element={<LazyRoute><CrossSellPage /></LazyRoute>} />
+                      <Route path="/offers/upsells" element={<LazyRoute><UpsellsPage /></LazyRoute>} />
+                      <Route path="/offers/exit-popup" element={<LazyRoute><ExitDownsellPage /></LazyRoute>} />
+                      <Route path="/offers/order-rules" element={<LazyRoute><OrderRulesPage /></LazyRoute>} />
+                      <Route path="/offers/social-proof" element={<LazyRoute><SocialProofPage /></LazyRoute>} />
+                      <Route path="/offers/newsletter" element={<LazyRoute><NewsletterPage /></LazyRoute>} />
+                      <Route path="/offers/referrals" element={<LazyRoute><ReferralLinksPage /></LazyRoute>} />
+                      <Route path="/offers/feed" element={<LazyRoute><ProductFeedPage /></LazyRoute>} />
+                      <Route path="/shipping" element={<LazyRoute><ShippingTaxPage /></LazyRoute>} />
+                      <Route path="/payments" element={<LazyRoute><PaymentsPage /></LazyRoute>} />
+                      <Route path="/website" element={<LazyRoute><WebsitePage /></LazyRoute>} />
                       <Route path="/funnels" element={<LazyRoute><FunnelsPage /></LazyRoute>} />
                       <Route path="/analytics" element={<LazyRoute><ReportsPage /></LazyRoute>} />
                       {/* The store reports (tax, stock value, slow stock, order times…): only while switched on (lib/features). */}
@@ -251,7 +262,7 @@ export default function App() {
                         path="/analytics/funnels/:funnelId"
                         element={<LazyRoute><FunnelAnalyticsPage /></LazyRoute>}
                       />
-                      <Route path="/subscription" element={<SubscriptionPage />} />
+                      <Route path="/subscription" element={<LazyRoute><SubscriptionPage /></LazyRoute>} />
                       <Route path="/settlements" element={<LazyRoute><SettlementsPage /></LazyRoute>} />
                       <Route path="/inbox" element={<LazyRoute><InboxPage /></LazyRoute>} />
                       <Route path="/automations" element={<LazyRoute><AutomationsPage /></LazyRoute>} />
@@ -265,17 +276,17 @@ export default function App() {
                       <Route path="/inbox/bot" element={AI_ENABLED ? <LazyRoute><WaBotPage /></LazyRoute> : <Navigate to="/" replace />} />
                       <Route path="/store-settings" element={<LazyRoute><StoreDesignPage /></LazyRoute>} />
                       <Route path="/store-settings/:tab" element={<LazyRoute><StoreDesignPage /></LazyRoute>} />
-                      <Route path="/settings" element={<SettingsPage />} />
+                      <Route path="/settings" element={<LazyRoute><SettingsPage /></LazyRoute>} />
                       <Route path="/activity" element={<LazyRoute><ActivityLogPage /></LazyRoute>} />
-                      <Route path="/support" element={<SupportPage />} />
-                      <Route path="/support/:ticketId" element={<SupportTicketPage />} />
-                      <Route path="/suggestions" element={<SuggestionsPage />} />
-                      <Route path="*" element={<NotFoundPage />} />
+                      <Route path="/support" element={<LazyRoute><SupportPage /></LazyRoute>} />
+                      <Route path="/support/:ticketId" element={<LazyRoute><SupportTicketPage /></LazyRoute>} />
+                      <Route path="/suggestions" element={<LazyRoute><SuggestionsPage /></LazyRoute>} />
+                      <Route path="*" element={<LazyRoute><NotFoundPage /></LazyRoute>} />
                     </Route>
 
                     {/* Full-screen editors: their own bar instead of the sidebar,
                         still under the access banner (EditorLayout). */}
-                    <Route element={<EditorLayout />}>
+                    <Route element={<LazyRoute screen><EditorLayout /></LazyRoute>}>
                       <Route path="/website/:websiteId/edit" element={<LazyRoute><WebsiteEditorPage /></LazyRoute>} />
                       <Route path="/funnels/:funnelId" element={<LazyRoute><FunnelEditorPage /></LazyRoute>} />
                     </Route>
