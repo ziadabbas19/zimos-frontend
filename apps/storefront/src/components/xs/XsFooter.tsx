@@ -10,6 +10,7 @@ import { PoweredByZimos, brandingRemoved } from "@/components/PoweredByZimos";
 import { ShellLink } from "@/components/ShellLink";
 import { SocialLinks } from "@/components/SocialLinks";
 import { StoreLink } from "@/components/StoreRoute";
+import { StoreRatingBadge, storeRatingOf } from "@/components/reviews/StoreRatingBadge";
 import { pageAndPolicyGroups } from "@/lib/footerLinks";
 import { getDictionary, type Locale } from "@/lib/i18n";
 import { resolveShellLinks, type ResolvedShellLink } from "@/lib/storeShell";
@@ -84,6 +85,13 @@ export function XsFooter({ store, locale, year, look }: { store: StorefrontMeta;
   // Its own sizes and column widths, per screen: a small stylesheet of their own (./shellSizes).
   const sizeCss = footerSizeCss(footer.sizes) + footerWidthCss(columns, pageGroups.length);
   const ar = locale === "ar";
+  // The store's own stars in the bottom row, just before ZIMOS's line, linking to its reviews page; in the
+  // footer's own colour (the look's or the merchant's), and nothing before the first counted review.
+  const ratingPart = storeRatingOf(store) ? (
+    <span className="xs-part" data-xs-part="rating">
+      <StoreRatingBadge store={store} locale={locale} />
+    </span>
+  ) : null;
 
   const linkList = (links: ResolvedShellLink[]) => (
     <ul>
@@ -241,17 +249,22 @@ export function XsFooter({ store, locale, year, look }: { store: StorefrontMeta;
               {creditLine}
             </Fragment>
           ) : part.type === "powered" ? (
-            !brandingRemoved(store) && (
-              <span key={part.id} className="xs-part" data-xs-part={part.id}>
-                <PoweredByZimos label={t.footer.poweredBy} />
-              </span>
-            )
+            <Fragment key={part.id}>
+              {ratingPart}
+              {!brandingRemoved(store) && (
+                <span className="xs-part" data-xs-part={part.id}>
+                  <PoweredByZimos label={t.footer.poweredBy} />
+                </span>
+              )}
+            </Fragment>
           ) : (
             <p key={part.id} data-xs-part={part.id}>
               {part.label}
             </p>
           )
         )}
+        {/* No ZIMOS line in this bottom row: the stars come last. */}
+        {!bottom.some((part) => part.type === "powered") && ratingPart}
       </div>
     </footer>
   );
