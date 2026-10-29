@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@store-builder/ui";
-import { menuOptionsLabel, type Order, type ShippingRule } from "@store-builder/api-client";
+import { menuOptionsLabel, type Order, type OrderItem, type ShippingRule } from "@store-builder/api-client";
 import { formatMoney, formatOptions } from "@/lib/format";
 import { providerName } from "@/lib/providers";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
@@ -23,6 +23,9 @@ const STRINGS = {
     sku: "SKU",
     bumpBadge: "Checkout add-on",
     upsellBadge: "Extra offer",
+    combo: "Combo: {name}",
+    comboUnnamed: "Combo",
+    comboSaving: "Combo saving: − {amount}",
     linkedOrders: "Extra offers placed as separate orders",
     linkedOrdersHint: "The customer took these funnel offers after this order had left its offers window. They ship free of charge.",
     linkedFrom: "A funnel offer taken after order {order}; its shipping is free.",
@@ -66,6 +69,9 @@ const STRINGS = {
     sku: "SKU",
     bumpBadge: "إضافة عند الدفع",
     upsellBadge: "عرض إضافي",
+    combo: "باقة: {name}",
+    comboUnnamed: "باقة",
+    comboSaving: "توفير الباقة: − {amount}",
     linkedOrders: "عروض إضافية في طلبات منفصلة",
     linkedOrdersHint: "قبِل العميل هذه العروض من مسار البيع بعد انتهاء نافذة العروض لهذا الطلب. تُشحن بدون رسوم شحن.",
     linkedFrom: "عرض إضافي من مسار البيع بعد الطلب {order}، وشحنه مجاني.",
@@ -101,6 +107,44 @@ const STRINGS = {
   },
 } satisfies Messages;
 
+interface LineGroup {
+  key: string;
+  /** null: ordinary lines, as they always were. */
+  comboKey: string | null;
+  name: string | null;
+  /** The combo's saving: what the server took off its lines (line_discount_amount). */
+  saving: number;
+  items: OrderItem[];
+}
+
+/**
+ * The order's lines in their order, the lines of one combo bought once
+ * (sharing a comboKey) gathered where its first line is. An order without a
+ * combo is one group holding every line.
+ */
+function lineGroups(items: readonly OrderItem[]): LineGroup[] {
+  const groups: LineGroup[] = [];
+  const combos = new Map<string, LineGroup>();
+  for (const item of items) {
+    const comboKey = item.comboKey ?? null;
+    if (comboKey) {
+      let group = combos.get(comboKey);
+      if (!group) {
+        group = { key: `combo:${comboKey}`, comboKey, name: item.comboNameSnapshot ?? null, saving: 0, items: [] };
+        combos.set(comboKey, group);
+        groups.push(group);
+      }
+      group.items.push(item);
+      group.saving += Number(item.lineDiscountAmount) || 0;
+      continue;
+    }
+    const last = groups[groups.length - 1];
+    if (last && last.comboKey === null) last.items.push(item);
+    else groups.push({ key: `lines:${item.id}`, comboKey: null, name: null, saving: 0, items: [item] });
+  }
+  return groups;
+}
+
 function AmountRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <div className={"flex justify-between gap-4 " + (strong ? "text-ink font-medium" : "text-ink-soft")}>
@@ -123,6 +167,45 @@ export function OrderSummary({ order, onChanged }: { order: Order; onChanged?: (
         .filter((part) => Boolean(part) && !isHidden(part))
         .join(t.listSep)
     : t.noAddress;
+
+  // A combo's lines sit a step in under its heading.
+  const itemRow = (item: OrderItem, inCombo: boolean) => (
+    <tr key={item.id} className="border-b border-line last:border-0 align-top">
+      <td className={inCombo ? "py-2 ps-3 pe-3" : "py-2 pe-3"}>
+        <div className="font-medium text-ink">{item.productNameSnapshot}</div>
+        {(item.isOrderBump || item.isUpsell) && (
+          <span className="mt-1 inline-flex rounded-full bg-primary-soft px-2 py-0.5 text-xs font-medium text-primary-dark dark:text-primary">
+            {item.isUpsell ? t.upsellBadge : t.bumpBadge}
+          </span>
+        )}
+        {formatOptions(item.variantOptionsSnapshot) && (
+          <div className="text-xs text-ink-soft">
+            {formatOptions(item.variantOptionsSnapshot)}
+          </div>
+        )}
+        {/* Menu options the line was sold with (Size, Extras). */}
+        {menuOptionsLabel(item.optionsSnapshot) && (
+          <div className="text-xs font-medium text-ink">{menuOptionsLabel(item.optionsSnapshot)}</div>
+        )}
+        {item.offerNameSnapshot && (
+          <div className="text-xs text-ink-soft">
+            {t.offer}: {item.offerNameSnapshot}
+          </div>
+        )}
+        {item.skuSnapshot && (
+          <div className="text-xs text-ink-soft">
+            {t.sku}: <bdi dir="ltr">{item.skuSnapshot}</bdi>
+          </div>
+        )}
+        <CustomizationList customizations={item.customizations} className="mt-2" currency={c} />
+        {/* Sold beyond stock as a pre-order: when it ships (lib/features). */}
+        {PREORDERS_ENABLED && <PreorderLineNote item={item} />}
+      </td>
+      <td className="py-2 pe-3 text-ink-soft">{item.quantity}</td>
+      <td className="py-2 pe-3 text-ink-soft">{formatMoney(item.unitPriceAmount, c)}</td>
+      <td className="py-2 text-end text-ink-soft">{formatMoney(item.lineTotalAmount, c)}</td>
+    </tr>
+  );
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -148,45 +231,30 @@ export function OrderSummary({ order, onChanged }: { order: Order; onChanged?: (
                   </th>
                 </tr>
               </thead>
-              <tbody>
-                {order.items.map((item) => (
-                  <tr key={item.id} className="border-b border-line last:border-0 align-top">
-                    <td className="py-2 pe-3">
-                      <div className="font-medium text-ink">{item.productNameSnapshot}</div>
-                      {(item.isOrderBump || item.isUpsell) && (
-                        <span className="mt-1 inline-flex rounded-full bg-primary-soft px-2 py-0.5 text-xs font-medium text-primary-dark dark:text-primary">
-                          {item.isUpsell ? t.upsellBadge : t.bumpBadge}
-                        </span>
-                      )}
-                      {formatOptions(item.variantOptionsSnapshot) && (
-                        <div className="text-xs text-ink-soft">
-                          {formatOptions(item.variantOptionsSnapshot)}
+              {lineGroups(order.items).map((group) =>
+                group.comboKey === null ? (
+                  <tbody key={group.key} className="border-line [&:not(:first-of-type)]:border-t">
+                    {group.items.map((item) => itemRow(item, false))}
+                  </tbody>
+                ) : (
+                  // One combo bought once: its lines under its name, its saving already in their totals.
+                  <tbody key={group.key} data-slot="order-combo" className="border-line [&:not(:first-of-type)]:border-t">
+                    <tr className="border-b border-line">
+                      <th scope="rowgroup" colSpan={4} className="py-2 text-start font-medium">
+                        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
+                          <span className="min-w-0 text-ink">
+                            <bdi>{group.name ? fmt(t.combo, { name: group.name }) : t.comboUnnamed}</bdi>
+                          </span>
+                          {group.saving > 0 && (
+                            <span className="text-xs text-success tabular-nums">{fmt(t.comboSaving, { amount: formatMoney(String(group.saving), c) })}</span>
+                          )}
                         </div>
-                      )}
-                      {/* Menu options the line was sold with (Size, Extras). */}
-                      {menuOptionsLabel(item.optionsSnapshot) && (
-                        <div className="text-xs font-medium text-ink">{menuOptionsLabel(item.optionsSnapshot)}</div>
-                      )}
-                      {item.offerNameSnapshot && (
-                        <div className="text-xs text-ink-soft">
-                          {t.offer}: {item.offerNameSnapshot}
-                        </div>
-                      )}
-                      {item.skuSnapshot && (
-                        <div className="text-xs text-ink-soft">
-                          {t.sku}: <bdi dir="ltr">{item.skuSnapshot}</bdi>
-                        </div>
-                      )}
-                      <CustomizationList customizations={item.customizations} className="mt-2" currency={c} />
-                      {/* Sold beyond stock as a pre-order: when it ships (lib/features). */}
-                      {PREORDERS_ENABLED && <PreorderLineNote item={item} />}
-                    </td>
-                    <td className="py-2 pe-3 text-ink-soft">{item.quantity}</td>
-                    <td className="py-2 pe-3 text-ink-soft">{formatMoney(item.unitPriceAmount, c)}</td>
-                    <td className="py-2 text-end text-ink-soft">{formatMoney(item.lineTotalAmount, c)}</td>
-                  </tr>
-                ))}
-              </tbody>
+                      </th>
+                    </tr>
+                    {group.items.map((item) => itemRow(item, true))}
+                  </tbody>
+                )
+              )}
             </table>
           </div>
 
