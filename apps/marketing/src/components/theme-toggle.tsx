@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore, type MouseEvent } from "react";
+import { animateThemeChange } from "@store-builder/ui/theme-reveal";
 import { useI18n } from "@/i18n/provider";
 import { Moon, Sun } from "./duo-icons";
 
@@ -83,10 +84,13 @@ export function ThemeToggle({ className = "lz-top__icon" }: { className?: string
     emit();
   }, []);
 
+  // The new theme grows over the old one as a circle from where the button was pressed (@store-builder/ui/theme-reveal).
+  const onClick = useCallback((event: MouseEvent<HTMLButtonElement>) => animateThemeChange(event, toggle), [toggle]);
+
   const label = theme === "dark" ? dict.nav.switchToLight : dict.nav.switchToDark;
 
   return (
-    <button type="button" onClick={toggle} aria-label={label} title={label} className={className}>
+    <button type="button" onClick={onClick} aria-label={label} title={label} className={className}>
       <span suppressHydrationWarning>{theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}</span>
     </button>
   );

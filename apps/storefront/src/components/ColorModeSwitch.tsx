@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
+import { animateThemeChange } from "@store-builder/ui/theme-reveal";
 import { COLOR_MODE_COOKIE } from "@/lib/colorModeCookie";
 import { useStore } from "@/lib/StoreContext";
 import type { ColorMode } from "@/lib/storeColorMode";
@@ -38,8 +39,11 @@ export function ColorModeSwitch({ mode, partId }: { mode: ColorMode; partId?: st
     startTransition(() => router.refresh());
   }
 
+  // The new look grows over the old one as a circle from where the button was pressed (@store-builder/ui/theme-reveal).
+  const onClick = (event: MouseEvent<HTMLButtonElement>) => animateThemeChange(event, toggle);
+
   return (
-    <button type="button" onClick={toggle} aria-label={label} title={label} className={iconBtn} data-xs-part={partId} data-color-mode-switch="">
+    <button type="button" onClick={onClick} aria-label={label} title={label} className={iconBtn} data-xs-part={partId} data-color-mode-switch="">
       {current === "dark" ? <SunIcon /> : <MoonIcon />}
     </button>
   );
