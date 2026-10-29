@@ -200,6 +200,8 @@ export default async function StoreLayout({
     xsPages: readXsStorePages(store.themeSettings),
     // The store's own words on its shop pages (lib/storeWords).
     words: readAllStoreWords(store.themeSettings),
+    // Whether the review forms show, and the store's stars (components/reviews).
+    reviews: store.reviews ?? null,
   };
   // GET /store/:workspaceId doesn't name a websiteId yet; read it defensively
   // so events carry it as soon as the API sends one.

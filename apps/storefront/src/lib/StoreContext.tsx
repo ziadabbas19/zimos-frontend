@@ -7,6 +7,7 @@ import { withStoreWords, type StoreWords } from "./storeWords";
 import type {
   CheckoutSettings,
   LegalPolicyKey,
+  StorefrontMeta,
   StorefrontOrderBump,
   ThankYouPageSettings,
   StorefrontHoliday,
@@ -54,6 +55,8 @@ export interface StoreInfo {
   xsPages?: XsStorePages | null;
   /** The store's own words on its shop pages, by language (lib/storeWords.ts). */
   words?: Record<string, StoreWords>;
+  /** Whether shoppers may send reviews now, and the store's own stars (GET /store/:ws `reviews`); absent from older APIs. */
+  reviews?: StorefrontMeta["reviews"] | null;
 }
 
 /** How a store that delivers itself takes orders (GET /store/:ws `delivery`). */
