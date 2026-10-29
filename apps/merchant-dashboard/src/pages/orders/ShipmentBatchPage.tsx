@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Alert, Button, cn, ZLoader } from "@store-builder/ui";
 import {
@@ -22,6 +22,7 @@ import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { apiClient } from "@/lib/apiClient";
 import { countOf } from "@/lib/plural";
 import { useAsync } from "@/lib/useAsync";
+import { useVisibleInterval } from "@/lib/useVisibleInterval";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useViewNavigate } from "@/lib/viewTransition";
 import { DeskList, DeskRow } from "@/pages/returns/rowkit/DeskList";
@@ -201,12 +202,8 @@ export function ShipmentBatchPage() {
   const data = batch.data;
   const running = data ? data.status !== "done" : false;
   const { refresh } = batch;
-  // Live while the queue works on it.
-  useEffect(() => {
-    if (!running) return;
-    const id = window.setInterval(() => void refresh({ silent: true }), 2000);
-    return () => window.clearInterval(id);
-  }, [running, refresh]);
+  // Live while the queue works on it, while the tab is in view (and at once on coming back).
+  useVisibleInterval(() => void refresh({ silent: true }), 2000, running);
 
   const courier = carriers.data?.carriers.find((c) => c.code === data?.carrierCode);
   const name = courier?.name ?? data?.carrierCode ?? "";

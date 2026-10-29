@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode, useRef } from "react";
+import { useState, type ReactNode, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Activity, Eye, Globe, MousePointerClick, Users } from "lucide-react";
 import { Card, cn } from "@store-builder/ui";
@@ -8,6 +8,7 @@ import { DataState } from "@/components/DataState";
 import { BarChart } from "@/components/charts";
 import { apiClient } from "@/lib/apiClient";
 import { useAsync } from "@/lib/useAsync";
+import { useVisibleInterval } from "@/lib/useVisibleInterval";
 import { LivePanel, useLiveView } from "./LiveView";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { formatCount } from "@/lib/analytics";
@@ -120,11 +121,8 @@ export function RealtimePage() {
   const live = useLiveView(workspaceId, funnelId);
   const frame = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (live.connected) return;
-    const id = setInterval(() => setTick((n) => n + 1), 10_000);
-    return () => clearInterval(id);
-  }, [live.connected]);
+  // Not while the tab is hidden; once on coming back.
+  useVisibleInterval(() => setTick((n) => n + 1), 10_000, !live.connected);
 
   const data = useAsync(() => apiClient.getWebAnalyticsRealtime(workspaceId), [workspaceId, tick]);
   const d = live.snapshot?.realtime ?? data.data;
