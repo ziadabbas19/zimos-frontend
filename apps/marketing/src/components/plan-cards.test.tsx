@@ -110,6 +110,92 @@ describe("the pay-per-order card", () => {
   });
 });
 
+/**
+ * Under a plan's yearly price: twelve monthly payments struck out and the
+ * year over twelve months, from the plan's own prices. Both sit in the block
+ * the yearly switch shows (CSS, so jsdom keeps both blocks): the monthly one
+ * holds neither.
+ */
+describe("the yearly price", () => {
+  const YEARLY_BLOCK = "group-has-[.cycle-yearly:checked]/pricing:block";
+  // Intl puts a no-break space in a price; getByText reads text with its spaces collapsed.
+  const perMonthText = (text: string) => text.replace(/\s+/g, " ");
+  const blocks = (li: HTMLElement) => ({
+    monthly: li.querySelector<HTMLElement>('[class*="group-has-[.cycle-yearly:checked]/pricing:hidden"]')!,
+    yearly: li.querySelector<HTMLElement>(`[class*="${YEARLY_BLOCK}"]`)!,
+  });
+
+  it("strikes the year at the monthly price and says what it comes to a month, on yearly only (en)", () => {
+    renderCards("en", null, [{ ...plan("a"), monthlyPrice: 31900, yearlyPrice: 319000 }]);
+    const { monthly, yearly } = blocks(card("Plan a"));
+    expect(yearly.className).toMatch(/(^| )hidden( |$)/);
+
+    expect(yearly.textContent).toContain(`${formatPrice(319000, "EGP", "en")} / year`);
+    const struck = yearly.querySelector("s")!;
+    expect(struck.textContent).toBe(formatPrice(382800, "EGP", "en"));
+    expect(struck.textContent).toMatch(/3,828/);
+    expect(within(yearly).getByText(perMonthText(`= ${formatPrice(26600, "EGP", "en")} / month`))).toBeTruthy();
+    expect(formatPrice(26600, "EGP", "en")).toMatch(/266/);
+    // Read with what it stands for: the struck price is not the price.
+    expect(yearly.textContent).toContain("Instead of paying monthly for a year:");
+
+    expect(monthly.querySelector("s")).toBeNull();
+    expect(monthly.textContent).not.toMatch(/= .* \/ month/);
+    expect(monthly.textContent).not.toContain(formatPrice(382800, "EGP", "en"));
+  });
+
+  it("writes the numbers as the rest of the page does in Arabic", () => {
+    renderCards("ar", null, [{ ...plan("a"), monthlyPrice: 31900, yearlyPrice: 319000 }]);
+    const { yearly } = blocks(card("Plan a"));
+    expect(yearly.querySelector("s")!.textContent).toBe(formatPrice(382800, "EGP", "ar"));
+    expect(formatPrice(382800, "EGP", "ar")).toMatch(/٣٬?٨٢٨/);
+    expect(within(yearly).getByText(perMonthText(`= ${formatPrice(26600, "EGP", "ar")} / شهر`))).toBeTruthy();
+  });
+
+  it("follows the plan's prices when the console changes them", () => {
+    renderCards("en", null, [{ ...plan("a"), monthlyPrice: 50000, yearlyPrice: 540000 }]);
+    const { yearly } = blocks(card("Plan a"));
+    expect(yearly.querySelector("s")!.textContent).toBe(formatPrice(600000, "EGP", "en"));
+    expect(within(yearly).getByText(perMonthText(`= ${formatPrice(45000, "EGP", "en")} / month`))).toBeTruthy();
+  });
+
+  it("strikes nothing and says no saving when yearly is not less than twelve months", () => {
+    renderCards("ar", null, [{ ...plan("a"), monthlyPrice: 10000, yearlyPrice: 120000 }]);
+    const { yearly } = blocks(card("Plan a"));
+    expect(yearly.querySelector("s")).toBeNull();
+    expect(within(yearly).getByText(perMonthText(`= ${formatPrice(10000, "EGP", "ar")} / شهر`))).toBeTruthy();
+    const switchLabel = screen.getByRole("radio", { name: /سنوي/ }).closest("label")!;
+    expect(switchLabel.textContent).toBe("سنوي");
+  });
+
+  it("says save on the switch while one plan saves, with no number", () => {
+    renderCards("en", null, [{ ...plan("a"), monthlyPrice: 10000, yearlyPrice: 120000 }, plan("b")]);
+    expect(screen.getByRole("radio", { name: "Yearly · Save" })).toBeTruthy();
+    // Plan a saves nothing: no struck price on it, while plan b has one.
+    expect(blocks(card("Plan a")).yearly.querySelector("s")).toBeNull();
+    expect(blocks(card("Plan b")).yearly.querySelector("s")).not.toBeNull();
+  });
+
+  it("no longer says two months free anywhere", () => {
+    for (const locale of ["ar", "en"] as const) {
+      const { container, unmount } = renderCards(locale, null);
+      expect(container.textContent).not.toMatch(/شهر[اي]ن مجان|months? free/i);
+      unmount();
+    }
+  });
+
+  it.each([
+    ["ar", getDictionary("ar")],
+    ["en", getDictionary("en")],
+  ])("is written with no number of its own (%s)", (_, dict) => {
+    const { yearly, yearlySave, fullYearLabel, perMonthEquivalent, yearlyEquivalent } = dict.pricing;
+    for (const text of [yearly, yearlySave, fullYearLabel, perMonthEquivalent, yearlyEquivalent]) {
+      expect(text).not.toMatch(/[0-9٠-٩]/);
+      expect(text).not.toMatch(/مجان|free/i);
+    }
+  });
+});
+
 describe("formatOrderCount", () => {
   it.each([
     [1, "طلب"],
