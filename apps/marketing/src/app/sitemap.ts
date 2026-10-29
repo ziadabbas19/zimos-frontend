@@ -12,6 +12,7 @@ const PAGES: Array<{ path: string; priority: number; lastModified?: string }> = 
   { path: "/terms", priority: 0.5, lastModified: POLICIES_LAST_UPDATED },
   { path: "/privacy", priority: 0.5, lastModified: POLICIES_LAST_UPDATED },
   { path: "/contact", priority: 0.6 },
+  { path: "/credits", priority: 0.3 },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
