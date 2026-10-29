@@ -17,7 +17,7 @@ import { StoreInfoCards } from "@/components/StoreInfoCards";
 import { ProductJsonLd } from "@/components/product/ProductJsonLd";
 import { canonicalOrigin } from "@/lib/domains";
 import { ProductContent } from "@/components/product/ProductContent";
-import { storefrontProductReviews } from "@store-builder/api-client";
+import { storefrontExternalReviews, storefrontProductReviews } from "@store-builder/api-client";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { ArrowIcon } from "@/components/Icons";
 import { Faq } from "@/components/product/Faq";
@@ -262,7 +262,13 @@ export default async function ProductPage({ params }: { params: Params }) {
         )}
 
         {ps.reviews_enabled && (
-          <ProductReviews workspaceId={workspaceId} productId={product.id} {...storefrontProductReviews(product)} />
+          <ProductReviews
+            workspaceId={workspaceId}
+            productId={product.id}
+            {...storefrontProductReviews(product)}
+            // Brought from other sites by the merchant: shown apart, never in the stars.
+            externalReviews={storefrontExternalReviews(product)}
+          />
         )}
 
         <div className="zt-pdp-more mt-12 grid gap-10 lg:grid-cols-[1fr_24rem]">

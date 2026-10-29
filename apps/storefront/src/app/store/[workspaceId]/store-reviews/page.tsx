@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
-import { storefrontProductReviews, storefrontStoreReviews } from "@store-builder/api-client";
+import { storefrontExternalReviews, storefrontProductReviews, storefrontStoreReviews } from "@store-builder/api-client";
 import { StoreReviews } from "@/components/reviews/StoreReviews";
 import { REVIEW_TEXT, STORE_REVIEWS_PATH } from "@/components/reviews/reviewText";
 import { container } from "@/components/ui";
@@ -17,13 +17,15 @@ type Params = Promise<{ workspaceId: string }>;
 /**
  * The store's published reviews and its stars (GET /store/:ws/store-reviews),
  * once per request. Read the same way as a product's
- * (storefrontProductReviews), tolerating missing fields; null when the API
- * does not answer.
+ * (storefrontProductReviews), tolerating missing fields, with the reviews
+ * the merchant brought from other sites apart; null when the API does not
+ * answer.
  */
 const getStoreReviews = cache(async (workspaceId: string) => {
   const client = await createServerStorefrontApiClient();
   try {
-    return storefrontProductReviews(await storefrontStoreReviews(client, workspaceId));
+    const answer = await storefrontStoreReviews(client, workspaceId);
+    return { ...storefrontProductReviews(answer), externalReviews: storefrontExternalReviews(answer) };
   } catch {
     return null;
   }
@@ -51,13 +53,14 @@ export default async function StoreReviewsPage({ params }: { params: Params }) {
   // The page's own read first; the store's stars from its details when that read failed.
   const rating = found?.rating ?? store.reviews?.storeRating ?? { average: null, count: 0, distribution: {} };
   const reviews = found?.reviews ?? [];
+  const externalReviews = found?.externalReviews ?? [];
 
   return (
     <main className={`${container} flex-1 py-10 sm:py-14`}>
       <div className="mx-auto max-w-4xl">
         <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">{text.storeTitle}</h1>
         <p className="mt-2 text-sm text-ink-soft">{text.storeIntro(store.name)}</p>
-        <StoreReviews workspaceId={workspaceId} rating={rating} reviews={reviews} />
+        <StoreReviews workspaceId={workspaceId} rating={rating} reviews={reviews} externalReviews={externalReviews} />
       </div>
     </main>
   );

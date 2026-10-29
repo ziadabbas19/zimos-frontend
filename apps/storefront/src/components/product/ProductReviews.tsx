@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { type StorefrontRatingSummary, type StorefrontReview } from "@store-builder/api-client";
+import { type StorefrontExternalReview, type StorefrontRatingSummary, type StorefrontReview } from "@store-builder/api-client";
 import { useStore } from "@/lib/StoreContext";
 import { pickText } from "@/lib/i18n";
+import { ExternalReviews } from "../reviews/ExternalReviews";
 import { RatingSummary, ReviewCards } from "../reviews/ReviewBits";
 import { ReviewForm, useReviewLinkToken, useReviewsOpen } from "../reviews/ReviewForm";
 import { REVIEW_TEXT } from "../reviews/reviewText";
@@ -19,6 +20,9 @@ import { btnSecondary } from "../ui";
  *
  * The store's review request links here as `?review=<token>#reviews`: the
  * form then opens by itself and the review is tied to that order.
+ *
+ * Reviews the merchant brought from other sites follow in their own block
+ * (ExternalReviews): never verified, never in the stars.
  */
 
 export function ProductReviews({
@@ -26,12 +30,15 @@ export function ProductReviews({
   productId,
   rating,
   reviews,
+  externalReviews = [],
   formOnly = false,
 }: {
   workspaceId: string;
   productId: string;
   rating: StorefrontRatingSummary;
   reviews: StorefrontReview[];
+  /** Brought from other sites (storefrontExternalReviews): shown apart, after the shoppers' reviews. */
+  externalReviews?: StorefrontExternalReview[];
   /** The builder's review_form element: the form alone, and nothing while the store takes no reviews. */
   formOnly?: boolean;
 }) {
@@ -81,12 +88,16 @@ export function ProductReviews({
           <RatingSummary rating={rating} />
         </div>
       ) : (
-        reviews.length === 0 && (
+        reviews.length === 0 &&
+        // With reviews from other sites below, not "no reviews yet": only the invitation, while open.
+        (externalReviews.length === 0 ? (
           <p className="mt-4 text-sm text-ink-soft">
             {text.none}
             {open && ` ${text.beFirst}`}
           </p>
-        )
+        ) : (
+          open && <p className="mt-4 text-sm text-ink-soft">{text.beFirst}</p>
+        ))
       )}
 
       {reviews.length > 0 && (
@@ -94,6 +105,8 @@ export function ProductReviews({
           <ReviewCards reviews={reviews} />
         </div>
       )}
+
+      <ExternalReviews reviews={externalReviews} className="mt-8" />
     </section>
   );
 }
