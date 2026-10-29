@@ -1,8 +1,8 @@
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionary";
-import { formatDays, formatNumber, formatPrice } from "@/lib/format";
-import type { PublicPlan } from "@/lib/plans";
-import { REGISTER_URL, registerUrlFor } from "@/lib/urls";
+import { formatDays, formatNumber, formatOrderCount, formatPrice } from "@/lib/format";
+import type { PayPerOrderPlan, PublicPlan } from "@/lib/plans";
+import { REGISTER_URL, registerUrlFor, registerUrlForPayPerOrder } from "@/lib/urls";
 import { CheckIcon } from "./icons";
 import { btnPrimary, btnSecondary } from "./ui";
 
@@ -24,9 +24,13 @@ const WHEN_YEARLY_BLOCK = "hidden group-has-[.cycle-yearly:checked]/pricing:bloc
  *
  * `compact` (the home page) leaves out the limits and features; the pricing
  * page shows everything.
+ *
+ * `payPerOrder`, when the API sends that plan, is one more card, last: beside
+ * the others while there are fewer than three, a wide one under them after.
  */
 export function PlanCards({
   plans,
+  payPerOrder = null,
   copy,
   locale,
   idPrefix,
@@ -34,6 +38,7 @@ export function PlanCards({
   headingLevel = 3,
 }: {
   plans: PublicPlan[];
+  payPerOrder?: PayPerOrderPlan | null;
   copy: Copy;
   locale: Locale;
   /** Unique per instance on a page: the switch's inputs are found by id. */
@@ -47,6 +52,7 @@ export function PlanCards({
   const yearlyId = `${idPrefix}-yearly`;
   const limit = (value: number | null) => (value === null ? copy.unlimited : formatNumber(value, locale));
   const showYearly = plans.some((plan) => plan.yearlyPrice > 0);
+  const cards = plans.length + (payPerOrder ? 1 : 0);
 
   return (
     <div className="group/pricing">
@@ -71,7 +77,7 @@ export function PlanCards({
         </fieldset>
       ) : null}
 
-      <ul className={`mx-auto mt-10 grid max-w-6xl gap-4 lg:gap-6 ${plans.length >= 3 ? "lg:grid-cols-3" : plans.length === 2 ? "md:grid-cols-2 md:max-w-4xl" : "max-w-md"}`}>
+      <ul className={`mx-auto mt-10 grid max-w-6xl gap-4 lg:gap-6 ${cards >= 3 ? "lg:grid-cols-3" : cards === 2 ? "md:grid-cols-2 md:max-w-4xl" : "max-w-md"}`}>
         {plans.map((plan) => {
           const free = plan.monthlyPrice === 0;
           const whenMonthly = showYearly ? WHEN_MONTHLY : "";
@@ -160,8 +166,88 @@ export function PlanCards({
             </li>
           );
         })}
+        {payPerOrder ? (
+          <PayPerOrderCard
+            plan={payPerOrder}
+            copy={copy}
+            locale={locale}
+            idPrefix={idPrefix}
+            PlanHeading={PlanHeading}
+            wide={plans.length >= 3}
+          />
+        ) : null}
       </ul>
     </div>
+  );
+}
+
+/**
+ * The pay-per-order plan: its fee for one order and the free orders a store
+ * starts with, both from the plan; when the fee is taken, as the API says;
+ * a balance that never expires (the API's wallet has no expiry). Its button
+ * goes to the same sign-up, and the plan is chosen in My Plan after it.
+ * `wide` spans the grid's row, the facts beside the price from `lg` up.
+ */
+function PayPerOrderCard({
+  plan,
+  copy,
+  locale,
+  idPrefix,
+  PlanHeading,
+  wide,
+}: {
+  plan: PayPerOrderPlan;
+  copy: Copy;
+  locale: Locale;
+  idPrefix: string;
+  PlanHeading: "h2" | "h3";
+  wide: boolean;
+}) {
+  const t = copy.payPerOrder;
+  const headingId = `${idPrefix}-plan-${plan.id}`;
+  const facts = [plan.feeChargedAt === "confirmation" ? t.feeAtConfirmation : t.feeAtPlacement, t.noExpiry, t.topUp];
+
+  return (
+    <li
+      aria-labelledby={headingId}
+      className={`relative flex flex-col overflow-hidden rounded-3xl border border-line bg-paper-raised p-6 sm:p-8 ${wide ? "col-span-full lg:grid lg:grid-cols-2 lg:items-center lg:gap-x-10" : ""}`}
+    >
+      <div>
+        <p className="inline-flex rounded-full bg-primary-soft px-3 py-1 text-xs font-semibold text-primary-dark dark:text-primary">{t.badge}</p>
+        <PlanHeading id={headingId} className="mt-3 text-xl font-bold text-ink">
+          {plan.name}
+        </PlanHeading>
+        <p className="mt-2 text-sm leading-relaxed text-ink-soft">{t.tagline}</p>
+
+        <div className="mt-4">
+          <p className="text-3xl font-bold text-ink">
+            {formatPrice(plan.feePerOrder, plan.currency, locale)}{" "}
+            <span className="text-base font-medium text-ink-soft">{t.perOrder}</span>
+          </p>
+          {plan.freeOrders > 0 ? (
+            <p className="mt-2 text-sm font-medium text-primary-dark dark:text-primary">
+              {t.freeOrders.replace("{orders}", formatOrderCount(plan.freeOrders, locale))}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="mt-6">
+          <a href={registerUrlForPayPerOrder(plan.id)} className={`${btnPrimary} h-11 w-full px-5 text-sm ${wide ? "lg:w-auto lg:min-w-56" : ""}`}>
+            {t.cta}
+          </a>
+          <p className="mt-3 text-xs leading-relaxed text-ink-soft">{t.howToChoose}</p>
+        </div>
+      </div>
+
+      <ul className={`mt-6 space-y-3 border-t border-line pt-6 ${wide ? "lg:mt-0 lg:border-t-0 lg:border-s lg:pt-0 lg:ps-10" : ""}`}>
+        {facts.map((fact) => (
+          <li key={fact} className="flex gap-3 text-sm text-ink-soft">
+            <CheckIcon width="1.1rem" height="1.1rem" className="mt-px shrink-0 text-primary" />
+            <span className="leading-relaxed">{fact}</span>
+          </li>
+        ))}
+      </ul>
+    </li>
   );
 }
 

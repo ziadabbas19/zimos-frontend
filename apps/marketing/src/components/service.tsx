@@ -6,10 +6,11 @@ const POINT_ICON: ColorIconName[] = ["receipt", "store", "vault", "lock"];
 
 /**
  * What ZIMOS is and what is sold, in plain words: a SaaS platform for
- * building online stores, paid for as a monthly or yearly subscription.
+ * building online stores, paid for as a monthly or yearly subscription —
+ * or per order, while the pricing page shows that plan (`payPerOrder`).
  * Under the prices on the pricing page.
  */
-export function Service({ copy }: { copy: Dictionary["service"] }) {
+export function Service({ copy, payPerOrder = false }: { copy: Dictionary["service"]; payPerOrder?: boolean }) {
   return (
     <section className="lz-sec lz-sec--line" id="service" aria-labelledby="service-heading">
       <div className="lz-in">
@@ -18,7 +19,7 @@ export function Service({ copy }: { copy: Dictionary["service"] }) {
           <h2 className="lz-h" id="service-heading">
             {copy.heading}
           </h2>
-          <p className="lz-lede">{copy.body}</p>
+          <p className="lz-lede">{payPerOrder ? copy.bodyWithPayPerOrder : copy.body}</p>
         </header>
 
         <div className="lz-trust lz-r">
@@ -29,7 +30,7 @@ export function Service({ copy }: { copy: Dictionary["service"] }) {
                   <ColorIcon name={POINT_ICON[i]} size={28} />
                 </span>
                 <h3>{point.title}</h3>
-                <p>{point.body}</p>
+                <p>{payPerOrder && point.withPayPerOrder ? point.withPayPerOrder : point.body}</p>
               </article>
             );
           })}
