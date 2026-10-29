@@ -5,6 +5,7 @@ import { Select } from "@/components/Select";
 import { Textarea } from "@/components/Textarea";
 import { ImageField } from "./ImageField";
 import { useEditorLocale } from "./editorLocale";
+import { plainText } from "./plainText";
 import { ProductPickerField } from "./ProductPickerField";
 import { VideoField } from "./VideoField";
 import { ChoiceField, NumberField } from "./inspector/controls";
@@ -29,7 +30,8 @@ import { inspectorNumber, inspectorUi } from "./inspector/strings";
  */
 
 export type ItemSubField =
-  | { key: string; label: string; labelAr: string; kind: "text" | "textarea" | "image" | "lines"; ltr?: boolean }
+  // `plain` and `maxLength` (words only): as on an element's own field (blocks.ts FieldSpec, plainText.ts).
+  | { key: string; label: string; labelAr: string; kind: "text" | "textarea" | "image" | "lines"; ltr?: boolean; plain?: boolean; maxLength?: number }
   // Picked from the catalogue, stored as the product's id (ProductPickerField.tsx).
   | { key: string; label: string; labelAr: string; kind: "product" }
   | {
@@ -257,6 +259,7 @@ export function ItemListField({
       );
     }
     const dir = slot?.dir ?? (field.ltr ? "ltr" : "auto");
+    const typed = (v: string) => (field.plain ? plainText(v) : v);
     if (field.kind === "textarea" || field.kind === "lines") {
       return (
         <div key={field.key} className="space-y-1.5">
@@ -267,13 +270,14 @@ export function ItemListField({
             id={id}
             rows={3}
             dir={dir}
+            maxLength={field.maxLength}
             value={field.kind === "lines" ? lines(item[field.key]) : str(item[field.key])}
             onChange={(e) =>
               patch(
                 i,
                 field.key,
                 // One line per entry; blank lines are kept while typing and dropped by the storefront.
-                field.kind === "lines" ? e.target.value.split("\n") : e.target.value
+                field.kind === "lines" ? typed(e.target.value).split("\n") : typed(e.target.value)
               )
             }
           />
@@ -286,7 +290,7 @@ export function ItemListField({
         <Label htmlFor={id} className={hidden ? "sr-only" : undefined}>
           {name}
         </Label>
-        <Input id={id} dir={dir} value={str(item[field.key])} onChange={(e) => patch(i, field.key, e.target.value)} />
+        <Input id={id} dir={dir} maxLength={field.maxLength} value={str(item[field.key])} onChange={(e) => patch(i, field.key, typed(e.target.value))} />
         {link && <LinkTargetNote href={str(item[field.key])} onPick={(href) => patch(i, field.key, href)} />}
       </div>
     );
