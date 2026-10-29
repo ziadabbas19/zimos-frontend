@@ -15,7 +15,14 @@ import * as React from "react";
  * Assets are served from `public/brand/`:
  *   zimos-logo-light.png  full logo, for light surfaces
  *   zimos-logo-dark.png   full logo (white wordmark), for dark surfaces
+ *   zimos-logo-*.webp     the same two, lossless, 72 px tall: twice the
+ *                         tallest the site draws them (36 px, the header)
  *   zimos-mark-tile.png   icon-only mark on its app-icon tile
+ *
+ * Each lockup is a <picture>: browsers take the small WebP, the PNG stays for
+ * any that can't. React preloads a bare <img> it renders early on the page,
+ * not one inside a <picture>, so neither logo (the hidden one included) is
+ * preloaded ahead of the hero's picture.
  */
 
 const cn = (...classes: Array<string | undefined | false>) =>
@@ -51,20 +58,26 @@ export function ZimosLogo({
       role="img"
       aria-label={alt}
     >
-      <img
-        className="zimos-logo-on-light"
-        src={`${basePath}/zimos-logo-light.png`}
-        alt=""
-        draggable={false}
-        style={{ height }}
-      />
-      <img
-        className="zimos-logo-on-dark"
-        src={`${basePath}/zimos-logo-dark.png`}
-        alt=""
-        draggable={false}
-        style={{ height }}
-      />
+      <picture>
+        <source srcSet={`${basePath}/zimos-logo-light.webp`} type="image/webp" />
+        <img
+          className="zimos-logo-on-light"
+          src={`${basePath}/zimos-logo-light.png`}
+          alt=""
+          draggable={false}
+          style={{ height }}
+        />
+      </picture>
+      <picture>
+        <source srcSet={`${basePath}/zimos-logo-dark.webp`} type="image/webp" />
+        <img
+          className="zimos-logo-on-dark"
+          src={`${basePath}/zimos-logo-dark.png`}
+          alt=""
+          draggable={false}
+          style={{ height }}
+        />
+      </picture>
     </span>
   );
 }
