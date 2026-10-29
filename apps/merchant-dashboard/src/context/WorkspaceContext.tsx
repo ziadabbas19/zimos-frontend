@@ -2,9 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { BillingCycle, Workspace } from "@store-builder/api-client";
 import { getErrorMessage } from "@/lib/errors";
 import { apiClient } from "@/lib/apiClient";
+import { CURRENT_WORKSPACE_KEY } from "@/lib/currentWorkspace";
 import { useAuth } from "./AuthContext";
-
-const CURRENT_WORKSPACE_KEY = "sb.currentWorkspaceId";
 
 /**
  * The outcome of creating a store. `addressError` is set when the store was

@@ -1,3 +1,5 @@
+// The frame's reads in one request, sent before anything else is evaluated (lib/bootstrap).
+import './lib/bootstrapEarly'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import '@store-builder/ui/styles.css'
