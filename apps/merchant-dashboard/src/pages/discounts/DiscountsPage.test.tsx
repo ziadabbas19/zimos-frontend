@@ -8,8 +8,24 @@ import { DiscountsPage } from "./DiscountsPage";
 /**
  * The discount codes tab of the offers hub. The list, the form in a sheet and
  * the share link are new; what is sent to the API is what the old form sent,
- * plus the three numbers a "buy X get Y" discount needs to work at all.
+ * plus the three numbers a "buy X get Y" discount needs to work at all, the
+ * coupon's controls and its collections — and no longer `stackable`.
  */
+
+/** A new coupon's controls when the form leaves them alone: the old behaviour, with the strict count on. */
+const NEW_CONTROLS = {
+  audience: "any",
+  customerPhones: [],
+  vipTierIds: [],
+  schedule: null,
+  maxDiscountAmount: null,
+  minQuantity: null,
+  excludedProductIds: [],
+  appliesToShipping: false,
+  appliesToDiscounted: true,
+  combinesWithOffers: true,
+  strictCustomerLimit: true,
+};
 
 function discount(over: Partial<Discount>): Discount {
   return fake<Discount>({
@@ -74,7 +90,7 @@ describe("the discount codes tab", () => {
     expect(screen.queryByText(/Results for/)).not.toBeInTheDocument();
   });
 
-  it("creates a percentage code with exactly what the old form sent", async () => {
+  it("creates a percentage code with the old form's fields, active, and the controls left alone", async () => {
     serve([discount({})]);
     api.createDiscount.mockResolvedValue(discount({ id: "d9", code: "EID15", value: "1500" }));
     const { user } = renderWithProviders(<DiscountsPage />, { route: "/discounts" });
@@ -91,8 +107,10 @@ describe("the discount codes tab", () => {
     await waitFor(() => expect(api.createDiscount).toHaveBeenCalledTimes(1));
     expect(api.createDiscount).toHaveBeenCalledWith("ws_1", {
       type: "percentage",
-      stackable: false,
+      status: "active",
       productRestrictions: [],
+      collectionRestrictions: [],
+      ...NEW_CONTROLS,
       code: "EID15",
       value: 1500,
       minimumSubtotal: 20000,
@@ -123,11 +141,14 @@ describe("the discount codes tab", () => {
       value: 7500,
       minimumSubtotal: 30000,
       productRestrictions: [],
+      collectionRestrictions: [],
       startsAt: null,
       endsAt: null,
       usageLimit: null,
       perCustomerLimit: null,
-      stackable: false,
+      // Stored before the controls: the server's old behaviour, sent back as it is.
+      ...NEW_CONTROLS,
+      strictCustomerLimit: false,
     });
   });
 
@@ -155,8 +176,10 @@ describe("the discount codes tab", () => {
     await waitFor(() => expect(api.createDiscount).toHaveBeenCalledTimes(1));
     expect(api.createDiscount).toHaveBeenCalledWith("ws_1", {
       type: "buy_x_get_y",
-      stackable: false,
+      status: "active",
       productRestrictions: [],
+      collectionRestrictions: [],
+      ...NEW_CONTROLS,
       code: "B2G1",
       buyXGetYConfig: { buyQuantity: 3, getQuantity: 1, getDiscountBasisPoints: 10000 },
     });

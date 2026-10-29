@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { IconCopy, IconDownload, IconMagic } from "@/components/icons";
+import { useId, useState } from "react";
+import { IconCaretDown, IconCopy, IconDownload, IconMagic } from "@/components/icons";
 import { Alert, Button, Label } from "@store-builder/ui";
 import { couponsBulkGenerate, type CouponBulkPayload, type CouponBulkResult } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
+import { useWorkspace } from "@/context/WorkspaceContext";
 import { useErrorMessage } from "@/lib/errorMessages";
 import { majorToMinor, percentToBasisPoints } from "@/lib/format";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
@@ -11,12 +12,28 @@ import { Modal } from "@/components/Modal";
 import { Select } from "@/components/Select";
 import { TextField } from "@/components/Field";
 import { useToast } from "@/components/Toast";
+import { readControls } from "@/pages/offers/hub/couponControls";
+import {
+  AudienceFields,
+  CONTROL_STRINGS,
+  CoverageSwitches,
+  ExcludedProductsField,
+  FormSection,
+  MaxDiscountField,
+  MinQuantityField,
+  ScheduleFields,
+  StrictLimitSwitch,
+  controlsMessages,
+  useCouponControls,
+} from "@/pages/offers/hub/CouponControlFields";
 
 /**
  * Bulk code generation: many random codes with one set of rules,
  * for a campaign where each influencer or customer gets a code of their own.
  * The result is shown once here to copy or download; the codes are ordinary
- * discounts afterwards and appear in the list.
+ * discounts afterwards and appear in the list. «قواعد إضافية» holds the same
+ * controls as one coupon's form (who, the weekly hours, what it leaves out,
+ * the cap, the minimum quantity, the strict per-customer count).
  */
 
 const STRINGS = {
@@ -98,9 +115,15 @@ export function BulkCodesButton({ onGenerated }: { onGenerated: () => void }) {
 
 function BulkCodesDialog({ onClose, onGenerated }: { onClose: () => void; onGenerated: () => void }) {
   const t = useT(STRINGS);
+  const tc = useT(CONTROL_STRINGS);
   const workspaceId = useWorkspaceId();
   const toast = useToast();
   const errorMessage = useErrorMessage();
+  const controls = useCouponControls();
+  const currency = useWorkspace().currentWorkspace?.defaultCurrency ?? "EGP";
+  const moreId = useId();
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [ruleErrors, setRuleErrors] = useState<Record<string, string>>({});
   const [count, setCount] = useState("20");
   const [prefix, setPrefix] = useState("");
   const [type, setType] = useState<CodeType>("percentage");
@@ -130,6 +153,15 @@ function BulkCodesDialog({ onClose, onGenerated }: { onClose: () => void; onGene
       const min = majorToMinor(minimum);
       if (Number.isFinite(min) && min > 0) payload.minimumSubtotal = min;
     }
+    const rules = readControls(controls.draft, type, false);
+    const messages = controlsMessages(rules.problems, tc);
+    setRuleErrors(messages);
+    const firstProblem = Object.values(messages)[0];
+    if (firstProblem) {
+      setMoreOpen(true);
+      return setError(firstProblem);
+    }
+    Object.assign(payload, rules.payload);
     setBusy(true);
     setError(null);
     try {
@@ -242,6 +274,42 @@ function BulkCodesDialog({ onClose, onGenerated }: { onClose: () => void; onGene
           <TextField label={t.minimum} hint={t.minimumHint} type="number" inputMode="decimal" min={0} dir="ltr" value={minimum} disabled={busy} onChange={(e) => setMinimum(e.target.value)} />
           <TextField label={t.usage} hint={t.usageHint} type="number" inputMode="numeric" min={1} value={usage} disabled={busy} onChange={(e) => setUsage(e.target.value)} />
         </div>
+
+        <div className="border-t border-line pt-3">
+          <button
+            type="button"
+            aria-expanded={moreOpen}
+            aria-controls={moreId}
+            onClick={() => setMoreOpen((open) => !open)}
+            className="flex min-h-11 w-full cursor-pointer items-center gap-2 rounded-[0.625rem] text-start focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-ink">{tc.moreRules}</span>
+              <span className="block text-xs text-ink-soft">{tc.moreRulesHint}</span>
+            </span>
+            <IconCaretDown className={`size-4 shrink-0 text-ink-soft ${moreOpen ? "rotate-180" : ""}`} aria-hidden />
+          </button>
+          {moreOpen && (
+            <div id={moreId} className="space-y-4 pt-2">
+              <FormSection title={tc.sectionWhen}>
+                <ScheduleFields controls={controls} error={ruleErrors.schedule} />
+              </FormSection>
+              <FormSection title={tc.sectionOnWhat}>
+                <ExcludedProductsField controls={controls} error={ruleErrors.excludedProductIds} />
+                <CoverageSwitches controls={controls} type={type} />
+              </FormSection>
+              <FormSection title={tc.sectionWho}>
+                <AudienceFields controls={controls} errors={ruleErrors} />
+              </FormSection>
+              <FormSection title={tc.sectionLimits}>
+                {type === "percentage" && <MaxDiscountField controls={controls} currency={currency} error={ruleErrors.maxDiscountAmount} />}
+                <MinQuantityField controls={controls} error={ruleErrors.minQuantity} />
+                <StrictLimitSwitch controls={controls} />
+              </FormSection>
+            </div>
+          )}
+        </div>
+
         {error && <Alert variant="danger">{error}</Alert>}
       </div>
     </Modal>
