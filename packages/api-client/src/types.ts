@@ -1977,6 +1977,8 @@ export type ReviewStatus = "pending" | "approved" | "rejected";
 export type ReviewKind = "product" | "store";
 /** Where the reviewer's order stands: delivered, ordered (on its way), cancelled, returned, or none. */
 export type ReviewPurchaseState = "delivered" | "ordered" | "cancelled" | "returned" | "none";
+/** Where a review the merchant brought from another site was written. */
+export type ReviewExternalSource = "facebook" | "google" | "instagram" | "whatsapp" | "other";
 
 export interface ReviewProductRef {
   id: string;
@@ -2005,7 +2007,14 @@ export interface Review {
   status: ReviewStatus;
   /** false: published as stars only, the text and photos stay here. */
   showText?: boolean;
-  source?: "customer" | "manual" | "import";
+  /** external = brought by the merchant from another site (shown apart, never in the stars). */
+  source?: "customer" | "manual" | "import" | "external";
+  externalSource?: ReviewExternalSource | null;
+  /** The site's name the merchant typed for "other". */
+  externalSourceLabel?: string | null;
+  externalUrl?: string | null;
+  /** The day it was written there (YYYY-MM-DD). */
+  reviewedAt?: string | null;
   authorName?: string | null;
   photos?: string[];
   /** The phone the reviewer typed (customers.view only). */
@@ -2025,6 +2034,7 @@ export interface Review {
 export interface ReviewListParams {
   status?: ReviewStatus;
   kind?: ReviewKind;
+  source?: "customer" | "manual" | "import" | "external";
   productId?: string;
   /** Without it every review comes back. */
   limit?: number;

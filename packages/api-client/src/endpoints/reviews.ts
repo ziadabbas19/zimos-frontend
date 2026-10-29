@@ -21,7 +21,7 @@
  */
 import type { ApiClient } from "../client";
 import type { Review, ReviewListParams, ReviewStatus } from "../types";
-import type { StorefrontRatingSummary, StorefrontReview } from "./catalog";
+import type { ManualReviewPayload, StorefrontExternalReview, StorefrontRatingSummary, StorefrontReview } from "./catalog";
 
 // ------------------------------------------------------------------ staff --
 
@@ -59,6 +59,24 @@ export async function reviewsModerate(client: ApiClient, workspaceId: string, re
   const { review } = await client.request<{ review: Review }>(`/workspaces/${workspaceId}/reviews/${reviewId}`, {
     method: "PATCH",
     body: { action },
+  });
+  return review;
+}
+
+/**
+ * Edits a review the merchant added (by hand, imported or from another site);
+ * giving a hand-added one a source makes it external. 409 REVIEW_NOT_EDITABLE
+ * for a shopper's own review.
+ */
+export async function reviewsUpdateContent(
+  client: ApiClient,
+  workspaceId: string,
+  reviewId: string,
+  payload: Partial<Omit<ManualReviewPayload, "status">>
+): Promise<Review> {
+  const { review } = await client.request<{ review: Review }>(`/workspaces/${workspaceId}/reviews/${reviewId}/content`, {
+    method: "PATCH",
+    body: payload,
   });
   return review;
 }
@@ -132,10 +150,14 @@ export async function storefrontSendStoreReview(
   return review;
 }
 
-/** The store's stars and its latest published store reviews. */
+/** The store's stars, its latest published store reviews, and those brought from other sites (apart). */
 export async function storefrontStoreReviews(
   client: ApiClient,
   workspaceId: string
-): Promise<{ rating: StorefrontRatingSummary; reviews: StorefrontReview[] }> {
-  return client.request(`/store/${workspaceId}/store-reviews`, { auth: false });
+): Promise<{ rating: StorefrontRatingSummary; reviews: StorefrontReview[]; externalReviews: StorefrontExternalReview[] }> {
+  const answer = await client.request<{ rating: StorefrontRatingSummary; reviews: StorefrontReview[]; externalReviews?: StorefrontExternalReview[] }>(
+    `/store/${workspaceId}/store-reviews`,
+    { auth: false }
+  );
+  return { ...answer, externalReviews: answer.externalReviews ?? [] };
 }

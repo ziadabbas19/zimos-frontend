@@ -274,6 +274,28 @@ export interface StorefrontRatingSummary {
   distribution: Record<string, number>;
 }
 
+/** A published review the merchant brought from another site: shown apart, with its source, never verified. */
+export interface StorefrontExternalReview {
+  id: string;
+  rating: number;
+  comment: string | null;
+  authorName: string | null;
+  photos: string[];
+  source: "facebook" | "google" | "instagram" | "whatsapp" | "other";
+  /** The site's name for "other". */
+  sourceLabel: string | null;
+  url: string | null;
+  /** YYYY-MM-DD, when the merchant gave it. */
+  reviewedAt: string | null;
+  createdAt: string;
+}
+
+/** The external reviews off a public product (or the store's reviews), [] from an older server. */
+export function storefrontExternalReviews(answer: unknown): StorefrontExternalReview[] {
+  const raw = (answer ?? {}) as { externalReviews?: unknown };
+  return Array.isArray(raw.externalReviews) ? (raw.externalReviews as StorefrontExternalReview[]) : [];
+}
+
 /** Reads the review block off a public product, tolerating an older response. */
 export function storefrontProductReviews(product: unknown): { rating: StorefrontRatingSummary; reviews: StorefrontReview[] } {
   const raw = (product ?? {}) as { rating?: Partial<StorefrontRatingSummary> | number | null; reviews?: unknown };
@@ -297,19 +319,27 @@ export function storefrontProductReviews(product: unknown): { rating: Storefront
 export type { StorefrontReviewInput as StorefrontReviewSubmission } from "./reviews";
 
 export interface ManualReviewPayload {
-  productId: string;
+  /** "store" for a review of the whole store (no product). Default "product". */
+  kind?: "product" | "store";
+  productId?: string | null;
   authorName: string;
   rating: number;
   comment?: string | null;
   photos?: string[];
   status?: "approved" | "pending";
+  /** Brought from another site: makes it an external review, shown apart with its source. */
+  externalSource?: "facebook" | "google" | "instagram" | "whatsapp" | "other";
+  externalSourceLabel?: string | null;
+  externalUrl?: string | null;
+  /** YYYY-MM-DD, not in the future. */
+  reviewedAt?: string | null;
 }
 
 /** A staff review row with the fields manual reviews added. */
 export interface CatalogReviewExtras {
   authorName?: string | null;
   photos?: string[];
-  source?: "customer" | "manual" | "import";
+  source?: "customer" | "manual" | "import" | "external";
 }
 
 /** Adds a real review that reached the merchant through another channel (products.manage). */
