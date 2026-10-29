@@ -4,7 +4,7 @@ export const en: Dictionary = {
   meta: {
     title: "ZIMOS — Build. Sell. Grow.",
     description:
-      "ZIMOS is the commerce platform for cash-on-delivery brands in Egypt and the Arab world: your store and funnels, order confirmation before shipping, shipping with your courier, and the real profit of each delivered order — on one screen.",
+      "ZIMOS is the platform to build a complete online store in 5 minutes: ready-made store templates, every payment method, order confirmation before shipping, shipping with every company, and the real profit of each delivered order — on one screen.",
   },
 
   brand: {
@@ -57,8 +57,9 @@ export const en: Dictionary = {
   integrations: {
     label: "Connects with",
     note: "Trademarks and logos belong to their owners.",
-    soon: "Soon",
     manualTransfer: "Manual transfer",
+    shippingCompanies: "Every shipping company",
+    paymentGateways: "Payment gateways",
   },
 
   templates: {
@@ -83,7 +84,7 @@ export const en: Dictionary = {
     kicker: "What you gain",
     heading: "Build the store. Everything after it comes with it.",
     intro:
-      "Templates, an editor where everything is yours to change and a checkout made for cash on delivery — plus order confirmation, shipping and real profit, connected in one platform.",
+      "Templates, an editor where everything is yours to change and a checkout that takes every payment method — plus order confirmation, shipping and real profit, connected in one platform.",
     hero: {
       title: "Your store, your way",
       body: "Start from a template and change any section, word, colour or picture in the editor — drag, drop, copy and paste. No designer, no code.",
@@ -113,7 +114,7 @@ export const en: Dictionary = {
       {
         id: "shipping",
         title: "Delivered by your courier",
-        body: "Confirmed orders go to Bosta, J&T or Mylerz with a tracking code, and the cash the courier collects is reconciled.",
+        body: "Confirmed orders go to the shipping company you choose with a tracking code, connected directly or by hand, and the cash the courier collects is reconciled.",
       },
       {
         id: "analytics",
@@ -306,14 +307,14 @@ export const en: Dictionary = {
           "New cash-on-delivery orders wait in a confirmation queue, and your team confirms them before shipping: by call, and by WhatsApp message on the plans that include it. A cash-on-delivery order can't be booked with a courier until it's confirmed, and an order paid in advance ships once its payment is in.",
       },
       {
-        question: "Which couriers can I ship with?",
+        question: "Can I ship with the courier I already use?",
         answer:
-          "Bosta, J&T Express and Mylerz: connect your own account with each from the dashboard and book shipments with a tracking code. Turbo is coming soon. A shipment you booked another way can still be added to the order by its waybill number.",
+          "Yes. ZIMOS works with every shipping company: some are connected directly, so you connect your own account from the dashboard and book shipments with a tracking code, and with any other company you add the shipment to the order by hand with its waybill number.",
       },
       {
-        question: "Do I have to sell with cash on delivery?",
+        question: "Which payment methods can I accept?",
         answer:
-          "No. Cash on delivery is fully supported. You can also take card and wallet payments online through Paymob or Kashier, once you connect your own account with them under Payments in the dashboard, and accept InstaPay as a manual transfer: the customer sends proof of the transfer and your team approves it.",
+          "All of them: cash on delivery; card and wallet payments online through a payment gateway, once you connect your own account with it under Payments in the dashboard; and InstaPay as a manual transfer: the customer sends proof of the transfer and your team approves it.",
       },
       {
         question: "Can I use my own domain?",

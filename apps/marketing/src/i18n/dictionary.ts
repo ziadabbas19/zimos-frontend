@@ -103,10 +103,12 @@ export interface Dictionary {
   integrations: {
     label: string;
     note: string;
-    /** Beside a platform not connected yet. */
-    soon: string;
     /** Beside InstaPay's mark: it is a manual transfer, not a connection. */
     manualTransfer: string;
+    /** In place of the shipping companies' marks, which the site does not name. */
+    shippingCompanies: string;
+    /** In place of the payment gateways' marks, which the site does not name. */
+    paymentGateways: string;
   };
 
   benefits: {
