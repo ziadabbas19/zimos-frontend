@@ -3736,7 +3736,17 @@ export class ApiClient {
   async addCartItem(
     workspaceId: string,
     cartToken: string,
-    payload: { variantId: string; offerId?: string; quantity?: number; customizations?: CustomizationInput; options?: import("./endpoints/menuOptions").MenuOptionsInput },
+    payload: {
+      /** Not needed for a combo. */
+      variantId?: string;
+      offerId?: string;
+      quantity?: number;
+      customizations?: CustomizationInput;
+      options?: import("./endpoints/menuOptions").MenuOptionsInput;
+      /** A whole combo on one line (endpoints/combos.ts). */
+      comboId?: string;
+      comboSelection?: Array<{ itemId: string; variantId: string }>;
+    },
     opts: { visitorId?: string } = {}
   ) {
     return this.request<Cart>(`/store/${workspaceId}/cart/items`, {

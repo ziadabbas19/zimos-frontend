@@ -943,6 +943,18 @@ export interface CartLine {
   customizations?: Customization[] | null;
   /** The menu options picked, with current names and prices; null when none. */
   options?: import("./endpoints/menuOptions").MenuOptionsSnapshot | null;
+  /** A whole combo on this line (endpoints/combos.ts): what it holds, priced as a combo. */
+  comboId?: string | null;
+  comboSelection?: Array<{ itemId: string; variantId: string }>;
+  combo?: {
+    id: string;
+    name: string;
+    items: Array<{ itemId: string; productId: string; productName: string; variantId: string; optionValues: Record<string, string> | null; quantity: number }>;
+  } | null;
+  /** The combo can no longer be bought (archived, a product gone, combos off): it counts nothing. */
+  unavailable?: boolean;
+  /** One combo's products bought apart. */
+  fullUnitPrice?: number | null;
 }
 
 // ---------------------------------------------------------------------
@@ -1058,7 +1070,16 @@ export interface CheckoutPayload {
    */
   checkoutSessionId?: string;
   /** "Buy Now" — a single item straight to an order, no cart. Ignored when a cart token is sent. */
-  item?: { variantId: string; offerId?: string; quantity?: number; customizations?: CustomizationInput; options?: import("./endpoints/menuOptions").MenuOptionsInput };
+  /** `variantId` is not needed for a combo (`comboId` + `comboSelection`, endpoints/combos.ts). */
+  item?: {
+    variantId?: string;
+    offerId?: string;
+    quantity?: number;
+    customizations?: CustomizationInput;
+    options?: import("./endpoints/menuOptions").MenuOptionsInput;
+    comboId?: string;
+    comboSelection?: Array<{ itemId: string; variantId: string }>;
+  };
   /**
    * The shopper ticked the order bump. Accepted only when it is the bump this
    * checkout offers (422 ORDER_BUMP_INVALID otherwise); 409
@@ -1469,6 +1490,10 @@ export interface OrderItem {
   customizations?: Customization[] | null;
   /** The menu options the line was sold with: names and prices as charged. */
   optionsSnapshot?: import("./endpoints/menuOptions").MenuOptionsSnapshot | null;
+  /** A line of a combo (endpoints/combos.ts): the lines of one combo bought once share comboKey. */
+  comboId?: string | null;
+  comboKey?: string | null;
+  comboNameSnapshot?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -2474,7 +2499,8 @@ export interface ShippingQuotePayload {
   country?: string;
   /** The same province string the checkout sends in shippingAddress.province. */
   governorate?: string | null;
-  items?: Array<{ variantId: string; offerId?: string; quantity?: number }>;
+  /** A combo line sends `comboId` + `comboSelection` instead of a variant (endpoints/combos.ts). */
+  items?: Array<{ variantId?: string; offerId?: string; quantity?: number; comboId?: string; comboSelection?: Array<{ itemId: string; variantId: string }> }>;
 }
 
 export interface FreeShippingProgress {

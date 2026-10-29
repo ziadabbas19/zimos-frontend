@@ -49,6 +49,8 @@ export * from "./endpoints/storeDesign";
 export * from "./endpoints/catalog";
 // Product and store reviews: staff moderation and the storefront's send and read (reviews/).
 export * from "./endpoints/reviews";
+// Combos: different products at one price (combos/, PRODUCT_COMBOS_ENABLED).
+export * from "./endpoints/combos";
 // Protection against fake orders: blocklist, rules, risk (Fraud protection page).
 export * from "./endpoints/protection";
 // Dashboard home overview, attribution, profit and ad spend.
