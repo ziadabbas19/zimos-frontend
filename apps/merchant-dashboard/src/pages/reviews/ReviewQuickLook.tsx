@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Review } from "@store-builder/api-client";
 import { ContactActions } from "@/components/ContactActions";
-import { IconCheck, IconDelete, IconEye, IconEyeOff, IconStar } from "@/components/icons";
+import { IconCheck, IconDelete, IconEdit, IconEye, IconEyeOff, IconStar } from "@/components/icons";
 import { QuickLook } from "@/components/QuickLook";
 import { ViewLink } from "@/components/ViewLink";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
@@ -12,14 +12,26 @@ import { useCachedAsync } from "@/lib/useCachedAsync";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { dialablePhone } from "@/pages/home/today/OrderQuickLook";
 import { InlineBone, RowAction } from "@/pages/returns/rowkit/RowBits";
-import { PurchaseBadge, ReviewPhotos, ReviewSourceBadge, ReviewStatusBadge, Stars } from "./ReviewBits";
-import { MAX_RATING, REVIEW_WORDS, isMerchantAdded, isStarsOnly, kindOf, photosOf, reviewAuthor, type ModerateAction } from "./reviewModel";
+import { PurchaseBadge, ReviewOriginalLink, ReviewPhotos, ReviewSourceBadge, ReviewStatusBadge, ReviewWrittenOn, Stars } from "./ReviewBits";
+import {
+  MAX_RATING,
+  REVIEW_WORDS,
+  isExternal,
+  isMerchantAdded,
+  isStarsOnly,
+  kindOf,
+  photosOf,
+  reviewAuthor,
+  type ModerateAction,
+} from "./reviewModel";
 
 const STRINGS = {
   en: {
     openProduct: "Open the product",
     openProducts: "Open the products",
     written: "Written {when}",
+    addedWhen: "Added {when}",
+    from: "Where it was written",
     rating: "Rating",
     said: "What they said",
     photos: "Photos",
@@ -37,12 +49,15 @@ const STRINGS = {
     countedNote: "It comes from a delivered order, so it counts in the stars shoppers see.",
     notCountedNote: "It does not count in your stars: only published reviews from delivered orders do.",
     addedNote: "You added this review, so it shows without the “verified buyer” badge and does not count in your stars.",
+    externalNote: "It comes from another site: your store shows it apart from your customers' reviews, with its source, and it does not count in your stars.",
     remove: "Delete this review",
   },
   ar: {
     openProduct: "فتح المنتج",
     openProducts: "فتح المنتجات",
     written: "كُتب {when}",
+    addedWhen: "أُضيف {when}",
+    from: "أين كُتب",
     rating: "التقييم",
     said: "ماذا قال",
     photos: "الصور",
@@ -60,6 +75,7 @@ const STRINGS = {
     countedNote: "صاحبه استلم طلبه، لذلك يدخل في متوسط النجوم الذي يراه العملاء.",
     notCountedNote: "لا يدخل في متوسط نجومك: المتوسط من التقييمات المنشورة لطلبات تم تسليمها فقط.",
     addedNote: "هذا التقييم أضفته أنت، لذلك يظهر بدون علامة «مشترٍ موثّق» ولا يدخل في متوسط نجومك.",
+    externalNote: "هذا التقييم من مصدر خارجي: يعرضه متجرك منفصلًا عن تقييمات عملائك مع مصدره، ولا يدخل في متوسط نجومك.",
     remove: "حذف هذا التقييم",
   },
 } satisfies Messages;
@@ -102,16 +118,19 @@ export interface ReviewQuickLookProps {
   /** The move on its way to the server for this review, if any. */
   busy: ModerateAction | null;
   onModerate: (action: ModerateAction) => void;
+  /** Opens the review in the form: offered for a review the store added only. */
+  onEdit: () => void;
   onDelete: () => void;
 }
 
 /**
  * A review at a glance, without leaving the list: the stars, the shopper's own
  * words in full, the photos, who wrote it and how to reach them — and the
- * decision in the footer. "Open fully" goes to the product, which is the page
- * a review belongs to.
+ * decision in the footer. A review from another site says where it was
+ * written, links to it and gives its day. "Open fully" goes to the product,
+ * which is the page a review belongs to.
  */
-export function ReviewQuickLook({ review, open, onOpenChange, busy, onModerate, onDelete }: ReviewQuickLookProps) {
+export function ReviewQuickLook({ review, open, onOpenChange, busy, onModerate, onEdit, onDelete }: ReviewQuickLookProps) {
   const t = useT(STRINGS);
   const words = useT(REVIEW_WORDS);
   if (!review) return null;
@@ -120,6 +139,7 @@ export function ReviewQuickLook({ review, open, onOpenChange, busy, onModerate, 
   const store = kindOf(review) === "store";
   const author = reviewAuthor(review, words.unknownCustomer);
   const added = isMerchantAdded(review);
+  const external = isExternal(review);
   const comment = review.comment?.trim() || "";
   const acting = busy !== null;
   const starsOnly = isStarsOnly(review);
@@ -178,13 +198,25 @@ export function ReviewQuickLook({ review, open, onOpenChange, busy, onModerate, 
     >
       <div data-slot="review-peek" className="space-y-4">
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-5 text-ink-soft">
+          {/* A review the store added was written elsewhere: its date here is the day it was added. */}
           <time dateTime={review.createdAt} title={formatDateTime(review.createdAt)}>
-            {fmt(t.written, { when: formatRelativeTime(review.createdAt) })}
+            {fmt(added ? t.addedWhen : t.written, { when: formatRelativeTime(review.createdAt) })}
           </time>
           <span aria-hidden>·</span>
           <span>{formatDate(review.createdAt)}</span>
-          <ReviewSourceBadge review={review} />
+          {!external && <ReviewSourceBadge review={review} />}
         </p>
+
+        {external && (
+          <section data-slot="review-external">
+            <BlockLabel>{t.from}</BlockLabel>
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm leading-6">
+              <ReviewSourceBadge review={review} />
+              <ReviewWrittenOn review={review} />
+              <ReviewOriginalLink review={review} size="block" />
+            </p>
+          </section>
+        )}
 
         {!added && (
           <section>
@@ -270,19 +302,34 @@ export function ReviewQuickLook({ review, open, onOpenChange, busy, onModerate, 
         </section>
 
         <p data-slot="review-hint" className="text-[13px] leading-5 text-ink-soft">
-          {hint} {added ? t.addedNote : review.status === "approved" ? (review.counted ? t.countedNote : t.notCountedNote) : null}
+          {hint}{" "}
+          {external ? t.externalNote : added ? t.addedNote : review.status === "approved" ? (review.counted ? t.countedNote : t.notCountedNote) : null}
         </p>
 
-        {/* Any review can be deleted: a shopper's photos go with it. */}
-        <button
-          type="button"
-          disabled={acting}
-          onClick={onDelete}
-          className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full px-3 text-sm font-medium text-danger transition-[background-color,scale] duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50 motion-safe:active:scale-[0.97] motion-reduce:transition-none"
-        >
-          <IconDelete className="size-4" aria-hidden />
-          {t.remove}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Only a review the store added is edited: a customer's own words stay theirs. */}
+          {added && (
+            <button
+              type="button"
+              disabled={acting}
+              onClick={onEdit}
+              className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full px-3 text-sm font-medium text-primary transition-[background-color,scale] duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50 motion-safe:active:scale-[0.97] motion-reduce:transition-none"
+            >
+              <IconEdit className="size-4" aria-hidden />
+              {words.edit}
+            </button>
+          )}
+          {/* Any review can be deleted: a shopper's photos go with it. */}
+          <button
+            type="button"
+            disabled={acting}
+            onClick={onDelete}
+            className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full px-3 text-sm font-medium text-danger transition-[background-color,scale] duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50 motion-safe:active:scale-[0.97] motion-reduce:transition-none"
+          >
+            <IconDelete className="size-4" aria-hidden />
+            {t.remove}
+          </button>
+        </div>
       </div>
     </QuickLook>
   );

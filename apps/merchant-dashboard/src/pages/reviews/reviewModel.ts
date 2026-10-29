@@ -1,5 +1,5 @@
-import type { CatalogReviewExtras, Review, ReviewKind, ReviewPurchaseState, ReviewStatus } from "@store-builder/api-client";
-import type { Messages } from "@/i18n/LocaleContext";
+import type { CatalogReviewExtras, Review, ReviewExternalSource, ReviewKind, ReviewPurchaseState, ReviewStatus } from "@store-builder/api-client";
+import { fmt, type Messages } from "@/i18n/LocaleContext";
 
 /**
  * What the Reviews page knows about a review beyond the row the API types:
@@ -9,20 +9,62 @@ import type { Messages } from "@/i18n/LocaleContext";
 
 /** A staff review row with the fields reviews added by the store carry. */
 export type ReviewRecord = Review & CatalogReviewExtras;
-export type ReviewSource = "customer" | "manual" | "import";
+/** external = brought by the merchant from another site; manual and import = added by hand before reviews had a source. */
+export type ReviewSource = "customer" | "manual" | "import" | "external";
+/**
+ * Where a review comes from, as the filter groups it: a customer's own, one
+ * brought from another site, or one added by hand before sources existed
+ * (typed in or imported).
+ */
+export type ReviewOrigin = "customer" | "external" | "added";
 /** The moves the API has: approve shows a review with its words, approve_stars shows its stars alone, reject (hide) keeps it out. */
 export type ModerateAction = "approve" | "approve_stars" | "reject";
 
 export const REVIEW_STATUSES: readonly ReviewStatus[] = ["pending", "approved", "rejected"];
-export const REVIEW_SOURCES: readonly ReviewSource[] = ["customer", "manual", "import"];
+export const REVIEW_ORIGINS: readonly ReviewOrigin[] = ["customer", "external", "added"];
+/** The sites a review can be brought from, in the order the form offers them. */
+export const EXTERNAL_SOURCES: readonly ReviewExternalSource[] = ["facebook", "google", "instagram", "whatsapp", "other"];
 
 export function sourceOf(review: Review): ReviewSource {
   return (review as ReviewRecord).source ?? "customer";
 }
 
-/** Added by the store — typed in or imported: named by hand, deletable, never "verified". */
+export function originOf(review: Review): ReviewOrigin {
+  const source = sourceOf(review);
+  return source === "customer" || source === "external" ? source : "added";
+}
+
+/** Added by the store — typed in, imported or brought from another site: named by hand, editable, deletable, never "verified". */
 export function isMerchantAdded(review: Review): boolean {
   return sourceOf(review) !== "customer";
+}
+
+/** Brought from another site: shown apart in the store, with its source, never in the stars. */
+export function isExternal(review: Review): boolean {
+  return sourceOf(review) === "external";
+}
+
+/** Added by hand before reviews had a source: editing it can give it one. */
+export function isLegacyAdded(review: Review): boolean {
+  return originOf(review) === "added";
+}
+
+/** The day it was written on the other site (YYYY-MM-DD), or null. */
+export function writtenOnOf(review: Review): string | null {
+  const day = review.reviewedAt?.slice(0, 10) ?? "";
+  return /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : null;
+}
+
+/** The link to the review on the other site — http(s) only, so nothing else ever lands in an href. */
+export function externalLinkOf(review: Review): string | null {
+  const raw = review.externalUrl?.trim();
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
+  } catch {
+    return null;
+  }
 }
 
 export function photosOf(review: Review): string[] {
@@ -86,6 +128,16 @@ export const REVIEW_WORDS = {
     source_customer: "From a customer",
     source_manual: "Added by you",
     source_import: "Imported",
+    from_facebook: "From Facebook",
+    from_google: "From Google",
+    from_instagram: "From Instagram",
+    from_whatsapp: "From WhatsApp",
+    from_other: "From {name}",
+    from_otherUnnamed: "From another site",
+    writtenOn: "Written {date}",
+    original: "Original review",
+    originalLabel: "Open the original review — opens in a new tab",
+    edit: "Edit",
     unknownProduct: "Deleted product",
     unknownCustomer: "Unnamed customer",
     noComment: "Rated without a comment.",
@@ -113,6 +165,16 @@ export const REVIEW_WORDS = {
     source_customer: "من عميل",
     source_manual: "أضفته أنت",
     source_import: "مستورد",
+    from_facebook: "من فيسبوك",
+    from_google: "من جوجل",
+    from_instagram: "من إنستجرام",
+    from_whatsapp: "من واتساب",
+    from_other: "من {name}",
+    from_otherUnnamed: "من موقع آخر",
+    writtenOn: "كُتب في {date}",
+    original: "التقييم الأصلي",
+    originalLabel: "فتح التقييم الأصلي — يُفتح في تبويب جديد",
+    edit: "تعديل",
     unknownProduct: "منتج محذوف",
     unknownCustomer: "عميل بدون اسم",
     noComment: "قيّم بدون تعليق.",
@@ -128,6 +190,20 @@ export const REVIEW_WORDS = {
 export const MAX_RATING = 5;
 
 export type ReviewWords = Record<keyof (typeof REVIEW_WORDS)["en"], string>;
+
+/** What a source badge says: «من فيسبوك», «من <the name the merchant typed>», «أضفته أنت»; null for a customer's own review. */
+export function sourceText(review: Review, words: ReviewWords): string | null {
+  const source = sourceOf(review);
+  if (source === "customer") return null;
+  if (source === "manual") return words.source_manual;
+  if (source === "import") return words.source_import;
+  const site = review.externalSource;
+  if (site === "other" || !site) {
+    const name = site === "other" ? review.externalSourceLabel?.trim() : "";
+    return name ? fmt(words.from_other, { name }) : words.from_otherUnnamed;
+  }
+  return words[`from_${site}`];
+}
 
 /** The badge tone of a status: waiting asks for attention, live is good news, hidden is quiet. */
 /** The tone of the purchase fact: a delivered order is the good kind, the rest are said quietly. */

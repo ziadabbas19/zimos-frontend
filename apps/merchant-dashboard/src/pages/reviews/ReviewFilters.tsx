@@ -3,7 +3,7 @@ import { FilterChoice, FilterGroup, FilterSheet } from "@/components/list";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { pluralOf } from "@/lib/plural";
 import type { ActiveFilter } from "@/pages/returns/rowkit/ActiveFilters";
-import { REVIEW_SOURCES, REVIEW_WORDS, kindOf, photosOf, sourceOf, type ReviewSource } from "./reviewModel";
+import { REVIEW_ORIGINS, kindOf, originOf, photosOf, type ReviewOrigin } from "./reviewModel";
 
 const STRINGS = {
   en: {
@@ -13,7 +13,10 @@ const STRINGS = {
     kind_store: "Your store",
     chipKind: "Reviewing: {value}",
     source: "Where it came from",
-    sourceHint: "A customer's own review, one you typed in, or one that came with an import.",
+    sourceHint: "Your customers' own reviews, or reviews you brought from other sites.",
+    origin_customer: "From customers",
+    origin_external: "From other sites",
+    origin_added: "Added by hand before",
     rating: "Rating",
     ratingLabel: "Reviews by rating",
     rating_high: "{a} and {b} stars",
@@ -35,7 +38,10 @@ const STRINGS = {
     kind_store: "متجرك",
     chipKind: "الموضوع: {value}",
     source: "المصدر",
-    sourceHint: "تقييم كتبه العميل، أو أضفته أنت، أو جاء مع استيراد.",
+    sourceHint: "تقييمات كتبها عملاؤك بأنفسهم، أو تقييمات نقلتها من مواقع أخرى.",
+    origin_customer: "من العملاء",
+    origin_external: "من مصادر خارجية",
+    origin_added: "أضفتها يدويًا سابقًا",
     rating: "التقييم",
     ratingLabel: "التقييمات حسب عدد النجوم",
     rating_high: "{a} و{b} نجوم",
@@ -65,7 +71,8 @@ const BAND_STARS: Record<RatingBand, { a: number; b: number }> = { high: { a: 4,
 /** What narrows the list besides the status chips and the search. `null` = that filter is off. */
 export interface ReviewFilterState {
   kind: ReviewKind | null;
-  source: ReviewSource | null;
+  /** Where the reviews come from (`?source=`): customers, other sites, or added by hand before reviews had a source. */
+  source: ReviewOrigin | null;
   rating: RatingBand | null;
   content: ContentFilter | null;
 }
@@ -76,8 +83,13 @@ export function isReviewKind(value: string | null): value is ReviewKind {
   return value === "product" || value === "store";
 }
 
-export function isReviewSource(value: string | null): value is ReviewSource {
-  return value !== null && (REVIEW_SOURCES as readonly string[]).includes(value);
+/**
+ * The origin a `?source=` asks for. The older values still work: `manual` and
+ * `import` (from before reviews had a source) both mean "added by hand".
+ */
+export function readSourceParam(value: string | null): ReviewOrigin | null {
+  if (value === "manual" || value === "import") return "added";
+  return REVIEW_ORIGINS.find((origin) => origin === value) ?? null;
 }
 
 export function countReviewFilters(filters: ReviewFilterState): number {
@@ -92,7 +104,7 @@ function inBand(rating: number, band: RatingBand): boolean {
 
 export function matchesReviewFilters(review: Review, filters: ReviewFilterState): boolean {
   if (filters.kind && kindOf(review) !== filters.kind) return false;
-  if (filters.source && sourceOf(review) !== filters.source) return false;
+  if (filters.source && originOf(review) !== filters.source) return false;
   if (filters.rating && !inBand(review.rating, filters.rating)) return false;
   if (filters.content === "photos" && photosOf(review).length === 0) return false;
   if (filters.content === "comment" && !review.comment?.trim()) return false;
@@ -102,7 +114,6 @@ export function matchesReviewFilters(review: Review, filters: ReviewFilterState)
 /** The filters in effect as removable chips, for the row under the toolbar. */
 export function useReviewFilterChips(filters: ReviewFilterState, onChange: (next: ReviewFilterState) => void): ActiveFilter[] {
   const t = useT(STRINGS);
-  const words = useT(REVIEW_WORDS);
   const chips: ActiveFilter[] = [];
   if (filters.kind) {
     chips.push({ id: "kind", label: fmt(t.chipKind, { value: t[`kind_${filters.kind}`] }), onRemove: () => onChange({ ...filters, kind: null }) });
@@ -110,7 +121,7 @@ export function useReviewFilterChips(filters: ReviewFilterState, onChange: (next
   if (filters.source) {
     chips.push({
       id: "source",
-      label: fmt(t.chipSource, { value: words[`source_${filters.source}`] }),
+      label: fmt(t.chipSource, { value: t[`origin_${filters.source}`] }),
       onRemove: () => onChange({ ...filters, source: null }),
     });
   }
@@ -133,8 +144,9 @@ export function useReviewFilterChips(filters: ReviewFilterState, onChange: (next
 
 /**
  * The one place the reviews are filtered beyond their status: where a review
- * came from, how many stars it gave and whether it carries photos or words.
- * The list is read whole, so every choice answers at once behind the sheet.
+ * came from (customers or other sites), how many stars it gave and whether it
+ * carries photos or words. The list is read whole, so every choice answers at
+ * once behind the sheet.
  */
 export function ReviewFilterSheet({
   open,
@@ -142,6 +154,7 @@ export function ReviewFilterSheet({
   value,
   onChange,
   matching,
+  legacy = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -149,9 +162,12 @@ export function ReviewFilterSheet({
   onChange: (next: ReviewFilterState) => void;
   /** How many reviews the list shows now: said on the button that closes the sheet. */
   matching: number;
+  /** The store has reviews added by hand before reviews had a source: that choice is offered too. */
+  legacy?: boolean;
 }) {
   const t = useT(STRINGS);
-  const words = useT(REVIEW_WORDS);
+  // "Added by hand before" only for a store that has such reviews, or a link that asked for them.
+  const origins = REVIEW_ORIGINS.filter((origin) => origin !== "added" || legacy || value.source === "added");
   return (
     <FilterSheet
       open={open}
@@ -175,7 +191,7 @@ export function ReviewFilterSheet({
           allowClear
           value={value.source}
           onChange={(source) => onChange({ ...value, source })}
-          options={REVIEW_SOURCES.map((source) => ({ value: source, label: words[`source_${source}`] }))}
+          options={origins.map((origin) => ({ value: origin, label: t[`origin_${origin}`] }))}
         />
       </FilterGroup>
       <FilterGroup label={t.rating}>

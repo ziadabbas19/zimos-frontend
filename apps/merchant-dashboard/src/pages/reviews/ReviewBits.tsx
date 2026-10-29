@@ -1,10 +1,24 @@
 import type { ReactNode } from "react";
 import { cn } from "@store-builder/ui";
 import type { Review } from "@store-builder/api-client";
-import { IconStar } from "@/components/icons";
+import { IconCalendar, IconExternal, IconStar } from "@/components/icons";
 import { StatusBadge } from "@/components/StatusBadge";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
-import { MAX_RATING, PURCHASE_TONE, REVIEW_STATUS_TONE, REVIEW_WORDS, isMerchantAdded, isStarsOnly, photosOf, purchaseOf, sourceOf } from "./reviewModel";
+import { formatDate } from "@/lib/format";
+import {
+  MAX_RATING,
+  PURCHASE_TONE,
+  REVIEW_STATUS_TONE,
+  REVIEW_WORDS,
+  externalLinkOf,
+  isExternal,
+  isStarsOnly,
+  photosOf,
+  purchaseOf,
+  sourceOf,
+  sourceText,
+  writtenOnOf,
+} from "./reviewModel";
 
 const STRINGS = {
   en: { photo: "Photo {n} of {total} — opens in a new tab" },
@@ -54,12 +68,57 @@ export function FactChip({ children }: { children: ReactNode }) {
   );
 }
 
-/** «ضفته إنت» / «مستورد» on a review the store added; nothing on a customer's own. */
+/**
+ * Where a review the store added came from: «من فيسبوك», «من جوجل», «من <the
+ * name the merchant typed>» for one brought from another site, «أضفته أنت» /
+ * «مستورد» for an older one added by hand. Nothing on a customer's own.
+ */
 export function ReviewSourceBadge({ review }: { review: Review }) {
   const words = useT(REVIEW_WORDS);
-  if (!isMerchantAdded(review)) return null;
-  const source = sourceOf(review);
-  return <StatusBadge value={source} tone="neutral" text={source === "manual" ? words.source_manual : words.source_import} />;
+  const text = sourceText(review, words);
+  if (!text) return null;
+  return <StatusBadge value={sourceOf(review)} tone={isExternal(review) ? "info" : "neutral"} text={text} />;
+}
+
+/** The day a review was written on the other site, as a quiet fact; nothing when it was not given. */
+export function ReviewWrittenOn({ review }: { review: Review }) {
+  const words = useT(REVIEW_WORDS);
+  const day = writtenOnOf(review);
+  if (!day) return null;
+  return (
+    <FactChip>
+      <IconCalendar className="size-3.5 shrink-0" aria-hidden />
+      {/* Noon of that day, read as local time: the day stays the same day in every time zone. */}
+      <time dateTime={day}>{fmt(words.writtenOn, { date: formatDate(`${day}T12:00:00`) })}</time>
+    </FactChip>
+  );
+}
+
+/**
+ * The review where it was written, in a new tab. `size="row"` is the small pill
+ * of a list row; `"block"` is a full 44px link for Quick Look.
+ */
+export function ReviewOriginalLink({ review, size = "row" }: { review: Review; size?: "row" | "block" }) {
+  const words = useT(REVIEW_WORDS);
+  const href = externalLinkOf(review);
+  if (!href) return null;
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer noopener"
+      aria-label={words.originalLabel}
+      data-slot="review-original"
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full font-medium whitespace-nowrap text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+        size === "row" ? "bg-paper-sunken px-2.5 py-0.5 text-xs pointer-coarse:min-h-8 pointer-coarse:py-1.5" : "min-h-11 text-sm pointer-fine:min-h-9"
+      )}
+    >
+      {words.original}
+      {/* An arrow out of the page: it points the same way in both languages. */}
+      <IconExternal className="size-3.5 shrink-0" aria-hidden />
+    </a>
+  );
 }
 
 /** Whether the reviewer bought, and where their order stands; nothing on a review the store added. */
