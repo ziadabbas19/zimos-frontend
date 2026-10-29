@@ -29,6 +29,7 @@ export type MerchantNotificationType =
   | "wallet.refund"
   | "wallet.credit"
   | "wallet.fallback"
+  | "review.new" // a shopper's review waits for the team's approval
   | "announcement"
   | "automation";
 

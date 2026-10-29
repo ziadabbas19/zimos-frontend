@@ -648,6 +648,8 @@ export interface CreateWebsitePayload {
 export interface StorefrontMeta {
   id: string;
   name: string;
+  /** Whether shoppers may send reviews now, and the store's own stars (endpoints/reviews.ts). */
+  reviews?: { open: boolean; storeRating: { average: number | null; count: number; distribution: Record<string, number> } };
   slug: string;
   logoUrl: string | null;
   tagline: string | null;
@@ -1963,14 +1965,18 @@ export interface ReturnListParams {
 }
 
 // ---------------------------------------------------------------------
-// Product reviews (staff moderation, /workspaces/:workspaceId/reviews)
-// A review is written by a customer who actually received the product, and
-// stays `pending` until a staff member approves or rejects it. Only approved
-// reviews reach the storefront. One row per (workspace, product, customer) —
-// a resubmission updates that row and drops it back to `pending`.
+// Product and store reviews (staff moderation, /workspaces/:workspaceId/reviews)
+// Anyone may send stars; every review waits (`pending`) until the merchant
+// publishes it (`approved`, with its text or the stars alone) or hides it
+// (`rejected`). Only published reviews from a delivered order count in the
+// stars shoppers see. One review per phone and per device for the same
+// product, or for the store. See endpoints/reviews.ts.
 // ---------------------------------------------------------------------
 
 export type ReviewStatus = "pending" | "approved" | "rejected";
+export type ReviewKind = "product" | "store";
+/** Where the reviewer's order stands: delivered, ordered (on its way), cancelled, returned, or none. */
+export type ReviewPurchaseState = "delivered" | "ordered" | "cancelled" | "returned" | "none";
 
 export interface ReviewProductRef {
   id: string;
@@ -1980,17 +1986,34 @@ export interface ReviewProductRef {
 export interface ReviewCustomerRef {
   id: string;
   fullName: string | null;
+  /** Only for someone with customers.view; masked on a locked order. */
+  phone?: string | null;
+  email?: string | null;
 }
 
 export interface Review {
   id: string;
-  workspaceId: string;
-  productId: string;
-  customerId: string;
-  orderId: string | null;
+  workspaceId?: string;
+  /** "product" when absent (a server from before store reviews). */
+  kind?: ReviewKind;
+  /** Null for a store review. */
+  productId: string | null;
+  customerId?: string | null;
+  orderId?: string | null;
   rating: number;
   comment: string | null;
   status: ReviewStatus;
+  /** false: published as stars only, the text and photos stay here. */
+  showText?: boolean;
+  source?: "customer" | "manual" | "import";
+  authorName?: string | null;
+  photos?: string[];
+  /** The phone the reviewer typed (customers.view only). */
+  reviewerPhone?: string | null;
+  contactLocked?: boolean;
+  purchase?: { state: ReviewPurchaseState; orderId: string | null; orderNumber: string | null };
+  /** Published and from a delivered order: it moves the stars shoppers see. */
+  counted?: boolean;
   createdAt: string;
   updatedAt: string;
   /** Joined in by the staff list only — the moderation response returns the
@@ -2001,6 +2024,11 @@ export interface Review {
 
 export interface ReviewListParams {
   status?: ReviewStatus;
+  kind?: ReviewKind;
+  productId?: string;
+  /** Without it every review comes back. */
+  limit?: number;
+  offset?: number;
 }
 
 // ---------------------------------------------------------------------
@@ -2222,10 +2250,53 @@ export interface Discount {
   status: DiscountStatus;
   createdAt: string;
   updatedAt: string;
+  // The merchant's controls (migration 730). Optional: a server from before them sends none,
+  // and each one's absence is the old behaviour.
+  audience?: DiscountAudience;
+  /** Normalized phones (2010…); empty = no such limit. */
+  customerPhones?: string[];
+  vipTierIds?: string[];
+  schedule?: DiscountSchedule | null;
+  /** A percentage takes at most this (minor units, BIGINT → string). */
+  maxDiscountAmount?: string | null;
+  minQuantity?: number | null;
+  excludedProductIds?: string[];
+  appliesToShipping?: boolean;
+  appliesToDiscounted?: boolean;
+  combinesWithOffers?: boolean;
+  strictCustomerLimit?: boolean;
+}
+
+/** any = everyone; new = a first order (no earlier order that was not cancelled); existing = returning customers. */
+export type DiscountAudience = "any" | "new" | "existing";
+
+/** Days 0–6 (0 = Sunday) and minutes since midnight, Cairo time; an end before the start runs past midnight. */
+export interface DiscountSchedule {
+  days: number[];
+  startMinute: number;
+  endMinute: number;
+}
+
+/** The controls a create, an update or a bulk generation may send. */
+export interface DiscountControlsPayload {
+  audience?: DiscountAudience;
+  customerPhones?: string[];
+  vipTierIds?: string[];
+  schedule?: DiscountSchedule | null;
+  maxDiscountAmount?: number | null;
+  minQuantity?: number | null;
+  excludedProductIds?: string[];
+  appliesToShipping?: boolean;
+  appliesToDiscounted?: boolean;
+  combinesWithOffers?: boolean;
+  /** The per-customer limit also counts the customer's e-mail and device. */
+  strictCustomerLimit?: boolean;
 }
 
 /** Mirrors discountValidation.create — `value`/`minimumSubtotal` are integers. */
-export interface CreateDiscountPayload {
+export interface CreateDiscountPayload extends DiscountControlsPayload {
+  /** "disabled" creates it paused. */
+  status?: "active" | "disabled";
   code?: string;
   type: DiscountType;
   value?: number;
@@ -2243,7 +2314,7 @@ export interface CreateDiscountPayload {
 }
 
 /** Mirrors discountValidation.update — every field optional, most nullable. */
-export interface UpdateDiscountPayload {
+export interface UpdateDiscountPayload extends DiscountControlsPayload {
   code?: string | null;
   type?: DiscountType;
   value?: number | null;

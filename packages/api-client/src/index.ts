@@ -47,6 +47,8 @@ export * from "./endpoints/webhookExtras";
 export * from "./endpoints/storeDesign";
 // Catalog additions: product page settings, content, option display.
 export * from "./endpoints/catalog";
+// Product and store reviews: staff moderation and the storefront's send and read (reviews/).
+export * from "./endpoints/reviews";
 // Protection against fake orders: blocklist, rules, risk (Fraud protection page).
 export * from "./endpoints/protection";
 // Dashboard home overview, attribution, profit and ad spend.

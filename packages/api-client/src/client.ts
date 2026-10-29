@@ -2893,7 +2893,7 @@ export class ApiClient {
     return reviews;
   }
 
-  async moderateReview(workspaceId: string, reviewId: string, action: "approve" | "reject") {
+  async moderateReview(workspaceId: string, reviewId: string, action: "approve" | "approve_stars" | "hide" | "reject") {
     const { review } = await this.request<{ review: Review }>(
       `/workspaces/${workspaceId}/reviews/${reviewId}`,
       { method: "PATCH", body: { action } }
