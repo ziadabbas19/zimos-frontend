@@ -148,6 +148,10 @@
     background-color: var(--menu-badge-brand);
     color: var(--lg-text-primary);
   }
+  .zimos-nav-badge[data-tone="reviews"] {
+    background-color: var(--menu-badge-attention);
+    color: var(--color-accent-dark);
+  }
   .zimos-nav-badge:not([data-tone="on-brand"]) {
     box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 16%, transparent);
   }
