@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Alert, cn } from "@store-builder/ui";
+import { yearlyBreakdown } from "@store-builder/ui/plan-pricing";
 import type { OnlinePaymentResult, OnlinePaymentStatus, WorkspaceBilling } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -163,7 +164,7 @@ export function SubscriptionSummary({ billing }: { billing: WorkspaceBilling }) 
   );
 }
 
-/** Monthly or annual (10 × monthly), from the next charge. */
+/** Monthly or annual, from the next charge; annual says "save" only while it is less than twelve months. */
 export function BillingCycleChoice({ billing, onChange }: { billing: WorkspaceBilling; onChange: (next: WorkspaceBilling) => void }) {
   const t = useT(BILLING_STRINGS);
   const workspaceId = useWorkspaceId();
@@ -190,7 +191,12 @@ export function BillingCycleChoice({ billing, onChange }: { billing: WorkspaceBi
 
   const options: Array<{ value: "monthly" | "yearly"; label: string }> = [
     { value: "monthly", label: fmt(t.cycleMonthly, { price: formatMoney(plan.monthlyPrice, plan.currency) }) },
-    { value: "yearly", label: fmt(t.cycleYearly, { price: formatMoney(plan.yearlyPrice, plan.currency) }) },
+    {
+      value: "yearly",
+      label: fmt(yearlyBreakdown(plan)?.fullYear != null ? t.cycleYearlySaves : t.cycleYearly, {
+        price: formatMoney(plan.yearlyPrice, plan.currency),
+      }),
+    },
   ];
 
   return (

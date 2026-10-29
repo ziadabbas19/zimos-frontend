@@ -136,7 +136,7 @@ describe("with the switch off, or support deciding: today's page", () => {
       expect(within(await cardOf("Basic")).getByRole("button", { name: "Contact support to switch" })).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Switch to this plan" })).not.toBeInTheDocument();
       expect(screen.queryByRole("heading", { name: "Plan change" })).not.toBeInTheDocument();
-      expect(screen.getByText(/Annual — .* a year \(2 months free\)/)).toBeInTheDocument();
+      expect(screen.getByText(/Annual — .* a year · Save$/)).toBeInTheDocument();
       expect(api.previewPlanSwitch).not.toHaveBeenCalled();
       unmount();
     }

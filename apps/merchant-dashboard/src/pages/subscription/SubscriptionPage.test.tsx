@@ -77,10 +77,16 @@ describe("SubscriptionPage", () => {
     expect(within(basic).getByText("Your current plan")).toBeInTheDocument();
     expect(within(basic).queryByRole("button", { name: "Choose this plan" })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("radio", { name: /Yearly/ }));
+    // Before yearly is chosen: no struck price, no price a month.
+    expect(screen.queryByText(/^= .* \/ month$/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "Yearly · Save" }));
     const pro = screen.getByRole("article", { name: "Pro" });
     // 12 × 800 − 8,000 = 1,600 a year.
     expect(within(pro).getByText(/Save .*1,600.* a year/)).toBeInTheDocument();
+    // 12 × 800 = 9,600 struck out; 8,000 / 12 = 666.67 → 667 a month.
+    expect(pro.querySelector("s")?.textContent).toMatch(/9,600/);
+    expect(within(pro).getByText(/^= .*667 \/ month$/)).toBeInTheDocument();
+    expect(screen.queryByText(/months free/)).not.toBeInTheDocument();
 
     const payPerOrder = screen.getByText("Pay per order").closest("article")!;
     expect(within(payPerOrder).getByText("Coming soon")).toBeInTheDocument();
