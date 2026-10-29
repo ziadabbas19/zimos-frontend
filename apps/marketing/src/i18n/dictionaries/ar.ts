@@ -82,7 +82,6 @@ export const ar: Dictionary = {
     swipeHint: "اسحب لترى المزيد من المتاجر",
     cta: "اختر قالبك",
     caption: "لقطات حقيقية من متاجر ZIMOS، والمنتجات والصور للعرض فقط.",
-    creditsLead: "تصميمات المتاجر في هذه الصفحة مقتبسة من قوالب مجانية:",
   },
 
   benefits: {
@@ -331,6 +330,15 @@ export const ar: Dictionary = {
     socialHeading: "تابعنا وتواصل معنا",
   },
 
+  credits: {
+    title: "الشكر والتراخيص",
+    description: "القوالب والأيقونات والخطوط المجانية التي يستخدمها موقع ZIMOS، وتراخيصها.",
+    intro: "يستخدم موقع ZIMOS تصميمات وأيقونات وخطوطا مجانية، ونشكر من صنعوها. هذه قائمتها مع تراخيصها.",
+    templatesHeading: "تصميمات المتاجر",
+    templatesLead: "تصميمات المتاجر في هذا الموقع مقتبسة من قوالب مجانية:",
+    resourcesHeading: "الأيقونات والخطوط",
+  },
+
   faq: {
     kicker: "الأسئلة",
     heading: "قبل أن تبدأ: إجابات واضحة",
@@ -396,6 +404,7 @@ export const ar: Dictionary = {
       { label: "سياسة الاسترجاع", href: "/refund-policy" },
       { label: "شروط الاستخدام", href: "/terms" },
       { label: "سياسة الخصوصية", href: "/privacy" },
+      { label: "الشكر والتراخيص", href: "/credits" },
     ],
     rights: "جميع الحقوق محفوظة.",
     languageLabel: "اللغة",
