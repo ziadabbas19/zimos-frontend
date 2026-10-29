@@ -151,6 +151,10 @@ function knownRefusal(err: unknown, copy: OrderErrorCopy): string | null {
   if (isApiErrorCode(err, "WALLET_LIMIT_REACHED")) return copy.ordersPaused;
   // Menu options missing, changed or no longer offered.
   if (isApiErrorCode(err, "OPTIONS_INVALID")) return copy.optionsInvalid;
+  // Combos (lib/combos): a product of it gone or not for sale, a pick missing, or a funnel's checkout (combos are bought from the cart).
+  if (isApiErrorCode(err, "COMBO_UNAVAILABLE")) return copy.comboUnavailable;
+  if (isApiErrorCode(err, "COMBO_VARIANT_REQUIRED")) return copy.comboVariantRequired;
+  if (isApiErrorCode(err, "COMBO_NOT_IN_FUNNEL")) return copy.comboNotInFunnel;
   // Closed (opening hours or the "accepting orders" switch): the store's own message when it wrote one.
   if (isApiErrorCode(err, "STORE_CLOSED")) {
     const details = apiErrorDetails<Array<{ field?: string; message?: string }>>(err);

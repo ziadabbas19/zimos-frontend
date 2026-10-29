@@ -7,6 +7,7 @@ import { GOVERNORATES } from "@/lib/egypt";
 import { useShipTo } from "@/lib/shipTo";
 import { useStore } from "@/lib/StoreContext";
 import { useShippingQuote } from "@/lib/useShippingQuote";
+import { cartQuoteLines } from "@/lib/combos";
 import { useStoreCountry } from "@/lib/storeCountry";
 import { input } from "@/components/ui";
 import { FreeShippingHint, ShippingFee } from "./ShippingFee";
@@ -41,7 +42,8 @@ export function CartShippingSummary({
     workspaceId,
     governorate: shipTo,
     country,
-    lines: cart.items.map((l) => ({ variantId: l.variantId, offerId: l.offerId, quantity: l.quantity })),
+    // A combo line is quoted as its combo, not its first product (lib/combos).
+    lines: cartQuoteLines(cart.items),
     enabled,
   });
 

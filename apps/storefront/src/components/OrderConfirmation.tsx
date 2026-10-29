@@ -5,6 +5,7 @@ import type { OrderSnapshot } from "@/lib/commerce";
 import { useStore } from "@/lib/StoreContext";
 import { CheckIcon } from "./Icons";
 import { card } from "./ui";
+import { comboText } from "./combos/comboText";
 
 /**
  * The pieces of the store's thank-you page (orders/[orderId]) that a funnel's
@@ -66,7 +67,7 @@ export function OrderSnapshotSummary({
   headingLevel?: "h2" | "h3";
   footnote?: ReactNode;
 }) {
-  const { t, money } = useStore();
+  const { t, money, locale } = useStore();
   const titleId = `summary-title-${snapshot.id}`;
 
   return (
@@ -84,6 +85,8 @@ export function OrderSnapshotSummary({
           <li key={i} className="flex justify-between gap-3 text-sm">
             <span className="min-w-0 text-ink">
               {item.name}
+              {/* A product bought in a combo: the combo's name under it. */}
+              {item.combo && <span className="block text-xs font-medium text-primary">{comboText(locale).partOf(item.combo)}</span>}
               {item.options && <span className="block text-xs text-ink-soft">{item.options}</span>}
               <span className="text-xs text-ink-soft"> × {item.quantity}</span>
             </span>
