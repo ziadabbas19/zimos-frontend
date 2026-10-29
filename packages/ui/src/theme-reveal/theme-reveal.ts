@@ -70,6 +70,17 @@ export function revealRadius(origin: RevealPoint, viewport: RevealViewport): num
   return Math.hypot(Math.max(origin.x, viewport.width - origin.x), Math.max(origin.y, viewport.height - origin.y));
 }
 
+/**
+ * The zoom <html> is drawn at (the marketing site: 90% from 601px). The
+ * circle's pseudo-elements inherit it, so their lengths come out that many
+ * times smaller on the screen than the click's.
+ */
+export function rootZoom(root: HTMLElement): number {
+  const current = (root as HTMLElement & { currentCSSZoom?: number }).currentCSSZoom;
+  const zoom = typeof current === "number" ? current : parseFloat(getComputedStyle(root).zoom);
+  return Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
+}
+
 /** The browser can draw the circle and the person hasn't asked for less motion. */
 export function canRevealThemeChange(): boolean {
   if (typeof document === "undefined") return false;
@@ -115,8 +126,10 @@ export function animateThemeChange(trigger: RevealTrigger | null | undefined, ap
   };
   // Read now: the event's currentTarget is gone once the handler returns.
   const origin = revealOrigin(trigger, viewport);
+  const radius = revealRadius(origin, viewport);
+  const zoom = rootZoom(root);
   const style = doc.createElement("style");
-  style.textContent = revealCss(origin, revealRadius(origin, viewport));
+  style.textContent = revealCss({ x: origin.x / zoom, y: origin.y / zoom }, radius / zoom);
   doc.head.appendChild(style);
   running = true;
 

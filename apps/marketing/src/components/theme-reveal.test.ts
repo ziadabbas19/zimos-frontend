@@ -5,6 +5,7 @@ import {
   revealCss,
   revealOrigin,
   revealRadius,
+  rootZoom,
   type RevealTrigger,
 } from "@store-builder/ui/theme-reveal";
 
@@ -147,6 +148,20 @@ describe("switching the theme", () => {
     done[0](true);
     await vi.waitFor(() => expect(styles()).toBe(0));
     expect(document.documentElement.hasAttribute(REVEAL_ATTRIBUTE)).toBe(false);
+  });
+
+  it("on a page drawn at a zoom (this site: 90% from 601px), the circle is drawn in the zoomed lengths", () => {
+    withTransitions();
+    Object.defineProperty(document.documentElement, "currentCSSZoom", { value: 0.9, configurable: true });
+    try {
+      expect(rootZoom(document.documentElement)).toBe(0.9);
+      animateThemeChange(click, vi.fn());
+      // The press at 300, 40 on the screen is 333, 44 in the pseudo-elements' own pixels.
+      expect(document.head.textContent).toContain("circle(0px at 333px 44px)");
+    } finally {
+      delete (document.documentElement as { currentCSSZoom?: number }).currentCSSZoom;
+    }
+    expect(rootZoom(document.documentElement)).toBe(1);
   });
 
   it("a press while the circle grows is let go; the next one after it works", async () => {

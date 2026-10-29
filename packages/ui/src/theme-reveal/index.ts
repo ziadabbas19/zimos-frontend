@@ -11,6 +11,7 @@ export {
   revealCss,
   revealOrigin,
   revealRadius,
+  rootZoom,
   type RevealPoint,
   type RevealTrigger,
   type RevealViewport,
