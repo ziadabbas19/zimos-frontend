@@ -83,6 +83,8 @@ export async function dashboardSetShortcuts(client: ApiClient, workspaceId: stri
  * page load, in one answer. Each part is the body (or the named part of the
  * body) of the endpoint beside it, built by the same code on the server; a
  * part the member's role may not read is null, and that endpoint answers 403.
+ * The order pipeline (the menu's "to ship" badge) is not in it: it counts
+ * every order of the store, and is asked for on its own.
  */
 export interface DashboardBootstrap {
   /** `GET /auth/me`, the whole body. */
@@ -101,8 +103,6 @@ export interface DashboardBootstrap {
   shortcuts: string[];
   /** `GET /workspaces/:id/confirmation-tasks/counts` → `counts`. */
   confirmationCounts: unknown | null;
-  /** `GET /workspaces/:id/orders/pipeline`, the whole body. */
-  orderPipeline: unknown | null;
   /** `GET /workspaces/:id/inbox/conversations?status=open&unread=true&limit=1`, the whole body. */
   inboxUnread: unknown | null;
 }

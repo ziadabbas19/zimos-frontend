@@ -36,7 +36,6 @@ function boot(overrides: Partial<DashboardBootstrap> = {}): DashboardBootstrap {
     notifications: { unreadCount: 2, latestOrderNotificationAt: null, soundEnabled: true },
     shortcuts: ["/orders"],
     confirmationCounts: { pending: 1, pendingDue: 1, inProgress: 0 },
-    orderPipeline: { stages: { ready_to_ship: 3 } },
     inboxUnread: { conversations: [], counts: { unread: 4 } },
     ...overrides,
   };
@@ -92,12 +91,13 @@ afterEach(() => {
 });
 
 describe("the dashboard bootstrap", () => {
-  it("answers every read of the frame with the one request", async () => {
+  it("answers every read of the frame with the one request, but the order pipeline", async () => {
     serve(() => json(200, { bootstrap: boot() }));
     await startBootstrap(client);
-    const [me, , list, access, plan, summary, shortcuts, counts, pipeline, inbox] = await frameReads(client);
+    const [me, , list, access, plan, summary, shortcuts, counts, , inbox] = await frameReads(client);
 
-    expect(paths()).toEqual([`/workspaces/${WS}/bootstrap`]);
+    // The pipeline counts every order of the store: it is asked for on its own, alongside.
+    expect(paths()).toEqual([`/workspaces/${WS}/bootstrap`, `/workspaces/${WS}/orders/pipeline`]);
     expect(me.user.id).toBe("user_1");
     expect(list.map((w) => [w.id, w.role])).toEqual([[WS, "owner"]]);
     expect(access).toEqual({ restricted: false, draft: false, warnings: [] });
@@ -105,12 +105,11 @@ describe("the dashboard bootstrap", () => {
     expect(summary.unreadCount).toBe(2);
     expect(shortcuts).toEqual(["/orders"]);
     expect(counts.pendingDue).toBe(1);
-    expect(pipeline.stages.ready_to_ship).toBe(3);
     expect(inbox.counts?.unread).toBe(4);
   });
 
   it("names exactly the paths the screens read", () => {
-    expect(new Set(bootstrapPaths(WS)).size).toBe(10);
+    expect(new Set(bootstrapPaths(WS)).size).toBe(9);
     expect(bootstrapPaths(WS)).toContain(`/workspaces/${WS}/inbox/conversations?status=open&unread=true&limit=1`);
   });
 
@@ -129,7 +128,7 @@ describe("the dashboard bootstrap", () => {
   });
 
   it("leaves a part the role may not read to its own endpoint, which answers as before", async () => {
-    serve(() => json(200, { bootstrap: boot({ confirmationCounts: null, orderPipeline: null, inboxUnread: null }) }));
+    serve(() => json(200, { bootstrap: boot({ confirmationCounts: null, inboxUnread: null }) }));
     await startBootstrap(client);
     await frameReads(client);
     expect(paths().sort()).toEqual(

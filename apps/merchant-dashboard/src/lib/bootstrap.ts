@@ -17,7 +17,9 @@ import { coverWhile, prime } from "@/lib/requestCache";
  * When it cannot be had (an API without it, a store no longer this account's,
  * no network) nothing is primed and every screen asks its own endpoint, as
  * before. A part the role may not read is null and is not primed: that screen
- * asks, and is refused, as before.
+ * asks, and is refused, as before. The order pipeline (the menu's "to ship"
+ * badge) is not a part: it counts every order of the store, so it is asked for
+ * on its own, alongside, and holds back only that badge.
  */
 
 /** The inbox read behind the menu's unread badge (lib/workCounts), as the bootstrap answers it. */
@@ -36,7 +38,6 @@ export function bootstrapAnswers(workspaceId: string, boot: DashboardBootstrap):
     [`${ws}/shortcuts`, { shortcuts: boot.shortcuts }],
   ];
   if (boot.confirmationCounts) answers.push([`${ws}/confirmation-tasks/counts`, { counts: boot.confirmationCounts }]);
-  if (boot.orderPipeline) answers.push([`${ws}/orders/pipeline`, boot.orderPipeline]);
   if (boot.inboxUnread) answers.push([INBOX_UNREAD_PATH(workspaceId), boot.inboxUnread]);
   return answers.filter(([, body]) => body !== undefined && body !== null);
 }
@@ -53,7 +54,6 @@ export function bootstrapPaths(workspaceId: string): string[] {
     `${ws}/notifications/summary`,
     `${ws}/shortcuts`,
     `${ws}/confirmation-tasks/counts`,
-    `${ws}/orders/pipeline`,
     INBOX_UNREAD_PATH(workspaceId),
   ];
 }
