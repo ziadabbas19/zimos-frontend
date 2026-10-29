@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "start": "serve -s dist -l 8080",
+    "start": "serve -s dist -l 8080 -c ../serve.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "templates:build": "node scripts/build-store-templates.mjs",
