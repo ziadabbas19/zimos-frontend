@@ -92,6 +92,28 @@ describe("prefetching a page's code", () => {
     }
   });
 
+  it.each([
+    ["slow-2g", false],
+    ["2g", false],
+    ["3g", false],
+    ["4g", true],
+  ])("on a %s connection, warms up: %s", async (effectiveType, warms) => {
+    vi.useFakeTimers();
+    try {
+      vi.stubGlobal("window", { setTimeout, addEventListener: vi.fn() });
+      vi.stubGlobal("document", { readyState: "complete" });
+      vi.stubGlobal("navigator", { connection: { saveData: false, effectiveType } });
+      const { warmUpWhenIdle, WARM_UP_DELAY_MS } = await fresh();
+      const page = vi.fn(() => Promise.resolve());
+      warmUpWhenIdle([page]);
+      await vi.advanceTimersByTimeAsync(WARM_UP_DELAY_MS + 5000);
+      expect(page.mock.calls.length > 0).toBe(warms);
+    } finally {
+      vi.unstubAllGlobals();
+      vi.useRealTimers();
+    }
+  });
+
   it("gives a link the three moments a page is warmed at", async () => {
     const { registerPrefetch, prefetchProps } = await fresh();
     const load = vi.fn(() => Promise.resolve());
