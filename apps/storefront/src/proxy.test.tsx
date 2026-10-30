@@ -180,33 +180,105 @@ describe("behind the Cloudflare Worker (X-Forwarded-Host + X-Zimos-Edge)", () =>
   });
 });
 
-describe("proxy: CDN caching of public store pages (STOREFRONT_EDGE_CACHE)", () => {
-  it("leaves every response as it was while off (the default)", async () => {
-    const res = await proxy(request("shop.zimos.co", "/"));
+describe("proxy: CDN caching of public store pages (STOREFRONT_EDGE_CACHE_ENABLED)", () => {
+  const PUBLIC = "public, max-age=0, s-maxage=60, stale-while-revalidate=300";
+  const cacheOf = async (req: NextRequest) => (await proxy(req)).headers.get("cache-control");
+  const on = () => vi.stubEnv("STOREFRONT_EDGE_CACHE_ENABLED", "true");
+
+  it("leaves every response exactly as before while off (the default), whatever else is set", async () => {
+    // The flag's earlier name no longer switches anything on.
+    vi.stubEnv("STOREFRONT_EDGE_CACHE", "true");
+    vi.stubEnv("STOREFRONT_EDGE_CACHE_ENABLED", "1");
+    for (const path of ["/", "/products/x", "/about", "/cart", "/pay/o1"]) {
+      const res = await proxy(request("shop.zimos.co", path));
+      expect(res.headers.get("cache-control"), path).toBeNull();
+    }
+    expect(new URL(rewriteOf(await proxy(request("shop.zimos.co", "/")))!).pathname).toBe("/store/shop");
+  });
+
+  it("marks an anonymous GET of a public page public, from the environment's numbers", async () => {
+    on();
+    for (const path of ["/", "/products", "/products/shirt", "/policies/refund", "/about"]) {
+      expect(await cacheOf(request("shop.zimos.co", path)), path).toBe(PUBLIC);
+    }
+    vi.stubEnv("STOREFRONT_EDGE_CACHE_S_MAXAGE", "30");
+    vi.stubEnv("STOREFRONT_EDGE_CACHE_SWR", "120");
+    expect(await cacheOf(request("shop.zimos.co", "/"))).toBe("public, max-age=0, s-maxage=30, stale-while-revalidate=120");
+  });
+
+  it("keeps the same page private for a visitor with a cookie that changes it (language, light/dark, preview)", async () => {
+    on();
+    for (const cookie of ["zimos_store_locale=en", "zimos_store_color_mode=dark", "zimos_store_preview=5a11fedd-23bc-48a4-b0bf-a543d90f1b45"]) {
+      const req = new NextRequest("http://shop.zimos.co/products/x", { headers: { host: "shop.zimos.co", cookie } });
+      expect(await cacheOf(req), cookie).toBeNull();
+    }
+    // Cookies only scripts read leave the page as it is.
+    const touched = new NextRequest("http://shop.zimos.co/products/x", { headers: { host: "shop.zimos.co", cookie: "zimos_touch=x; _fbp=y" } });
+    expect(await cacheOf(touched)).toBe(PUBLIC);
+  });
+
+  it("keeps a response that sets a cookie private (a preview link keeps its token in one)", async () => {
+    on();
+    const res = await proxy(request("shop.zimos.co", "/?storePreview=staffpreview0001.signature0001"));
+    expect(res.headers.get("set-cookie")).toContain("zimos_store_preview=");
     expect(res.headers.get("cache-control")).toBeNull();
   });
 
-  it("marks a public page cacheable when on, and nothing personal", async () => {
-    vi.stubEnv("STOREFRONT_EDGE_CACHE", "true");
-    const home = await proxy(request("shop.zimos.co", "/"));
-    expect(home.headers.get("cache-control")).toContain("s-maxage=60");
-    expect(new URL(rewriteOf(home)!).pathname).toBe("/store/shop");
-
-    const checkout = await proxy(request("shop.zimos.co", "/checkout"));
-    expect(checkout.headers.get("cache-control")).toBeNull();
-
-    const chosen = new NextRequest("http://shop.zimos.co/", { headers: { host: "shop.zimos.co", cookie: "zimos_store_locale=en" } });
-    expect((await proxy(chosen)).headers.get("cache-control")).toBeNull();
-
+  it("never marks a redirect", async () => {
+    on();
+    const internal = await proxy(request("shop.zimos.co", "/store/shop/products/x"));
+    expect(internal.status).toBe(307);
+    expect(internal.headers.get("cache-control")).toBeNull();
     const platform = await proxy(request("zimos.co"));
     expect(platform.status).toBe(307);
     expect(platform.headers.get("cache-control")).toBeNull();
   });
 
-  it("never marks the website editor's view of a page cacheable (it shows a look that is not saved)", async () => {
-    vi.stubEnv("STOREFRONT_EDGE_CACHE", "true");
-    const viewed = await proxy(request("shop.zimos.co", "/?zimos-view=5a11fedd-23bc-48a4-b0bf-a543d90f1b45"));
-    expect(viewed.headers.get("cache-control")).toBeNull();
+  it("never marks payment, cart, checkout, account, orders or tracking", async () => {
+    on();
+    for (const path of ["/pay/o1", "/cart", "/checkout", "/account", "/account/orders/o1", "/orders/o1", "/track", "/offer/o1"]) {
+      expect(await cacheOf(request("shop.zimos.co", path)), path).toBeNull();
+    }
+  });
+
+  it("never marks a preview: the editor's frame, the funnel preview, a preview page", async () => {
+    on();
+    expect(await cacheOf(request("shop.zimos.co", "/?zimos-view=5a11fedd-23bc-48a4-b0bf-a543d90f1b45"))).toBeNull();
+    expect(await cacheOf(request("shop.zimos.co", "/products/x?paymentsPreview=5a11fedd-23bc-48a4-b0bf-a543d90f1b45"))).toBeNull();
+    expect(await cacheOf(request("shop.zimos.co", "/preview/5a11fedd-23bc-48a4-b0bf-a543d90f1b45"))).toBeNull();
+    expect(await cacheOf(request("shop.zimos.co", "/f/ref"))).toBeNull();
+  });
+
+  it("never marks a POST, the internal path served as is, or a host with no store", async () => {
+    on();
+    expect(await cacheOf(new NextRequest("http://shop.zimos.co/", { method: "POST", headers: { host: "shop.zimos.co" } }))).toBeNull();
+    expect(await cacheOf(request("localhost:3000", "/store/shop/products/x"))).toBeNull();
+    expect(await cacheOf(request("shop.example.com", "/"))).toBeNull();
+  });
+
+  it("never marks a request carrying a header only the proxy sets", async () => {
+    on();
+    for (const header of ["x-store-slug", "x-store-ref", "x-zimos-store-preview", "x-zimos-view"]) {
+      const req = new NextRequest("http://shop.zimos.co/", { headers: { host: "shop.zimos.co", [header]: "other" } });
+      expect(await cacheOf(req), header).toBeNull();
+    }
+  });
+
+  it("never marks a merchant domain reached through the Worker (the CDN would key it on our Railway host)", async () => {
+    on();
+    vi.stubEnv("CUSTOM_DOMAINS_ENABLED", "true");
+    vi.stubEnv("CUSTOM_DOMAIN_EDGE_SECRET", "edge-secret-for-tests-0123456789abcdef");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ store: { slug: "shop", homeFunnel: null, primaryHost: null } }), { status: 200 })));
+    const req = new NextRequest("https://storefront-production.up.railway.app/products/x", {
+      headers: {
+        host: "storefront-production.up.railway.app",
+        "x-zimos-host": "www.example.com",
+        "x-zimos-edge": "edge-secret-for-tests-0123456789abcdef",
+      },
+    });
+    const res = await proxy(req);
+    expect(new URL(rewriteOf(res)!).pathname).toBe("/store/shop/products/x");
+    expect(res.headers.get("cache-control")).toBeNull();
   });
 });
 
