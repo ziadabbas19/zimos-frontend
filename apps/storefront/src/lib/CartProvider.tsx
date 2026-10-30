@@ -58,6 +58,8 @@ function clearStoredToken(workspaceId: string) {
 export interface CartContextValue {
   cart: Cart | null;
   isLoading: boolean;
+  /** True while an `addItem` is on its way (the drawer starts reading the catalogue then). */
+  isAdding: boolean;
   /** Sum of every line's quantity. */
   itemCount: number;
   /** `customizations` answers the product's custom fields (photos by upload id). */
@@ -103,6 +105,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [client] = useState(() => createStorefrontApiClient());
   const [cart, setCart] = useState<Cart | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [adding, setAdding] = useState(0);
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const openDrawer = useCallback(() => setDrawerOpen(true), []);
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
@@ -160,14 +163,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback(
     async (variantId: string, offerId?: string, quantity = 1, customizations?: CustomizationInput, options?: import("@store-builder/api-client").MenuOptionsInput) => {
       if (!workspaceId) return;
-      const token = await ensureToken();
-      const next = await client.addCartItem(
-        workspaceId,
-        token,
-        { variantId, offerId, quantity, ...(customizations ? { customizations } : {}), ...(options && options.length ? { options } : {}) },
-        // The visitor owns any photo among the answers.
-        { visitorId: getVisitorId(workspaceId) }
-      );
+      setAdding((n) => n + 1);
+      let next: Cart;
+      try {
+        const token = await ensureToken();
+        next = await client.addCartItem(
+          workspaceId,
+          token,
+          { variantId, offerId, quantity, ...(customizations ? { customizations } : {}), ...(options && options.length ? { options } : {}) },
+          // The visitor owns any photo among the answers.
+          { visitorId: getVisitorId(workspaceId) }
+        );
+      } finally {
+        setAdding((n) => n - 1);
+      }
       setCart(next);
       // AddToCart for the store's own analytics: the line just added, valued at
       // its unit price × the quantity added (not the whole line, which may have
@@ -243,6 +252,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     () => ({
       cart,
       isLoading,
+      isAdding: adding > 0,
       itemCount,
       addItem,
       updateItem,
@@ -253,7 +263,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       openDrawer,
       closeDrawer,
     }),
-    [cart, isLoading, itemCount, addItem, updateItem, removeItem, refreshCart, clearCart, isDrawerOpen, openDrawer, closeDrawer]
+    [cart, isLoading, adding, itemCount, addItem, updateItem, removeItem, refreshCart, clearCart, isDrawerOpen, openDrawer, closeDrawer]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
