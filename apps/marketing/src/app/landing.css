@@ -1130,7 +1130,9 @@ html {
   animation-delay: calc(var(--k) * 5s - 15s);
 }
 
-.lz-cycle img:first-child {
+/* The computer frame's captures each sit in a <picture> (components/hero.tsx). */
+.lz-cycle > img:first-child,
+.lz-cycle > picture:first-child img {
   opacity: 1;
 }
 
@@ -3185,6 +3187,8 @@ html {
 
 @media (prefers-reduced-motion: reduce) {
   .lz-float,
+  /* On a phone the hero's chips bob under a rule of their own (max-width: 600px): stopped here too. */
+  .lz-hero .lz-float,
   .lz-floats,
   .lz-end__phone,
   .lz-sec--tint::before,
@@ -3246,4 +3250,31 @@ html {
   .lz-show__head {
     transform: none !important;
   }
+}
+
+/*
+ * Asked for less motion or less transparency: the hero's chips drop the blur
+ * behind them; their own ground is 92% opaque, so they read the same.
+ * Everyone else is unchanged.
+ */
+@media (prefers-reduced-motion: reduce), (prefers-reduced-transparency: reduce) {
+  .lz-float {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/*
+ * A section scrolled out of view holds its endless animations still (the
+ * class is set by components/landing-motion.tsx): nothing on screen changes,
+ * and a phone stops redrawing what nobody sees. They go on from where they
+ * were when the section comes back.
+ */
+.lz-offscreen,
+.lz-offscreen *,
+.lz-offscreen *::before,
+.lz-offscreen *::after,
+.lz-offscreen::before,
+.lz-offscreen::after {
+  animation-play-state: paused !important;
 }
