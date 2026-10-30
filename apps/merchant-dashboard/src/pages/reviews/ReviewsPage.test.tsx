@@ -33,6 +33,7 @@ const shown = review("r2", "approved", "Arrived fast");
 afterEach(() => {
   api.listReviews.mockReset();
   api.moderateReview.mockReset();
+  api.request.mockReset();
 });
 
 describe("the reviews page", () => {
@@ -51,8 +52,8 @@ describe("the reviews page", () => {
 
   it("approves a waiting review in one press and takes it back from the toast", async () => {
     api.listReviews.mockResolvedValue([waiting]);
-    api.moderateReview.mockImplementation(async (_ws: string, id: string, action: "approve" | "reject") =>
-      fake<Review>({ ...waiting, id, status: action === "approve" ? "approved" : "rejected" })
+    api.moderateReview.mockImplementation(async (_ws: string, id: string, action: string) =>
+      fake<Review>({ ...waiting, id, status: action === "reject" ? "rejected" : "approved", showText: action !== "approve_stars" })
     );
     const { user } = renderWithProviders(<ReviewsPage />, { route: "/reviews" });
 
@@ -72,5 +73,44 @@ describe("the reviews page", () => {
     expect((await screen.findAllByText("ينتظر موافقتك")).length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: /تنتظر موافقتك/ })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "موافقة" }).length).toBeGreaterThan(0);
+  });
+
+  it("deletes a shopper's review too, after asking", async () => {
+    api.listReviews.mockResolvedValue([waiting]);
+    api.request.mockResolvedValue({ deleted: true, id: "r1" });
+    const { user } = renderWithProviders(<ReviewsPage />, { route: "/reviews" });
+
+    await user.click((await screen.findAllByRole("button", { name: "Actions for this review" }))[0]);
+    await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
+    await user.click(await screen.findByRole("button", { name: "Delete review" }));
+    await waitFor(() => expect(api.request).toHaveBeenCalledWith("/workspaces/ws_1/reviews/r1", { method: "DELETE" }));
+  });
+
+  it("says whether the reviewer bought, and publishes the stars alone from the row's menu", async () => {
+    const bought = fake<Review>({ ...waiting, purchase: { state: "delivered", orderId: "o1", orderNumber: "ORD-1" } });
+    const stranger = fake<Review>({ ...review("r3", "pending", "Never ordered"), customerId: null, customer: null, authorName: "Visitor", purchase: { state: "none", orderId: null, orderNumber: null } });
+    api.listReviews.mockResolvedValue([bought, stranger]);
+    api.moderateReview.mockImplementation(async (_ws: string, id: string, action: string) =>
+      fake<Review>({ ...bought, id, status: "approved", showText: action !== "approve_stars" })
+    );
+    const { user } = renderWithProviders(<ReviewsPage />, { route: "/reviews" });
+
+    expect((await screen.findAllByText("Bought — delivered")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Did not buy").length).toBeGreaterThan(0);
+
+    await user.click(screen.getAllByRole("button", { name: "Actions for this review" })[0]);
+    await user.click(await screen.findByRole("menuitem", { name: "Publish the stars only" }));
+    await waitFor(() => expect(api.moderateReview).toHaveBeenCalledWith("ws_1", "r1", "approve_stars"));
+    expect(await screen.findByText("Published — your store shows its stars only.")).toBeInTheDocument();
+  });
+
+  it("names a store review as one of the store, and tells about the reviews added by hand", async () => {
+    const storeReview = fake<Review>({ ...review("r4", "pending", "Lovely shop"), kind: "store", productId: null, product: null });
+    const manual = fake<Review>({ ...review("r5", "approved", "From WhatsApp"), source: "manual", authorName: "Sara", customerId: null, customer: null });
+    api.listReviews.mockResolvedValue([storeReview, manual]);
+    renderWithProviders(<ReviewsPage />, { route: "/reviews?status=all" });
+
+    expect((await screen.findAllByText("Your store")).length).toBeGreaterThan(0);
+    expect(screen.getByText(/no longer count in your stars/)).toBeInTheDocument();
   });
 });

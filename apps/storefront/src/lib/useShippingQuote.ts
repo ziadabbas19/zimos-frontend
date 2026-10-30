@@ -2,7 +2,7 @@
 
 import { storefrontQuoteExtras, storefrontShippingQuoteFor, type StorefrontQuoteExtras } from "@store-builder/api-client";
 import { useEffect, useState } from "react";
-import type { ApiClient, FreeShippingProgress, ShippingQuote } from "@store-builder/api-client";
+import type { ApiClient, ComboSelection, FreeShippingProgress, ShippingQuote } from "@store-builder/api-client";
 import { provinceFor } from "./orderForm";
 import { getVisitorId } from "./visitorId";
 import { quotePricesShipping, shippingLineFor, type ShippingLine } from "./shippingLine";
@@ -10,10 +10,17 @@ import { quoteOptionsOf, type ShippingOptionChoice } from "./shippingChoice";
 
 const DEBOUNCE_MS = 300;
 
+/**
+ * A line to quote: a variant (with its offer), or a whole combo (`comboId` +
+ * `comboSelection`, no variant): the server prices a combo as its products at
+ * the combo's price, so the weight and the free-shipping threshold are right.
+ */
 export interface QuoteLine {
-  variantId: string;
+  variantId?: string;
   offerId?: string | null;
   quantity: number;
+  comboId?: string | null;
+  comboSelection?: ComboSelection;
 }
 
 export type { ShippingLine };
@@ -60,7 +67,11 @@ export function useShippingQuote({
   const province = provinceFor(governorate);
   const items = lines
     .filter((l) => l.quantity > 0)
-    .map((l) => ({ variantId: l.variantId, ...(l.offerId ? { offerId: l.offerId } : {}), quantity: l.quantity }));
+    .map((l) =>
+      l.comboId
+        ? { comboId: l.comboId, comboSelection: l.comboSelection ?? [], quantity: l.quantity }
+        : { variantId: l.variantId, ...(l.offerId ? { offerId: l.offerId } : {}), quantity: l.quantity }
+    );
   // The effect keys on content, not on the fresh array each render.
   const requestKey = JSON.stringify([workspaceId, country, province, items]);
   const active = enabled && items.length > 0;

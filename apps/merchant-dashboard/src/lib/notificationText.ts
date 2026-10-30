@@ -26,6 +26,10 @@ export const NOTIFICATION_STRINGS = {
     type_wallet_refund: "Balance refunds",
     type_wallet_credit: "Credit from Zimos",
     type_wallet_fallback: "Moved to pay per order",
+    type_review_new: "New reviews waiting for your approval",
+    reviewNewTitle: "A new review of {product} is waiting for your approval",
+    reviewNewStoreTitle: "A new review of your store is waiting for your approval",
+    reviewNewBody: "{rating} out of 5. It shows in your store only once you approve it.",
     walletFallbackTitle: "Your subscription ended: your store is now on pay per order",
     walletFallbackBody: "Your store keeps selling, and each order's fee comes from your prepaid balance. You can choose a subscription again at any time.",
     walletRefundTitle_requested: "Your refund request was received",
@@ -83,6 +87,10 @@ export const NOTIFICATION_STRINGS = {
     type_wallet_refund: "استرداد الرصيد",
     type_wallet_credit: "رصيد من Zimos",
     type_wallet_fallback: "الانتقال إلى الدفع لكل طلب",
+    type_review_new: "تقييمات جديدة تنتظر موافقتك",
+    reviewNewTitle: "تقييم جديد على {product} ينتظر موافقتك",
+    reviewNewStoreTitle: "تقييم جديد لمتجرك ينتظر موافقتك",
+    reviewNewBody: "{rating} من 5. لن يظهر في متجرك إلا بعد موافقتك.",
     walletFallbackTitle: "انتهى اشتراكك: متجرك الآن على الدفع لكل طلب",
     walletFallbackBody: "يستمر متجرك في البيع، ويُخصم رسم كل طلب من رصيدك المدفوع مسبقًا. يمكنك اختيار اشتراك مجددًا في أي وقت.",
     walletRefundTitle_requested: "تم استلام طلب الاسترداد",
@@ -193,6 +201,12 @@ export function notificationText(t: NotificationStrings, n: MerchantNotification
       return { title: t.walletFallbackTitle, body: t.walletFallbackBody };
     case "wallet.credit":
       return { title: d.kind === "gift" ? t.walletCreditGift : t.walletCreditCorrection, body: d.reason ? str(d.reason) : null };
+    case "review.new":
+      if (d.rating === undefined) break;
+      return {
+        title: d.productName ? fmt(t.reviewNewTitle, { product: str(d.productName) }) : t.reviewNewStoreTitle,
+        body: fmt(t.reviewNewBody, { rating: str(d.rating) }),
+      };
     case "export.ready":
       if (!d.name) break;
       if (d.failed) return { title: fmt(t.exportFailedTitle, { name: str(d.name) }), body: t.exportFailedBody };

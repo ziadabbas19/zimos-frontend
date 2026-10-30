@@ -40,9 +40,12 @@ import type { ItemSubField } from "./ItemListField";
 // ---------------------------------------------------------------------------
 
 export type FieldSpec = (
-  | { key: string; label: string; kind: "text"; placeholder?: string; hint?: string }
-  | { key: string; label: string; kind: "textarea"; placeholder?: string; hint?: string }
-  | { key: string; label: string; kind: "number"; min?: number; max?: number; hint?: string }
+  // `plain`: words the server takes as plain text only — markup and hidden characters are dropped as they are typed
+  // (plainText.ts). `maxLength`: the most characters the server takes.
+  | { key: string; label: string; kind: "text"; placeholder?: string; hint?: string; plain?: boolean; maxLength?: number }
+  | { key: string; label: string; kind: "textarea"; placeholder?: string; hint?: string; plain?: boolean; maxLength?: number }
+  // `strict`: only a whole number inside min–max is ever stored (a server that checks the range refuses anything else).
+  | { key: string; label: string; kind: "number"; min?: number; max?: number; hint?: string; strict?: boolean }
   // A date and time, stored as an ISO string ("" = not set).
   | { key: string; label: string; kind: "datetime"; hint?: string }
   // A colour as #rrggbb ("" or absent = not chosen: the element keeps its own).
@@ -76,6 +79,8 @@ export type FieldSpec = (
       max: number;
       fields: ItemSubField[];
       hint?: string;
+      /** Each card also has a grip to drag it to another place, and a copy button (an imported template's band always has them). */
+      arrange?: boolean;
     }
 ) & {
   /**

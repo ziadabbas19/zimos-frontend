@@ -1,8 +1,7 @@
 import type { Review } from "@store-builder/api-client";
 import { ContextMenu, type ContextMenuItem } from "@/components/ContextMenu";
-import { IconCamera, IconCheck, IconDelete, IconEye, IconEyeOff, IconProduct, IconQuickLook } from "@/components/icons";
+import { IconCamera, IconCheck, IconDelete, IconEdit, IconEye, IconEyeOff, IconProduct, IconQuickLook, IconStar } from "@/components/icons";
 import { ListRowCard } from "@/components/list";
-import { StatusBadge } from "@/components/StatusBadge";
 import { ViewLink } from "@/components/ViewLink";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { formatDateTime } from "@/lib/format";
@@ -12,8 +11,8 @@ import { useViewNavigate } from "@/lib/viewTransition";
 import { ItemMenu } from "@/pages/catalog/media/ItemMenu";
 import { DeskRow } from "@/pages/returns/rowkit/DeskList";
 import { RowAction, rowKeyProps } from "@/pages/returns/rowkit/RowBits";
-import { FactChip, ReviewSourceBadge, Stars } from "./ReviewBits";
-import { REVIEW_STATUS_TONE, REVIEW_WORDS, isMerchantAdded, photosOf, reviewAuthor, type ModerateAction } from "./reviewModel";
+import { FactChip, PurchaseBadge, ReviewOriginalLink, ReviewSourceBadge, ReviewStatusBadge, ReviewWrittenOn, Stars } from "./ReviewBits";
+import { REVIEW_WORDS, isMerchantAdded, isStarsOnly, kindOf, photosOf, reviewAuthor, type ModerateAction } from "./reviewModel";
 
 const STRINGS = {
   en: {
@@ -45,6 +44,8 @@ export interface ReviewRowProps {
   current: boolean;
   onPeek: () => void;
   onModerate: (action: ModerateAction) => void;
+  /** Opens the review in the form: only a review the store added has one. */
+  onEdit: () => void;
   onDelete: () => void;
 }
 
@@ -53,16 +54,17 @@ export interface ReviewRowProps {
  * stands, who wrote it and the ONE move its status allows — approve a waiting
  * review, hide a live one, show a hidden one. A press anywhere else opens
  * Quick Look (Space too; Enter opens the product). Everything else — the other
- * move of a waiting review, delete for a review the store added — is in «…»
- * and in the menu of the row (right-click, a long press, Shift+F10).
+ * moves (publish the stars only, hide), edit (a review the store added), delete
+ * — is in «…» and in the menu of the row (right-click, a long press, Shift+F10).
  */
-export function ReviewRow({ review, compact, busy, current, onPeek, onModerate, onDelete }: ReviewRowProps) {
+export function ReviewRow({ review, compact, busy, current, onPeek, onModerate, onEdit, onDelete }: ReviewRowProps) {
   const t = useT(STRINGS);
   const words = useT(REVIEW_WORDS);
   const navigate = useViewNavigate();
 
   const product = review.product ?? null;
-  const productName = product?.name || words.unknownProduct;
+  const store = kindOf(review) === "store";
+  const productName = store ? words.storeReview : product?.name || words.unknownProduct;
   const productPath = product ? `/catalog/${product.id}` : null;
   const author = reviewAuthor(review, words.unknownCustomer);
   const photos = photosOf(review).length;
@@ -73,7 +75,9 @@ export function ReviewRow({ review, compact, busy, current, onPeek, onModerate, 
 
   const menu: ContextMenuItem[] = [{ id: "peek", label: t.menuPeek, icon: IconQuickLook, onSelect: onPeek }];
   if (productPath) menu.push({ id: "product", label: t.menuProduct, icon: IconProduct, onSelect: () => navigate(productPath) });
-  if (review.status !== "approved") {
+  // A customer's own words are never edited: only a review the store added.
+  if (isMerchantAdded(review)) menu.push({ id: "edit", label: words.edit, icon: IconEdit, disabled: acting, onSelect: onEdit });
+  if (review.status !== "approved" || isStarsOnly(review)) {
     menu.push({
       id: "approve",
       label: review.status === "rejected" ? words.show : words.approve,
@@ -82,6 +86,9 @@ export function ReviewRow({ review, compact, busy, current, onPeek, onModerate, 
       disabled: acting,
       onSelect: () => onModerate("approve"),
     });
+  }
+  if (!isStarsOnly(review)) {
+    menu.push({ id: "stars", label: words.approveStars, icon: IconStar, disabled: acting, onSelect: () => onModerate("approve_stars") });
   }
   if (review.status !== "rejected") {
     menu.push({
@@ -93,9 +100,7 @@ export function ReviewRow({ review, compact, busy, current, onPeek, onModerate, 
       onSelect: () => onModerate("reject"),
     });
   }
-  if (isMerchantAdded(review)) {
-    menu.push({ id: "delete", label: words.remove, icon: IconDelete, destructive: true, separatorBefore: true, disabled: acting, onSelect: onDelete });
-  }
+  menu.push({ id: "delete", label: words.remove, icon: IconDelete, destructive: true, separatorBefore: true, disabled: acting, onSelect: onDelete });
 
   // The ONE move of the row: the brand pill while a decision is due, a quiet pane once it was made.
   const action =
@@ -107,7 +112,7 @@ export function ReviewRow({ review, compact, busy, current, onPeek, onModerate, 
       <RowAction tone="quiet" label={words.show} icon={compact ? undefined : IconEye} busy={busy === "approve"} disabled={acting} onClick={() => onModerate("approve")} />
     );
 
-  const status = <StatusBadge value={review.status} tone={REVIEW_STATUS_TONE[review.status]} text={words[`status_${review.status}`]} />;
+  const status = <ReviewStatusBadge review={review} />;
   const age = (
     <time dateTime={review.createdAt} title={formatDateTime(review.createdAt)}>
       {formatRelativeTime(review.createdAt)}
@@ -116,6 +121,10 @@ export function ReviewRow({ review, compact, busy, current, onPeek, onModerate, 
   const facts = (
     <>
       <ReviewSourceBadge review={review} />
+      {/* Never on a review the store added: it has no order (purchaseOf). */}
+      <PurchaseBadge review={review} />
+      <ReviewWrittenOn review={review} />
+      <ReviewOriginalLink review={review} />
       {photos > 0 && (
         <FactChip>
           <IconCamera className="size-3.5 shrink-0" aria-hidden />
@@ -130,7 +139,7 @@ export function ReviewRow({ review, compact, busy, current, onPeek, onModerate, 
       <li>
         <ContextMenu items={menu} label={t.menuLabel}>
           <ListRowCard
-            title={<bdi className={product ? undefined : "font-medium text-ink-soft"}>{productName}</bdi>}
+            title={<bdi className={product || store ? undefined : "font-medium text-ink-soft"}>{productName}</bdi>}
             amount={<Stars rating={review.rating} size="sm" />}
             status={status}
             meta={
@@ -174,7 +183,7 @@ export function ReviewRow({ review, compact, busy, current, onPeek, onModerate, 
               <bdi>{productName}</bdi>
             </ViewLink>
           ) : (
-            <span className="text-ink-soft">{productName}</span>
+            <span className={store ? undefined : "text-ink-soft"}>{productName}</span>
           )}
         </p>
         <p className="truncate text-xs leading-5 text-ink-soft">

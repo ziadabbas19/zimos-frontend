@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@store-builder/ui";
-import { catalogDeleteManualReview, type Review, type ReviewStatus } from "@store-builder/api-client";
+import { reviewsDelete, type Review, type ReviewStatus } from "@store-builder/api-client";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import type { ContextMenuItem } from "@/components/ContextMenu";
 import { DataState } from "@/components/DataState";
@@ -9,11 +9,13 @@ import { EmptyState } from "@/components/EmptyState";
 import { IconPlus, IconRefresh, IconReviews, IconSearch } from "@/components/icons";
 import { ChipRow, ListSkeleton, ListToolbar, type ChipItem } from "@/components/list";
 import { PageHeader } from "@/components/PageHeader";
+import { PlanFeatureNotice } from "@/components/PlanFeatureNotice";
 import { useToast } from "@/components/Toast";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { apiClient } from "@/lib/apiClient";
 import { useErrorMessage } from "@/lib/errorMessages";
 import { useCachedAsync } from "@/lib/useCachedAsync";
+import { usePlanFeatures } from "@/lib/usePlanFeatures";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { ItemMenu } from "@/pages/catalog/media/ItemMenu";
 import { ActiveFilters } from "@/pages/returns/rowkit/ActiveFilters";
@@ -24,8 +26,9 @@ import {
   NO_REVIEW_FILTERS,
   ReviewFilterSheet,
   countReviewFilters,
-  isReviewSource,
+  isReviewKind,
   matchesReviewFilters,
+  readSourceParam,
   useReviewFilterChips,
   type ContentFilter,
   type RatingBand,
@@ -33,13 +36,16 @@ import {
 } from "./ReviewFilters";
 import { ReviewQuickLook } from "./ReviewQuickLook";
 import { REVIEW_COLUMNS, ReviewRow } from "./ReviewRow";
-import { REVIEW_WORDS, actionTo, fold, reviewAuthor, statusAfter, type ModerateAction } from "./reviewModel";
+import { REVIEW_WORDS, actionTo, fold, isLegacyAdded, reviewAuthor, statusAfter, type ModerateAction } from "./reviewModel";
+import { refreshWorkCounts } from "@/lib/workCounts";
 
 const STRINGS = {
   en: {
     title: "Reviews",
-    description: "A customer can review a product once it reaches them. Nothing shows in your store until you approve it.",
-    add: "Add review",
+    description: "Anyone can review a product or your store. Nothing shows until you approve it, and only reviews from delivered orders count in your stars.",
+    legacyNote:
+      "Reviews you added yourself show as before, but no longer count in your stars: your average comes only from published reviews of customers whose order was delivered. Edit one to give it its source: it then shows apart, with that source.",
+    add: "Add a review from another site",
     tools: "Tools",
     refresh: "Refresh the list",
     searchLabel: "Search the reviews",
@@ -55,7 +61,7 @@ const STRINGS = {
     colAge: "Written",
     colAction: "Next step",
     firstTitle: "No reviews yet",
-    firstBody: "A review arrives when a customer who received a product writes one. You can also add one that reached you on WhatsApp yourself.",
+    firstBody: "A review arrives when a shopper writes one on a product or your store. You can also add real reviews your customers left you on other sites.",
     emptyPending: "No reviews are waiting for you",
     emptyPendingBody: "A new review lands here first, and shows in your store once you approve it.",
     emptyApproved: "No review shows in your store yet",
@@ -65,6 +71,7 @@ const STRINGS = {
     clearAll: "Clear the search and filters",
     searchAll: "Look in all reviews",
     toastApproved: "Approved — it shows in your store now.",
+    toastStars: "Published — your store shows its stars only.",
     toastHidden: "Hidden — it won't show in your store.",
     toastShown: "The review shows in your store again.",
     toastHiddenAgain: "The review is off your store.",
@@ -78,8 +85,10 @@ const STRINGS = {
   },
   ar: {
     title: "التقييمات",
-    description: "يقيّم العميل المنتج بعد استلامه، ولا يظهر أي تقييم في متجرك إلا بعد موافقتك عليه.",
-    add: "إضافة تقييم",
+    description: "يمكن لأي شخص تقييم منتج أو متجرك، ولا يظهر أي تقييم إلا بعد موافقتك، ولا يدخل في متوسط نجومك إلا تقييم من طلب تم تسليمه.",
+    legacyNote:
+      "التقييمات التي أضفتها بنفسك تظهر كما كانت، لكنها لم تعد تدخل في متوسط نجومك: المتوسط يُحسب من التقييمات المنشورة لعملاء تم تسليم طلباتهم فقط. عدّل أيًّا منها لتحدد مصدره، فيظهر منفصلًا مع ذلك المصدر.",
+    add: "إضافة تقييم من مصدر خارجي",
     tools: "أدوات",
     refresh: "تحديث القائمة",
     searchLabel: "ابحث في التقييمات",
@@ -95,7 +104,7 @@ const STRINGS = {
     colAge: "كُتب",
     colAction: "الخطوة التالية",
     firstTitle: "لا توجد تقييمات بعد",
-    firstBody: "يصل التقييم عندما يكتبه عميل استلم منتجًا. ويمكنك أيضًا إضافة تقييم وصلك عبر واتساب بنفسك.",
+    firstBody: "يصل التقييم عندما يكتبه عميل على منتج أو على متجرك. ويمكنك أيضًا إضافة تقييمات حقيقية تركها لك عملاؤك على مواقع أخرى.",
     emptyPending: "لا توجد تقييمات تنتظر موافقتك",
     emptyPendingBody: "أي تقييم جديد يصل هنا أولًا، ويظهر في متجرك بعد موافقتك عليه.",
     emptyApproved: "لا يظهر أي تقييم في متجرك بعد",
@@ -105,6 +114,7 @@ const STRINGS = {
     clearAll: "مسح البحث والفلاتر",
     searchAll: "البحث في كل التقييمات",
     toastApproved: "تمت الموافقة — يظهر الآن في متجرك.",
+    toastStars: "تم النشر — يعرض متجرك نجومه فقط.",
     toastHidden: "تم الإخفاء — لن يظهر في متجرك.",
     toastShown: "عاد التقييم إلى الظهور في متجرك.",
     toastHiddenAgain: "أُزيل التقييم من متجرك.",
@@ -136,9 +146,28 @@ function tabOf(value: string | null): StatusTab {
  * undone from the toast.
  *
  * `?status=` keeps the chosen chip (absent = waiting) and `?source=` the
- * source filter — both are what the product link import points at.
+ * origin filter (customer | external | added; the older manual and import
+ * both read as added) — both are what the product link import points at.
+ *
+ * A review the store added (from another site, or by hand before sources
+ * existed) is edited in the same form that adds one; a customer's never is.
  */
+/** Without the plan's reviews (while the server refuses it) the page says so and lists nothing. */
 export function ReviewsPage() {
+  const t = useT(STRINGS);
+  const plan = usePlanFeatures();
+  if (plan.gated("reviews")) {
+    return (
+      <div className="max-w-5xl">
+        <PageHeader title={t.title} />
+        <PlanFeatureNotice feature="reviews" />
+      </div>
+    );
+  }
+  return <ReviewsScreen />;
+}
+
+function ReviewsScreen() {
   const workspaceId = useWorkspaceId();
   const t = useT(STRINGS);
   const words = useT(REVIEW_WORDS);
@@ -149,8 +178,9 @@ export function ReviewsPage() {
 
   const [params, setParams] = useSearchParams();
   const tab = tabOf(params.get("status"));
-  const rawSource = params.get("source");
-  const source = isReviewSource(rawSource) ? rawSource : null;
+  const source = readSourceParam(params.get("source"));
+  const rawKind = params.get("kind");
+  const kind = isReviewKind(rawKind) ? rawKind : null;
 
   function patchParams(change: (out: URLSearchParams) => void) {
     setParams(
@@ -175,20 +205,23 @@ export function ReviewsPage() {
   const [search, setSearch] = useState("");
   const [rating, setRating] = useState<RatingBand | null>(null);
   const [content, setContent] = useState<ContentFilter | null>(null);
-  const filters: ReviewFilterState = useMemo(() => ({ source, rating, content }), [source, rating, content]);
+  const filters: ReviewFilterState = useMemo(() => ({ kind, source, rating, content }), [kind, source, rating, content]);
   function setFilters(next: ReviewFilterState) {
     setRating(next.rating);
     setContent(next.content);
-    if (next.source !== source) {
+    if (next.source !== source || next.kind !== kind) {
       patchParams((out) => {
         if (next.source) out.set("source", next.source);
         else out.delete("source");
+        if (next.kind) out.set("kind", next.kind);
+        else out.delete("kind");
       });
     }
   }
 
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [adding, setAdding] = useState(false);
+  // The form, for a new review from another site (review null) or for editing one the store added.
+  const [form, setForm] = useState<{ open: boolean; review: Review | null }>({ open: false, review: null });
   // The review being looked at stays here while its panel closes, so the panel does not empty on its way out.
   const [peek, setPeek] = useState<{ id: string; open: boolean } | null>(null);
   // The same for the review being deleted: its name stays in the question while the question closes.
@@ -226,14 +259,16 @@ export function ReviewsPage() {
 
   /** The request alone: the row already shows where it is going, and goes back if the server says no. */
   async function send(review: Review, action: ModerateAction) {
-    const before = review.status;
-    patchRow(review.id, { status: statusAfter(action) });
+    const before = { status: review.status, showText: review.showText };
+    patchRow(review.id, { status: statusAfter(action), ...(action === "reject" ? {} : { showText: action === "approve" }) });
     try {
       // The answer is the bare row: the product and the customer the list joined in stay as they are.
       const updated = await apiClient.moderateReview(workspaceId, review.id, action);
-      patchRow(review.id, { status: updated.status, updatedAt: updated.updatedAt });
+      patchRow(review.id, { status: updated.status, showText: updated.showText, updatedAt: updated.updatedAt });
+      // The sidebar's "waiting" badge follows at once.
+      refreshWorkCounts();
     } catch (err) {
-      patchRow(review.id, { status: before });
+      patchRow(review.id, before);
       throw err;
     }
   }
@@ -242,18 +277,21 @@ export function ReviewsPage() {
   function moderate(review: Review, action: ModerateAction) {
     const before = review.status;
     const after = statusAfter(action);
-    if (before === after || busy[review.id]) return;
+    const sameText = action === "reject" || (review.showText !== false) === (action === "approve");
+    if ((before === after && sameText) || busy[review.id]) return;
     setBusy((prev) => ({ ...prev, [review.id]: action }));
     void send(review, action)
       .then(() => {
-        const moved: Review = { ...review, status: after };
-        const back = actionTo(before);
-        if (back) {
+        const moved: Review = { ...review, status: after, ...(action === "reject" ? {} : { showText: action === "approve" }) };
+        const back = before === after ? null : actionTo(before);
+        if (action === "approve_stars" || (before === after && action === "approve")) {
+          toast.success(action === "approve_stars" ? t.toastStars : t.toastApproved);
+        } else if (back) {
           // The opposite call puts it exactly where it was: a true Undo.
           toast.undo(after === "approved" ? t.toastShown : t.toastHiddenAgain, () => send(moved, back));
         } else {
           // A waiting review cannot go back to waiting (the API has only the two moves): the toast offers the other one, by its name.
-          const other: ModerateAction = action === "approve" ? "reject" : "approve";
+          const other: ModerateAction = action === "reject" ? "approve" : "reject";
           toast.notify("success", after === "approved" ? t.toastApproved : t.toastHidden, {
             action: { label: other === "reject" ? t.hideIt : t.showIt, onClick: () => moderate(moved, other) },
           });
@@ -277,6 +315,31 @@ export function ReviewsPage() {
     setRemoving({ review, open: true });
   }
 
+  /** The form, filled with a review the store added. Quick Look steps aside for it too. */
+  function openEdit(review: Review) {
+    setPeek((current) => (current ? { ...current, open: false } : current));
+    setForm({ open: true, review });
+  }
+
+  /** What an edit changed, laid over the row: the order facts the list joined in stay as they are. */
+  function applyEdit(id: string, saved: Review) {
+    patchRow(id, {
+      kind: saved.kind,
+      productId: saved.productId,
+      product: saved.product ?? null,
+      authorName: saved.authorName,
+      rating: saved.rating,
+      comment: saved.comment,
+      photos: saved.photos,
+      source: saved.source,
+      externalSource: saved.externalSource ?? null,
+      externalSourceLabel: saved.externalSourceLabel ?? null,
+      externalUrl: saved.externalUrl ?? null,
+      reviewedAt: saved.reviewedAt ?? null,
+      updatedAt: saved.updatedAt,
+    });
+  }
+
   // While the list is on its way a chip holds its place with a dash (null) instead of a zero.
   const figure = (count: number) => (list.loading ? null : count);
   const chips: ChipItem<StatusTab>[] = [
@@ -291,7 +354,7 @@ export function ReviewsPage() {
   ];
 
   const addButton = (
-    <Button className="min-h-11 rounded-full px-5" onClick={() => setAdding(true)}>
+    <Button className="min-h-11 rounded-full px-5" onClick={() => setForm({ open: true, review: null })}>
       <IconPlus className="size-4" aria-hidden />
       {t.add}
     </Button>
@@ -321,7 +384,7 @@ export function ReviewsPage() {
       title={t.firstTitle}
       description={t.firstBody}
       action={
-        <Button className="rounded-full px-5" onClick={() => setAdding(true)}>
+        <Button className="rounded-full px-5" onClick={() => setForm({ open: true, review: null })}>
           <IconPlus className="size-4" aria-hidden />
           {t.add}
         </Button>
@@ -360,6 +423,7 @@ export function ReviewsPage() {
       current={peek?.open === true && peek.id === review.id}
       onPeek={() => setPeek({ id: review.id, open: true })}
       onModerate={(action) => moderate(review, action)}
+      onEdit={() => openEdit(review)}
       onDelete={() => askDelete(review)}
     />
   ));
@@ -381,6 +445,12 @@ export function ReviewsPage() {
         />
         <ChipRow items={chips} value={tab} onChange={selectTab} label={t.chipsLabel} collapseEmpty={false} countsLoading={list.loading} />
         <ActiveFilters filters={filterChips} onClearAll={() => setFilters(NO_REVIEW_FILTERS)} />
+        {/* About the reviews added by hand before reviews had a source; one from another site says its own. */}
+        {reviews.some(isLegacyAdded) && (
+          <p data-slot="reviews-legacy-note" className="rounded-2xl bg-paper-sunken px-4 py-3 text-[13px] leading-5 text-ink-soft">
+            {t.legacyNote}
+          </p>
+        )}
 
         <DataState
           loading={list.loading}
@@ -407,7 +477,14 @@ export function ReviewsPage() {
         </DataState>
       </div>
 
-      <ReviewFilterSheet open={filtersOpen} onOpenChange={setFiltersOpen} value={filters} onChange={setFilters} matching={visible.length} />
+      <ReviewFilterSheet
+        open={filtersOpen}
+        onOpenChange={setFiltersOpen}
+        value={filters}
+        onChange={setFilters}
+        matching={visible.length}
+        legacy={reviews.some(isLegacyAdded)}
+      />
 
       <ReviewQuickLook
         review={peeked}
@@ -417,17 +494,23 @@ export function ReviewsPage() {
         onModerate={(action) => {
           if (peeked) moderate(peeked, action);
         }}
+        onEdit={() => {
+          if (peeked) openEdit(peeked);
+        }}
         onDelete={() => {
           if (peeked) askDelete(peeked);
         }}
       />
 
       <AddReviewDialog
-        open={adding}
-        onClose={() => setAdding(false)}
-        onAdded={() => {
-          setAdding(false);
-          void list.refresh({ silent: true });
+        open={form.open}
+        review={form.review}
+        onClose={() => setForm((current) => ({ ...current, open: false }))}
+        onSaved={(saved) => {
+          const edited = form.review;
+          setForm((current) => ({ ...current, open: false }));
+          if (edited) applyEdit(edited.id, saved);
+          else void list.refresh({ silent: true });
         }}
       />
 
@@ -442,13 +525,14 @@ export function ReviewsPage() {
         onConfirm={async () => {
           if (!removing) return;
           try {
-            await catalogDeleteManualReview(apiClient, workspaceId, removing.review.id);
+            await reviewsDelete(apiClient, workspaceId, removing.review.id);
           } catch (err) {
             throw new Error(errorMessage(err));
           }
           const id = removing.review.id;
           toast.success(t.deleted);
           list.setData((prev) => (prev ?? []).filter((row) => row.id !== id));
+          refreshWorkCounts();
           setRemoving((current) => (current ? { ...current, open: false } : current));
         }}
       />

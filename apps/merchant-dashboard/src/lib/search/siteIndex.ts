@@ -64,6 +64,7 @@ import {
   CUSTOM_DOMAINS_ENABLED,
   EMAIL_SUPPRESSIONS_ENABLED,
   LOYALTY_ENABLED,
+  PRODUCT_COMBOS_ENABLED,
   PRODUCT_SPECS_ENABLED,
   PUBLIC_API_ACK_ENABLED,
   SIZE_CHARTS_ENABLED,
@@ -230,6 +231,7 @@ const PAGE_WORDS: Partial<Record<NavKey, readonly string[]>> = {
 /** A menu page whose content the plan holds back (the server refuses its data without the key). */
 const PAGE_PLAN: Partial<Record<NavKey, SearchPlanRule>> = {
   webAnalytics: { feature: "advanced_analytics" },
+  reviews: { feature: "reviews" },
 };
 
 /** The heading of each menu page: its group's name, or its own for a page in a group without one. */
@@ -357,6 +359,7 @@ const DECLARED: EntryDef[] = [
   { id: pageId("/form-submissions"), kind: "page", title: text("formSubmissions"), keywords: ["forms", "contact form", "leads", "نماذج", "رسائل"], to: "/form-submissions", icon: IconDocument, parent: pageId("/customers") },
   { id: pageId("/blog/categories"), kind: "page", title: both(BLOG_WORDS, "categories"), keywords: ["blog categories", "تصنيفات المدونة"], to: "/blog/categories", icon: IconBlog, parent: pageId("/blog"), when: BLOG_ENABLED },
   { id: pageId("/offers/bundles"), kind: "page", title: text("bundles"), keywords: ["bundle", "باقة"], to: "/offers/bundles", icon: IconGift, parent: pageId("/offers") },
+  { id: pageId("/offers/combos"), kind: "page", title: text("combos"), keywords: ["combo", "kit", "set", "باقة منتجات", "كومبو"], to: "/offers/combos", icon: IconGift, parent: pageId("/offers"), when: PRODUCT_COMBOS_ENABLED },
   { id: pageId("/offers/order-bumps"), kind: "page", title: text("bumps"), keywords: ["order bump", "add-on", "إضافة"], to: "/offers/order-bumps", icon: IconGift, parent: pageId("/offers") },
   { id: pageId("/offers/upsells"), kind: "page", title: text("upsells"), keywords: ["upsell", "one click", "بعد الشراء"], to: "/offers/upsells", icon: IconTrendUp, parent: pageId("/offers") },
   { id: pageId("/offers/cross-sell"), kind: "page", title: text("crossSell"), keywords: ["related products", "frequently bought together", "منتجات مرتبطة"], to: "/offers/cross-sell", icon: IconShuffle, parent: pageId("/offers") },

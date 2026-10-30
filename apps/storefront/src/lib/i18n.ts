@@ -335,6 +335,9 @@ const en = {
       optionsInvalid: "This product's options changed or are incomplete. Choose them again on the product page.",
       pickupUnavailable: "Pickup from the store isn't available right now. Choose delivery instead.",
       unavailable: "This product is unavailable right now.",
+      comboUnavailable: "A product of this combo is no longer available.",
+      comboVariantRequired: "Choose an option for every product in the combo.",
+      comboNotInFunnel: "Combos can't be ordered from this page. Add the combo to your cart and check out from there.",
     },
   },
   bump: {
@@ -1193,6 +1196,9 @@ const ar: Dictionary = {
       optionsInvalid: "اختيارات المنتج اتغيّرت أو ناقصة. اختارها تاني من صفحة المنتج.",
       pickupUnavailable: "الاستلام من المحل مش متاح دلوقتي. اختار التوصيل.",
       unavailable: "المنتج غير متوفر حاليًا.",
+      comboUnavailable: "منتج من الطقم مبقاش متاح.",
+      comboVariantRequired: "اختار الاختيار لكل منتج في الطقم.",
+      comboNotInFunnel: "الطقم مينفعش يتطلب من الصفحة دي. ضيفه للسلة وكمّل الطلب من هناك.",
     },
   },
   bump: {

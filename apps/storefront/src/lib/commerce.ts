@@ -140,7 +140,8 @@ export interface OrderSnapshot {
   discountAmount: number;
   shippingAmount: number;
   totalAmount: number;
-  items: { name: string; options: string; quantity: number; lineTotal: number }[];
+  /** `combo`: the name of the combo the line was bought in (lib/combos); absent on other lines and older snapshots. */
+  items: { name: string; options: string; quantity: number; lineTotal: number; combo?: string }[];
   /** The estimated delivery time the order was placed with, minutes (shipping snapshot). */
   etaMinutes?: number | null;
   productIds: string[];
@@ -167,6 +168,8 @@ export function snapshotFromOrder(order: Order, phone: string): OrderSnapshot {
       options: [Object.values(item.variantOptionsSnapshot ?? {}).filter(Boolean).join(" / "), menuOptionsLabel((item as { optionsSnapshot?: MenuOptionsSnapshot | null }).optionsSnapshot)].filter(Boolean).join(" · "),
       quantity: item.quantity,
       lineTotal: parseMoney(item.lineTotalAmount),
+      // A product of a combo: the order holds one line per product, each keeping the combo's name.
+      ...(item.comboNameSnapshot ? { combo: item.comboNameSnapshot } : {}),
     })),
     productIds: (order.items ?? []).map((i) => i.productId).filter((id): id is string => !!id),
     contentIds: (order.items ?? []).map((i) => lineContentId(i)).filter((id): id is string => !!id),

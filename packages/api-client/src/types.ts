@@ -648,6 +648,8 @@ export interface CreateWebsitePayload {
 export interface StorefrontMeta {
   id: string;
   name: string;
+  /** Whether shoppers may send reviews now, and the store's own stars (endpoints/reviews.ts). */
+  reviews?: { open: boolean; storeRating: { average: number | null; count: number; distribution: Record<string, number> } };
   slug: string;
   logoUrl: string | null;
   tagline: string | null;
@@ -941,6 +943,18 @@ export interface CartLine {
   customizations?: Customization[] | null;
   /** The menu options picked, with current names and prices; null when none. */
   options?: import("./endpoints/menuOptions").MenuOptionsSnapshot | null;
+  /** A whole combo on this line (endpoints/combos.ts): what it holds, priced as a combo. */
+  comboId?: string | null;
+  comboSelection?: Array<{ itemId: string; variantId: string }>;
+  combo?: {
+    id: string;
+    name: string;
+    items: Array<{ itemId: string; productId: string; productName: string; variantId: string; optionValues: Record<string, string> | null; quantity: number }>;
+  } | null;
+  /** The combo can no longer be bought (archived, a product gone, combos off): it counts nothing. */
+  unavailable?: boolean;
+  /** One combo's products bought apart. */
+  fullUnitPrice?: number | null;
 }
 
 // ---------------------------------------------------------------------
@@ -1056,7 +1070,16 @@ export interface CheckoutPayload {
    */
   checkoutSessionId?: string;
   /** "Buy Now" — a single item straight to an order, no cart. Ignored when a cart token is sent. */
-  item?: { variantId: string; offerId?: string; quantity?: number; customizations?: CustomizationInput; options?: import("./endpoints/menuOptions").MenuOptionsInput };
+  /** `variantId` is not needed for a combo (`comboId` + `comboSelection`, endpoints/combos.ts). */
+  item?: {
+    variantId?: string;
+    offerId?: string;
+    quantity?: number;
+    customizations?: CustomizationInput;
+    options?: import("./endpoints/menuOptions").MenuOptionsInput;
+    comboId?: string;
+    comboSelection?: Array<{ itemId: string; variantId: string }>;
+  };
   /**
    * The shopper ticked the order bump. Accepted only when it is the bump this
    * checkout offers (422 ORDER_BUMP_INVALID otherwise); 409
@@ -1467,6 +1490,10 @@ export interface OrderItem {
   customizations?: Customization[] | null;
   /** The menu options the line was sold with: names and prices as charged. */
   optionsSnapshot?: import("./endpoints/menuOptions").MenuOptionsSnapshot | null;
+  /** A line of a combo (endpoints/combos.ts): the lines of one combo bought once share comboKey. */
+  comboId?: string | null;
+  comboKey?: string | null;
+  comboNameSnapshot?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -1963,14 +1990,20 @@ export interface ReturnListParams {
 }
 
 // ---------------------------------------------------------------------
-// Product reviews (staff moderation, /workspaces/:workspaceId/reviews)
-// A review is written by a customer who actually received the product, and
-// stays `pending` until a staff member approves or rejects it. Only approved
-// reviews reach the storefront. One row per (workspace, product, customer) —
-// a resubmission updates that row and drops it back to `pending`.
+// Product and store reviews (staff moderation, /workspaces/:workspaceId/reviews)
+// Anyone may send stars; every review waits (`pending`) until the merchant
+// publishes it (`approved`, with its text or the stars alone) or hides it
+// (`rejected`). Only published reviews from a delivered order count in the
+// stars shoppers see. One review per phone and per device for the same
+// product, or for the store. See endpoints/reviews.ts.
 // ---------------------------------------------------------------------
 
 export type ReviewStatus = "pending" | "approved" | "rejected";
+export type ReviewKind = "product" | "store";
+/** Where the reviewer's order stands: delivered, ordered (on its way), cancelled, returned, or none. */
+export type ReviewPurchaseState = "delivered" | "ordered" | "cancelled" | "returned" | "none";
+/** Where a review the merchant brought from another site was written. */
+export type ReviewExternalSource = "facebook" | "google" | "instagram" | "whatsapp" | "other";
 
 export interface ReviewProductRef {
   id: string;
@@ -1980,17 +2013,41 @@ export interface ReviewProductRef {
 export interface ReviewCustomerRef {
   id: string;
   fullName: string | null;
+  /** Only for someone with customers.view; masked on a locked order. */
+  phone?: string | null;
+  email?: string | null;
 }
 
 export interface Review {
   id: string;
-  workspaceId: string;
-  productId: string;
-  customerId: string;
-  orderId: string | null;
+  workspaceId?: string;
+  /** "product" when absent (a server from before store reviews). */
+  kind?: ReviewKind;
+  /** Null for a store review. */
+  productId: string | null;
+  customerId?: string | null;
+  orderId?: string | null;
   rating: number;
   comment: string | null;
   status: ReviewStatus;
+  /** false: published as stars only, the text and photos stay here. */
+  showText?: boolean;
+  /** external = brought by the merchant from another site (shown apart, never in the stars). */
+  source?: "customer" | "manual" | "import" | "external";
+  externalSource?: ReviewExternalSource | null;
+  /** The site's name the merchant typed for "other". */
+  externalSourceLabel?: string | null;
+  externalUrl?: string | null;
+  /** The day it was written there (YYYY-MM-DD). */
+  reviewedAt?: string | null;
+  authorName?: string | null;
+  photos?: string[];
+  /** The phone the reviewer typed (customers.view only). */
+  reviewerPhone?: string | null;
+  contactLocked?: boolean;
+  purchase?: { state: ReviewPurchaseState; orderId: string | null; orderNumber: string | null };
+  /** Published and from a delivered order: it moves the stars shoppers see. */
+  counted?: boolean;
   createdAt: string;
   updatedAt: string;
   /** Joined in by the staff list only — the moderation response returns the
@@ -2001,6 +2058,12 @@ export interface Review {
 
 export interface ReviewListParams {
   status?: ReviewStatus;
+  kind?: ReviewKind;
+  source?: "customer" | "manual" | "import" | "external";
+  productId?: string;
+  /** Without it every review comes back. */
+  limit?: number;
+  offset?: number;
 }
 
 // ---------------------------------------------------------------------
@@ -2222,10 +2285,53 @@ export interface Discount {
   status: DiscountStatus;
   createdAt: string;
   updatedAt: string;
+  // The merchant's controls (migration 730). Optional: a server from before them sends none,
+  // and each one's absence is the old behaviour.
+  audience?: DiscountAudience;
+  /** Normalized phones (2010…); empty = no such limit. */
+  customerPhones?: string[];
+  vipTierIds?: string[];
+  schedule?: DiscountSchedule | null;
+  /** A percentage takes at most this (minor units, BIGINT → string). */
+  maxDiscountAmount?: string | null;
+  minQuantity?: number | null;
+  excludedProductIds?: string[];
+  appliesToShipping?: boolean;
+  appliesToDiscounted?: boolean;
+  combinesWithOffers?: boolean;
+  strictCustomerLimit?: boolean;
+}
+
+/** any = everyone; new = a first order (no earlier order that was not cancelled); existing = returning customers. */
+export type DiscountAudience = "any" | "new" | "existing";
+
+/** Days 0–6 (0 = Sunday) and minutes since midnight, Cairo time; an end before the start runs past midnight. */
+export interface DiscountSchedule {
+  days: number[];
+  startMinute: number;
+  endMinute: number;
+}
+
+/** The controls a create, an update or a bulk generation may send. */
+export interface DiscountControlsPayload {
+  audience?: DiscountAudience;
+  customerPhones?: string[];
+  vipTierIds?: string[];
+  schedule?: DiscountSchedule | null;
+  maxDiscountAmount?: number | null;
+  minQuantity?: number | null;
+  excludedProductIds?: string[];
+  appliesToShipping?: boolean;
+  appliesToDiscounted?: boolean;
+  combinesWithOffers?: boolean;
+  /** The per-customer limit also counts the customer's e-mail and device. */
+  strictCustomerLimit?: boolean;
 }
 
 /** Mirrors discountValidation.create — `value`/`minimumSubtotal` are integers. */
-export interface CreateDiscountPayload {
+export interface CreateDiscountPayload extends DiscountControlsPayload {
+  /** "disabled" creates it paused. */
+  status?: "active" | "disabled";
   code?: string;
   type: DiscountType;
   value?: number;
@@ -2243,7 +2349,7 @@ export interface CreateDiscountPayload {
 }
 
 /** Mirrors discountValidation.update — every field optional, most nullable. */
-export interface UpdateDiscountPayload {
+export interface UpdateDiscountPayload extends DiscountControlsPayload {
   code?: string | null;
   type?: DiscountType;
   value?: number | null;
@@ -2393,7 +2499,8 @@ export interface ShippingQuotePayload {
   country?: string;
   /** The same province string the checkout sends in shippingAddress.province. */
   governorate?: string | null;
-  items?: Array<{ variantId: string; offerId?: string; quantity?: number }>;
+  /** A combo line sends `comboId` + `comboSelection` instead of a variant (endpoints/combos.ts). */
+  items?: Array<{ variantId?: string; offerId?: string; quantity?: number; comboId?: string; comboSelection?: Array<{ itemId: string; variantId: string }> }>;
 }
 
 export interface FreeShippingProgress {
@@ -2668,7 +2775,14 @@ export type PlanFeatureKey =
   | "remove_branding"
   | "priority_support"
   // Loyalty points: with LOYALTY_REQUIRE_PLAN_FEATURE, switching the programme on, and earning or spending points.
-  | "loyalty";
+  | "loyalty"
+  // The four below are refused only with GROWTH_REQUIRE_PLAN_FEATURE on too (WorkspacePlanFeatures.growthEnforced).
+  | "reviews"
+  | "about_gallery"
+  // Exists only while PRODUCT_COMBOS_ENABLED is on.
+  | "combos"
+  // The coupon controls (audience, schedule, cap, ...) and the coupon report; plain codes are on every plan.
+  | "advanced_coupons";
 
 /**
  * One row of `GET /admin/workspaces`. This is a purpose-built overview row,

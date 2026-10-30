@@ -65,6 +65,7 @@ import { pageStyleSheet, styleKey } from "./elementStyle";
 import { applyBindings, loadBindingData, pageProductId, type BindingData } from "./bindings";
 import { RepeaterElement } from "./repeater";
 import { MasonryGridElement, ProductActionElement, productAction } from "./builderMore";
+import { StoryGalleryElement } from "./StoryGallery";
 
 /**
  * An element with a style of its own (the editor's Style and Layout tabs) is
@@ -297,6 +298,9 @@ function ElementNode({ element, ctx }: { element: PageElement; ctx: Ctx }) {
     default:
       // Pictures in columns of their own heights (item 93, ./builderMore).
       if ((element.type as string) === "masonry_grid") return <MasonryGridElement props={props} />;
+      // The store's story in pictures, with a lightbox (./StoryGallery). Outside the api-client's
+      // element union, like the masonry grid, so it is matched here rather than by a case of its own.
+      if ((element.type as string) === "story_gallery") return <StoryGalleryElement props={props} editable={ctx.editable === true} />;
       // Gallery with thumbnails, variant and bundle pickers, review form (./builderExtras).
       if (EXTRA_ELEMENT_TYPES.has(element.type)) {
         return <BuilderExtraElement type={element.type} props={props} workspaceId={ctx.workspaceId} editable={ctx.editable === true} />;

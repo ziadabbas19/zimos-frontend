@@ -2,10 +2,11 @@ import { useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Alert, Button } from "@store-builder/ui";
 import type { Discount, DiscountType } from "@store-builder/api-client";
-import { IconArchive, IconCopy, IconEdit, IconLink, IconPause, IconPlay, IconPlus, IconSearch, IconTag } from "@/components/icons";
+import { IconArchive, IconCopy, IconEdit, IconLink, IconPause, IconPlay, IconPlus, IconReports, IconSearch, IconTag } from "@/components/icons";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useCachedAsync } from "@/lib/useCachedAsync";
+import { usePlanFeatures } from "@/lib/usePlanFeatures";
 import { getErrorMessage } from "@/lib/errors";
 import { fmt, useT } from "@/i18n/LocaleContext";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -33,11 +34,14 @@ import {
 import { matchesFolded } from "@/pages/offers/hub/foldText";
 import { BulkCodesButton } from "./BulkCodesDialog";
 import { CouponLinkDialog } from "./CouponLinkDialog";
+import { CouponReportDialog } from "./CouponReportDialog";
 import { useDiscountResults, useResultsWindowLabel } from "./DiscountResults";
 
 type StatusFilter = "all" | DisplayStatus;
 
 const isStatus = (value: string | null): value is DisplayStatus => DISPLAY_STATUSES.some((status) => status === value);
+/** `?status=paused` is a turned-off discount (stored `disabled`); the chips write `disabled`. */
+const statusFrom = (value: string | null): StatusFilter => (value === "paused" ? "disabled" : isStatus(value) ? value : "all");
 const isType = (value: string | null): value is DiscountType => DISCOUNT_TYPES.some((type) => type === value);
 const isKind = (value: string | null): value is DiscountKind => value === "code" || value === "automatic";
 
@@ -51,7 +55,11 @@ const isKind = (value: string | null): value is DiscountKind => value === "code"
  * `setDiscountStatus`, `deleteDiscount` (which archives), and the results of
  * each discount for the window in the address (`?range=` / `?from=&to=`). The
  * status, type and kind filters live in the address too (`?status=`, `?type=`,
- * `?kind=`), so a filtered list can be linked and survives Back.
+ * `?kind=`), so a filtered list can be linked and survives Back. A discount
+ * whose end has passed or whose uses are all taken counts as expired.
+ *
+ * Each discount's report (its uses, as a table and a CSV file) opens from its
+ * menu and from its sheet.
  */
 export function DiscountsPage() {
   const t = useT(DISCOUNT_STRINGS);
@@ -68,7 +76,7 @@ export function DiscountsPage() {
   const statusParam = params.get("status");
   const typeParam = params.get("type");
   const kindParam = params.get("kind");
-  const status: StatusFilter = isStatus(statusParam) ? statusParam : "all";
+  const status = statusFrom(statusParam);
   const type = isType(typeParam) ? typeParam : null;
   const kind = isKind(kindParam) ? kindParam : null;
   const [q, setQ] = useState("");
@@ -100,6 +108,9 @@ export function DiscountsPage() {
   const [formTarget, setFormTarget] = useState<string | "new" | null>(null);
   const [deleting, setDeleting] = useState<Discount | null>(null);
   const [sharing, setSharing] = useState<Discount | null>(null);
+  const [reporting, setReporting] = useState<Discount | null>(null);
+  // The coupon report is the plan's advanced_coupons.
+  const advanced = !usePlanFeatures().gated("advanced_coupons");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const reload = () => list.refresh({ silent: true });
@@ -170,6 +181,7 @@ export function DiscountsPage() {
     const items: ContextMenuItem[] = [{ id: "open", label: t.open, icon: IconEdit, onSelect: () => setFormTarget(d.id) }];
     if (d.code) items.push({ id: "copy", label: t.copyCode, icon: IconCopy, onSelect: () => void copyCode(d) });
     if (d.code && d.status !== "archived") items.push({ id: "share", label: t.shareLink, icon: IconLink, onSelect: () => setSharing(d) });
+    if (advanced) items.push({ id: "report", label: t.report, icon: IconReports, onSelect: () => setReporting(d) });
     if (d.status !== "archived") {
       items.push({
         id: "toggle",
@@ -320,6 +332,7 @@ export function DiscountsPage() {
         }}
         onToggle={(d) => void toggleStatus(d)}
         onArchive={archive}
+        onReport={setReporting}
       />
 
       {/* From a row's menu; the sheet of a discount has its own copies of these two. */}
@@ -328,6 +341,7 @@ export function DiscountsPage() {
         statusText={sharing && sharingStatus !== "active" && sharingStatus ? t[STATUS_LABEL[sharingStatus]] : null}
         onClose={() => setSharing(null)}
       />
+      {reporting && <CouponReportDialog discount={reporting} onClose={() => setReporting(null)} />}
       <ConfirmDialog
         open={deleting !== null}
         title={deleting?.code ? fmt(t.archiveTitleCode, { code: deleting.code }) : t.archiveTitle}

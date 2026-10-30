@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { PoweredByZimos, brandingRemoved } from "@/components/PoweredByZimos";
 import { ShellLink } from "@/components/ShellLink";
 import { StoreLink } from "@/components/StoreRoute";
+import { StoreRatingBadge } from "@/components/reviews/StoreRatingBadge";
 import { getDictionary, type Locale } from "@/lib/i18n";
 import { resolveShellLinks, type FooterShell } from "@/lib/storeShell";
 import { pageAndPolicyGroups } from "@/lib/footerLinks";
@@ -152,6 +153,8 @@ export function RichFooter({
             ))}
           </div>
         )}
+        {/* The store's own stars, to its reviews page; nothing before its first counted review. */}
+        <StoreRatingBadge store={store} locale={locale} className="transition-colors hover:text-primary" starClass="text-primary" />
         {!brandingRemoved(store) && <PoweredByZimos label={t.footer.poweredBy} />}
       </div>
     </footer>

@@ -44,7 +44,7 @@ import {
   Wallet,
   Route,
 } from "lucide-react";
-import type { Permission } from "@store-builder/api-client";
+import type { Permission, PlanFeatureKey } from "@store-builder/api-client";
 import type { Messages } from "@/i18n/LocaleContext";
 import { hasAnyPermission } from "@/lib/permissions";
 import {
@@ -126,7 +126,7 @@ export type NavGroupKey = "orders" | "products" | "customers" | "marketing" | "s
  * A count of waiting work shown on a row (lib/workCounts.ts): calls due now,
  * confirmed orders with no courier booked yet, unread messages.
  */
-export type NavBadge = "toConfirm" | "toShip" | "unread";
+export type NavBadge = "toConfirm" | "toShip" | "unread" | "reviews";
 
 export interface NavItem {
   /** Key into NAV_LABELS — the visible label is resolved per locale. */
@@ -147,6 +147,11 @@ export interface NavItem {
   under?: string;
   /** A count of waiting work shown on the row (see NavBadge). */
   badge?: NavBadge;
+  /**
+   * A whole feature the store's plan holds (lib/usePlanFeatures): the entry
+   * is left out while the plan lacks it and the server refuses it.
+   */
+  plan?: PlanFeatureKey;
 }
 
 export interface NavGroup {
@@ -188,7 +193,7 @@ export const NAV_GROUPS: NavGroup[] = [
     labelKey: "products",
     items: [
       { key: "catalog", to: "/catalog", icon: Package, requires: ["products.view"] },
-      { key: "reviews", to: "/reviews", icon: Star, requires: ["products.manage"] },
+      { key: "reviews", to: "/reviews", icon: Star, badge: "reviews", requires: ["products.manage"], plan: "reviews" },
       // Shoppers' questions and size charts, each only while its feature is switched on (lib/features).
       ...(PRODUCT_QUESTIONS_ENABLED ? [{ key: "productQuestions" as const, to: "/questions", icon: CircleQuestionMark, requires: ["products.view"] as Permission[] }] : []),
       ...(SIZE_CHARTS_ENABLED ? [{ key: "sizeCharts" as const, to: "/size-charts", icon: Ruler, requires: ["products.view"] as Permission[] }] : []),

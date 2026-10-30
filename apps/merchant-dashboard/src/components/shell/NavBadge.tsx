@@ -13,6 +13,8 @@ const STRINGS = {
     toShip_other: "{n} ready to ship",
     unread_one: "{n} unread message",
     unread_other: "{n} unread messages",
+    reviews_one: "{n} review waiting for your approval",
+    reviews_other: "{n} reviews waiting for your approval",
   },
   ar: {
     over: "{n}+",
@@ -27,6 +29,10 @@ const STRINGS = {
     unread_two: "رسالتان غير مقروءتين",
     unread_few: "{n} رسائل غير مقروءة",
     unread_other: "{n} رسالة غير مقروءة",
+    reviews_one: "تقييم واحد ينتظر موافقتك",
+    reviews_two: "تقييمان ينتظران موافقتك",
+    reviews_few: "{n} تقييمات تنتظر موافقتك",
+    reviews_other: "{n} تقييمًا ينتظر موافقتك",
   },
 } satisfies Messages;
 
@@ -44,6 +50,8 @@ const TONE: Record<NavBadgeKind, string> = {
   toShip: "bg-accent-soft text-accent-dark",
   // Unread messages: the brand's own tint.
   unread: "bg-primary-soft text-primary-dark",
+  // Reviews waiting for the merchant's approval: needs attention, not urgent.
+  reviews: "bg-accent-soft text-accent-dark",
 };
 
 interface NavBadgeProps {

@@ -56,6 +56,22 @@ export function buyXGetYConfigOf(discount: Pick<Discount, "buyXGetYConfig"> | un
 const ascii = (text: string) => text.trim().replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
 const percentText = (points: number) => String(Math.round(points) / 100);
 
+type Typed = { buy: string; get: string; percent: string };
+
+/** The three fields as typed, read: the config when every one is valid, and which are not. */
+function parse({ buy, get, percent }: Typed): { config: BuyXGetYConfig | null; bad: { buy: boolean; get: boolean; percent: boolean } } {
+  const units = (text: string) => (/^\d{1,4}$/.test(ascii(text)) ? Number(ascii(text)) : Number.NaN);
+  const buyQuantity = units(buy);
+  const getQuantity = units(get);
+  const points = /^\d{1,3}(\.\d{1,2})?$/.test(ascii(percent)) ? Math.round(Number(ascii(percent)) * 100) : Number.NaN;
+  const bad = {
+    buy: !(buyQuantity >= 1 && buyQuantity <= 1000),
+    get: !(getQuantity >= 1 && getQuantity <= 1000),
+    percent: !(points >= 1 && points <= 10000),
+  };
+  return { config: bad.buy || bad.get || bad.percent ? null : { buyQuantity, getQuantity, getDiscountBasisPoints: points }, bad };
+}
+
 export interface BuyXGetYState {
   buy: string;
   get: string;
@@ -79,18 +95,9 @@ export function useBuyXGetY(discount: Discount | undefined): BuyXGetYState {
   }
 
   function read(): BuyXGetYConfig | null {
-    const units = (text: string) => (/^\d{1,4}$/.test(ascii(text)) ? Number(ascii(text)) : Number.NaN);
-    const buyQuantity = units(buy);
-    const getQuantity = units(get);
-    const points = /^\d{1,3}(\.\d{1,2})?$/.test(ascii(percent)) ? Math.round(Number(ascii(percent)) * 100) : Number.NaN;
-    const bad = {
-      buy: !(buyQuantity >= 1 && buyQuantity <= 1000),
-      get: !(getQuantity >= 1 && getQuantity <= 1000),
-      percent: !(points >= 1 && points <= 10000),
-    };
+    const { config, bad } = parse({ buy, get, percent });
     setErrors(bad);
-    if (bad.buy || bad.get || bad.percent) return null;
-    return { buyQuantity, getQuantity, getDiscountBasisPoints: points };
+    return config;
   }
 
   return { buy, get, percent, errors, set, read };
@@ -130,6 +137,17 @@ export function BuyXGetYFields({ state, error, disabled }: { state: BuyXGetYStat
       )}
     </div>
   );
+}
+
+/** «اشترِ 2 واحصل على 1 مجانًا» for the fields as typed, or null while one of them is not valid (the coupon's sentence). */
+export function useBuyXGetYWords(): (typed: Typed) => string | null {
+  const t = useT(STRINGS);
+  return (typed) => {
+    const { config } = parse(typed);
+    if (!config) return null;
+    const values = { buy: config.buyQuantity, get: config.getQuantity, percent: percentText(config.getDiscountBasisPoints) };
+    return config.getDiscountBasisPoints >= 10000 ? fmt(t.free, values) : fmt(t.atOff, values);
+  };
 }
 
 /** A discount's value for the list: «اشترِ 2 واحصل على 1 مجانًا» for a buy-X-get-Y one, the usual label for any other. */

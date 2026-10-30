@@ -457,7 +457,8 @@ export function ProductLanding({
         });
         focusField(fieldId(FORM_PREFIX, invalid[0]));
       } else {
-        setFormError(orderErrorMessage(err, t.form.errors));
+        // A code the store refused says why (lib/couponRefusals).
+        setFormError(orderErrorMessage(err, t.form.errors, { locale, money: (n) => money(n) }));
         setSubmitting(false);
       }
       autosave.resume();

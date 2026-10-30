@@ -35,6 +35,10 @@ export const PLAN_STRINGS = {
     remove_branding: "Remove platform branding",
     priority_support: "Priority support",
     loyalty: "Loyalty points",
+    reviews: "Product and store reviews",
+    about_gallery: "About page photo gallery",
+    combos: "Product combos",
+    advanced_coupons: "Advanced coupons",
   },
   ar: {
     perMonth: "/ شهريًا",
@@ -64,6 +68,10 @@ export const PLAN_STRINGS = {
     remove_branding: "إزالة شعار المنصة",
     priority_support: "دعم ذو أولوية",
     loyalty: "نقاط الولاء",
+    reviews: "تقييمات المنتجات والمتجر",
+    about_gallery: "معرض صور صفحة من نحن",
+    combos: "باقات المنتجات",
+    advanced_coupons: "كوبونات متقدمة",
   },
 } satisfies Messages;
 

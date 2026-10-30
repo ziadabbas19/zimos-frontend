@@ -12,6 +12,7 @@ import {
   Megaphone,
   PackageMinus,
   ShoppingBag,
+  Star,
   Truck,
   Unplug,
   Wallet,
@@ -88,6 +89,7 @@ const ICONS: Record<string, LucideIcon> = {
   "wallet.refund": Wallet,
   "wallet.credit": Wallet,
   "wallet.fallback": Wallet,
+  "review.new": Star,
   announcement: Megaphone,
   automation: Bot,
 };

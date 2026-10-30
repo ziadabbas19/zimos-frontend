@@ -3,6 +3,7 @@ import { ProductReviews } from "@/components/product/ProductReviews";
 import { bundleTiers } from "@/lib/commerce";
 import { productImages } from "@/lib/product";
 import { createServerStorefrontApiClient } from "@/lib/serverApiClient";
+import { getStoreMeta } from "@/lib/storeMeta";
 import { storefrontProductReviews } from "@store-builder/api-client";
 import { BundleChoice, GalleryWithThumbs, PopupBlock, VariantChips } from "./builderExtrasClient";
 import { type Props, bool, num, resolveHref, safeUrl, str } from "./props";
@@ -109,6 +110,9 @@ export async function BuilderExtraElement({
   }
 
   if (type === "review_form") {
+    // Only while the store takes reviews (`store.reviews.open`): the title must not stand over nothing.
+    const store = await getStoreMeta(workspaceId);
+    if (store?.reviews?.open !== true) return null;
     return (
       <div>
         <Title text={title} />

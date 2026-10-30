@@ -76,7 +76,8 @@ export function CheckoutSummaryBlock({ title, buttonLabel }: { title: string; bu
             {items.map((line) => (
               <li key={line.id} className="flex justify-between gap-3 text-sm">
                 <span className="text-ink-soft">
-                  {t.cart.item} × {line.quantity}
+                  {/* A whole combo on one line goes by the combo's name (lib/combos). */}
+                  {line.combo?.name ?? t.cart.item} × {line.quantity}
                 </span>
                 <span className="shrink-0 font-medium text-ink">{money(line.lineTotal, cart?.currency)}</span>
               </li>

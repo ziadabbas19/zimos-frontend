@@ -732,6 +732,22 @@ const SKETCHES: Record<string, Sketch> = {
       </span>
     ),
   },
+  // Photos of one shape, each with its title and a line of words under it.
+  story_gallery: {
+    h: 4,
+    node: (
+      <span className="mx-auto grid w-[86%] grid-cols-3 gap-[0.4em]">
+        {range(3).map((i) => (
+          <span key={i} className="flex flex-col gap-[0.22em]">
+            <span className={cn("flex h-[2.3em] items-center justify-center rounded-[0.35em]", TILE)}>{PICTURE_SMALL}</span>
+            {line("70%", STRONG, "h-[0.3em]")}
+            {line("100%")}
+            {line("55%")}
+          </span>
+        ))}
+      </span>
+    ),
+  },
 };
 // A question list reads like an accordion.
 SKETCHES.faq = SKETCHES.accordion;
@@ -818,6 +834,7 @@ const MINI: Record<string, Sketch> = {
   image_banner: MINI_PICTURE,
   image_gallery: MINI_PICTURE,
   masonry_grid: MINI_PICTURE,
+  story_gallery: MINI_PICTURE,
   video: {
     h: 2.7,
     node: (

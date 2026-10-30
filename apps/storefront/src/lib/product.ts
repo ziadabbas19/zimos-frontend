@@ -125,7 +125,7 @@ export function findVariant(
   );
 }
 
-export function variantLabel(variant: StorefrontVariant | null | undefined): string {
+export function variantLabel(variant: { optionValues?: Record<string, string> | null } | null | undefined): string {
   if (!variant) return "";
   return Object.values(variant.optionValues ?? {}).filter(Boolean).join(" / ");
 }

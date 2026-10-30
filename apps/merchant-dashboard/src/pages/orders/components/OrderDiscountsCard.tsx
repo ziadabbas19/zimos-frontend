@@ -13,6 +13,8 @@ const STRINGS = {
     automatic: "Automatic discount",
     bundle: "Bundle: {name}",
     bundleHint: "Already taken off the item prices above.",
+    combo: "Combo saving",
+    comboNamed: "Combo saving: {name}",
     freeShipping: "Free shipping",
     type_percentage: "Percentage",
     type_fixed: "Fixed amount",
@@ -27,6 +29,8 @@ const STRINGS = {
     automatic: "خصم تلقائي",
     bundle: "باقة: {name}",
     bundleHint: "مخصوم بالفعل من أسعار المنتجات بالأعلى.",
+    combo: "توفير الباقة",
+    comboNamed: "توفير الباقة: {name}",
     freeShipping: "شحن مجاني",
     type_percentage: "نسبة مئوية",
     type_fixed: "مبلغ ثابت",
@@ -48,9 +52,9 @@ interface Entry {
 }
 
 /**
- * The order's coupon (or automatic discount) and its bundle savings, each on
- * its own line (SPEC §4.4 card 8), from the order's discounts snapshot. A
- * bundle's saving is already in the item prices; the coupon's is the
+ * The order's coupon (or automatic discount) and its bundle and combo savings,
+ * each on its own line (SPEC §4.4 card 8), from the order's discounts snapshot.
+ * A bundle's or a combo's saving is already in the item prices; the coupon's is the
  * summary's "Discount". Nothing shows for an order without either.
  */
 export function OrderDiscountsCard({ order }: { order: Order }) {
@@ -73,8 +77,14 @@ export function OrderDiscountsCard({ order }: { order: Order }) {
         </div>
         <ul className="divide-y divide-line">
           {entries.map((e, i) => {
-            const bundle = e.kind === "bundle";
-            const label = bundle
+            // A combo's saving is in its lines' prices too, like a bundle's (combos/comboPricing).
+            const combo = e.kind === "combo";
+            const bundle = e.kind === "bundle" || combo;
+            const label = combo
+              ? e.name
+                ? fmt(t.comboNamed, { name: e.name })
+                : t.combo
+              : bundle
               ? fmt(t.bundle, { name: e.name ?? "—" })
               : e.code
                 ? fmt(t.coupon, { code: e.code })

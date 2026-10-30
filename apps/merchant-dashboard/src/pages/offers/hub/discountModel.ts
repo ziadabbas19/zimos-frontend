@@ -55,6 +55,7 @@ export const DISCOUNT_STRINGS = {
     disable: "Turn off",
     archive: "Archive…",
     shareLink: "Share link",
+    report: "Report",
     menuLabel: "Actions for {code}",
     moreActions: "More actions for {code}",
     enabledToast: "Discount turned on.",
@@ -100,16 +101,15 @@ export const DISCOUNT_STRINGS = {
     amountOff: "Amount off",
     minimumSubtotal: "Minimum subtotal",
     minimumSubtotalHint: "Optional — the order subtotal must reach this before the discount applies.",
-    startsAt: "Starts at",
-    endsAt: "Ends at",
+    startsAt: "Start date",
+    endsAt: "End date",
     usageLimit: "Usage limit",
-    usageLimitHint: "Total redemptions allowed.",
+    usageLimitHint: "The first N uses; after them it stops.",
     perCustomerLimit: "Per-customer limit",
     perCustomerLimitHint: "Redemptions allowed per customer.",
     appliesTo: "Applies to",
     allProducts: "All products",
     specificProducts: "Specific products",
-    stackable: "Can be combined with other discounts",
     saving: "Saving…",
     save: "Save discount",
     createSubmit: "Create discount",
@@ -118,8 +118,6 @@ export const DISCOUNT_STRINGS = {
     selectedCount: "{count} selected",
     noProducts: "No products yet — add one in Catalog first.",
     noMatch: "No products match.",
-    sectionRules: "Limits and dates",
-    sectionRulesSummary: "Minimum order, dates, how many uses",
     thisDiscount: "This discount",
     // preview
     previewTitle: "How the shopper sees it",
@@ -188,6 +186,7 @@ export const DISCOUNT_STRINGS = {
     disable: "إيقاف",
     archive: "أرشفة…",
     shareLink: "رابط المشاركة",
+    report: "تقرير",
     menuLabel: "إجراءات {code}",
     moreActions: "إجراءات أخرى لـ {code}",
     enabledToast: "تم تفعيل الخصم.",
@@ -236,13 +235,12 @@ export const DISCOUNT_STRINGS = {
     startsAt: "تاريخ البداية",
     endsAt: "تاريخ النهاية",
     usageLimit: "حد الاستخدام",
-    usageLimitHint: "إجمالي عدد مرات الاستخدام المسموح بها.",
+    usageLimitHint: "أول عدد من مرات الاستخدام، يتوقف بعده.",
     perCustomerLimit: "الحد لكل عميل",
     perCustomerLimitHint: "عدد مرات الاستخدام المسموح بها لكل عميل.",
     appliesTo: "يُطبَّق على",
     allProducts: "كل المنتجات",
     specificProducts: "منتجات محددة",
-    stackable: "يمكن استخدامه مع خصومات أخرى",
     saving: "جارٍ الحفظ…",
     save: "حفظ الخصم",
     createSubmit: "إنشاء الخصم",
@@ -251,8 +249,6 @@ export const DISCOUNT_STRINGS = {
     selectedCount: "تم تحديد {count}",
     noProducts: "لا توجد منتجات بعد — أضف منتجًا من صفحة المنتجات أولًا.",
     noMatch: "لا توجد منتجات مطابقة.",
-    sectionRules: "الحدود والتواريخ",
-    sectionRulesSummary: "الحد الأدنى، التواريخ، عدد مرات الاستخدام",
     thisDiscount: "هذا الخصم",
     previewTitle: "كما يراه العميل",
     previewSample: "مثال على سلة بقيمة {amount}",
@@ -303,14 +299,16 @@ export const STATUS_LABEL: Record<DisplayStatus, keyof DiscountStrings> = {
 
 /**
  * `active` on the backend just means "not disabled/archived" — a discount
- * with a future start or a past end is still stored as `active`. Compute the
- * status a merchant actually cares about from the date range on top of it.
+ * with a future start, a past end or every use taken is still stored as
+ * `active`. Compute the status a merchant actually cares about on top of it:
+ * expired once its end has passed or its usage limit is reached.
  */
 export function displayStatus(d: Discount): DisplayStatus {
   if (d.status !== "active") return d.status;
   const now = Date.now();
   if (d.startsAt && new Date(d.startsAt).getTime() > now) return "scheduled";
   if (d.endsAt && new Date(d.endsAt).getTime() < now) return "expired";
+  if (d.usageLimit != null && d.usageCount >= d.usageLimit) return "expired";
   return "active";
 }
 

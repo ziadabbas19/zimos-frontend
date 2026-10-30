@@ -261,6 +261,10 @@ export const ar: Dictionary = {
       remove_branding: "إزالة شعار المنصة",
       priority_support: "دعم ذو أولوية",
       loyalty: "نقاط الولاء",
+      reviews: "تقييمات المنتجات والمتجر",
+      about_gallery: "معرض صور صفحة من نحن",
+      combos: "باقات المنتجات",
+      advanced_coupons: "كوبونات متقدمة",
     },
     payPerOrder: {
       badge: "دون اشتراك",
