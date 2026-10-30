@@ -19,7 +19,7 @@ import { resolveCustomHost, type ResolvedHost } from "@/lib/customDomains";
 import { STORE_REF_HEADER } from "@/lib/documentLocale";
 import { EDITOR_VIEW_HEADER, EDITOR_VIEW_PARAM, isViewToken } from "@/lib/editorView";
 import { EDGE_CLIENT_IP_HEADER, EDGE_HOST_HEADER, EDGE_SECRET_HEADER, visitorHost, type VisitorHost } from "@/lib/edgeHost";
-import { edgeCacheControl } from "@/lib/edgeCache";
+import { withEdgeCache } from "@/lib/edgeCache";
 
 /**
  * Merchant-owned domains (`shop.example.com`) are off unless the server's
@@ -46,30 +46,6 @@ async function route(request: NextRequest) {
   } catch {
     return platformProxy(request, visitor);
   }
-}
-
-/**
- * A public store page may be kept by the CDN for a minute (lib/edgeCache).
- * Off unless STOREFRONT_EDGE_CACHE is exactly "true"; off, the response is
- * untouched.
- */
-function withEdgeCache(request: NextRequest, response: NextResponse) {
-  // The website editor's view of a store page (lib/editorView) is a preview too: never kept at the edge.
-  const linked =
-    request.nextUrl.searchParams.get(STORE_PREVIEW_PARAM) ??
-    request.nextUrl.searchParams.get(PAYMENTS_PREVIEW_PARAM) ??
-    request.nextUrl.searchParams.get(EDITOR_VIEW_PARAM);
-  const value = edgeCacheControl({
-    enabled: process.env.STOREFRONT_EDGE_CACHE === "true",
-    method: request.method,
-    pathname: request.nextUrl.pathname,
-    cookieNames: request.cookies.getAll().map((c) => c.name),
-    previewLink: linked !== null,
-    status: response.status,
-    redirected: response.headers.has("location"),
-  });
-  if (value) response.headers.set("Cache-Control", value);
-  return response;
 }
 
 /** The website editor's view token (lib/editorView): from the address, never from a header a visitor sent. */
