@@ -14,8 +14,8 @@
 
 [data-xs-look="01"],
 .brand-theme[data-xs-shell="01"] {
-  --xs-sans: "XS01 Sans", var(--font-sans), sans-serif;
-  --xs-display: "XS01 Display", var(--font-display), serif;
+  --xs-sans: "XS01 Sans", "XS01 Sans Fallback", var(--font-sans), sans-serif;
+  --xs-display: "XS01 Display", "XS01 Display Fallback", var(--font-display), serif;
   --xs-ink: #333;
   --xs-ink-soft: #555;
   --xs-muted: #999;

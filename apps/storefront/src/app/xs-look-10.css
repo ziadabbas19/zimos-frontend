@@ -13,8 +13,8 @@
 
 [data-xs-look="10"],
 .brand-theme[data-xs-shell="10"] {
-  --xs-sans: "XS01 Sans", "XS Ar Tajawal", var(--font-sans), sans-serif;
-  --xs-display: "XS01 Sans", "XS Ar Tajawal", var(--font-sans), sans-serif;
+  --xs-sans: "XS01 Sans", "XS01 Sans Fallback", "XS Ar Tajawal", var(--font-sans), sans-serif;
+  --xs-display: "XS01 Sans", "XS01 Sans Fallback", "XS Ar Tajawal", var(--font-sans), sans-serif;
   --xs-ink: #000;
   --xs-ink-soft: #666;
   --xs-muted: #666;

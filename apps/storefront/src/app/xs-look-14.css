@@ -15,7 +15,7 @@
 [data-xs-look="14"],
 .brand-theme[data-xs-shell="14"] {
   --xs-sans: "Montserrat", "XS Ar Cairo", var(--font-sans), sans-serif;
-  --xs-display: "XS01 Display", "XS Ar El Messiri", var(--font-display), serif;
+  --xs-display: "XS01 Display", "XS01 Display Fallback", "XS Ar El Messiri", var(--font-display), serif;
   --xs-ink: #0c0c0c;
   --xs-ink-soft: #0c0c0c;
   --xs-muted: #999998;

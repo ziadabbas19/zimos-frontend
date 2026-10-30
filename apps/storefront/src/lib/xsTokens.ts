@@ -30,8 +30,8 @@ export interface XsFace {
 
 /** Curated pairs, each the Latin face of one of the templates with the Arabic face it was paired with. */
 export const FACES: Record<string, XsFace> = {
-  poppins: { label: "Poppins · تجوّل", stack: '"XS01 Sans", "XS Ar Tajawal", sans-serif', via: "01" },
-  playfair: { label: "Playfair Display · المسيري", stack: '"XS01 Display", "XS Ar El Messiri", serif', via: "01" },
+  poppins: { label: "Poppins · تجوّل", stack: '"XS01 Sans", "XS01 Sans Fallback", "XS Ar Tajawal", sans-serif', via: "01" },
+  playfair: { label: "Playfair Display · المسيري", stack: '"XS01 Display", "XS01 Display Fallback", "XS Ar El Messiri", serif', via: "01" },
   inter: { label: "Inter · IBM Plex Arabic", stack: '"Inter", "XS Ar IBM Plex Sans Arabic", sans-serif', via: "02" },
   jost: { label: "Jost · تجوّل", stack: '"Jost", "XS Ar Tajawal", sans-serif', via: "03" },
   marcellus: { label: "Marcellus · أميري", stack: '"Marcellus", "XS Ar Amiri", serif', via: "03" },
