@@ -9,6 +9,7 @@ import { formatDate, formatDateTime } from "@/lib/format";
 import { useT, fmt, type Messages } from "@/i18n/LocaleContext";
 import { getGoLiveState, openGoLive, subscribeGoLive } from "@/lib/goLive";
 import { publishWorkspaceAccess } from "@/lib/workspaceAccess";
+import { forget } from "@/lib/requestCache";
 
 /**
  * The subscription / suspension banner shown above every dashboard page, from
@@ -166,6 +167,33 @@ export function AccessBanner() {
   const { liveVersion } = useSyncExternalStore(subscribeGoLive, getGoLiveState);
   const [access, setAccess] = useState<WorkspaceAccess | null>(null);
   const [dismissedKey, setDismissedKey] = useState<string | null>(null);
+  // Bumped when the merchant comes back to the tab: the access kept for the
+  // pages (lib/requestCache, up to five minutes) is dropped and read again,
+  // so a change made elsewhere meanwhile shows without a reload.
+  const [cameBack, setCameBack] = useState(0);
+
+  useEffect(() => {
+    if (!workspaceId) return;
+    let away = false;
+    const leave = () => {
+      away = true;
+    };
+    const back = () => {
+      if (!away || document.visibilityState !== "visible") return;
+      away = false;
+      forget(`/workspaces/${workspaceId}/access`);
+      setCameBack((n) => n + 1);
+    };
+    const onVisibility = () => (document.visibilityState === "visible" ? back() : leave());
+    window.addEventListener("blur", leave);
+    window.addEventListener("focus", back);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("blur", leave);
+      window.removeEventListener("focus", back);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [workspaceId]);
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -184,7 +212,7 @@ export function AccessBanner() {
     return () => {
       cancelled = true;
     };
-  }, [workspaceId, location.pathname, liveVersion]);
+  }, [workspaceId, location.pathname, liveVersion, cameBack]);
 
   if (!workspaceId || !access) return null;
   const notice = noticeFor(access, t);

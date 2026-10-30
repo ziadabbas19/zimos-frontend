@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { BURST_MS, PRIMED_MS, coverWhile, forgetAll, prime, resetRequestCache, sharedGet } from "./requestCache";
+import { BURST_MS, KEEP_ACCESS_MS, PRIMED_MS, coverWhile, forget, forgetAll, prime, resetRequestCache, sharedGet } from "./requestCache";
 
 /** A request the test answers by hand. */
 function deferred<T>() {
@@ -91,28 +91,42 @@ describe("shared GETs", () => {
     expect(await sharedGet("/workspaces/w/orders", send)).toEqual({ orders: [] });
   });
 
-  it("reads the store's access once a session, so moving between pages never asks again", async () => {
+  it("keeps the store's access five minutes, so moving between pages does not ask again", async () => {
     const send = vi.fn(async () => ({ access: { restricted: false } }));
     await sharedGet("/workspaces/w/access", send);
-    vi.setSystemTime(Date.now() + 3 * 60 * 60 * 1000);
+    vi.setSystemTime(Date.now() + KEEP_ACCESS_MS - 1000);
     expect(await sharedGet("/workspaces/w/access", send)).toEqual({ access: { restricted: false } });
     expect(send).toHaveBeenCalledTimes(1);
     // Another store's access is its own read.
     await sharedGet("/workspaces/w2/access", send);
     expect(send).toHaveBeenCalledTimes(2);
-    // A save here forgets it: the next page reads it again.
-    forgetAll();
+    // Stale after five minutes: the next page reads it again.
+    vi.setSystemTime(Date.now() + 2000);
     await sharedGet("/workspaces/w/access", send);
     expect(send).toHaveBeenCalledTimes(3);
+    // A save here forgets it too.
+    forgetAll();
+    await sharedGet("/workspaces/w/access", send);
+    expect(send).toHaveBeenCalledTimes(4);
   });
 
-  it("keeps the bootstrap's access for the session too, past the first burst of reads", async () => {
+  it("keeps the bootstrap's access five minutes too, past the first burst of reads", async () => {
     prime("/workspaces/w/access", { access: { draft: false } });
     const send = vi.fn(async () => ({ access: { draft: true } }));
     expect(await sharedGet("/workspaces/w/access", send)).toEqual({ access: { draft: false } });
     vi.setSystemTime(Date.now() + PRIMED_MS + BURST_MS + 60_000);
     expect(await sharedGet("/workspaces/w/access", send)).toEqual({ access: { draft: false } });
     expect(send).not.toHaveBeenCalled();
+  });
+
+  it("forgets one path on demand, the rest staying", async () => {
+    const send = vi.fn(async () => ({ access: {} }));
+    await sharedGet("/workspaces/w/access", send);
+    await sharedGet("/workspaces/w2/access", send);
+    forget("/workspaces/w/access");
+    await sharedGet("/workspaces/w/access", send);
+    await sharedGet("/workspaces/w2/access", send);
+    expect(send).toHaveBeenCalledTimes(3);
   });
 
   it("forgets everything kept after a save", async () => {

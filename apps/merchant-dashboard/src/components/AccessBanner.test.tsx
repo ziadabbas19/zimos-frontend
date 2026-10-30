@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import type { Workspace, WorkspaceAccess } from "@store-builder/api-client";
 import { api, fake, workspaceMock } from "@/test/mocks";
 import { renderWithProviders } from "@/test/renderWithProviders";
@@ -38,5 +38,30 @@ describe("AccessBanner and paying", () => {
     renderWithProviders(<AccessBanner />);
     const banner = await screen.findByRole("status");
     expect(within(banner).queryByRole("link")).not.toBeInTheDocument();
+  });
+});
+
+describe("AccessBanner coming back to the tab", () => {
+  it("reads the store's access again once the merchant returns, not on a mere focus at load", async () => {
+    workspaceMock.currentWorkspace = fake<Workspace>({ id: "ws_back", name: "Nile Store", role: "owner" });
+    api.getWorkspaceAccess.mockResolvedValue(access({ phase: "expiring" }));
+    renderWithProviders(<AccessBanner />);
+    await screen.findByRole("status");
+    expect(api.getWorkspaceAccess).toHaveBeenCalledTimes(1);
+
+    // A focus with no time away first asks nothing.
+    act(() => {
+      window.dispatchEvent(new Event("focus"));
+    });
+    expect(api.getWorkspaceAccess).toHaveBeenCalledTimes(1);
+
+    // Away (another window), then back: one new read.
+    api.getWorkspaceAccess.mockResolvedValue(access({ phase: "ok" }));
+    act(() => {
+      window.dispatchEvent(new Event("blur"));
+      window.dispatchEvent(new Event("focus"));
+    });
+    await waitFor(() => expect(api.getWorkspaceAccess).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
   });
 });
