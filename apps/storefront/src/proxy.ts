@@ -20,6 +20,7 @@ import { STORE_REF_HEADER } from "@/lib/documentLocale";
 import { EDITOR_VIEW_HEADER, EDITOR_VIEW_PARAM, isViewToken } from "@/lib/editorView";
 import { EDGE_CLIENT_IP_HEADER, EDGE_HOST_HEADER, EDGE_SECRET_HEADER, visitorHost, type VisitorHost } from "@/lib/edgeHost";
 import { edgeCacheControl } from "@/lib/edgeCache";
+import { subdomainRedirect } from "@/lib/subdomainRedirect";
 
 /**
  * Merchant-owned domains (`shop.example.com`) are off unless the server's
@@ -255,6 +256,8 @@ async function customDomainProxy(request: NextRequest, visitor: VisitorHost) {
   }
   // Assets and route handlers never cost a lookup.
   if (isPassThrough(pathname)) return NextResponse.next();
+  const toOwnDomain = await subdomainRedirect(request, host);
+  if (toOwnDomain) return toOwnDomain;
   const custom = platformSlug ? null : await resolveWithin(host);
   // Not a merchant domain: exactly the platform's routing.
   if (!custom) return platformProxy(request, visitor);
