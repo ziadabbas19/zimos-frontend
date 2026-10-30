@@ -60,10 +60,7 @@ export const en: FeaturesCopy = {
           body: "Delivered automatically on payment, with chapters, lessons and a student portal.",
         },
         { title: "Product A/B tests", body: "Test the price or the photos; the winner is picked automatically." },
-        {
-          title: "Product and store reviews",
-          body: "Customers rate a product or your whole store with stars, words and photos. Every review reaches you first and you decide what goes live; the stars count only customers who received their order, with a “Verified buyer” badge.",
-        },
+        { title: "Reviews", body: "Moderate and add reviews with photos, with a “Verified buyer” badge." },
         {
           title: "Reviews from other sites",
           body: "Add real reviews that reached you on social media, maps or WhatsApp; they show apart with their source badge and stay out of your stars.",
