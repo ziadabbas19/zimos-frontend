@@ -9,8 +9,10 @@
  *     lib/bootstrap) answers the first reads of that path when they come, and
  *     a read that comes while the bootstrap is still on its way waits for it
  *     (`coverWhile`) instead of asking the server a second time;
- *   - the store's access, which the banner reads again on every page, is kept
- *     for STALE_MS: moving between pages does not ask for it each time;
+ *   - the store's access, which the banner, the store link and the toolbar's
+ *     balance read on every page, is read once a session: its first answer
+ *     (the bootstrap's, or the first request's) is kept until something is
+ *     saved here, the session ends or the page is loaded again;
  *   - any other request (a save, a sign-in, a sign-out) forgets everything
  *     kept, before it is sent and once it is answered: whatever is read after
  *     a change comes from the server.
@@ -23,11 +25,8 @@
 export const PRIMED_MS = 15_000;
 /** After its first read, a primed answer still serves the reads of the same burst (the frame mounting), then it is gone. */
 export const BURST_MS = 1_000;
-/** How long a read on the STALE list is reused. */
-export const STALE_MS = 30_000;
-
-/** Paths whose answer is reused for STALE_MS: read again on every page, changed only by a save here (which forgets it) or rarely elsewhere. */
-const STALE: RegExp[] = [/^\/workspaces\/[^/?]+\/access$/];
+/** Paths read once a session: read again on every page, changed by a save here (which forgets them) and seldom elsewhere. */
+const ONCE_A_SESSION: RegExp[] = [/^\/workspaces\/[^/?]+\/access$/];
 
 interface Kept {
   body: unknown;
@@ -59,12 +58,23 @@ function take(path: string): { hit: true; body: unknown } | { hit: false } {
   return { hit: true, body: copy(entry.body) };
 }
 
-function staleFor(path: string): boolean {
-  return STALE.some((pattern) => pattern.test(path));
+function onceASession(path: string): boolean {
+  return ONCE_A_SESSION.some((pattern) => pattern.test(path));
 }
 
-/** Keeps `body` as the answer to a GET of `path` for `ttlMs`, until its first read's burst is over. */
+function keepForSession(path: string, body: unknown): void {
+  kept.set(path, { body: copy(body), expiresAt: Number.POSITIVE_INFINITY, burst: false, firstReadAt: null });
+}
+
+/**
+ * Keeps `body` as the answer to a GET of `path` for `ttlMs`, until its first
+ * read's burst is over; a path read once a session keeps it for the session.
+ */
 export function prime(path: string, body: unknown, ttlMs = PRIMED_MS): void {
+  if (onceASession(path)) {
+    keepForSession(path, body);
+    return;
+  }
   kept.set(path, { body: copy(body), expiresAt: now() + ttlMs, burst: true, firstReadAt: null });
 }
 
@@ -105,9 +115,7 @@ export async function sharedGet<T>(path: string, send: () => Promise<T>): Promis
   inFlight.set(path, request);
   try {
     const body = await request;
-    if (inFlight.get(path) === request && staleFor(path)) {
-      kept.set(path, { body: copy(body), expiresAt: now() + STALE_MS, burst: false, firstReadAt: null });
-    }
+    if (inFlight.get(path) === request && onceASession(path)) keepForSession(path, body);
     return body;
   } finally {
     if (inFlight.get(path) === request) inFlight.delete(path);

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { BURST_MS, PRIMED_MS, STALE_MS, coverWhile, forgetAll, prime, resetRequestCache, sharedGet } from "./requestCache";
+import { BURST_MS, PRIMED_MS, coverWhile, forgetAll, prime, resetRequestCache, sharedGet } from "./requestCache";
 
 /** A request the test answers by hand. */
 function deferred<T>() {
@@ -91,15 +91,28 @@ describe("shared GETs", () => {
     expect(await sharedGet("/workspaces/w/orders", send)).toEqual({ orders: [] });
   });
 
-  it("keeps the store's access for a while, so moving between pages does not ask again", async () => {
+  it("reads the store's access once a session, so moving between pages never asks again", async () => {
     const send = vi.fn(async () => ({ access: { restricted: false } }));
     await sharedGet("/workspaces/w/access", send);
-    vi.setSystemTime(Date.now() + STALE_MS - 1000);
-    await sharedGet("/workspaces/w/access", send);
+    vi.setSystemTime(Date.now() + 3 * 60 * 60 * 1000);
+    expect(await sharedGet("/workspaces/w/access", send)).toEqual({ access: { restricted: false } });
     expect(send).toHaveBeenCalledTimes(1);
-    vi.setSystemTime(Date.now() + 2000);
-    await sharedGet("/workspaces/w/access", send);
+    // Another store's access is its own read.
+    await sharedGet("/workspaces/w2/access", send);
     expect(send).toHaveBeenCalledTimes(2);
+    // A save here forgets it: the next page reads it again.
+    forgetAll();
+    await sharedGet("/workspaces/w/access", send);
+    expect(send).toHaveBeenCalledTimes(3);
+  });
+
+  it("keeps the bootstrap's access for the session too, past the first burst of reads", async () => {
+    prime("/workspaces/w/access", { access: { draft: false } });
+    const send = vi.fn(async () => ({ access: { draft: true } }));
+    expect(await sharedGet("/workspaces/w/access", send)).toEqual({ access: { draft: false } });
+    vi.setSystemTime(Date.now() + PRIMED_MS + BURST_MS + 60_000);
+    expect(await sharedGet("/workspaces/w/access", send)).toEqual({ access: { draft: false } });
+    expect(send).not.toHaveBeenCalled();
   });
 
   it("forgets everything kept after a save", async () => {
