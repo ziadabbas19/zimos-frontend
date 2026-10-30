@@ -1,8 +1,8 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ShoppingCart, Workflow } from "lucide-react";
 import { Button, Card, cn, ZLoader } from "@store-builder/ui";
-import type { Order } from "@store-builder/api-client";
+import { dashboardSetupGuide, funnelsList, insightsGetOverview, type Order } from "@store-builder/api-client";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
@@ -10,7 +10,8 @@ import { apiClient } from "@/lib/apiClient";
 import { fetchOrderStats } from "@/lib/orderStats";
 import { isPermissionError } from "@/lib/errors";
 import { formatDateTime, formatMoney } from "@/lib/format";
-import type { AnalyticsPair } from "@/lib/analytics";
+import { rangeWindows, type AnalyticsPair } from "@/lib/analytics";
+import { warm } from "@/lib/requestCache";
 import { fetchAnalyticsPair, takePrefetchedAnalyticsSummary } from "@/lib/analyticsPrefetch";
 import { canViewAnalytics } from "@/lib/analyticsAccess";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -156,16 +157,33 @@ export function DashboardHomePage() {
     [workspaceId, summary.loading, withAnalytics]
   );
 
+  // With the summary, not after it: the panel only shows once the summary is here.
   const extra = useAsync(
     () =>
-      withAnalytics
+      analyticsAllowed
         ? apiClient
             .listOrders(workspaceId, { limit: 6 })
             .then((page) => ({ recent: page.orders as Order[] }))
             .catch(() => ({ recent: null }))
         : Promise.resolve(null),
-    [workspaceId, withAnalytics]
+    [workspaceId, analyticsAllowed]
   );
+
+  // What the overview's parts (SetupGuideCard, StoreOverview on its first
+  // range) read once the summary is here, read with it: the same paths, so
+  // each part's own read finds the answer kept (lib/requestCache `warm`).
+  useEffect(() => {
+    if (!analyticsAllowed || !workspaceId) return;
+    warm(() => {
+      void dashboardSetupGuide(apiClient, workspaceId).catch(() => undefined);
+      void funnelsList(apiClient, workspaceId).catch(() => undefined);
+      void insightsGetOverview(apiClient, workspaceId, {
+        ...rangeWindows("7d").current,
+        compare: "previous",
+        funnelId: undefined,
+      }).catch(() => undefined);
+    });
+  }, [workspaceId, analyticsAllowed]);
 
   const loading = summary.loading || (!withAnalytics && legacy.loading);
   const error = summary.error ?? (!withAnalytics ? legacy.error : null);

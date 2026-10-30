@@ -14,6 +14,9 @@
  *     (the bootstrap's, or the first request's) serves every page until it is
  *     that old, something is saved here, the session ends, or the banner
  *     drops it on coming back to the tab (`forget`) and reads it again;
+ *   - a page that knows what its parts will read once something else has
+ *     answered starts those reads early (`warm`): each answer is kept, like a
+ *     bootstrap answer, for the part that asks for it a little later;
  *   - any other request (a save, a sign-in, a sign-out) forgets everything
  *     kept, before it is sent and once it is answered: whatever is read after
  *     a change comes from the server.
@@ -90,6 +93,30 @@ export function coverWhile(paths: Iterable<string>, until: Promise<unknown>): vo
   });
 }
 
+/** How long an answer read ahead by `warm` waits for its first read. */
+export const WARM_MS = 30_000;
+let warming = 0;
+// Read-ahead requests a part already joined while they were on their way: nothing left to keep for.
+const joined = new WeakSet<Promise<unknown>>();
+
+/**
+ * Runs `start`, which starts reads a page's parts will make a little later
+ * (the home page's, once the analytics have answered). Every GET it starts is
+ * shared as usual and, once answered, kept like a bootstrap answer (WARM_MS
+ * for its first read, then the burst): the part's own read then needs no
+ * request, and a read made while it is still on its way joins it. The reads
+ * must be made the way the parts make them (the same path), or they are only
+ * requests made early.
+ */
+export function warm(start: () => void): void {
+  warming += 1;
+  try {
+    start();
+  } finally {
+    warming -= 1;
+  }
+}
+
 /** Forgets the answer kept for `path`: its next read asks the server. */
 export function forget(path: string): void {
   kept.delete(path);
@@ -106,6 +133,8 @@ export function forgetAll(): void {
  * makes the request itself; it is called at most once per shared request.
  */
 export async function sharedGet<T>(path: string, send: () => Promise<T>): Promise<T> {
+  // Read before any await: `warm` only covers the reads started inside it.
+  const readAhead = warming > 0;
   const first = take(path);
   if (first.hit) return first.body as T;
 
@@ -117,13 +146,17 @@ export async function sharedGet<T>(path: string, send: () => Promise<T>): Promis
   }
 
   const shared = inFlight.get(path);
-  if (shared) return copy((await shared) as T);
+  if (shared) {
+    joined.add(shared);
+    return copy((await shared) as T);
+  }
 
   const request = send();
   inFlight.set(path, request);
   try {
     const body = await request;
     if (inFlight.get(path) === request && keptPath(path)) keepAWhile(path, body);
+    else if (inFlight.get(path) === request && readAhead && !joined.has(request)) prime(path, body, WARM_MS);
     return body;
   } finally {
     if (inFlight.get(path) === request) inFlight.delete(path);

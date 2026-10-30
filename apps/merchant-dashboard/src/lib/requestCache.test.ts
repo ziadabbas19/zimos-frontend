@@ -1,5 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { BURST_MS, KEEP_ACCESS_MS, PRIMED_MS, coverWhile, forget, forgetAll, prime, resetRequestCache, sharedGet } from "./requestCache";
+import {
+  BURST_MS,
+  KEEP_ACCESS_MS,
+  PRIMED_MS,
+  WARM_MS,
+  coverWhile,
+  forget,
+  forgetAll,
+  prime,
+  resetRequestCache,
+  sharedGet,
+  warm,
+} from "./requestCache";
 
 /** A request the test answers by hand. */
 function deferred<T>() {
@@ -162,5 +174,71 @@ describe("shared GETs", () => {
     const retry = vi.fn(async () => ({ access: {} }));
     await sharedGet("/workspaces/w/access", retry);
     expect(retry).toHaveBeenCalledTimes(1);
+  });
+
+  describe("reads started ahead (warm)", () => {
+    it("keeps the answer for the part that reads it a little later, then only for that burst", async () => {
+      const send = vi.fn(async () => ({ guide: "early" }));
+      let ahead!: Promise<unknown>;
+      warm(() => {
+        ahead = sharedGet("/workspaces/w/setup-guide", send);
+      });
+      await ahead;
+
+      vi.setSystemTime(Date.now() + WARM_MS - 1000);
+      const later = vi.fn(async () => ({ guide: "from-server" }));
+      expect(await sharedGet("/workspaces/w/setup-guide", later)).toEqual({ guide: "early" });
+      expect(later).not.toHaveBeenCalled();
+
+      vi.setSystemTime(Date.now() + BURST_MS + 10);
+      expect(await sharedGet("/workspaces/w/setup-guide", later)).toEqual({ guide: "from-server" });
+    });
+
+    it("drops an answer read ahead that nobody read in time", async () => {
+      warm(() => {
+        void sharedGet("/workspaces/w/funnels", async () => ({ funnels: ["early"] }));
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+      vi.setSystemTime(Date.now() + WARM_MS + 1);
+      const later = vi.fn(async () => ({ funnels: [] }));
+      await sharedGet("/workspaces/w/funnels", later);
+      expect(later).toHaveBeenCalledTimes(1);
+    });
+
+    it("keeps nothing when the part already joined the read on its way", async () => {
+      const answer = deferred<{ funnels: string[] }>();
+      const send = vi.fn(() => answer.promise);
+      warm(() => {
+        void sharedGet("/workspaces/w/funnels", send);
+      });
+      const part = sharedGet("/workspaces/w/funnels", send);
+      answer.resolve({ funnels: ["one"] });
+      expect(await part).toEqual({ funnels: ["one"] });
+      expect(send).toHaveBeenCalledTimes(1);
+
+      const later = vi.fn(async () => ({ funnels: [] }));
+      await sharedGet("/workspaces/w/funnels", later);
+      expect(later).toHaveBeenCalledTimes(1);
+    });
+
+    it("keeps nothing past a save", async () => {
+      let ahead!: Promise<unknown>;
+      warm(() => {
+        ahead = sharedGet("/workspaces/w/setup-guide", async () => ({ guide: "early" }));
+      });
+      await ahead;
+      forgetAll();
+      const later = vi.fn(async () => ({ guide: "after the save" }));
+      expect(await sharedGet("/workspaces/w/setup-guide", later)).toEqual({ guide: "after the save" });
+    });
+
+    it("leaves the reads made outside it as they were", async () => {
+      warm(() => undefined);
+      const send = vi.fn(async () => ({ ok: true }));
+      await sharedGet("/workspaces/w/orders?limit=6", send);
+      await sharedGet("/workspaces/w/orders?limit=6", send);
+      expect(send).toHaveBeenCalledTimes(2);
+    });
   });
 });

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import type {
   AnalyticsSummary,
@@ -176,5 +176,26 @@ describe("DashboardHomePage", () => {
     expect(screen.getByRole("link", { name: /Awaiting confirmation/ })).toHaveTextContent("5");
     expect(api.getAnalyticsSummary).not.toHaveBeenCalled();
     expect(api.getFunnelAnalytics).not.toHaveBeenCalled();
+    // Nor what the overview's parts would read.
+    expect(api.request).not.toHaveBeenCalledWith(expect.stringMatching(/\/setup-guide$|\/funnels$|\/analytics\/overview\?/));
+    expect(api.listOrders).not.toHaveBeenCalledWith("ws_1", { limit: 6 });
+  });
+
+  it("asks for what the overview's parts read while the summary is still on its way", async () => {
+    api.getAnalyticsSummary.mockReturnValue(new Promise<never>(() => undefined));
+    api.getConfirmationQueueCounts.mockResolvedValue(queue);
+    api.listOrders.mockResolvedValue({ orders: [order], nextCursor: null });
+    serveRequests();
+
+    renderWithProviders(<DashboardHomePage />, { route: "/" });
+
+    await vi.waitFor(() => {
+      expect(api.listOrders).toHaveBeenCalledWith("ws_1", { limit: 6 });
+      expect(api.request).toHaveBeenCalledWith("/workspaces/ws_1/setup-guide");
+      expect(api.request).toHaveBeenCalledWith("/workspaces/ws_1/funnels");
+      expect(api.request).toHaveBeenCalledWith(expect.stringMatching(/^\/workspaces\/ws_1\/analytics\/overview\?.*compare=previous/));
+    });
+    // The overview itself still waits for the summary.
+    expect(screen.queryByText("Get your store ready")).not.toBeInTheDocument();
   });
 });
