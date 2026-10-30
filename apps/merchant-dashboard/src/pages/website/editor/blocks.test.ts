@@ -113,6 +113,8 @@ const ALLOWED_ELEMENT_TYPES = new Set([
   "review_form",
   "popup",
   "masonry_grid",
+  // The store's story in pictures (pageTree.js STORY_GALLERY_MAX photos, plain-text words).
+  "story_gallery",
 ]);
 
 const SETTING_KEYS = new Set(SECTION_SETTING_SPECS.map((s) => s.key));

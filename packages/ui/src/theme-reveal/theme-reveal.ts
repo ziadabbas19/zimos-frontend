@@ -1,7 +1,8 @@
 /**
- * The light / dark switch of the marketing site and of the stores, drawn as a
- * circle: the page in its new theme grows over the old one from the point
- * the switch was pressed until it covers the screen.
+ * Every light / dark switch of the platform (the marketing site, the stores,
+ * the dashboard and the console), drawn as a circle: the page in its new
+ * theme grows over the old one from the point the switch was pressed until it
+ * covers the screen.
  *
  * It is the View Transitions API's own picture of the page. The browser keeps
  * a still of the page as it was, the theme changes underneath, and the live
@@ -96,6 +97,9 @@ export function revealCss(origin: RevealPoint, radius: number): string {
     // The still of the old page stays whole underneath; the new page shows only through the circle.
     "::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}",
     `::view-transition-new(root){animation:${KEYFRAMES} ${REVEAL_DURATION_MS}ms ${REVEAL_EASING} both}`,
+    // One picture of the whole page, old and new: a part named for the dashboard's page moves
+    // (its toolbar, dock, page) would otherwise be drawn apart from the root, outside the circle.
+    ":root *{view-transition-name:none!important}",
     `@keyframes ${KEYFRAMES}{from{clip-path:circle(0px ${at})}to{clip-path:circle(${Math.ceil(radius)}px ${at})}}`,
     // The page's own colour transitions (buttons, cards) would otherwise fade from the old colours inside the circle.
     `${busy},${busy} *,${busy} *::before,${busy} *::after{transition:none!important}`,

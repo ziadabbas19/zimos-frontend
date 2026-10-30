@@ -57,6 +57,7 @@ export function elementSummary(element: PageElement, locale: EditorLocale): stri
     case "image_gallery":
       return join([str("title"), t.images(count("images"))]);
     case "masonry_grid":
+    case "story_gallery":
       return join([str("title"), t.images(count("items"))]);
     case "testimonial":
       return join([str("quote") && `“${str("quote")}”`, str("author")], " — ");

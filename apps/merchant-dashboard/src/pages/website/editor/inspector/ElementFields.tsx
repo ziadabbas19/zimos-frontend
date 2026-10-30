@@ -9,6 +9,7 @@ import { ELEMENT_SPECS, type FieldSpec } from "../blocks";
 import { editorUi, fieldHint, fieldLabel, optionLabel, useEditorLocale, type EditorUi } from "../editorLocale";
 import { ImageField, ImageListField } from "../ImageField";
 import { ItemListField } from "../ItemListField";
+import { plainText } from "../plainText";
 import { ColorWell } from "../theme/ColorWell";
 import { ProductPickerField } from "../ProductPickerField";
 import { locateOnCanvas } from "@/lib/previewBridge";
@@ -470,8 +471,9 @@ export function ElementField({
           labelHidden={labelHidden}
           placeholder={spec.placeholder}
           dir={dir}
+          maxLength={spec.maxLength}
           value={asString(raw)}
-          onChange={(e) => onChange(spec.key, e.target.value)}
+          onChange={(e) => onChange(spec.key, spec.plain ? plainText(e.target.value) : e.target.value)}
         />
       );
 
@@ -484,8 +486,9 @@ export function ElementField({
               rows={3}
               dir={dir}
               placeholder={spec.placeholder}
+              maxLength={spec.maxLength}
               value={asString(raw)}
-              onChange={(e) => onChange(spec.key, e.target.value)}
+              onChange={(e) => onChange(spec.key, spec.plain ? plainText(e.target.value) : e.target.value)}
             />
           )}
         </Field>
@@ -504,6 +507,8 @@ export function ElementField({
           value={asNumber(raw)}
           placeholder={typeof inherited === "number" ? String(inherited) : undefined}
           startAt={typeof inherited === "number" ? inherited : undefined}
+          strict={spec.strict === true}
+          integer={spec.strict === true}
           onChange={(v) => onChange(spec.key, v === "" ? undefined : v)}
         />
       );
@@ -611,7 +616,7 @@ export function ElementField({
           fields={spec.fields}
           max={spec.max}
           onChange={(next) => onChange(spec.key, next)}
-          arrange={isXsType(elementType)}
+          arrange={spec.arrange === true || isXsType(elementType)}
           listKey={spec.key}
         />
       );

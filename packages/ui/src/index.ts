@@ -86,7 +86,7 @@ export {
 } from "./components/sheet";
 
 // The two dashboards' own controls (not shadcn): the Mac segmented control and a slider.
-export { Segmented, type SegmentedOption, type SegmentedProps } from "./components/segmented";
+export { Segmented, type SegmentedOption, type SegmentedPress, type SegmentedProps } from "./components/segmented";
 export { RangeInput, type RangeInputProps } from "./components/range-input";
 
 export { cn } from "cn";

@@ -18,6 +18,7 @@ import { useStore } from "@/lib/StoreContext";
 import { storeHref } from "@/lib/storeHref";
 import { ThankYouUpsell, CrossSellStrip } from "@/components/offers/StoreOffers";
 import { ThankYouDownloads } from "@/components/ThankYouDownloads";
+import { ThankYouStoreReview } from "@/components/reviews/ThankYouStoreReview";
 import { ManualPaymentStatus } from "@/components/checkout/ManualPayment";
 import { GiftCardPaidNote } from "@/components/giftCards/GiftCardPaidNote";
 import { GIFT_CARDS_ENABLED } from "@/lib/features";
@@ -151,6 +152,10 @@ function Confirmation() {
             </StoreLink>
           )}
         </div>
+
+        {/* A short review of the store while it takes reviews, with this order's phone filled in;
+            drawn once the saved order is readable, so the phone is there from the start. */}
+        {isClient && <ThankYouStoreReview workspaceId={workspaceId} phone={snapshot?.phone ?? ""} />}
 
         {thanks?.enabled && thanks.show_products_from_collection_id && (
           <ThankYouProducts workspaceId={workspaceId} collectionId={thanks.show_products_from_collection_id} />

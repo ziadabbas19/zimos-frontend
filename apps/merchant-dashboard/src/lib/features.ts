@@ -89,6 +89,16 @@ export const PUBLIC_API_ACK_ENABLED = import.meta.env.VITE_PUBLIC_API_ACK_ENABLE
  */
 export const ORDER_PAYLOAD_OPTIONS_ENABLED = import.meta.env.VITE_ORDER_PAYLOAD_OPTIONS_ENABLED === "true";
 
+/**
+ * Product combos (Offers → Combos): different products sold together at one
+ * price — the list, the editor with its live price, and the tool card on the
+ * offers hub. Off: no card, no route (/offers/combos goes back to the offers
+ * hub). An order that holds a combo shows its lines under the combo's name
+ * either way, since that comes from the order itself. Turn on once the API
+ * runs with PRODUCT_COMBOS_ENABLED.
+ */
+export const PRODUCT_COMBOS_ENABLED = import.meta.env.VITE_PRODUCT_COMBOS_ENABLED === "true";
+
 /** The block designer for order emails. */
 export const ORDER_EMAIL_DESIGN_ENABLED = import.meta.env.VITE_ORDER_EMAIL_DESIGN_ENABLED === "true";
 

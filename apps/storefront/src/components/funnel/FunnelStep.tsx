@@ -407,7 +407,7 @@ export function FunnelCheckout({
   /** The form's heading; the checkout title when unset. */
   title?: string;
 }) {
-  const { t, money, store } = useStore();
+  const { t, money, store, locale } = useStore();
   const funnelCurrency = useFunnelCurrency();
   const [client] = useState(() => createStorefrontApiClient());
   const { fields, reveal } = useOrderFormFields(useFreshCheckoutSettings(client, workspaceId));
@@ -590,7 +590,8 @@ export function FunnelCheckout({
         });
         focusField(fieldId(FORM_PREFIX, invalidFromServer[0]));
       } else {
-        setFormError(orderErrorMessage(err, t.form.errors));
+        // A code the store refused says why (lib/couponRefusals).
+        setFormError(orderErrorMessage(err, t.form.errors, { locale, money: (n) => money(n, currency) }));
         setSubmitting(false);
       }
       autosave.resume();

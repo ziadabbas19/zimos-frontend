@@ -260,18 +260,40 @@ export interface StorefrontReview {
   rating: number;
   comment: string | null;
   createdAt: string;
-  /** First name and an initial for a shopper; what the merchant typed for a manual review. */
+  /** The reviewer's first name only. */
   authorName: string | null;
   photos: string[];
-  /** True when the author received the product in an order of this store. */
+  /** True when the reviewer's order of this store was delivered (the reviews that move the stars). */
   verified: boolean;
 }
 
 export interface StorefrontRatingSummary {
   average: number | null;
   count: number;
-  /** How many approved reviews gave each number of stars, keys "1".."5". */
+  /** How many counted reviews gave each number of stars, keys "1".."5". */
   distribution: Record<string, number>;
+}
+
+/** A published review the merchant brought from another site: shown apart, with its source, never verified. */
+export interface StorefrontExternalReview {
+  id: string;
+  rating: number;
+  comment: string | null;
+  authorName: string | null;
+  photos: string[];
+  source: "facebook" | "google" | "instagram" | "whatsapp" | "other";
+  /** The site's name for "other". */
+  sourceLabel: string | null;
+  url: string | null;
+  /** YYYY-MM-DD, when the merchant gave it. */
+  reviewedAt: string | null;
+  createdAt: string;
+}
+
+/** The external reviews off a public product (or the store's reviews), [] from an older server. */
+export function storefrontExternalReviews(answer: unknown): StorefrontExternalReview[] {
+  const raw = (answer ?? {}) as { externalReviews?: unknown };
+  return Array.isArray(raw.externalReviews) ? (raw.externalReviews as StorefrontExternalReview[]) : [];
 }
 
 /** Reads the review block off a public product, tolerating an older response. */
@@ -288,56 +310,36 @@ export function storefrontProductReviews(product: unknown): { rating: Storefront
       createdAt: r.createdAt ?? "",
       authorName: r.authorName ?? null,
       photos: Array.isArray(r.photos) ? r.photos : [],
-      verified: r.verified ?? true,
+      verified: r.verified ?? false,
     })),
   };
 }
 
-export interface StorefrontReviewSubmission {
-  /** The order number and the phone it was placed with: a delivered order of this product proves the purchase. */
-  orderNumber: string;
-  phone: string;
-  /** Up to three photos, uploaded first (uploadCustomerPhoto) by the same visitor. */
-  photoIds?: string[];
-  rating: number;
-  comment?: string;
-}
-
-/**
- * Public: a shopper reviews a product they received. 403 REVIEW_NOT_VERIFIED
- * unless a delivered order of this product has this number and phone; 422
- * REVIEW_PHOTO_INVALID for a photo that expired or isn't this visitor's. The
- * review waits for the merchant's approval.
- */
-export async function storefrontSubmitReview(
-  client: ApiClient,
-  workspaceId: string,
-  productId: string,
-  payload: StorefrontReviewSubmission,
-  /** The visitor who uploaded the photos (X-Visitor-Id). */
-  visitorId?: string
-): Promise<{ id: string; status: string; created: boolean }> {
-  const { review } = await client.request<{ review: { id: string; status: string; created: boolean } }>(
-    `/store/${workspaceId}/products/${productId}/reviews`,
-    { method: "POST", body: payload, auth: false, ...(visitorId ? { headers: { "X-Visitor-Id": visitorId } } : {}) }
-  );
-  return review;
-}
+/** Kept for older imports: sending a review is storefrontSendProductReview (endpoints/reviews.ts). */
+export type { StorefrontReviewInput as StorefrontReviewSubmission } from "./reviews";
 
 export interface ManualReviewPayload {
-  productId: string;
+  /** "store" for a review of the whole store (no product). Default "product". */
+  kind?: "product" | "store";
+  productId?: string | null;
   authorName: string;
   rating: number;
   comment?: string | null;
   photos?: string[];
   status?: "approved" | "pending";
+  /** Brought from another site: makes it an external review, shown apart with its source. */
+  externalSource?: "facebook" | "google" | "instagram" | "whatsapp" | "other";
+  externalSourceLabel?: string | null;
+  externalUrl?: string | null;
+  /** YYYY-MM-DD, not in the future. */
+  reviewedAt?: string | null;
 }
 
 /** A staff review row with the fields manual reviews added. */
 export interface CatalogReviewExtras {
   authorName?: string | null;
   photos?: string[];
-  source?: "customer" | "manual" | "import";
+  source?: "customer" | "manual" | "import" | "external";
 }
 
 /** Adds a real review that reached the merchant through another channel (products.manage). */
@@ -353,7 +355,7 @@ export async function catalogCreateManualReview<T = unknown>(
   return review;
 }
 
-/** 409 REVIEW_NOT_MANUAL for a customer's review: those are rejected, not deleted. */
+/** Deletes any review: one added by hand or a shopper's (reviewsDelete is the same call). */
 export async function catalogDeleteManualReview(client: ApiClient, workspaceId: string, reviewId: string): Promise<void> {
   await client.request(`/workspaces/${workspaceId}/reviews/${reviewId}`, { method: "DELETE" });
 }

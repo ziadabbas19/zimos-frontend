@@ -64,7 +64,7 @@ import { useCatalog } from "@/lib/useCatalog";
 import { CrossSellStrip, ProductBumpCards } from "@/components/offers/StoreOffers";
 import { useCartBumps } from "@/components/offers/CartBumps";
 import { useCheckoutAutosave } from "@/lib/useCheckoutAutosave";
-import { useShippingQuote } from "@/lib/useShippingQuote";
+import { useShippingQuote, type QuoteLine } from "@/lib/useShippingQuote";
 import { useShippingChoice } from "@/lib/shippingChoice";
 import { ShippingOptionPicker } from "@/components/ShippingOptionPicker";
 import { useShipTo } from "@/lib/shipTo";
@@ -75,6 +75,9 @@ import { LineOptions } from "@/components/LineOptions";
 import { PolicyLinks } from "@/components/PolicyLinks";
 import { XsPageStrip } from "@/components/xs/XsPageStrip";
 import { storePageAttrs, stripHoldsTitle } from "@/lib/xsStorePages";
+import { ComboLineFullTotal, ComboLineInfo } from "@/components/combos/ComboLine";
+import { comboText } from "@/components/combos/comboText";
+import { cartProductIds, cartQuoteLines, isComboLine, isUnavailableLine } from "@/lib/combos";
 
 const FORM_PREFIX = "checkout";
 
@@ -86,7 +89,7 @@ export default function CheckoutPage() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const router = useRouter();
   const basePath = useStoreBasePath();
-  const { cart, clearCart } = useCart();
+  const { cart, clearCart, removeItem } = useCart();
   const { t, money, store, locale } = useStore();
   // On a store that wears a template, its shop's title strip (lib/xsStorePages).
   const xsPages = store?.xsPages ?? null;
@@ -164,6 +167,9 @@ export default function CheckoutPage() {
 
   const currency = cart?.currency ?? "EGP";
   const items = useMemo(() => cart?.items ?? [], [cart]);
+  // A combo the server can no longer sell (lib/combos) counts nothing and would fail the order: removed first.
+  const blockedByCombo = items.some(isUnavailableLine);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const autosave = useCheckoutAutosave({ client, workspaceId, values, lines: items });
 
   // InitiateCheckout once per visit to this page, the first time the cart is
@@ -183,17 +189,17 @@ export default function CheckoutPage() {
   // The merchant's bump — not offered when that product is already in the cart.
   const bump = useMemo(() => {
     if (bumpGone) return null;
-    const inCart = items.map((l) => byVariant.get(l.variantId)?.id).filter(Boolean) as string[];
-    return orderBumpOf(store?.orderBump, inCart);
+    return orderBumpOf(store?.orderBump, cartProductIds(items, byVariant));
   }, [bumpGone, items, byVariant, store?.orderBump]);
 
   // The cart products' own add-ons (Offers → Order bumps), the store-wide one left to `bump` (CartBumps.tsx).
-  const cartBumps = useCartBumps(client, workspaceId, items.map((l) => byVariant.get(l.variantId)?.id).filter(Boolean) as string[], store?.orderBump?.offerId);
+  const cartBumps = useCartBumps(client, workspaceId, cartProductIds(items, byVariant), store?.orderBump?.offerId);
   // A ticked bump is not a cart line: the server adds it to the order.
   const bumpInTotals = (bumpOn && bump ? bump.priceAmount : 0) + cartBumps.selected.reduce((sum, b) => sum + b.priceAmount, 0);
   const subtotal = cart?.subtotal ?? 0;
   // The bump counts toward the parcel's weight as soon as it's ticked.
-  const quoteLines = items.map((l) => ({ variantId: l.variantId, offerId: l.offerId, quantity: l.quantity }));
+  // A combo line is quoted as its combo, not its first product (lib/combos).
+  const quoteLines: QuoteLine[] = cartQuoteLines(items);
   if (bumpOn && bump) quoteLines.push({ variantId: bump.variantId, offerId: bump.offerId, quantity: 1 });
   for (const b of cartBumps.selected) quoteLines.push({ variantId: b.variantId, offerId: b.offerId, quantity: 1 });
   // The gift wrap is a product the server adds: its weight counts toward the parcel too.
@@ -261,6 +267,8 @@ export default function CheckoutPage() {
       setFormError(t.form.errors.emptyCart);
       return;
     }
+    // A combo that can no longer be bought: the note above the button already asks to remove it.
+    if (blockedByCombo) return;
 
     // A proof filled in at checkout must be valid; an empty one is sent later from the thank-you page.
     if (manualChosen) {
@@ -374,7 +382,8 @@ export default function CheckoutPage() {
           giftCard.onError(err) ??
           (TENDERS_ON ? tenders.onError(err) : null) ??
           (PERKS_ON ? perks.onError(err) : null);
-        setFormError(featureRefusal ?? orderErrorMessage(err, t.form.errors));
+        // A code the store refused says why (lib/couponRefusals).
+        setFormError(featureRefusal ?? orderErrorMessage(err, t.form.errors, { locale, money: (n) => money(n, currency) }));
         setSubmitting(false);
       }
       autosave.resume();
@@ -394,7 +403,7 @@ export default function CheckoutPage() {
   const storeClosed = store?.delivery?.hours ? !store.delivery.hours.openNow : false;
   // Closed by the weekly hours: when it opens next (lib/storeHours).
   const nextOpen = storeClosed ? (store?.delivery?.hours?.nextOpen ?? null) : null;
-  const submitDisabled = submitting || items.length === 0 || storeClosed || holiday.paused;
+  const submitDisabled = submitting || items.length === 0 || storeClosed || holiday.paused || blockedByCombo;
   // The estimated delivery time: the chosen zone's, else the store's.
   const etaMinutes = pickingUp ? null : (zoneChosen?.etaMinutes ?? store?.delivery?.etaMinutes ?? null);
 
@@ -495,6 +504,39 @@ export default function CheckoutPage() {
                 {items.map((line) => {
                   const product = byVariant.get(line.variantId);
                   const options = variantLabel(line.variant);
+                  // A whole combo (lib/combos): its name and products; one that can no longer be bought is removed here.
+                  if (isComboLine(line)) {
+                    return (
+                      <li key={line.id} className="flex justify-between gap-3 text-sm">
+                        <span className="min-w-0 text-ink-soft">
+                          <ComboLineInfo line={line} />
+                          {line.unavailable ? (
+                            <button
+                              type="button"
+                              disabled={removingId === line.id}
+                              onClick={() => {
+                                setRemovingId(line.id);
+                                removeItem(line.id)
+                                  .catch(() => setFormError(t.cart.removeFailed))
+                                  .finally(() => setRemovingId(null));
+                              }}
+                              className="mt-1 inline-flex min-h-11 cursor-pointer items-center text-xs font-medium text-danger hover:underline disabled:opacity-50"
+                            >
+                              {t.cart.remove}
+                            </button>
+                          ) : (
+                            <span className="text-xs"> × {line.quantity}</span>
+                          )}
+                        </span>
+                        {!line.unavailable && (
+                          <span className="flex shrink-0 flex-col items-end">
+                            <span className="font-medium text-ink">{money(line.lineTotal, currency)}</span>
+                            <ComboLineFullTotal line={line} currency={currency} />
+                          </span>
+                        )}
+                      </li>
+                    );
+                  }
                   return (
                     <li key={line.id} className="flex justify-between gap-3 text-sm">
                       <span className="min-w-0 text-ink-soft">
@@ -620,6 +662,12 @@ export default function CheckoutPage() {
           )}
           {items.length > 0 && <ProductBumpCards state={cartBumps} idPrefix={`${FORM_PREFIX}-pb`} />}
 
+          {/* Why the button is off while the cart holds a combo that can no longer be bought. */}
+          {blockedByCombo && (
+            <p role="status" className="rounded-xl bg-danger-soft px-4 py-3 text-sm font-medium text-danger">
+              {comboText(locale).checkoutBlocked}
+            </p>
+          )}
           <div role="alert" aria-live="assertive" className="empty:hidden">
             {formError && <p className="rounded-xl bg-danger-soft px-4 py-3 text-sm font-medium text-danger">{formError}</p>}
           </div>
@@ -648,7 +696,7 @@ export default function CheckoutPage() {
         <CrossSellStrip
           workspaceId={workspaceId}
           placement="checkout"
-          productIds={[...new Set(items.map((line) => byVariant.get(line.variantId)?.id).filter((id): id is string => Boolean(id)))]}
+          productIds={cartProductIds(items, byVariant)}
         />
       )}
       </div>

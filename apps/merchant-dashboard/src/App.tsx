@@ -17,6 +17,7 @@ import {
   CUSTOMER_REFERRALS_ENABLED,
   GIFT_CARDS_ENABLED,
   LOYALTY_ENABLED,
+  PRODUCT_COMBOS_ENABLED,
   PRODUCT_QUESTIONS_ENABLED,
   PRODUCT_SPECS_ENABLED,
   SIZE_CHARTS_ENABLED,
@@ -104,6 +105,7 @@ const ReferAFriendPage = lazy(() => import("@/pages/customerReferrals/ReferAFrie
 const StoreCreditPage = lazy(() => import("@/pages/storeCredit/StoreCreditPage").then((m) => ({ default: m.StoreCreditPage })));
 const GiftCardsPage = lazy(() => import("@/pages/giftCards/GiftCardsPage").then((m) => ({ default: m.GiftCardsPage })));
 const GiftCardDetailPage = lazy(() => import("@/pages/giftCards/GiftCardDetailPage").then((m) => ({ default: m.GiftCardDetailPage })));
+const CombosPage = lazy(() => import("@/pages/offers/CombosPage").then((m) => ({ default: m.CombosPage })));
 const BlogPostsPage = lazy(() => import("@/pages/blog/BlogPostsPage").then((m) => ({ default: m.BlogPostsPage })));
 const BlogPostEditorPage = lazy(() => import("@/pages/blog/BlogPostEditorPage").then((m) => ({ default: m.BlogPostEditorPage })));
 const BlogCategoriesPage = lazy(() => import("@/pages/blog/BlogCategoriesPage").then((m) => ({ default: m.BlogCategoriesPage })));
@@ -234,6 +236,8 @@ export default function App() {
                       <Route path="/blog/:postId" element={BLOG_ENABLED ? <LazyRoute><BlogPostEditorPage /></LazyRoute> : <Navigate to="/" replace />} />
                       <Route path="/offers" element={<LazyRoute><OffersPage /></LazyRoute>} />
                       <Route path="/offers/bundles" element={<LazyRoute><BundlesPage /></LazyRoute>} />
+                      {/* Product combos (lib/features): off, this address goes back to the offers hub. */}
+                      <Route path="/offers/combos" element={PRODUCT_COMBOS_ENABLED ? <LazyRoute><CombosPage /></LazyRoute> : <Navigate to="/offers" replace />} />
                       <Route path="/offers/order-bumps" element={<LazyRoute><OrderBumpsPage /></LazyRoute>} />
                       <Route path="/offers/cross-sell" element={<LazyRoute><CrossSellPage /></LazyRoute>} />
                       <Route path="/offers/upsells" element={<LazyRoute><UpsellsPage /></LazyRoute>} />

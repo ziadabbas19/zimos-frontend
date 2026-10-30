@@ -1,3 +1,4 @@
+import { animateThemeChange } from "@store-builder/ui/theme-reveal";
 import { useLocale, useT, type Messages } from "@/i18n/LocaleContext";
 import { IconContrast, IconMoon, IconSun } from "@/components/icons";
 import { Segmented } from "@/components/Segmented";
@@ -106,7 +107,8 @@ export function AppearanceSection() {
           <Segmented
             label={t.look}
             value={look}
-            onChange={setLook}
+            // The new look grows over the old one as a circle from the segment pressed, like the toolbar switch.
+            onChange={(next, press) => animateThemeChange(press, () => setLook(next))}
             className="sm:self-start"
             options={[
               { value: "light", label: t.light, icon: IconSun },

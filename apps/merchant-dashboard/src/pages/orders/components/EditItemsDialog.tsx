@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Alert, Button, Input } from "@store-builder/ui";
 import {
@@ -41,6 +41,8 @@ const STRINGS = {
     saving: "Saving…",
     saved: "Items updated.",
     ORDER_ALREADY_PAID: "This order has been paid; correct it with a refund instead.",
+    ORDER_HAS_COMBO: "This order holds a combo, so its items cannot be edited. Cancel it and place it again.",
+    comboLocked: "Holds a combo: cancel and place it again to change its items.",
   },
   ar: {
     button: "تعديل المنتجات",
@@ -64,6 +66,8 @@ const STRINGS = {
     saving: "جارٍ الحفظ…",
     saved: "تم تحديث المنتجات.",
     ORDER_ALREADY_PAID: "تم دفع هذا الأوردر؛ صحّحه باسترداد بدلًا من التعديل.",
+    ORDER_HAS_COMBO: "يحتوي هذا الطلب على باقة، لذلك لا يمكن تعديل منتجاته. ألغِه وأنشئه من جديد.",
+    comboLocked: "يحتوي على باقة: ألغِه وأنشئه من جديد لتغيير منتجاته.",
   },
 } satisfies Messages;
 
@@ -85,10 +89,29 @@ export function canEditItems(order: Order): boolean {
   return !(order.shipments ?? []).some((s) => !["created", "cancelled", "failed"].includes(s.status));
 }
 
+/** A combo's lines are priced together, so the server refuses to edit them (409 ORDER_HAS_COMBO). */
+function hasComboLines(order: Order): boolean {
+  return (order.items ?? []).some((item) => Boolean(item.comboKey));
+}
+
 export function EditItemsButton({ order, onChanged }: { order: Order; onChanged: () => void }) {
   const t = useT(STRINGS);
   const [open, setOpen] = useState(false);
+  const reasonId = useId();
   if (!canEditItems(order)) return null;
+  // Shown, but off, with the reason beside it: the merchant learns why instead of hunting for it.
+  if (hasComboLines(order)) {
+    return (
+      <span className="inline-flex flex-wrap items-center gap-2">
+        <Button variant="outline" size="sm" className="min-h-11" disabled aria-describedby={reasonId}>
+          {t.button}
+        </Button>
+        <span id={reasonId} className="text-xs text-ink-soft">
+          {t.comboLocked}
+        </span>
+      </span>
+    );
+  }
   return (
     <>
       <Button variant="outline" size="sm" className="min-h-11" onClick={() => setOpen(true)}>
@@ -115,6 +138,7 @@ function EditItemsDialog({ order, onClose, onSaved }: { order: Order; onClose: (
   const orderError = useOrderErrorMessage();
   const errorMessage = (err: unknown) => {
     const code = err && typeof err === "object" && "code" in err ? String((err as { code?: string }).code) : "";
+    if (code === "ORDER_HAS_COMBO") return t.ORDER_HAS_COMBO;
     return code === "ORDER_ALREADY_PAID" ? t.ORDER_ALREADY_PAID : orderError(err);
   };
 

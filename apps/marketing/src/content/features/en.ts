@@ -61,6 +61,10 @@ export const en: FeaturesCopy = {
         },
         { title: "Product A/B tests", body: "Test the price or the photos; the winner is picked automatically." },
         { title: "Reviews", body: "Moderate and add reviews with photos, with a “Verified buyer” badge." },
+        {
+          title: "Reviews from other sites",
+          body: "Add real reviews that reached you on social media, maps or WhatsApp; they show apart with their source badge and stay out of your stars.",
+        },
         { title: "Interactive photos (Shop the look)", body: "Points on a photo linked to your products." },
         { title: "Customer questions", body: "Customers ask about a product, and you answer." },
         {
@@ -229,7 +233,7 @@ export const en: FeaturesCopy = {
         { title: "The source of every order", body: "First and last touch, UTMs and ad click IDs." },
         {
           title: "Discount codes",
-          body: "Percentage, amount, free shipping or “Buy X, get Y”, with usage limits and dates, a share link that applies the code by itself, and many codes generated at once.",
+          body: "Percentage, amount, free shipping or “Buy X, get Y”, under your full control: when it runs, on which days and hours, on which products, for whom (first order only or returning customers), usage limits overall and per customer, and a report for each code. Plus a share link that applies the code by itself, and many codes generated at once.",
         },
         { title: "Automatic discounts", body: "A discount that applies without a code." },
         {
@@ -285,6 +289,10 @@ export const en: FeaturesCopy = {
           body: "An app for your store (PWA), and a floating WhatsApp button.",
         },
         { title: "Ready policies", body: "Returns, privacy and terms, from ready templates." },
+        {
+          title: "A photo gallery of your story",
+          body: "Photos with a title and a description on your About page, in Arabic and English, opening large with a tap.",
+        },
         { title: "More than one store", body: "On one account." },
       ],
     },

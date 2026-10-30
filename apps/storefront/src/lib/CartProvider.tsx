@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { useParams } from "next/navigation";
-import { ApiError, parseMoney, type Cart, type CustomizationInput } from "@store-builder/api-client";
+import { ApiError, parseMoney, type Cart, type ComboSelection, type CustomizationInput } from "@store-builder/api-client";
 import { getVisitorId } from "@/lib/visitorId";
 import { createStorefrontApiClient } from "@/lib/apiClient";
 import { track } from "@/lib/track";
@@ -55,6 +55,18 @@ function clearStoredToken(workspaceId: string) {
   }
 }
 
+/** A whole combo on one cart line (lib/combos): the combo and the variant picked for each product that lets the shopper choose. */
+export interface CartComboTarget {
+  comboId: string;
+  comboSelection: ComboSelection;
+}
+
+/** The same picks, whatever their order (the server keeps them in the combo's order). */
+function sameSelection(a: ComboSelection | undefined, b: ComboSelection): boolean {
+  const key = (list: ComboSelection) => list.map((s) => `${s.itemId}:${s.variantId}`).sort().join(",");
+  return key(a ?? []) === key(b);
+}
+
 export interface CartContextValue {
   cart: Cart | null;
   isLoading: boolean;
@@ -62,9 +74,13 @@ export interface CartContextValue {
   isAdding: boolean;
   /** Sum of every line's quantity. */
   itemCount: number;
-  /** `customizations` answers the product's custom fields (photos by upload id). */
+  /**
+   * A variant, or a whole combo (`{ comboId, comboSelection }`, which takes no
+   * offer, custom fields or menu options). `customizations` answers the
+   * product's custom fields (photos by upload id).
+   */
   addItem: (
-    variantId: string,
+    variantId: string | CartComboTarget,
     offerId?: string,
     quantity?: number,
     customizations?: CustomizationInput,
@@ -161,8 +177,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [workspaceId, client]);
 
   const addItem = useCallback(
-    async (variantId: string, offerId?: string, quantity = 1, customizations?: CustomizationInput, options?: import("@store-builder/api-client").MenuOptionsInput) => {
+    async (target: string | CartComboTarget, offerId?: string, quantity = 1, customizations?: CustomizationInput, options?: import("@store-builder/api-client").MenuOptionsInput) => {
       if (!workspaceId) return;
+      const combo = typeof target === "string" ? null : target;
+      const variantId = typeof target === "string" ? target : "";
       setAdding((n) => n + 1);
       let next: Cart;
       try {
@@ -170,7 +188,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         next = await client.addCartItem(
           workspaceId,
           token,
-          { variantId, offerId, quantity, ...(customizations ? { customizations } : {}), ...(options && options.length ? { options } : {}) },
+          // A combo is one line the server prices as a combo; it names no variant of its own.
+          combo
+            ? { comboId: combo.comboId, comboSelection: combo.comboSelection, quantity }
+            : { variantId, offerId, quantity, ...(customizations ? { customizations } : {}), ...(options && options.length ? { options } : {}) },
           // The visitor owns any photo among the answers.
           { visitorId: getVisitorId(workspaceId) }
         );
@@ -182,10 +203,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       // its unit price × the quantity added (not the whole line, which may have
       // held the variant already).
       try {
-        const line = next.items.find((l) => l.variantId === variantId && (l.offerId ?? undefined) === offerId);
+        const line = combo
+          ? (next.items.find((l) => l.comboId === combo.comboId && sameSelection(l.comboSelection, combo.comboSelection)) ??
+            next.items.find((l) => l.comboId === combo.comboId))
+          : next.items.find((l) => l.variantId === variantId && (l.offerId ?? undefined) === offerId && !l.comboId);
         const unit = line ? parseMoney(line.unitPriceSnapshot) : 0;
         track("AddToCart", {
-          contentIds: [contentIdOf(line?.variant) ?? variantId],
+          contentIds: [contentIdOf(line?.variant) ?? (combo ? combo.comboId : variantId)],
           valueMinor: Math.round(unit * quantity),
           currency: next.currency,
           numItems: quantity,

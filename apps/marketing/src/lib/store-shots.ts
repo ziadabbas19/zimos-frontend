@@ -21,8 +21,9 @@ export const STORE_SHOTS: Record<string, { desk: string; phone: string }> = Obje
  * The credit each look's licence asks for wherever its design is shown,
  * copied from the storefront's XS_CREDITS (apps/storefront/src/lib/xsShell.ts;
  * store-shots.test.ts keeps the two equal), with a link to the licence where
- * it has one. Written under the gallery, it covers every look on the page:
- * the hero, the benefits card and the closing band show gallery looks only.
+ * it has one. Written on the credits page (app/[locale]/credits), linked from
+ * every page's footer, it covers every look on the site: the hero, the
+ * benefits card and the closing band show gallery looks only.
  */
 export const SHOT_CREDITS: Record<string, { name: string; author: string; href: string; licence: string; licenceHref?: string }> = {
   "04": { name: "Ashion", author: "Colorlib", href: "https://colorlib.com", licence: "CC BY 3.0", licenceHref: "https://creativecommons.org/licenses/by/3.0/" },

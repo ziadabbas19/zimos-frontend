@@ -1662,22 +1662,6 @@ html {
   margin-block-start: 22px;
 }
 
-.lz-tpl__credits {
-  margin: 8px auto 0;
-  max-inline-size: 72ch;
-  padding-inline: 20px;
-  text-align: center;
-  font-size: 12px;
-  line-height: 1.7;
-  color: var(--lz-text);
-}
-
-.lz-tpl__credits a {
-  color: inherit;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
 /* Phones: a row to swipe through, each card a phone showing the store as a
    shopper sees it, its page scrolling slowly up and down by itself. */
 @media (max-width: 600px) {

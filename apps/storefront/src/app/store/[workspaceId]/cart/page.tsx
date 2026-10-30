@@ -23,6 +23,8 @@ import { LineCustomizations } from "@/components/LineCustomizations";
 import { LineOptions } from "@/components/LineOptions";
 import { XsPageStrip } from "@/components/xs/XsPageStrip";
 import { storePageAttrs, stripHoldsTitle } from "@/lib/xsStorePages";
+import { ComboLineFullTotal, ComboLineInfo, ComboLineThumb } from "@/components/combos/ComboLine";
+import { cartProductIds, comboLineImages, isComboLine } from "@/lib/combos";
 
 export default function CartPage() {
   // Still needed for the catalogue lookup — the links go through StoreLink,
@@ -95,13 +97,18 @@ export default function CartPage() {
               {cart.items.map((line) => {
                 const rowBusy = pendingId === line.id;
                 const product = byVariant.get(line.variantId);
+                // A whole combo on one line (lib/combos): its name and products, not its first product's.
+                const combo = isComboLine(line);
+                const comboImages = combo ? comboLineImages(line, byVariant) : [];
                 // The variant's own picture, else the product's (lib/variantImage).
                 const image = product ? lineImage(product, line.variantId) : null;
                 const options = variantLabel(line.variant);
                 return (
                   <li key={line.id} className={`flex gap-4 p-4 sm:p-5 ${rowBusy ? "opacity-60" : ""}`}>
-                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-line bg-paper">
-                      {image ? (
+                    <div className={`h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-line bg-paper ${line.unavailable ? "opacity-50" : ""}`}>
+                      {combo && comboImages.length > 0 ? (
+                        <ComboLineThumb images={comboImages} />
+                      ) : !combo && image ? (
                         <StoreImage src={image} alt="" width={80} height={80} sizes="80px" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-primary/40">
@@ -113,7 +120,9 @@ export default function CartPage() {
                     <div className="flex min-w-0 flex-1 flex-col">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          {product ? (
+                          {combo ? (
+                            <ComboLineInfo line={line} />
+                          ) : product ? (
                             <StoreLink
                               href={`/products/${product.slug}`}
                               className="line-clamp-2 text-sm font-semibold text-ink hover:text-primary"
@@ -123,7 +132,7 @@ export default function CartPage() {
                           ) : (
                             <span className="text-sm font-semibold text-ink">{options || t.cart.item}</span>
                           )}
-                          {product && options && <p className="mt-0.5 text-xs text-ink-soft">{options}</p>}
+                          {!combo && product && options && <p className="mt-0.5 text-xs text-ink-soft">{options}</p>}
                           <LineOptions options={line.options} />
                           <LineCustomizations customizations={line.customizations} />
                         </div>
@@ -137,19 +146,27 @@ export default function CartPage() {
                         </button>
                       </div>
 
-                      <span className="text-xs text-ink-soft">{t.cart.perUnit(money(line.currentUnitPrice, currency))}</span>
-                      {line.priceChanged && <span className="mt-1 text-xs text-accent-dark">{t.cart.priceChanged}</span>}
+                      {/* A combo that can no longer be bought counts nothing: only the way to remove it. */}
+                      {!line.unavailable && (
+                        <>
+                          <span className="text-xs text-ink-soft">{t.cart.perUnit(money(line.currentUnitPrice, currency))}</span>
+                          {line.priceChanged && <span className="mt-1 text-xs text-accent-dark">{t.cart.priceChanged}</span>}
 
-                      <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-                        {/* The same stepper the drawer and the product page use. */}
-                        <QuantityStepper
-                          size="sm"
-                          value={line.quantity}
-                          disabled={rowBusy}
-                          onChange={(next) => run(line.id, () => updateItem(line.id, next), t.cart.updateFailed)}
-                        />
-                        <span className="text-base font-bold text-ink">{money(line.lineTotal, currency)}</span>
-                      </div>
+                          <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                            {/* The same stepper the drawer and the product page use. */}
+                            <QuantityStepper
+                              size="sm"
+                              value={line.quantity}
+                              disabled={rowBusy}
+                              onChange={(next) => run(line.id, () => updateItem(line.id, next), t.cart.updateFailed)}
+                            />
+                            <span className="flex flex-wrap items-baseline justify-end gap-x-2">
+                              <ComboLineFullTotal line={line} currency={currency} />
+                              <span className="text-base font-bold text-ink">{money(line.lineTotal, currency)}</span>
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </li>
                 );
@@ -188,7 +205,7 @@ export default function CartPage() {
         <CrossSellStrip
           workspaceId={workspaceId}
           placement="cart"
-          productIds={[...new Set(cart.items.map((line) => byVariant.get(line.variantId)?.id).filter((id): id is string => Boolean(id)))]}
+          productIds={cartProductIds(cart.items, byVariant)}
         />
       )}
       </div>

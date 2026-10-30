@@ -1,4 +1,4 @@
-import { IconDashboard, IconLayers, IconMedia, IconMessageAdd, IconPage, IconSliders, type IconComponent } from "@/components/icons";
+import { IconCamera, IconDashboard, IconLayers, IconMedia, IconMessageAdd, IconPage, IconSliders, type IconComponent } from "@/components/icons";
 import type { PageElementType } from "@store-builder/api-client";
 import type { BlockPreset, FieldSpec, SectionSettingSpec } from "./blocks";
 
@@ -14,7 +14,38 @@ type Spec = { label: string; icon: IconComponent; defaultProps: Record<string, u
 
 const PRODUCT_FIELD: FieldSpec = { key: "productId", label: "Product", kind: "product", hint: "Leave empty to use the page's product (else the newest)." };
 
+/** The most photos a story gallery holds (backend pages/pageTree.js STORY_GALLERY_MAX). */
+export const STORY_GALLERY_MAX = 24;
+
 export const EXTRA_ELEMENT_SPECS: Record<string, Spec> = {
+  // The store's story in pictures, for the About page (storefront page-renderer/StoryGallery.tsx). The server takes
+  // its words as plain text only, so markup is dropped as it is typed; `title` and `description` are translated with
+  // the page's other words.
+  story_gallery: {
+    label: "Story gallery",
+    icon: IconCamera,
+    defaultProps: { title: "", columns: 3, items: [] },
+    fields: [
+      { key: "title", label: "Section title", kind: "text", plain: true, maxLength: 200 },
+      { key: "columns", label: "Columns on a computer", kind: "number", min: 2, max: 4, strict: true, hint: "A phone shows one or two." },
+      {
+        key: "items",
+        label: "Photos",
+        kind: "itemList",
+        itemLabel: "Photo",
+        itemLabelAr: "صورة",
+        titleKey: "title",
+        max: STORY_GALLERY_MAX,
+        arrange: true,
+        hint: "Drag a photo by its grip, or use Up and Down, to change the order. The section shows on the store once it has a photo.",
+        fields: [
+          { key: "src", label: "Photo", labelAr: "الصورة", kind: "image" },
+          { key: "title", label: "Title (also read out for the photo)", labelAr: "العنوان (ويُقرأ وصفًا للصورة)", kind: "text", plain: true, maxLength: 120 },
+          { key: "description", label: "Description", labelAr: "الوصف", kind: "textarea", plain: true, maxLength: 500 },
+        ],
+      },
+    ],
+  },
   image_gallery: {
     label: "Gallery with thumbnails",
     icon: IconMedia,
@@ -154,6 +185,16 @@ export const EXTRA_PRESETS: BlockPreset[] = [
     group: "story",
     elements: [t("masonry_grid")],
   },
+  {
+    key: "story-gallery",
+    label: "Story gallery",
+    description: "Your store's story in photos for the About page — a title and a few words under each; shoppers open any photo full size.",
+    icon: IconCamera,
+    group: "story",
+    elements: [t("story_gallery")],
+    // No photos to start with: the store shows nothing of it until the merchant adds the first.
+    content: [{ title: "قصتنا" }],
+  },
 ];
 
 /**
@@ -252,8 +293,12 @@ export const EXTRA_AR = {
     review_form: "فورم التقييم",
     popup: "نافذة منبثقة",
     masonry_grid: "شبكة صور متفاوتة",
+    story_gallery: "معرض صور القصة",
   } as Record<string, string>,
   fields: {
+    "story_gallery.title": "عنوان القسم",
+    "story_gallery.columns": "عدد الأعمدة على الكمبيوتر",
+    "story_gallery.items": "الصور",
     "image_gallery.thumbnails": "المصغّرات",
     "variant_selector.showPrice": "اعرض سعر ومخزون النوع المختار",
     "popup.key": "اسم النافذة",
@@ -270,6 +315,8 @@ export const EXTRA_AR = {
     "form.fileRequired": "الصورة مطلوبة",
   } as Record<string, string>,
   hints: {
+    "story_gallery.columns": "يعرض الهاتف عمودًا أو عمودين.",
+    "story_gallery.items": "غيّر ترتيب الصور بسحب الصورة من مقبضها أو بزرَّي «للأعلى» و«للأسفل». يظهر القسم في المتجر بعد إضافة أول صورة.",
     "image_gallery.images": "لو فاضي بيعرض صور المنتج نفسه.",
     "image_gallery.productId": "سيبه فاضي عشان يستخدم منتج الصفحة (أو الأحدث).",
     "variant_selector.productId": "سيبه فاضي عشان يستخدم منتج الصفحة (أو الأحدث).",
@@ -296,6 +343,10 @@ export const EXTRA_AR = {
     "variant-selector": { label: "اختيار النوع", description: "أنواع المنتج (المقاس، اللون…) كأزرار. فورم الطلب بيبدأ من اختيار العميل." },
     "bundle-selector": { label: "اختيار العرض", description: "عروض الكمية بتاعة المنتج يختار منها العميل، مع التوفير." },
     "masonry-grid": { label: "شبكة صور متفاوتة", description: "صور بأطوال مختلفة في أعمدة مرتبة، لكل صورة تعليق ورابط اختياري." },
+    "story-gallery": {
+      label: "معرض صور القصة",
+      description: "قصة متجرك بالصور لصفحة «من نحن»: لكل صورة عنوان ووصف قصير، ويفتح العميل أي صورة بحجمها الكامل.",
+    },
     popup: { label: "نافذة منبثقة", description: "نافذة فوق الصفحة — بتتفتح من زرار لينكه #popup-<الاسم>، أو بعد كام ثانية، أو لما العميل يسيب الصفحة." },
   } as Record<string, { label: string; description: string }>,
 };

@@ -77,7 +77,6 @@ export const en: Dictionary = {
     swipeHint: "Swipe to see more stores",
     cta: "Pick your template",
     caption: "Real screenshots of the ZIMOS storefront — demo products and pictures.",
-    creditsLead: "The store designs on this page are adapted from free templates:",
   },
 
   benefits: {
@@ -257,6 +256,10 @@ export const en: Dictionary = {
       remove_branding: "Remove platform branding",
       priority_support: "Priority support",
       loyalty: "Loyalty points",
+      reviews: "Product and store reviews",
+      about_gallery: "About page photo gallery",
+      combos: "Product combos",
+      advanced_coupons: "Advanced coupons",
     },
     payPerOrder: {
       badge: "No subscription",
@@ -326,6 +329,15 @@ export const en: Dictionary = {
     socialHeading: "Follow us and get in touch",
   },
 
+  credits: {
+    title: "Credits and licenses",
+    description: "The free templates, icons and fonts the ZIMOS website uses, and their licenses.",
+    intro: "The ZIMOS website uses free designs, icons and fonts. Our thanks to the people who made them — here they are with their licenses.",
+    templatesHeading: "Store designs",
+    templatesLead: "The store designs on this site are adapted from free templates:",
+    resourcesHeading: "Icons and fonts",
+  },
+
   faq: {
     kicker: "Questions",
     heading: "Before you start: straight answers",
@@ -391,6 +403,7 @@ export const en: Dictionary = {
       { label: "Refund policy", href: "/refund-policy" },
       { label: "Terms of service", href: "/terms" },
       { label: "Privacy policy", href: "/privacy" },
+      { label: "Credits", href: "/credits" },
     ],
     rights: "All rights reserved.",
     languageLabel: "Language",

@@ -18,6 +18,7 @@ const LISTS: Record<string, { key: string; noun: CountNoun }> = {
   carousel: { key: "images", noun: "picture" },
   image_gallery: { key: "images", noun: "picture" },
   masonry_grid: { key: "items", noun: "picture" },
+  story_gallery: { key: "items", noun: "picture" },
   faq: { key: "items", noun: "question" },
   accordion: { key: "items", noun: "row" },
   list: { key: "items", noun: "point" },

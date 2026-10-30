@@ -5,6 +5,7 @@ import {
   IconEmail,
   IconLayers,
   IconLink,
+  IconPackage,
   IconProductAdd,
   IconRss,
   IconShuffle,
@@ -17,6 +18,8 @@ import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useCachedAsync } from "@/lib/useCachedAsync";
 import { formatMoney } from "@/lib/format";
 import { pluralOf } from "@/lib/plural";
+import { PRODUCT_COMBOS_ENABLED } from "@/lib/features";
+import { usePlanFeatures } from "@/lib/usePlanFeatures";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { OffersHub } from "./hub/OffersHub";
 import { OfferTools, type OfferToolGroup } from "./hub/OfferTools";
@@ -40,6 +43,8 @@ const STRINGS = {
     groupReach: "Bring customers",
     bundles: "Bundles",
     bundlesHint: "Buy more, pay less per piece — one bundle for many products.",
+    combos: "Combos",
+    combosHint: "Different products sold together at one price.",
     bumps: "Order bumps",
     bumpsHint: "A tick box on the order form: add this to your order.",
     crossSell: "Cross-sell",
@@ -76,6 +81,8 @@ const STRINGS = {
     groupReach: "جذب العملاء",
     bundles: "الباقات",
     bundlesHint: "اشترِ أكثر وادفع أقل للقطعة — باقة واحدة لمنتجات كثيرة.",
+    combos: "باقات المنتجات",
+    combosHint: "منتجات مختلفة تُباع معًا بسعر واحد.",
     bumps: "إضافات الطلب",
     bumpsHint: "مربع اختيار في نموذج الطلب: أضف هذا إلى طلبك.",
     crossSell: "منتجات مقترحة",
@@ -112,6 +119,7 @@ const STRINGS = {
 export function OffersPage() {
   const t = useT(STRINGS);
   const workspaceId = useWorkspaceId();
+  const plan = usePlanFeatures();
   // Each tool's numbers; the cards work without them while they load or if they fail.
   // Kept for the session, so coming back to the hub shows them at once.
   const s = useCachedAsync(`offers-summary:${workspaceId}`, () => offersSummaryGet(apiClient, workspaceId, 30), [workspaceId]).data;
@@ -132,6 +140,8 @@ export function OffersPage() {
           state: running(s?.bundles.active),
           stat: s && s.bundles.orders > 0 ? fmt(t.statBundles, { orders: s.bundles.orders, amount: formatMoney(s.bundles.savedAmount) }) : undefined,
         },
+        // Product combos (lib/features): no card while the switch is off, nor while the plan lacks them.
+        ...(PRODUCT_COMBOS_ENABLED && !plan.gated("combos") ? [{ to: "/offers/combos", icon: <IconPackage />, title: t.combos, hint: t.combosHint }] : []),
         {
           to: "/offers/order-bumps",
           icon: <IconProductAdd />,

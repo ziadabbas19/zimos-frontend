@@ -9,7 +9,7 @@ import { END_LOOKS, FAN_LOOKS, GALLERY_LOOKS, HERO_LOOKS, SHOT_CREDITS, STORE_SH
 
 /**
  * Every capture on the site is of an imported design whose licence asks for
- * a credit; the gallery writes SHOT_CREDITS, copied from the storefront's
+ * a credit; the credits page writes SHOT_CREDITS, copied from the storefront's
  * XS_CREDITS, for the gallery's looks. So every look shown anywhere on the
  * page must be one of the gallery's, with its credit — and 07 and 11, whose
  * pictures' licence is unclear, are shown nowhere (the owner, 2026-10-23).

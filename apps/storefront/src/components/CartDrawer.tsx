@@ -18,6 +18,8 @@ import { StoreImage } from "./StoreImage";
 import { backdrop, btnPrimaryLg, btnSecondary, focusRing, iconBtn, modalLayer, sheet, skeleton } from "./ui";
 import { LineCustomizations } from "@/components/LineCustomizations";
 import { LineOptions } from "@/components/LineOptions";
+import { ComboLineFullTotal, ComboLineInfo, ComboLineThumb } from "@/components/combos/ComboLine";
+import { comboLineImages, isComboLine } from "@/lib/combos";
 
 /**
  * The cart as a slide-over, opened by "add to cart" anywhere in the store and
@@ -163,14 +165,20 @@ export function CartDrawer() {
               {items.map((line) => {
                 const rowBusy = pendingId === line.id;
                 const product = byVariant.get(line.variantId);
+                // A whole combo on one line (lib/combos): its name and products, not its first product's.
+                const combo = isComboLine(line);
+                const comboImages = combo ? comboLineImages(line, byVariant) : [];
                 // The variant's own picture, else the product's (lib/variantImage).
                 const image = product ? lineImage(product, line.variantId) : null;
                 const options = variantLabel(line.variant);
+                const lineName = combo ? line.combo?.name : product?.name;
                 return (
                   <li key={line.id} className={`flex gap-3 py-4 first:pt-0 transition-opacity ${rowBusy ? "opacity-60" : ""}`}>
                     {/* A fixed box, so the row keeps its height whether the photo has arrived or not. */}
-                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-line bg-paper">
-                      {image ? (
+                    <div className={`h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-line bg-paper ${line.unavailable ? "opacity-50" : ""}`}>
+                      {combo && comboImages.length > 0 ? (
+                        <ComboLineThumb images={comboImages} />
+                      ) : !combo && image ? (
                         <StoreImage src={image} alt="" width={80} height={80} sizes="80px" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                       ) : loaded ? (
                         <div className="flex h-full w-full items-center justify-center text-primary/40">
@@ -184,7 +192,9 @@ export function CartDrawer() {
                     <div className="flex min-w-0 flex-1 flex-col">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          {product ? (
+                          {combo ? (
+                            <ComboLineInfo line={line} />
+                          ) : product ? (
                             <StoreLink
                               href={`/products/${product.slug}`}
                               className={`line-clamp-2 rounded text-sm font-semibold text-ink hover:text-primary ${focusRing}`}
@@ -196,31 +206,37 @@ export function CartDrawer() {
                           ) : (
                             <span className={`${skeleton} block h-4 w-32`} />
                           )}
-                          {product && options && <p className="mt-0.5 text-xs text-ink-soft">{options}</p>}
+                          {!combo && product && options && <p className="mt-0.5 text-xs text-ink-soft">{options}</p>}
                           <LineOptions options={line.options} />
                           <LineCustomizations customizations={line.customizations} />
-                          <p className="mt-0.5 text-xs text-ink-soft">{t.cart.perUnit(money(line.currentUnitPrice, currency))}</p>
+                          {!line.unavailable && <p className="mt-0.5 text-xs text-ink-soft">{t.cart.perUnit(money(line.currentUnitPrice, currency))}</p>}
                         </div>
                         <button
                           type="button"
                           onClick={() => run(line.id, () => removeItem(line.id), t.cart.removeFailed)}
                           disabled={rowBusy}
-                          aria-label={`${t.cart.remove}${product ? ` — ${product.name}` : ""}`}
+                          aria-label={`${t.cart.remove}${lineName ? ` — ${lineName}` : ""}`}
                           className={`-me-2 -mt-2 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-soft transition-colors hover:text-danger disabled:opacity-50 ${focusRing}`}
                         >
                           <CrossIcon size={18} />
                         </button>
                       </div>
 
-                      <div className="mt-2 flex items-center justify-between gap-3">
-                        <QuantityStepper
-                          size="sm"
-                          value={line.quantity}
-                          disabled={rowBusy}
-                          onChange={(next) => run(line.id, () => updateItem(line.id, next), t.cart.updateFailed)}
-                        />
-                        <span className="text-sm font-bold text-ink">{money(line.lineTotal, currency)}</span>
-                      </div>
+                      {/* A combo that can no longer be bought counts nothing: only the way to remove it. */}
+                      {!line.unavailable && (
+                        <div className="mt-2 flex items-center justify-between gap-3">
+                          <QuantityStepper
+                            size="sm"
+                            value={line.quantity}
+                            disabled={rowBusy}
+                            onChange={(next) => run(line.id, () => updateItem(line.id, next), t.cart.updateFailed)}
+                          />
+                          <span className="flex flex-wrap items-baseline justify-end gap-x-2">
+                            <ComboLineFullTotal line={line} currency={currency} />
+                            <span className="text-sm font-bold text-ink">{money(line.lineTotal, currency)}</span>
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </li>
                 );

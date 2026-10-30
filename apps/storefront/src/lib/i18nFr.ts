@@ -251,6 +251,9 @@ export const fr: Dictionary = {
       optionsInvalid: "Les options de ce produit ont changé ou sont incomplètes. Choisissez-les à nouveau sur la page du produit.",
       pickupUnavailable: "Le retrait en boutique n'est pas disponible pour le moment. Choisissez la livraison.",
       unavailable: "Ce produit est indisponible pour le moment.",
+      comboUnavailable: "Un produit de ce pack n'est plus disponible.",
+      comboVariantRequired: "Choisissez une option pour chaque produit du pack.",
+      comboNotInFunnel: "Les packs ne peuvent pas être commandés depuis cette page. Ajoutez le pack au panier et finalisez la commande depuis le panier.",
     },
   },
   bump: {

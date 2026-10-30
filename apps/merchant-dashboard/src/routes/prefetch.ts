@@ -19,6 +19,7 @@ import {
   CUSTOMER_REFERRALS_ENABLED,
   GIFT_CARDS_ENABLED,
   LOYALTY_ENABLED,
+  PRODUCT_COMBOS_ENABLED,
   PRODUCT_QUESTIONS_ENABLED,
   PRODUCT_SPECS_ENABLED,
   SIZE_CHARTS_ENABLED,
@@ -105,6 +106,7 @@ if (BLOG_ENABLED) registerPrefetch("/blog/categories", () => import("@/pages/blo
 if (CUSTOMER_REFERRALS_ENABLED) registerPrefetch("/loyalty/referrals", () => import("@/pages/customerReferrals/ReferAFriendPage"));
 if (GIFT_CARDS_ENABLED) registerPrefetch("/gift-cards", () => import("@/pages/giftCards/GiftCardsPage"));
 if (LOYALTY_ENABLED) registerPrefetch("/loyalty", () => import("@/pages/loyalty/LoyaltyProgramPage"));
+if (PRODUCT_COMBOS_ENABLED) registerPrefetch("/offers/combos", () => import("@/pages/offers/CombosPage"));
 if (PRODUCT_QUESTIONS_ENABLED) registerPrefetch("/questions", () => import("@/pages/questions/QuestionsPage"));
 if (PRODUCT_SPECS_ENABLED) registerPrefetch("/catalog/specifications", () => import("@/pages/productSpecs/SpecKeysPage"));
 if (SIZE_CHARTS_ENABLED) registerPrefetch("/size-charts", () => import("@/pages/sizeCharts/SizeChartsPage"));

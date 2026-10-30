@@ -10,6 +10,7 @@ import { PoweredByZimos, brandingRemoved } from "./PoweredByZimos";
 import { cardTitle, storeCards } from "@/lib/storePromises";
 import { pageAndPolicyGroups } from "@/lib/footerLinks";
 import { RichFooter } from "./shell/RichFooter";
+import { StoreRatingBadge } from "./reviews/StoreRatingBadge";
 import { ShellLink } from "./ShellLink";
 import { container } from "./ui";
 
@@ -123,6 +124,8 @@ export function StoreFooter({ store, locale, year }: { store: StorefrontMeta; lo
       <div className="border-t border-line">
         <div className={`${container} flex flex-col items-center justify-between gap-2 py-4 sm:flex-row`}>
           <p className="text-xs text-ink-soft">{t.footer.rights(store.name, year)}</p>
+          {/* The store's own stars, to its reviews page; nothing before its first counted review. */}
+          <StoreRatingBadge store={store} locale={locale} className="text-xs text-ink-soft transition-colors hover:text-primary" starClass="text-primary" />
           {/* Removed for stores whose plan includes it (Plan.features.remove_branding). */}
           {!brandingRemoved(store) && <PoweredByZimos label={t.footer.poweredBy} />}
         </div>
