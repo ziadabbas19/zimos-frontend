@@ -74,6 +74,12 @@ describe("an imported template footer's logo", () => {
     }
   });
 
+  it("is fetched lazily, below the fold, so the page neither preloads nor downloads it up front", () => {
+    const { img } = show("06");
+    expect(img?.getAttribute("loading")).toBe("lazy");
+    expect(img?.getAttribute("src")).toBe(STORE_LOGO);
+  });
+
   it("is the template's own with no store logo, and the footer's own picture before both", () => {
     const template = show("05", { logoUrl: null });
     expect(template.img?.getAttribute("src")).toBe(XS_LOGOS["05"].footer);

@@ -13,6 +13,7 @@ import { GIFT_OPTIONS_ENABLED } from "@/lib/features";
 import { useStore } from "@/lib/StoreContext";
 import { GiftIcon } from "../Icons";
 import { card, input } from "../ui";
+import { StoreImage } from "@/components/StoreImage";
 
 /**
  * The checkout's gift choice: "Is this a gift?", then the
@@ -127,9 +128,7 @@ export function GiftOptionsField({ state, idPrefix = "checkout" }: { state: Gift
             <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-ink">
               <input type="checkbox" className={box} checked={state.wrap} onChange={(e) => state.setWrap(e.target.checked)} />
               {options.wrap.imageUrl && (
-                // Merchant media are arbitrary remote URLs (no next/image allowlist).
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={options.wrap.imageUrl} alt="" width={40} height={40} loading="lazy" className="size-10 shrink-0 rounded-lg border border-line object-cover" />
+                <StoreImage src={options.wrap.imageUrl} alt="" width={40} height={40} sizes="40px" loading="lazy" className="size-10 shrink-0 rounded-lg border border-line object-cover" />
               )}
               <span className="font-medium">{copy.wrap(money(options.wrap.priceAmount, options.wrap.currency))}</span>
             </label>

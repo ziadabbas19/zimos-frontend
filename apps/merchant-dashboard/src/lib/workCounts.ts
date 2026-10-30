@@ -17,6 +17,8 @@ export interface WorkCounts {
 }
 
 const EMPTY: WorkCounts = { toConfirm: null, toShip: null, unread: null, reviews: null };
+/** The one-row inbox read behind the unread badge; the dashboard bootstrap answers this exact read (lib/bootstrap). */
+export const INBOX_UNREAD_PARAMS = { status: "open", unread: true, limit: 1 } as const;
 const REFRESH_MS = 60_000;
 
 let state: { workspaceId: string | null; counts: WorkCounts } = { workspaceId: null, counts: EMPTY };
@@ -62,7 +64,7 @@ async function load(workspaceId: string) {
     const [confirm, pipeline, inbox] = await Promise.allSettled([
       apiClient.getConfirmationQueueCounts(workspaceId),
       apiClient.getOrderPipeline(workspaceId),
-      inboxListConversations(apiClient, workspaceId, { status: "open", unread: true, limit: 1 }),
+      inboxListConversations(apiClient, workspaceId, INBOX_UNREAD_PARAMS),
     ]);
     if (state.workspaceId !== workspaceId) return;
     const next: WorkCounts = {

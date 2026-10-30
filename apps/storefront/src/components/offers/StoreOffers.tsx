@@ -29,6 +29,7 @@ import { OfferVariantPicker, useOfferProduct } from "./OfferVariantPicker";
 import { OfferTimer, useOfferCountdown } from "./OfferTimer";
 import { trackOfferView, useOfferView } from "@/lib/offerViews";
 import { pickText } from "@/lib/i18n";
+import { StoreImage } from "@/components/StoreImage";
 
 /*
  * The shopper's side of the offer rules (backend modules/offers): a
@@ -316,8 +317,7 @@ export function ThankYouUpsell({
       <p className="text-xs font-semibold uppercase tracking-wide text-primary">{text.upsellEyebrow}</p>
       <div className="mt-3 flex gap-4">
         {offer.imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={offer.imageUrl} alt="" className="h-24 w-24 shrink-0 rounded-xl border border-line object-cover" />
+          <StoreImage src={offer.imageUrl} alt="" width={96} height={96} sizes="96px" className="h-24 w-24 shrink-0 rounded-xl border border-line object-cover" />
         )}
         <div className="min-w-0">
           <h2 id="upsell-title" className="text-lg font-semibold text-ink">

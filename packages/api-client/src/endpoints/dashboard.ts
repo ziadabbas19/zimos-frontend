@@ -77,3 +77,37 @@ export async function dashboardSetShortcuts(client: ApiClient, workspaceId: stri
   const result = await client.request<{ shortcuts: string[] }>(`${base(workspaceId)}/shortcuts`, { method: "PUT", body: { shortcuts } });
   return result.shortcuts;
 }
+
+/**
+ * `GET /workspaces/:id/bootstrap` — what the dashboard's frame reads on every
+ * page load, in one answer. Each part is the body (or the named part of the
+ * body) of the endpoint beside it, built by the same code on the server; a
+ * part the member's role may not read is null, and that endpoint answers 403.
+ * The order pipeline (the menu's "to ship" badge) is not in it: it counts
+ * every order of the store, and is asked for on its own.
+ */
+export interface DashboardBootstrap {
+  /** `GET /auth/me`, the whole body. */
+  me: unknown;
+  /** `GET /auth/me/ui-preferences` → `uiPreferences`. */
+  uiPreferences: unknown;
+  /** `GET /workspaces` → `workspaces`. */
+  workspaces: unknown[];
+  /** `GET /workspaces/:id/access` → `access`. */
+  access: unknown;
+  /** `GET /workspaces/:id/plan-features` → `planFeatures`. */
+  planFeatures: unknown;
+  /** `GET /workspaces/:id/notifications/summary`, the whole body. */
+  notifications: unknown;
+  /** `GET /workspaces/:id/shortcuts` → `shortcuts`. */
+  shortcuts: string[];
+  /** `GET /workspaces/:id/confirmation-tasks/counts` → `counts`. */
+  confirmationCounts: unknown | null;
+  /** `GET /workspaces/:id/inbox/conversations?status=open&unread=true&limit=1`, the whole body. */
+  inboxUnread: unknown | null;
+}
+
+export async function dashboardBootstrap(client: ApiClient, workspaceId: string): Promise<DashboardBootstrap> {
+  const { bootstrap } = await client.request<{ bootstrap: DashboardBootstrap }>(`${base(workspaceId)}/bootstrap`);
+  return bootstrap;
+}

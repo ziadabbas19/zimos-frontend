@@ -4,6 +4,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { container } from "@/components/ui";
 import { ZimosLogo } from "@/components/ZimosLogo";
 import { brandingRemoved } from "@/components/PoweredByZimos";
+import { StoreImage } from "@/components/StoreImage";
 
 /**
  * The masthead of a funnel page: the same brand bar, logo and name as the
@@ -25,13 +26,13 @@ export function FunnelHeader({ store }: { store: StorefrontMeta }) {
       <div className={`${container} flex h-16 items-center justify-between gap-3`}>
         <div className="flex min-w-0 items-center gap-3">
           {store.logoUrl ? (
-            // Merchant logos are arbitrary remote URLs (no next/image allowlist).
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            // Resized when the media origin is listed (components/StoreImage).
+            <StoreImage
               src={store.logoUrl}
               alt=""
               width={40}
               height={40}
+              sizes="40px"
               className="h-10 w-10 shrink-0 rounded-xl object-contain"
             />
           ) : brandingRemoved(store) ? null : (

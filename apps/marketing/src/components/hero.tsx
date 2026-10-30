@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- the captures are already sized and compressed for the page. */
 import type { CSSProperties } from "react";
+import { preload } from "react-dom";
 import type { Dictionary } from "@/i18n/dictionary";
 import { REGISTER_URL } from "@/lib/urls";
 import { HERO_LOOKS, STORE_SHOTS } from "@/lib/store-shots";
@@ -8,6 +9,14 @@ import { ColorIcon } from "./color-icon";
 import { Arrow } from "./duo-icons";
 
 const turn = (i: number) => ({ "--k": i }) as CSSProperties;
+
+/**
+ * Up to this width the computer frame is hidden (landing.css, max-width 600px)
+ * and only the phone shows: its captures are not downloaded there.
+ */
+const FRAME_HIDDEN = "(max-width: 600px)";
+/** A 1x1 transparent GIF: what the hidden frame's pictures resolve to on a phone, with no request. */
+const NOTHING = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
 /**
  * The slogan, and real stores built on the template library: the home page on
@@ -21,6 +30,9 @@ const turn = (i: number) => ({ "--k": i }) as CSSProperties;
  */
 export function Hero({ copy }: { copy: Dictionary["hero"] }) {
   const { chips } = copy;
+  // The first capture is the page's largest picture on a computer: fetched
+  // early there, as React's own preload of it did, and not at all on a phone.
+  preload(STORE_SHOTS[HERO_LOOKS[0]].desk, { as: "image", fetchPriority: "high", media: "(min-width: 601px)" });
 
   return (
     <section className="lz-hero" aria-labelledby="lz-h1">
@@ -74,16 +86,18 @@ export function Hero({ copy }: { copy: Dictionary["hero"] }) {
             </div>
             <div className="lz-cycle lz-frame__store">
               {HERO_LOOKS.map((look, i) => (
-                <img
-                  key={look}
-                  src={STORE_SHOTS[look].desk}
-                  width={960}
-                  height={900}
-                  alt={i === 0 ? copy.imageAlt : ""}
-                  fetchPriority={i === 0 ? "high" : "low"}
-                  decoding="async"
-                  style={turn(i)}
-                />
+                <picture key={look}>
+                  <source media={FRAME_HIDDEN} srcSet={NOTHING} />
+                  <img
+                    src={STORE_SHOTS[look].desk}
+                    width={960}
+                    height={900}
+                    alt={i === 0 ? copy.imageAlt : ""}
+                    fetchPriority={i === 0 ? "high" : "low"}
+                    decoding="async"
+                    style={turn(i)}
+                  />
+                </picture>
               ))}
             </div>
           </figure>

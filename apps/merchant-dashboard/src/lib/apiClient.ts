@@ -1,6 +1,7 @@
 import { ApiClient } from "@store-builder/api-client";
 import { draftRefusal, holdForGoLive } from "@/lib/goLive";
 import { emailRefusal, holdForEmailConfirm } from "@/lib/emailConfirm";
+import { forgetAll, sharedGet } from "@/lib/requestCache";
 
 /** Base URL every API call is built on. Exported so non-ApiClient flows (e.g.
  * the Google OAuth redirect) can hit the same backend. */
@@ -24,7 +25,7 @@ export const apiClient = new ApiClient({
 // next still opens the subscribe dialog. Every typed method goes through
 // `request`, so this covers all.
 const send = apiClient.request.bind(apiClient);
-apiClient.request = async function request<T>(path: string, opts?: Parameters<typeof send>[1]): Promise<T> {
+async function sendWithHolds<T>(path: string, opts?: Parameters<typeof send>[1]): Promise<T> {
   try {
     return await send<T>(path, opts);
   } catch (err) {
@@ -33,4 +34,26 @@ apiClient.request = async function request<T>(path: string, opts?: Parameters<ty
     if (!refusal) throw err;
     return holdForGoLive(err, refusal, () => send<T>(path, opts));
   }
+}
+
+// Plain GETs are shared (lib/requestCache): one request for the same read
+// asked twice at once, the bootstrap's answers for the frame's first reads.
+// Anything else forgets what is kept, before it goes and once it is answered.
+const clearSession = apiClient.clearSession.bind(apiClient);
+apiClient.clearSession = () => {
+  forgetAll();
+  clearSession();
+};
+apiClient.request = async function request<T>(path: string, opts?: Parameters<typeof send>[1]): Promise<T> {
+  const method = opts?.method ?? "GET";
+  if (method !== "GET") {
+    forgetAll();
+    try {
+      return await sendWithHolds<T>(path, opts);
+    } finally {
+      forgetAll();
+    }
+  }
+  if (opts?.signal || opts?.headers || opts?.redirect || opts?.auth === false) return sendWithHolds<T>(path, opts);
+  return sharedGet<T>(path, () => sendWithHolds<T>(path, opts));
 };

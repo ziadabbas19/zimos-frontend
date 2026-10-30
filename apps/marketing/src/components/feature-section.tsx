@@ -71,8 +71,12 @@ export function FeatureSection({ id, copy, locale }: { id: FeatureSectionId; cop
 
           {shot ? (
             <figure className="ft-shot" data-ft-extra>
+              {/* 1440 wide, and the 2880 copy only for a screen that draws it that sharp;
+                  `sizes` follows the shot's column (features.css, .ft-sec__in, and .lz-in in landing.css). */}
               <img
-                src={`/product/${shot}-${locale}.webp`}
+                src={`/product/${shot}-${locale}-1440.webp`}
+                srcSet={`/product/${shot}-${locale}-1440.webp 1440w, /product/${shot}-${locale}.webp 2880w`}
+                sizes="(min-width: 2200px) 1200px, (min-width: 1680px) 980px, (min-width: 1081px) 850px, 100vw"
                 width={1440}
                 height={900}
                 alt={copy.shots[shot]}

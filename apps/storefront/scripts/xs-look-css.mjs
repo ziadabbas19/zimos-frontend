@@ -66,8 +66,9 @@ function faces() {
 /** The families a look's file names; the shared defaults' for a look that sets no type of its own. */
 function familiesOf(source) {
   const named = new Set([...source.matchAll(/"([^"]+)"/g)].map((match) => match[1]));
-  if (!/--xs-sans\s*:/.test(source)) named.add("XS01 Sans");
-  if (!/--xs-display\s*:/.test(source)) named.add("XS01 Display");
+  // The shared defaults (xs-sections.css) name each face's sized fallbacks right after it.
+  if (!/--xs-sans\s*:/.test(source)) named.add("XS01 Sans").add("XS01 Sans Fallback").add("XS01 Sans Fallback Android");
+  if (!/--xs-display\s*:/.test(source)) named.add("XS01 Display").add("XS01 Display Fallback").add("XS01 Display Fallback Android");
   return named;
 }
 

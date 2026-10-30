@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Alert, Button, ZLoader } from "@store-builder/ui";
 import { exportFileDownload, exportFileGet, type ExportFile } from "@store-builder/api-client";
@@ -11,6 +11,7 @@ import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { apiClient } from "@/lib/apiClient";
 import { useErrorMessage } from "@/lib/errorMessages";
 import { formatDateTime } from "@/lib/format";
+import { useVisibleInterval } from "@/lib/useVisibleInterval";
 import { countOf } from "@/lib/plural";
 import { useAsync } from "@/lib/useAsync";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
@@ -161,12 +162,8 @@ export function ExportFilePage() {
   const data = file.data;
   const working = data ? data.status === "queued" || data.status === "running" : false;
   const { refresh } = file;
-  // Live while the queue builds it.
-  useEffect(() => {
-    if (!working) return;
-    const id = window.setInterval(() => void refresh({ silent: true }), 2000);
-    return () => window.clearInterval(id);
-  }, [working, refresh]);
+  // Live while the queue builds it, while the tab is in view (and at once on coming back).
+  useVisibleInterval(() => void refresh({ silent: true }), 2000, working);
 
   async function download() {
     if (!data || busy) return;

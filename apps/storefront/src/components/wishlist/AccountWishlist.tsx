@@ -14,6 +14,7 @@ import { storeHref } from "@/lib/storeHref";
 import { useStore } from "@/lib/StoreContext";
 import { useWishlist, wishlistErrorMessage } from "@/lib/wishlist";
 import { HeartIcon } from "./WishlistHeart";
+import { StoreImage } from "@/components/StoreImage";
 
 type CartState = { status: "working" | "added" } | { status: "error"; message: string };
 
@@ -260,9 +261,7 @@ export function AccountWishlist() {
 
 function Thumb({ src, href, dim }: { src: string | null; href: string | null; dim: boolean }) {
   const body = src ? (
-    // Merchant media are arbitrary remote URLs (no next/image allowlist).
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt="" width={96} height={96} loading="lazy" className={`h-full w-full object-cover ${dim ? "opacity-60 grayscale" : ""}`} />
+    <StoreImage src={src} alt="" width={96} height={96} sizes="96px" loading="lazy" className={`h-full w-full object-cover ${dim ? "opacity-60 grayscale" : ""}`} />
   ) : (
     <span className="flex h-full w-full items-center justify-center text-primary/40">
       <BoxIcon size={32} />

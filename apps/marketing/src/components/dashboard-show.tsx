@@ -95,11 +95,15 @@ export function DashboardShow({ copy, locale }: { copy: Dictionary["dashboard"];
             aria-labelledby={`${baseId}-tab-${shot}`}
           >
             {copy.tabs.map((tab) => (
-              // A plain img: the captures are already sized and compressed for the page.
+              // A plain img: the captures are already sized and compressed for the page,
+              // 1440 wide, and the 2880 one only for a screen that draws them that sharp.
+              // `sizes` follows the card's widths in landing.css (.lz-show__card).
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 key={tab.id}
-                src={`/product/${tab.id}-${locale}.webp`}
+                src={`/product/${tab.id}-${locale}-1440.webp`}
+                srcSet={`/product/${tab.id}-${locale}-1440.webp 1440w, /product/${tab.id}-${locale}.webp 2880w`}
+                sizes="(min-width: 2200px) 1440px, (min-width: 1680px) 1248px, (min-width: 1120px) 1120px, 100vw"
                 width={1440}
                 height={900}
                 alt={tab.alt}

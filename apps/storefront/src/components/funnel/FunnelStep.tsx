@@ -58,6 +58,7 @@ import { defaultOfferOf, firstImage, offerAppliesTo, variantLabel } from "@/lib/
 import { useStore } from "@/lib/StoreContext";
 import { useFunnelCurrency } from "./FunnelCurrency";
 import { FunnelOptIn } from "./FunnelOptIn";
+import { StoreImage } from "@/components/StoreImage";
 import { readPick } from "@/lib/pagePicks";
 import { storeHref } from "@/lib/storeHref";
 import { setTrackingContext, track, trackPurchaseOnce } from "@/lib/track";
@@ -639,9 +640,7 @@ export function FunnelCheckout({
         <div className="mt-5 flex items-center gap-4 rounded-xl border border-line p-3">
           <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-paper">
             {image ? (
-              // Merchant media are arbitrary remote URLs (no next/image allowlist).
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={image} alt="" width={64} height={64} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+              <StoreImage src={image} alt="" width={64} height={64} sizes="64px" loading="lazy" decoding="async" className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-primary/40">
                 <BoxIcon size={28} />
@@ -878,9 +877,7 @@ function FunnelOfferCard({
               {(image || (firstLine && !loaded)) && (
                 <div className="mx-auto mb-5 aspect-square w-full max-w-56 overflow-hidden rounded-2xl border border-line bg-paper">
                   {image ? (
-                    // Merchant media are arbitrary remote URLs (no next/image allowlist).
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={image} alt="" width={224} height={224} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                    <StoreImage src={image} alt="" width={224} height={224} sizes="224px" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                   ) : (
                     <span className={`${skeleton} block h-full w-full rounded-none`} />
                   )}

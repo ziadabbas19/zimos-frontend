@@ -1130,7 +1130,9 @@ html {
   animation-delay: calc(var(--k) * 5s - 15s);
 }
 
-.lz-cycle img:first-child {
+/* The computer frame's captures each sit in a <picture> (components/hero.tsx). */
+.lz-cycle > img:first-child,
+.lz-cycle > picture:first-child img {
   opacity: 1;
 }
 
@@ -3169,6 +3171,8 @@ html {
 
 @media (prefers-reduced-motion: reduce) {
   .lz-float,
+  /* On a phone the hero's chips bob under a rule of their own (max-width: 600px): stopped here too. */
+  .lz-hero .lz-float,
   .lz-floats,
   .lz-end__phone,
   .lz-sec--tint::before,
@@ -3229,5 +3233,70 @@ html {
   .lz-show__card,
   .lz-show__head {
     transform: none !important;
+  }
+}
+
+/*
+ * Asked for less motion or less transparency: the hero's chips drop the blur
+ * behind them; their own ground is 92% opaque, so they read the same.
+ * Everyone else is unchanged.
+ */
+@media (prefers-reduced-motion: reduce), (prefers-reduced-transparency: reduce) {
+  .lz-float {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/*
+ * A section scrolled out of view holds its endless animations still (the
+ * class is set by components/landing-motion.tsx): nothing on screen changes,
+ * and a phone stops redrawing what nobody sees. They go on from where they
+ * were when the section comes back.
+ */
+.lz-offscreen,
+.lz-offscreen *,
+.lz-offscreen *::before,
+.lz-offscreen *::after,
+.lz-offscreen::before,
+.lz-offscreen::after {
+  animation-play-state: paused !important;
+}
+
+/*
+ * On a phone. The lights and lines of the hero and of the closing band stand
+ * still where they rest, on every page that has them, and the hero's chips sit
+ * without the blur behind them. On the home page (`.lz-home`), everything else
+ * that moves for good waits for the page to finish loading (`html.lz-loaded`,
+ * set by components/landing-motion.tsx), held on its first frame until then,
+ * so the first paint is the same. A computer is unchanged.
+ */
+@media (max-width: 600px) {
+  .lz-hero .lz-fx__orb,
+  .lz-hero .lz-fx__wave,
+  .lz-end .lz-fx__orb,
+  .lz-end .lz-fx__wave {
+    animation: none;
+  }
+
+  .lz-hero .lz-float {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  html:not(.lz-loaded) .lz-home .lz-fx__orb,
+  html:not(.lz-loaded) .lz-home .lz-fx__wave,
+  html:not(.lz-loaded) .lz-home .lz-float,
+  html:not(.lz-loaded) .lz-home .lz-floats,
+  html:not(.lz-loaded) .lz-home .lz-hero .lz-float,
+  html:not(.lz-loaded) .lz-home .lz-cycle img,
+  html:not(.lz-loaded) .lz-home .lz-marquee__track,
+  html:not(.lz-loaded) .lz-home .lz-sec--tint::before,
+  html:not(.lz-loaded) .lz-home .lz-sec--tint::after,
+  html:not(.lz-loaded) .lz-home .lz-tpl__screen img,
+  html:not(.lz-loaded) .lz-home .lz-track__line i,
+  html:not(.lz-loaded) .lz-home .lz-track__marker,
+  html:not(.lz-loaded) .lz-home .lz-end__phone {
+    animation-play-state: paused;
   }
 }

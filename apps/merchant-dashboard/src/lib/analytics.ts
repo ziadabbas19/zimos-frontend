@@ -2,6 +2,7 @@ import type { AnalyticsSummary } from "@store-builder/api-client";
 import { useAsync } from "@/lib/useAsync";
 import { getIntlLocale } from "@/i18n/LocaleContext";
 import { fetchAnalyticsPair, takePrefetchedAnalyticsSummary } from "@/lib/analyticsPrefetch";
+import { rangeNow } from "@/lib/timeWindow";
 
 /** The ranges the analytics and profit screens offer. */
 export type AnalyticsRange = "today" | "yesterday" | "7d" | "30d" | "90d" | "365d";
@@ -27,9 +28,12 @@ function startOfDay(ms: number): number {
  * `from`/`to` for a range, and the same-length window immediately before it.
  * `to` is exclusive server-side, so "now" is a valid end. "Today" runs from
  * local midnight to now and compares against the same hours of yesterday;
- * "yesterday" is a whole day against the day before it.
+ * "yesterday" is a whole day against the day before it. "Now" is the start
+ * of the next minute (lib/timeWindow): the same range asked twice within a
+ * minute is the same request.
  */
-export function rangeWindows(range: AnalyticsRange, now = Date.now()) {
+export function rangeWindows(range: AnalyticsRange, at = Date.now()) {
+  const now = rangeNow(at);
   let from: number;
   let to: number;
   if (range === "today") {

@@ -436,6 +436,7 @@ function ProductTable({ products, t, statusLabel, renderActions, selection }: Ro
                   media={primaryImage(product)}
                   alt={product.name}
                   className="size-10"
+                  size={40}
                 />
               </td>
               <td className="px-4 py-3">

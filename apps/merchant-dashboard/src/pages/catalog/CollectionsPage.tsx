@@ -384,7 +384,7 @@ function CollectionRow({
           <GripVertical className="size-4" aria-hidden />
         </button>
         {c.imageUrl ? (
-          <img src={c.imageUrl} alt="" className="size-10 shrink-0 rounded-[0.375rem] border border-line object-cover" />
+          <img src={c.imageUrl} alt="" loading="lazy" decoding="async" className="size-10 shrink-0 rounded-[0.375rem] border border-line object-cover" />
         ) : (
           <span className="flex size-10 shrink-0 items-center justify-center rounded-[0.375rem] bg-paper text-ink-soft" aria-hidden>
             <Folder className="size-4" />

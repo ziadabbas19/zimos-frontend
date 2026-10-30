@@ -10,6 +10,36 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    // A font file is never written into the stylesheet as data: the small
+    // .woff fallbacks of src/fonts.css (for browsers without woff2) would
+    // otherwise make the render-blocking CSS heavier for nobody.
+    assetsInlineLimit: (file) => (/\.(woff2?|ttf|otf)$/.test(file) ? false : undefined),
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          // React and the router in a file of their own: every page needs them,
+          // and they change only when the packages are upgraded, so a deploy of
+          // the dashboard leaves this file (and its name) as it was and the
+          // browser keeps it from the last visit.
+          groups: [
+            {
+              name: 'react',
+              test: /[\\/]node_modules[\\/](react|react-dom|scheduler|react-router|react-router-dom|cookie|set-cookie-parser)[\\/]/,
+              priority: 20,
+            },
+            // The icons the pages use, in one file instead of one small file
+            // per icon (a hundred requests for the frame alone otherwise).
+            {
+              name: 'icons',
+              test: /[\\/]node_modules[\\/]lucide-react[\\/]/,
+              priority: 10,
+            },
+          ],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     // Proxy API calls to the backend so the browser talks same-origin — the

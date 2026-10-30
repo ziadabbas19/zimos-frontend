@@ -41,7 +41,7 @@ export default async function MarketingHome({
   return (
     <>
       <SiteHeader />
-      <main id="main" className="lz-page">
+      <main id="main" className="lz-page lz-home">
         <Hero copy={dict.hero} />
         <WorksWith copy={dict.integrations} />
         <TemplatesGallery copy={dict.templates} />

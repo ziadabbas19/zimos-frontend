@@ -1,7 +1,11 @@
+// The frame's reads in one request, sent before anything else is evaluated (lib/bootstrap).
+import './lib/bootstrapEarly'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import '@store-builder/ui/styles.css'
 import './index.css'
+// Tajawal, Plus Jakarta Sans and Fraunces, served with the app (they came from Google Fonts).
+import './fonts.css'
 // The theme: token values first, then the glass material of the shell and of the shared parts.
 // The layers the platform console draws with too are in packages/ui/src/theme; the ones
 // under ./theme are this dashboard's own screens.

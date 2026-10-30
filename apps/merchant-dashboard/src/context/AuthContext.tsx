@@ -9,6 +9,7 @@ import {
   type VerificationChallenge,
 } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
+import { startBootstrap } from "@/lib/bootstrap";
 import { listenForConfirmation, noteCodeSent } from "@/lib/emailConfirm";
 import { leavePushOnSignOut } from "@/lib/push/pushClient";
 
@@ -66,6 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStatus("guest");
       return;
     }
+    // The frame's reads in one request, this one's answer among them (lib/bootstrap);
+    // already on its way when the page has just started.
+    startBootstrap();
     try {
       const me = await apiClient.meDetails();
       setUser(me.user);

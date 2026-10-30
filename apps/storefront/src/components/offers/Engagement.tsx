@@ -16,6 +16,7 @@ import { StoreLink } from "../StoreRoute";
 import { CheckIcon } from "../Icons";
 import { btnPrimary, btnSecondary, card, container, input, label as labelClass } from "../ui";
 import { pickText } from "@/lib/i18n";
+import { StoreImage } from "@/components/StoreImage";
 
 /*
  * Sales notifications and the newsletter sign-up (SPEC §10.7, §10.9).
@@ -148,8 +149,7 @@ export function SocialProofPopup({ workspaceId }: { workspaceId: string }) {
     >
       <div className={`${card} flex w-80 max-w-full items-center gap-3 p-3 shadow-lg`}>
         {item.imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg border border-line object-cover" />
+          <StoreImage src={item.imageUrl} alt="" width={48} height={48} sizes="48px" className="h-12 w-12 shrink-0 rounded-lg border border-line object-cover" />
         )}
         <div className="min-w-0 flex-1 text-sm">
           <p className="text-ink-soft">{text.bought(item.firstName, item.city)}</p>

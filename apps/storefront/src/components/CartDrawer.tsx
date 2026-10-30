@@ -35,9 +35,18 @@ import { comboLineImages, isComboLine } from "@/lib/combos";
  */
 export function CartDrawer() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const { cart, isLoading, itemCount, updateItem, removeItem, isDrawerOpen, closeDrawer } = useCart();
+  const { cart, isLoading, isAdding, itemCount, updateItem, removeItem, isDrawerOpen, closeDrawer } = useCart();
   const { t, money } = useStore();
-  const { byVariant, loaded } = useCatalog(workspaceId);
+  // The catalogue names and pictures the drawer's lines. It is read once the
+  // cart has a line, the drawer opens or a line is on its way in (so the first
+  // added line still shows its name and picture at once) — not on every page a
+  // visitor with an empty cart opens. Once read, it stays.
+  const [catalogWanted, setCatalogWanted] = useState(false);
+  const wantsCatalog = catalogWanted || itemCount > 0 || isDrawerOpen || isAdding;
+  useEffect(() => {
+    if (wantsCatalog && !catalogWanted) setCatalogWanted(true);
+  }, [wantsCatalog, catalogWanted]);
+  const { byVariant, loaded } = useCatalog(wantsCatalog ? workspaceId : undefined);
   const pathname = usePathname();
   const dialogRef = useDialog<HTMLDivElement>({ open: isDrawerOpen, onClose: closeDrawer });
   // In the DOM only while open or sliding out — a closed sheet parked

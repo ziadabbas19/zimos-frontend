@@ -14,6 +14,7 @@ import { defaultOfferOf, firstImage, offerAppliesTo, priceOf } from "@/lib/produ
 import { useStore } from "@/lib/StoreContext";
 import { useIsClient } from "@/lib/useIsClient";
 import { SPEC_TEXT, specName, specValue } from "./specText";
+import { StoreImage } from "@/components/StoreImage";
 
 /**
  * The compare page (/compare, frontend-): the products of the
@@ -246,9 +247,7 @@ function ProductHead({ product, onRemove, removeLabel }: { product: StorefrontPr
       </button>
       <div className="h-24 w-24 overflow-hidden rounded-xl border border-line bg-paper">
         {image ? (
-          // Merchant media are arbitrary remote URLs (no next/image allowlist).
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={image} alt="" width={96} height={96} loading="lazy" className="h-full w-full object-cover" />
+          <StoreImage src={image} alt="" width={96} height={96} sizes="96px" loading="lazy" className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-primary/40">
             <BoxIcon size={32} />

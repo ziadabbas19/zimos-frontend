@@ -146,9 +146,10 @@ export function XsFooter({ store, locale, year, look }: { store: StorefrontMeta;
               data-template-logo={templateFooterLogo ?? undefined}
             >
               {footerLogo ? (
-                // A picture on this storefront or the store's media.
+                // A picture on this storefront or the store's media. Sized by the picture itself (app/xs-shell.css),
+                // so it stays the plain file; lazy, so the page does not fetch (nor preload) it before the footer is near.
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={footerLogo} alt={store.name} className="xs-footer__logo" data-xs-logo={footerLogoSource === "template" ? "template" : undefined} data-xs-pic="logo" />
+                <img src={footerLogo} alt={store.name} loading="lazy" decoding="async" className="xs-footer__logo" data-xs-logo={footerLogoSource === "template" ? "template" : undefined} data-xs-pic="logo" />
               ) : (
                 <span className="xs-footer__name" data-xs-pic="logo">
                   {store.name}

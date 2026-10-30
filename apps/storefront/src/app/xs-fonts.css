@@ -56,6 +56,56 @@
   font-display: swap;
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
+/*
+ * Arial and Times New Roman sized to Poppins and Playfair Display (the
+ * metrics next/font gives its own fallbacks, from capsize), named right after
+ * them in the looks' stacks: text set while the face is still on its way takes
+ * the room it takes once it arrives, so nothing below moves then (the product
+ * page's breadcrumb went from one line to two: CLS 0.155 on a phone). Same
+ * Latin range; a device without Arial or Times New Roman skips them, as before.
+ */
+@font-face {
+  font-family: "XS01 Sans Fallback";
+  src: local("Arial");
+  ascent-override: 93.62%;
+  descent-override: 31.21%;
+  line-gap-override: 8.92%;
+  size-adjust: 112.16%;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "XS01 Display Fallback";
+  src: local("Times New Roman");
+  ascent-override: 97.25%;
+  descent-override: 22.56%;
+  line-gap-override: 0%;
+  size-adjust: 111.26%;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/*
+ * The same for Android, which has neither: its own sans (Roboto) and serif
+ * (Noto Serif), sized the same way from the same capsize metrics, named right
+ * after the two above. A device that has Arial or Times New Roman uses those
+ * first; one with none of the four skips them all, as before.
+ */
+@font-face {
+  font-family: "XS01 Sans Fallback Android";
+  src: local("Roboto"), local("Roboto-Regular");
+  ascent-override: 93.41%;
+  descent-override: 31.14%;
+  line-gap-override: 8.9%;
+  size-adjust: 112.4%;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "XS01 Display Fallback Android";
+  src: local("Noto Serif"), local("NotoSerif-Regular");
+  ascent-override: 115.14%;
+  descent-override: 26.71%;
+  line-gap-override: 0%;
+  size-adjust: 93.97%;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 /* Inter — look 02 */
 @font-face {
   font-family: "Inter";

@@ -1,10 +1,9 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { BillingCycle, Workspace } from "@store-builder/api-client";
 import { getErrorMessage } from "@/lib/errors";
 import { apiClient } from "@/lib/apiClient";
+import { CURRENT_WORKSPACE_KEY } from "@/lib/currentWorkspace";
 import { useAuth } from "./AuthContext";
-
-const CURRENT_WORKSPACE_KEY = "sb.currentWorkspaceId";
 
 /**
  * The outcome of creating a store. `addressError` is set when the store was
@@ -53,6 +52,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     () => localStorage.getItem(CURRENT_WORKSPACE_KEY)
   );
   const [loading, setLoading] = useState(true);
+  // The list asked for while the account is still being read on a page load:
+  // it needs only the session this device holds, so it does not wait for
+  // /auth/me. Used once, by the first read after the account is known.
+  const early = useRef<Promise<Workspace[]> | null>(null);
 
   const refresh = async (opts?: { silent?: boolean }) => {
     // Auth is still resolving on a fresh page load — stay in the loading state
@@ -60,8 +63,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     // and refreshes to the workspace picker).
     if (status === "loading") {
       setLoading(true);
+      if (!early.current && apiClient.isAuthenticated()) {
+        early.current = apiClient.listWorkspaces();
+        // Read (or dropped) once the account is known; a failure here is retried then.
+        early.current.catch(() => undefined);
+      }
       return;
     }
+    const head = early.current;
+    early.current = null;
     if (status !== "authenticated") {
       setWorkspaces([]);
       setLoading(false);
@@ -69,7 +79,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
     if (!opts?.silent) setLoading(true);
     try {
-      const list = await apiClient.listWorkspaces();
+      const list = await (head ? head.catch(() => apiClient.listWorkspaces()) : apiClient.listWorkspaces());
       setWorkspaces(list);
       // Functional update: `refresh` is often called from a closure captured
       // before a selection changed (createWorkspace selects, then refreshes),

@@ -70,6 +70,8 @@ function sameSelection(a: ComboSelection | undefined, b: ComboSelection): boolea
 export interface CartContextValue {
   cart: Cart | null;
   isLoading: boolean;
+  /** True while an `addItem` is on its way (the drawer starts reading the catalogue then). */
+  isAdding: boolean;
   /** Sum of every line's quantity. */
   itemCount: number;
   /**
@@ -119,6 +121,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [client] = useState(() => createStorefrontApiClient());
   const [cart, setCart] = useState<Cart | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [adding, setAdding] = useState(0);
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const openDrawer = useCallback(() => setDrawerOpen(true), []);
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
@@ -178,17 +181,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (!workspaceId) return;
       const combo = typeof target === "string" ? null : target;
       const variantId = typeof target === "string" ? target : "";
-      const token = await ensureToken();
-      const next = await client.addCartItem(
-        workspaceId,
-        token,
-        // A combo is one line the server prices as a combo; it names no variant of its own.
-        combo
-          ? { comboId: combo.comboId, comboSelection: combo.comboSelection, quantity }
-          : { variantId, offerId, quantity, ...(customizations ? { customizations } : {}), ...(options && options.length ? { options } : {}) },
-        // The visitor owns any photo among the answers.
-        { visitorId: getVisitorId(workspaceId) }
-      );
+      setAdding((n) => n + 1);
+      let next: Cart;
+      try {
+        const token = await ensureToken();
+        next = await client.addCartItem(
+          workspaceId,
+          token,
+          // A combo is one line the server prices as a combo; it names no variant of its own.
+          combo
+            ? { comboId: combo.comboId, comboSelection: combo.comboSelection, quantity }
+            : { variantId, offerId, quantity, ...(customizations ? { customizations } : {}), ...(options && options.length ? { options } : {}) },
+          // The visitor owns any photo among the answers.
+          { visitorId: getVisitorId(workspaceId) }
+        );
+      } finally {
+        setAdding((n) => n - 1);
+      }
       setCart(next);
       // AddToCart for the store's own analytics: the line just added, valued at
       // its unit price × the quantity added (not the whole line, which may have
@@ -267,6 +276,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     () => ({
       cart,
       isLoading,
+      isAdding: adding > 0,
       itemCount,
       addItem,
       updateItem,
@@ -277,7 +287,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       openDrawer,
       closeDrawer,
     }),
-    [cart, isLoading, itemCount, addItem, updateItem, removeItem, refreshCart, clearCart, isDrawerOpen, openDrawer, closeDrawer]
+    [cart, isLoading, adding, itemCount, addItem, updateItem, removeItem, refreshCart, clearCart, isDrawerOpen, openDrawer, closeDrawer]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

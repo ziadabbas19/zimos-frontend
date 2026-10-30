@@ -9,6 +9,7 @@ import { storeHref } from "@/lib/storeHref";
 import { useStoreBasePath } from "./StoreRoute";
 import { CrossIcon, SearchIcon } from "./Icons";
 import { focusRing, iconBtn } from "./ui";
+import { StoreImage } from "@/components/StoreImage";
 
 /**
  * The header's product search: suggestions while the shopper types (GET
@@ -174,8 +175,7 @@ export function SearchCombobox({ autoFocus = false, onDone }: { autoFocus?: bool
     >
       {option.kind !== "all" &&
         (option.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={option.imageUrl} alt="" className="size-9 shrink-0 rounded-md border border-line object-cover" />
+          <StoreImage src={option.imageUrl} alt="" width={36} height={36} sizes="36px" className="size-9 shrink-0 rounded-md border border-line object-cover" />
         ) : (
           <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-paper text-ink-soft" aria-hidden>
             <SearchIcon size={14} />
