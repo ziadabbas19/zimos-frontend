@@ -65,11 +65,13 @@ describe("the landing's endless animations", () => {
     expect(held).toEqual(expect.arrayContaining(endless));
   });
 
-  it("leave the hero's lights and lines still on a phone, and its chips without the blur", () => {
+  it("leave the lights and lines of the hero and the closing band still on a phone, and the hero's chips without the blur", () => {
     const phone = rules(media("(max-width: 600px)"));
     const body = (selector: string) => phone.filter((rule) => rule.selector === selector).map((rule) => rule.body).join("");
     expect(body(".lz-hero .lz-fx__orb")).toMatch(/animation:\s*none/);
     expect(body(".lz-hero .lz-fx__wave")).toMatch(/animation:\s*none/);
+    expect(body(".lz-end .lz-fx__orb")).toMatch(/animation:\s*none/);
+    expect(body(".lz-end .lz-fx__wave")).toMatch(/animation:\s*none/);
     expect(body(".lz-hero .lz-float")).toMatch(/(^|[^-])backdrop-filter:\s*none/);
   });
 });

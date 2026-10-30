@@ -3280,16 +3280,18 @@ html {
 }
 
 /*
- * On a phone, the home page only (`.lz-home`: /features shares the ground and
- * the closing band). The hero's lights and lines stand still where they rest,
- * and its chips sit without the blur behind them. Everything else that moves
- * for good waits for the page to finish loading (`html.lz-loaded`, set by
- * components/landing-motion.tsx), held on its first frame until then, so the
- * first paint is the same. A computer is unchanged.
+ * On a phone. The lights and lines of the hero and of the closing band stand
+ * still where they rest, on every page that has them, and the hero's chips sit
+ * without the blur behind them. On the home page (`.lz-home`), everything else
+ * that moves for good waits for the page to finish loading (`html.lz-loaded`,
+ * set by components/landing-motion.tsx), held on its first frame until then,
+ * so the first paint is the same. A computer is unchanged.
  */
 @media (max-width: 600px) {
   .lz-hero .lz-fx__orb,
-  .lz-hero .lz-fx__wave {
+  .lz-hero .lz-fx__wave,
+  .lz-end .lz-fx__orb,
+  .lz-end .lz-fx__wave {
     animation: none;
   }
 
