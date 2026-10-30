@@ -15,8 +15,8 @@
 
 [data-xs-look="17"],
 .brand-theme[data-xs-shell="17"] {
-  --xs-sans: "XS01 Sans", "XS01 Sans Fallback", "XS Ar Tajawal", var(--font-sans), sans-serif;
-  --xs-display: "XS01 Sans", "XS01 Sans Fallback", "XS Ar Tajawal", var(--font-sans), sans-serif;
+  --xs-sans: "XS01 Sans", "XS01 Sans Fallback", "XS01 Sans Fallback Android", "XS Ar Tajawal", var(--font-sans), sans-serif;
+  --xs-display: "XS01 Sans", "XS01 Sans Fallback", "XS01 Sans Fallback Android", "XS Ar Tajawal", var(--font-sans), sans-serif;
   --xs-ink: #000;
   --xs-ink-soft: #343434;
   --xs-muted: #343434;

@@ -43,8 +43,8 @@ describe("xsTokens: a store's Template look", () => {
 
   it("pairs every Latin face with an Arabic one, and names a look that carries both", () => {
     for (const face of Object.values(FACES)) {
-      // A Latin face may be followed by its sized fallback (app/xs-fonts.css), named after it.
-      expect(face.stack).toMatch(/^"([^"]+)", (?:"\1 Fallback", )?"XS Ar [^"]+", (sans-)?serif$/);
+      // A Latin face may be followed by its sized fallbacks (app/xs-fonts.css), named after it.
+      expect(face.stack).toMatch(/^"([^"]+)", (?:"\1 Fallback", "\1 Fallback Android", )?"XS Ar [^"]+", (sans-)?serif$/);
       expect(face.via).toMatch(/^\d\d$/);
     }
     expect(xsTokenLooks({ display: "cookie", sans: "marcellus" })).toEqual(["18", "03"]);
