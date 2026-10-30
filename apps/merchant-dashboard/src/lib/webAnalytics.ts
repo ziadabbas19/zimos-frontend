@@ -1,4 +1,5 @@
 import type { WebAnalyticsFilterKey, WebAnalyticsFilters, WebAnalyticsUnit } from "@store-builder/api-client";
+import { rangeNow } from "@/lib/timeWindow";
 
 /** The date presets Umami's date filter offers. */
 export type WebRange =
@@ -24,8 +25,13 @@ function startOfDay(ms: number): number {
   return d.getTime();
 }
 
-/** `from`/`to` (ISO, `to` exclusive) for a preset; "all" leaves both open. */
-export function webRangeWindow(range: WebRange, now = Date.now()): { from?: string; to?: string } {
+/**
+ * `from`/`to` (ISO, `to` exclusive) for a preset; "all" leaves both open.
+ * "Now" is the start of the next minute (lib/timeWindow): the same preset
+ * asked twice within a minute is the same request.
+ */
+export function webRangeWindow(range: WebRange, at = Date.now()): { from?: string; to?: string } {
+  const now = rangeNow(at);
   const iso = (ms: number) => new Date(ms).toISOString();
   const today = startOfDay(now);
   const d = new Date(now);
