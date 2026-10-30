@@ -40,8 +40,9 @@ describe("which keys are locked", () => {
     expect(visibleNavItems(group, undefined).map((item) => item.key)).toContain("reviews");
     expect(visibleNavItems(group, undefined, undefined, (feature) => feature === "reviews").map((item) => item.key)).not.toContain("reviews");
 
-    expect(offeredPresets(LIBRARY_PRESETS, false).some((preset) => preset.elements.includes("story_gallery"))).toBe(true);
-    expect(offeredPresets(LIBRARY_PRESETS, false, GALLERY_TYPES).some((preset) => preset.elements.includes("story_gallery"))).toBe(false);
+    const holdsGallery = (preset: { elements: readonly string[] }) => preset.elements.includes("story_gallery");
+    expect(offeredPresets(LIBRARY_PRESETS, false).some(holdsGallery)).toBe(true);
+    expect(offeredPresets(LIBRARY_PRESETS, false, GALLERY_TYPES).some(holdsGallery)).toBe(false);
   });
 });
 
@@ -92,7 +93,7 @@ describe("pages of a store without the key", () => {
     await user.click(within(dialog).getByRole("button", { name: "Create discount" }));
 
     await waitFor(() => expect(api.createDiscount).toHaveBeenCalledTimes(1));
-    const payload = api.createDiscount.mock.calls[0][1] as Record<string, unknown>;
+    const payload = api.createDiscount.mock.calls[0][1] as unknown as Record<string, unknown>;
     expect(payload).toMatchObject({ code: "PLAIN", type: "percentage", value: 1000 });
     for (const key of ["audience", "customerPhones", "vipTierIds", "schedule", "maxDiscountAmount", "minQuantity", "excludedProductIds", "appliesToShipping", "appliesToDiscounted", "combinesWithOffers", "strictCustomerLimit"]) {
       expect(payload).not.toHaveProperty(key);
