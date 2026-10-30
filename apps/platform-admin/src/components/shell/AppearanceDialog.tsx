@@ -1,6 +1,7 @@
 import { Contrast, Moon, Sun } from "lucide-react";
 import { Segmented } from "@store-builder/ui";
 import { GlowColours, ToneSlider, setGlass, setLook, setTone, useAppearance } from "@store-builder/ui/appearance";
+import { animateThemeChange } from "@store-builder/ui/theme-reveal";
 import { Modal } from "@/components/Modal";
 import { useLocale, useT } from "@/i18n/LocaleContext";
 import { LOOK_STRINGS, SHELL_STRINGS } from "@/lib/shellStrings";
@@ -49,7 +50,8 @@ export function AppearanceDialog({ open, onClose }: { open: boolean; onClose: ()
             <Segmented
               label={t.look}
               value={look}
-              onChange={setLook}
+              // The new look grows over the old one as a circle from the segment pressed, like the toolbar switch.
+              onChange={(next, press) => animateThemeChange(press, () => setLook(next))}
               className="sm:self-start"
               options={[
                 { value: "light", label: t.light, icon: Sun },

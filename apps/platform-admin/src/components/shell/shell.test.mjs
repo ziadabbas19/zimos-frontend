@@ -119,6 +119,11 @@ describe("the console's frame is the merchant dashboard's", () => {
     for (const look of ["light", "black", "dark"]) assert.ok(dialog.includes(`{ value: "${look}", label: t.${look},`), look);
     // The dashboard's section draws the same five rows.
     const section = read("../../../../merchant-dashboard/src/pages/settings/AppearanceSection.tsx");
+    // Both draw the new look as a circle from the segment pressed, like the toolbar switch (@store-builder/ui/theme-reveal).
+    for (const source of [dialog, section]) {
+      assert.match(source, /import \{ animateThemeChange \} from "@store-builder\/ui\/theme-reveal";/);
+      assert.ok(source.includes("onChange={(next, press) => animateThemeChange(press, () => setLook(next))}"));
+    }
     for (const key of ["language", "look", "tone", "glass", "glow"]) {
       assert.ok(dialog.includes(`label={t.${key}}`), key);
       assert.ok(section.includes(`label={t.${key}}`), key);
