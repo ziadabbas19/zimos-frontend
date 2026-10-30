@@ -11,8 +11,9 @@ import {
 
 /**
  * The circle of the light / dark switch (@store-builder/ui/theme-reveal),
- * shared by this site's switch and the storefront's. Tested here: the
- * package has no test runner of its own, and this site is one of its two users.
+ * shared by this site's switch, the storefront's and the two dashboards'.
+ * Tested here: the package has no test runner of its own, and this site is
+ * one of its users.
  */
 
 const screen390 = { width: 390, height: 844 };
@@ -62,6 +63,14 @@ describe("how far the circle grows", () => {
     expect(css).toContain("clip-path:circle(0px at 12px 701px)");
     expect(css).toContain("clip-path:circle(813px at 12px 701px)");
     expect(css).toContain("::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}");
+  });
+
+  it("the whole page is one picture under the circle: no part keeps a transition name of its own", () => {
+    // The dashboard names its toolbar, dock and page for its page moves; drawn apart, they would sit outside the circle.
+    const css = revealCss({ x: 10, y: 10 }, 100);
+    expect(css).toContain(":root *{view-transition-name:none!important}");
+    // The root itself keeps its name: it is the picture the circle is cut from.
+    expect(css).not.toMatch(/:root\s*\{[^}]*view-transition-name/);
   });
 });
 
