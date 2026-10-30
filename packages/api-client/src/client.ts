@@ -562,7 +562,11 @@ export class ApiClient {
 
     const doFetch = async (): Promise<Response> => {
       const finalHeaders: Record<string, string> = {
-        "Content-Type": "application/json",
+        // Only a request that sends a body says what the body is. A GET or a
+        // HEAD with no Content-Type (and no other header of its own) is a
+        // "simple" cross-origin request, which the browser sends without
+        // asking first (no CORS preflight): the storefront's public reads.
+        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
         ...this.defaultHeaders,
         ...headers,
       };
