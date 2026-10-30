@@ -2820,6 +2820,31 @@ export interface AdminWorkspaceOverview {
   owner?: { id: string; username: string | null; fullName: string; email: string } | null;
   /** The link that opens the store: its primary domain when that can be served, else its platform subdomain. Missing from an older API. */
   storeUrl?: string | null;
+  /** Always the platform subdomain (`https://<slug>.zimos.co`), whatever domain the store has. Missing from an older API. */
+  platformUrl?: string | null;
+  /** The store's own domain (its primary one, else the healthiest, else the newest), null without one. Missing from an older API. */
+  customDomain?: AdminStoreDomain | null;
+  /** How many domains of its own the store has, in any state. Missing from an older API. */
+  customDomainCount?: number;
+}
+
+/**
+ * connected: verified, certificate issued, not suspended. problem: verification
+ * failed, certificate failed or the domain no longer points at the store, or
+ * suspended. pending: anything else (DNS or certificate not done yet).
+ */
+export type AdminStoreDomainState = "connected" | "pending" | "problem";
+
+/** A store's own domain in the console's store list. */
+export interface AdminStoreDomain {
+  hostname: string;
+  /** pending_verification | verified | active | failed */
+  status: string;
+  /** none | pending | issued | failed | moved */
+  sslStatus: string;
+  primary: boolean;
+  suspended: boolean;
+  state: AdminStoreDomainState;
 }
 
 /** What set a store's current subscription period. */

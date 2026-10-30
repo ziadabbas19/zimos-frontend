@@ -165,6 +165,35 @@ describe("the store list", () => {
     expect(screen.queryByText("store detail page")).toBeNull();
   });
 
+  it("shows the subdomain and the store's own domain under it, and finds the store by that domain", async () => {
+    mocked.listWorkspaceRows.mockResolvedValue([
+      row({
+        name: "Nare",
+        slug: "naree",
+        storeUrl: "https://www.elmamoun-example.store",
+        platformUrl: "https://naree.zimos.co",
+        customDomain: { hostname: "www.elmamoun-example.store", status: "active", sslStatus: "issued", primary: true, suspended: false, state: "connected" },
+        customDomainCount: 1,
+      }),
+      row({ id: "66666666-6666-4666-8666-666666666666", name: "Plain", slug: "plain", platformUrl: "https://plain.zimos.co", customDomain: null }),
+    ]);
+    renderAt("/workspaces");
+
+    const subdomain = await screen.findByRole("link", { name: "Open Nare in a new tab" });
+    expect(subdomain.getAttribute("href")).toBe("https://naree.zimos.co");
+    expect(screen.getByRole("link", { name: "Open Nare on www.elmamoun-example.store in a new tab" }).getAttribute("href")).toBe(
+      "https://www.elmamoun-example.store"
+    );
+    expect(screen.getAllByText("Custom domain")).toHaveLength(1);
+    expect(screen.getByText("Connected")).toBeTruthy();
+    // The subdomain link already shows the address, so the bare slug is not repeated.
+    expect(screen.queryByText("naree")).toBeNull();
+
+    fireEvent.change(screen.getByPlaceholderText("Store, address, ID or owner"), { target: { value: "elmamoun" } });
+    expect(screen.queryByRole("link", { name: "Open Plain in a new tab" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Open Nare in a new tab" })).toBeTruthy();
+  });
+
   it("names the link in Arabic, and shows no link when the API sent none", async () => {
     localStorage.setItem("zimos.console.locale", "ar");
     mocked.listWorkspaceRows.mockResolvedValue([row(), row({ id: "55555555-5555-4555-8555-555555555555", name: "Old Store", storeUrl: undefined })]);

@@ -6,6 +6,7 @@ import { DataState, EmptyBlock } from "@/components/DataState";
 import { DetailRow } from "@/components/Drawer";
 import { Mono, Panel } from "@/components/Panel";
 import { PricingBadge, Status, StatusBadge } from "@/components/StatusBadge";
+import { StoreLinks } from "@/components/StoreLink";
 import { WorkspaceStatus } from "@/components/workspace";
 import { SubscriptionCharges } from "@/components/charges";
 import { StoreAccessPanel } from "@/components/storeAccess";
@@ -100,6 +101,9 @@ export function WorkspaceDetailPage() {
                 <DetailRow label="Address">
                   <Mono>{ws.slug}</Mono>
                 </DetailRow>
+                <DetailRow label="Links">
+                  <StoreLinks workspace={ws} />
+                </DetailRow>
                 <DetailRow label="Workspace ID">
                   <Mono>{ws.id}</Mono>
                 </DetailRow>
@@ -129,8 +133,9 @@ export function WorkspaceDetailPage() {
           </div>
 
           <p className="mt-4 text-xs text-ink-soft">
-            Team members, domains, locale and theme settings, and the activity trail each need an
-            admin endpoint that doesn't exist yet, so they aren't shown here.
+            Team members, the full domain list with its DNS records, locale and theme settings, and
+            the activity trail each need an admin endpoint that doesn't exist yet, so they aren't
+            shown here.
           </p>
         </TabsContent>
 
