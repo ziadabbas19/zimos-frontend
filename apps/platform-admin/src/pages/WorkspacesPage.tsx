@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import { PageHeader } from "@/components/PageHeader";
-import { StoreLink } from "@/components/StoreLink";
+import { StoreLinks } from "@/components/StoreLink";
 import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { FilterChips, NativeSelect, SearchInput } from "@/components/forms";
 import { Panel, SortHead, Td, Th, compareValues, type SortState } from "@/components/Panel";
@@ -112,6 +112,7 @@ export function WorkspacesPage() {
           !q ||
           workspace.name.toLowerCase().includes(q) ||
           workspace.slug.toLowerCase().includes(q) ||
+          (workspace.customDomain?.hostname ?? "").toLowerCase().includes(q) ||
           workspace.id.startsWith(q) ||
           Boolean(
             workspace.owner &&
@@ -214,15 +215,21 @@ export function WorkspacesPage() {
                       onClick={() => navigate(`/workspaces/${workspace.id}`)}
                     >
                       <Td>
-                        <Link
-                          to={`/workspaces/${workspace.id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="block font-medium text-ink hover:text-primary"
-                        >
-                          {workspace.name}
-                        </Link>
-                        <span className="block text-xs text-ink-soft">{workspace.slug}</span>
-                        <StoreLink url={workspace.storeUrl} name={workspace.name} />
+                        {/* Capped so a long name or host is cut, not the row widened (the table scrolls sideways on a phone). */}
+                        <div className="max-w-56 whitespace-normal sm:max-w-72">
+                          <Link
+                            to={`/workspaces/${workspace.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="block font-medium break-words text-ink hover:text-primary"
+                          >
+                            {workspace.name}
+                          </Link>
+                          {/* The subdomain link below already shows the address; an older API sends no subdomain. */}
+                          {workspace.platformUrl === undefined && (
+                            <span className="block text-xs text-ink-soft">{workspace.slug}</span>
+                          )}
+                          <StoreLinks workspace={workspace} className="mt-0.5" />
+                        </div>
                       </Td>
                       <Td>
                         {workspace.owner ? (
