@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from "react";
-import { inboxListConversations, reviewsSummary } from "@store-builder/api-client";
+import { apiErrorCode, inboxListConversations, reviewsSummary } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 
 /**
@@ -37,6 +37,9 @@ function subscribe(fn: () => void) {
 
 const snapshot = () => state.counts;
 
+// Stores whose plan lacks reviews (403 PLAN_FEATURE_REQUIRED): not asked again until the dashboard reloads.
+const reviewsLocked = new Set<string>();
+
 function setReviews(workspaceId: string, reviews: number | null) {
   if (state.workspaceId !== workspaceId || state.counts.reviews === reviews) return;
   state = { workspaceId, counts: { ...state.counts, reviews } };
@@ -47,10 +50,15 @@ async function load(workspaceId: string) {
   if (inFlight) return inFlight;
   inFlight = (async () => {
     // Reviews waiting are asked alongside and written when they come: a slow answer never holds back the other counts.
-    void reviewsSummary(apiClient, workspaceId).then(
-      (counts) => setReviews(workspaceId, counts?.pending ?? null),
-      () => setReviews(workspaceId, null)
-    );
+    if (!reviewsLocked.has(workspaceId)) {
+      void reviewsSummary(apiClient, workspaceId).then(
+        (counts) => setReviews(workspaceId, counts?.pending ?? null),
+        (err: unknown) => {
+          if (apiErrorCode(err) === "PLAN_FEATURE_REQUIRED") reviewsLocked.add(workspaceId);
+          setReviews(workspaceId, null);
+        }
+      );
+    }
     const [confirm, pipeline, inbox] = await Promise.allSettled([
       apiClient.getConfirmationQueueCounts(workspaceId),
       apiClient.getOrderPipeline(workspaceId),

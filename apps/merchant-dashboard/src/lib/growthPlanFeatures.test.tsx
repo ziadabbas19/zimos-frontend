@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { screen, waitFor, within } from "@testing-library/react";
-import { planFeatureGated, type Discount } from "@store-builder/api-client";
+import { renderHook, screen, waitFor, within } from "@testing-library/react";
+import { ApiError, planFeatureGated, type Discount } from "@store-builder/api-client";
 import { api, fake, testWorkspace, workspaceMock } from "@/test/mocks";
-import { fakeBackend } from "@/test/fakeBackend";
+import { callsTo, fakeBackend } from "@/test/fakeBackend";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { visibleNavItems } from "@/components/shell/SidebarNav";
 import { NAV_GROUPS } from "@/lib/navigation";
+import { refreshWorkCounts, useWorkCounts } from "@/lib/workCounts";
 import { GALLERY_TYPES, LIBRARY_PRESETS, offeredPresets } from "@/pages/website/editor/library/purposes";
 import { ReviewsPage } from "@/pages/reviews/ReviewsPage";
 import { CombosPage } from "@/pages/offers/CombosPage";
@@ -41,6 +42,20 @@ describe("which keys are locked", () => {
 
     expect(offeredPresets(LIBRARY_PRESETS, false).some((preset) => preset.elements.includes("story_gallery"))).toBe(true);
     expect(offeredPresets(LIBRARY_PRESETS, false, GALLERY_TYPES).some((preset) => preset.elements.includes("story_gallery"))).toBe(false);
+  });
+});
+
+describe("the waiting-reviews badge", () => {
+  it("stops asking once the plan refuses it", async () => {
+    const refused = new ApiError("Your plan doesn't include Product and store reviews. Upgrade your plan to use it.", 403, "PLAN_FEATURE_REQUIRED", {});
+    const calls = fakeBackend({ "GET /workspaces/ws_9/reviews/summary": refused, "GET /workspaces/ws_9/inbox/conversations": { conversations: [], nextCursor: null } });
+    api.getConfirmationQueueCounts.mockResolvedValue(fake({ dueNow: 0 }));
+    api.getOrderPipeline.mockResolvedValue(fake({}));
+    renderHook(() => useWorkCounts("ws_9"));
+    await waitFor(() => expect(callsTo(calls, "GET", "/reviews/summary")).toHaveLength(1));
+    refreshWorkCounts();
+    await waitFor(() => expect(api.getConfirmationQueueCounts.mock.calls.length).toBeGreaterThanOrEqual(2));
+    expect(callsTo(calls, "GET", "/reviews/summary")).toHaveLength(1);
   });
 });
 
