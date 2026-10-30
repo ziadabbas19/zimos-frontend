@@ -1,3 +1,5 @@
+import type { MouseEvent } from "react";
+import { animateThemeChange } from "../theme-reveal";
 import { toggleScheme, useAppearance } from "./store";
 
 function MoonIcon() {
@@ -42,7 +44,8 @@ function SunIcon() {
 /**
  * The sun / moon switch of the toolbar: Light, or the dark look chosen last in
  * Settings → Language and look (Black or Dark). One store with that screen
- * (lib/appearance.ts), so the two never disagree.
+ * (lib/appearance.ts), so the two never disagree. The new look grows over the
+ * old one as a circle from the press (../theme-reveal).
  */
 export function ThemeToggle({ className = "" }: { className?: string }) {
   const dark = useAppearance().look !== "light";
@@ -51,7 +54,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   return (
     <button
       type="button"
-      onClick={toggleScheme}
+      onClick={(event: MouseEvent<HTMLButtonElement>) => animateThemeChange(event, toggleScheme)}
       aria-label={label}
       title={label}
       className={`cursor-pointer inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-line bg-paper-raised text-ink-soft transition-colors hover:border-ink-soft hover:text-ink ${className}`}
