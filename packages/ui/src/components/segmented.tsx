@@ -11,10 +11,22 @@ export interface SegmentedOption<T extends string> {
   count?: number;
 }
 
+/**
+ * What chose a segment: a click or a tap (where it landed; `detail` 0 for
+ * Enter / Space), or an arrow key (`detail` 0, the segment it moved to). The
+ * look picker draws its light / dark circle from here (@store-builder/ui/theme-reveal).
+ */
+export interface SegmentedPress {
+  clientX: number;
+  clientY: number;
+  detail: number;
+  currentTarget: HTMLButtonElement | null;
+}
+
 export interface SegmentedProps<T extends string> {
   value: T;
   /** NoInfer keeps T pinned to `value` / `options`, so a plain setState fits here. */
-  onChange: (value: NoInfer<T>) => void;
+  onChange: (value: NoInfer<T>, press: SegmentedPress) => void;
   options: ReadonlyArray<SegmentedOption<T>>;
   /** Names the choice for screen readers, e.g. «الفترة». */
   label: string;
@@ -81,8 +93,9 @@ export function Segmented<T extends string>({
     else if (next > last) next = 0;
     const option = options[next];
     if (!option) return;
-    segments.current[next]?.focus();
-    if (option.value !== value) onChange(option.value);
+    const segment = segments.current[next] ?? null;
+    segment?.focus();
+    if (option.value !== value) onChange(option.value, { clientX: 0, clientY: 0, detail: 0, currentTarget: segment });
   }
 
   // One geometry for the thumb and for the glow under it: a column wide, `--i` columns along.
@@ -133,8 +146,8 @@ export function Segmented<T extends string>({
             aria-checked={checked}
             // Roving focus: Tab lands on the chosen segment (or the first, when nothing is chosen yet).
             tabIndex={checked || (chosen < 0 && index === 0) ? 0 : -1}
-            onClick={() => {
-              if (!checked) onChange(option.value);
+            onClick={(event) => {
+              if (!checked) onChange(option.value, event);
             }}
             onKeyDown={(event) => onKeyDown(event, index)}
             className={cn(
