@@ -13,9 +13,21 @@ const ENDLESS = ".lz-hero, .lz-sec, .lz-marquee, .lz-end";
  *
  * Also: a section scrolled out of view holds its endless animations (the
  * moving grounds, the crossfades, the marquee, the bobbing cards) still,
- * so a phone does not keep redrawing what nobody sees.
+ * so a phone does not keep redrawing what nobody sees; and on a phone they
+ * only start once the page has loaded (`html.lz-loaded`, landing.css).
  */
 export function LandingMotion() {
+  useEffect(() => {
+    const html = document.documentElement;
+    const start = () => html.classList.add("lz-loaded");
+    if (document.readyState === "complete") start();
+    else window.addEventListener("load", start, { once: true });
+    return () => {
+      window.removeEventListener("load", start);
+      html.classList.remove("lz-loaded");
+    };
+  }, []);
+
   useEffect(() => {
     if (!("IntersectionObserver" in window)) return;
     const io = new IntersectionObserver((entries) => {

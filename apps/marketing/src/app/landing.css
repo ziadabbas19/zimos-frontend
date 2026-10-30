@@ -3278,3 +3278,39 @@ html {
 .lz-offscreen::after {
   animation-play-state: paused !important;
 }
+
+/*
+ * On a phone, the home page only (`.lz-home`: /features shares the ground and
+ * the closing band). The hero's lights and lines stand still where they rest,
+ * and its chips sit without the blur behind them. Everything else that moves
+ * for good waits for the page to finish loading (`html.lz-loaded`, set by
+ * components/landing-motion.tsx), held on its first frame until then, so the
+ * first paint is the same. A computer is unchanged.
+ */
+@media (max-width: 600px) {
+  .lz-hero .lz-fx__orb,
+  .lz-hero .lz-fx__wave {
+    animation: none;
+  }
+
+  .lz-hero .lz-float {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  html:not(.lz-loaded) .lz-home .lz-fx__orb,
+  html:not(.lz-loaded) .lz-home .lz-fx__wave,
+  html:not(.lz-loaded) .lz-home .lz-float,
+  html:not(.lz-loaded) .lz-home .lz-floats,
+  html:not(.lz-loaded) .lz-home .lz-hero .lz-float,
+  html:not(.lz-loaded) .lz-home .lz-cycle img,
+  html:not(.lz-loaded) .lz-home .lz-marquee__track,
+  html:not(.lz-loaded) .lz-home .lz-sec--tint::before,
+  html:not(.lz-loaded) .lz-home .lz-sec--tint::after,
+  html:not(.lz-loaded) .lz-home .lz-tpl__screen img,
+  html:not(.lz-loaded) .lz-home .lz-track__line i,
+  html:not(.lz-loaded) .lz-home .lz-track__marker,
+  html:not(.lz-loaded) .lz-home .lz-end__phone {
+    animation-play-state: paused;
+  }
+}
