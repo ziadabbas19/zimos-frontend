@@ -2775,7 +2775,14 @@ export type PlanFeatureKey =
   | "remove_branding"
   | "priority_support"
   // Loyalty points: with LOYALTY_REQUIRE_PLAN_FEATURE, switching the programme on, and earning or spending points.
-  | "loyalty";
+  | "loyalty"
+  // The four below are refused only with GROWTH_REQUIRE_PLAN_FEATURE on too (WorkspacePlanFeatures.growthEnforced).
+  | "reviews"
+  | "about_gallery"
+  // Exists only while PRODUCT_COMBOS_ENABLED is on.
+  | "combos"
+  // The coupon controls (audience, schedule, cap, ...) and the coupon report; plain codes are on every plan.
+  | "advanced_coupons";
 
 /**
  * One row of `GET /admin/workspaces`. This is a purpose-built overview row,

@@ -254,6 +254,10 @@ export const en: Dictionary = {
       remove_branding: "Remove platform branding",
       priority_support: "Priority support",
       loyalty: "Loyalty points",
+      reviews: "Product and store reviews",
+      about_gallery: "About page photo gallery",
+      combos: "Product combos",
+      advanced_coupons: "Advanced coupons",
     },
   },
 

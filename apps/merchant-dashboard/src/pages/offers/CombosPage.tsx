@@ -5,6 +5,8 @@ import { combosArchive, combosList, type ComboDto } from "@store-builder/api-cli
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useCachedAsync } from "@/lib/useCachedAsync";
+import { usePlanFeatures } from "@/lib/usePlanFeatures";
+import { PlanFeatureNotice } from "@/components/PlanFeatureNotice";
 import { formatMoney, formatOptions } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
 import { useWorkspace } from "@/context/WorkspaceContext";
@@ -97,7 +99,21 @@ function itemsText(combo: ComboDto, t: Strings): string {
     .join(t.itemJoin);
 }
 
+/** Without the plan's combos (while the server refuses it) the page says so and lists nothing. */
 export function CombosPage() {
+  const t = useT(STRINGS);
+  const plan = usePlanFeatures();
+  if (plan.gated("combos")) {
+    return (
+      <OfferPage title={t.title} description={t.description}>
+        <PlanFeatureNotice feature="combos" />
+      </OfferPage>
+    );
+  }
+  return <CombosScreen />;
+}
+
+function CombosScreen() {
   const t = useT(STRINGS);
   const workspaceId = useWorkspaceId();
   const toast = useToast();

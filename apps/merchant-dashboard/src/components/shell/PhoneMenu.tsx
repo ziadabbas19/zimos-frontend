@@ -13,6 +13,7 @@ import { StoreSwitcher } from "@/components/shell/StoreSwitcher";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { useT, type Messages } from "@/i18n/LocaleContext";
 import { NAV_GROUPS, NAV_GROUP_LABELS, NAV_LABELS, findNavItem, sidebarHome } from "@/lib/navigation";
+import { usePlanFeatures } from "@/lib/usePlanFeatures";
 import { useWorkCounts } from "@/lib/workCounts";
 
 const STRINGS = {
@@ -120,6 +121,7 @@ function PhoneMenuSheet({ onClose }: { onClose: () => void }) {
   const groupLabels = useT(NAV_GROUP_LABELS);
   const counts = useWorkCounts(currentWorkspace?.id);
   const permissions = currentWorkspace?.permissions;
+  const plan = usePlanFeatures();
   const sheet = useRef<HTMLDivElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
   const titleId = useId();
@@ -148,7 +150,7 @@ function PhoneMenuSheet({ onClose }: { onClose: () => void }) {
 
   const onDock = new Set(tabRoutesFor(permissions));
   const activeTo = sidebarHome(findNavItem(location.pathname));
-  const groups = NAV_GROUPS.map((group) => ({ group, items: visibleNavItems(group, permissions, onDock) })).filter(({ items }) => items.length > 0);
+  const groups = NAV_GROUPS.map((group) => ({ group, items: visibleNavItems(group, permissions, onDock, plan.gated) })).filter(({ items }) => items.length > 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:hidden">

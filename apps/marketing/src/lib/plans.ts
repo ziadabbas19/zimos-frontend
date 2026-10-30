@@ -18,7 +18,11 @@ export type PlanFeatureKey =
   | "visitor_insights"
   | "remove_branding"
   | "priority_support"
-  | "loyalty";
+  | "loyalty"
+  | "reviews"
+  | "about_gallery"
+  | "combos"
+  | "advanced_coupons";
 
 export interface PublicPlan {
   id: string;

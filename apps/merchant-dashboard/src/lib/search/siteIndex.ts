@@ -231,6 +231,7 @@ const PAGE_WORDS: Partial<Record<NavKey, readonly string[]>> = {
 /** A menu page whose content the plan holds back (the server refuses its data without the key). */
 const PAGE_PLAN: Partial<Record<NavKey, SearchPlanRule>> = {
   webAnalytics: { feature: "advanced_analytics" },
+  reviews: { feature: "reviews" },
 };
 
 /** The heading of each menu page: its group's name, or its own for a page in a group without one. */

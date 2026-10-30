@@ -9,11 +9,13 @@ import { EmptyState } from "@/components/EmptyState";
 import { IconPlus, IconRefresh, IconReviews, IconSearch } from "@/components/icons";
 import { ChipRow, ListSkeleton, ListToolbar, type ChipItem } from "@/components/list";
 import { PageHeader } from "@/components/PageHeader";
+import { PlanFeatureNotice } from "@/components/PlanFeatureNotice";
 import { useToast } from "@/components/Toast";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { apiClient } from "@/lib/apiClient";
 import { useErrorMessage } from "@/lib/errorMessages";
 import { useCachedAsync } from "@/lib/useCachedAsync";
+import { usePlanFeatures } from "@/lib/usePlanFeatures";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { ItemMenu } from "@/pages/catalog/media/ItemMenu";
 import { ActiveFilters } from "@/pages/returns/rowkit/ActiveFilters";
@@ -150,7 +152,22 @@ function tabOf(value: string | null): StatusTab {
  * A review the store added (from another site, or by hand before sources
  * existed) is edited in the same form that adds one; a customer's never is.
  */
+/** Without the plan's reviews (while the server refuses it) the page says so and lists nothing. */
 export function ReviewsPage() {
+  const t = useT(STRINGS);
+  const plan = usePlanFeatures();
+  if (plan.gated("reviews")) {
+    return (
+      <div className="max-w-5xl">
+        <PageHeader title={t.title} />
+        <PlanFeatureNotice feature="reviews" />
+      </div>
+    );
+  }
+  return <ReviewsScreen />;
+}
+
+function ReviewsScreen() {
   const workspaceId = useWorkspaceId();
   const t = useT(STRINGS);
   const words = useT(REVIEW_WORDS);

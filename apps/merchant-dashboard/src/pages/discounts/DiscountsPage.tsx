@@ -6,6 +6,7 @@ import { IconArchive, IconCopy, IconEdit, IconLink, IconPause, IconPlay, IconPlu
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useCachedAsync } from "@/lib/useCachedAsync";
+import { usePlanFeatures } from "@/lib/usePlanFeatures";
 import { getErrorMessage } from "@/lib/errors";
 import { fmt, useT } from "@/i18n/LocaleContext";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -108,6 +109,8 @@ export function DiscountsPage() {
   const [deleting, setDeleting] = useState<Discount | null>(null);
   const [sharing, setSharing] = useState<Discount | null>(null);
   const [reporting, setReporting] = useState<Discount | null>(null);
+  // The coupon report is the plan's advanced_coupons.
+  const advanced = !usePlanFeatures().gated("advanced_coupons");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const reload = () => list.refresh({ silent: true });
@@ -178,7 +181,7 @@ export function DiscountsPage() {
     const items: ContextMenuItem[] = [{ id: "open", label: t.open, icon: IconEdit, onSelect: () => setFormTarget(d.id) }];
     if (d.code) items.push({ id: "copy", label: t.copyCode, icon: IconCopy, onSelect: () => void copyCode(d) });
     if (d.code && d.status !== "archived") items.push({ id: "share", label: t.shareLink, icon: IconLink, onSelect: () => setSharing(d) });
-    items.push({ id: "report", label: t.report, icon: IconReports, onSelect: () => setReporting(d) });
+    if (advanced) items.push({ id: "report", label: t.report, icon: IconReports, onSelect: () => setReporting(d) });
     if (d.status !== "archived") {
       items.push({
         id: "toggle",

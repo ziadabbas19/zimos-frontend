@@ -4,6 +4,7 @@ import type { CreateDiscountPayload, Discount, DiscountType, UpdateDiscountPaylo
 import { IconArchive, IconLink, IconMagic, IconPause, IconPlay, IconReports } from "@/components/icons";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
+import { usePlanFeatures } from "@/lib/usePlanFeatures";
 import { getErrorMessage, getFieldErrors } from "@/lib/errors";
 import { basisPointsToPercentInput, majorToMinor, minorToMajorInput, percentToBasisPoints } from "@/lib/format";
 import { fmt, useT } from "@/i18n/LocaleContext";
@@ -165,6 +166,9 @@ function DiscountFormBody({
   const { currentWorkspace } = useWorkspace();
   const currency = currentWorkspace?.defaultCurrency ?? "EGP";
   const isEdit = Boolean(discount);
+  // Without the plan's advanced_coupons the controls and the report are not offered;
+  // their values are still sent as loaded, so the server sees them unchanged.
+  const advanced = !usePlanFeatures().gated("advanced_coupons");
 
   const [code, setCode] = useState(discount?.code ?? "");
   const [type, setType] = useState<DiscountType>(discount?.type ?? "percentage");
@@ -234,7 +238,9 @@ function DiscountFormBody({
     if (productScope === "collections" && collectionIds.length === 0) errors.collectionRestrictions = tc.collectionsRequired;
 
     const read = readControls(controls.draft, type, productScope === "products");
-    for (const [field, message] of Object.entries(controlsMessages(read.problems, tc))) errors[field] ??= message;
+    if (advanced) for (const [field, message] of Object.entries(controlsMessages(read.problems, tc))) errors[field] ??= message;
+    // Hidden controls are not sent: a new coupon gets the server's defaults, an existing one keeps its own.
+    const controlFields = advanced ? read.payload : {};
 
     // Required for the type; a field that is not valid is marked and nothing is sent.
     const buyXGetYConfig = type === "buy_x_get_y" ? buyXGetY.read() : null;
@@ -263,7 +269,7 @@ function DiscountFormBody({
           endsAt: endsAt ?? null,
           usageLimit: usageLimitNum,
           perCustomerLimit: perCustomerNum,
-          ...read.payload,
+          ...controlFields,
           ...(buyXGetYConfig ? { buyXGetYConfig: { ...buyXGetYConfig } } : {}),
         };
         await apiClient.updateDiscount(workspaceId, discount.id, payload);
@@ -274,7 +280,7 @@ function DiscountFormBody({
           status: active ? "active" : "disabled",
           productRestrictions,
           collectionRestrictions,
-          ...read.payload,
+          ...controlFields,
         };
         if (codeValue) payload.code = codeValue;
         if (buyXGetYConfig) payload.buyXGetYConfig = { ...buyXGetYConfig };
@@ -375,7 +381,7 @@ function DiscountFormBody({
                   {t.shareLink}
                 </button>
               )}
-              {onReport && (
+              {onReport && advanced && (
                 <button type="button" className={ACTION} onClick={() => onReport(discount)}>
                   <IconReports className="size-4" aria-hidden />
                   {t.report}
@@ -483,7 +489,7 @@ function DiscountFormBody({
                 <MoneyInput label={t.amountOff} required currency={currency} value={value} onChange={setValue} error={fieldErrors.value} />
               )}
 
-              {type === "percentage" && <MaxDiscountField controls={controls} currency={currency} error={fieldErrors.maxDiscountAmount} />}
+              {advanced && type === "percentage" && <MaxDiscountField controls={controls} currency={currency} error={fieldErrors.maxDiscountAmount} />}
 
               {type === "buy_x_get_y" && <BuyXGetYFields state={buyXGetY} error={fieldErrors.buyXGetYConfig} />}
             </div>
@@ -502,7 +508,7 @@ function DiscountFormBody({
             )}
             {stampFields("startsAt")}
             {stampFields("endsAt")}
-            <ScheduleFields controls={controls} error={fieldErrors.schedule} />
+            {advanced && <ScheduleFields controls={controls} error={fieldErrors.schedule} />}
           </FormSection>
 
           <FormSection title={tc.sectionOnWhat}>
@@ -542,13 +548,15 @@ function DiscountFormBody({
               {fieldErrors.collectionRestrictions && <p className="text-xs font-medium text-danger">{fieldErrors.collectionRestrictions}</p>}
             </div>
             {/* Leaving products out of a list of chosen products means nothing: shown for all products and collections. */}
-            {productScope !== "products" && <ExcludedProductsField controls={controls} error={fieldErrors.excludedProductIds} />}
-            <CoverageSwitches controls={controls} type={type} />
+            {advanced && productScope !== "products" && <ExcludedProductsField controls={controls} error={fieldErrors.excludedProductIds} />}
+            {advanced && <CoverageSwitches controls={controls} type={type} />}
           </FormSection>
 
-          <FormSection title={tc.sectionWho}>
-            <AudienceFields controls={controls} errors={fieldErrors} />
-          </FormSection>
+          {advanced && (
+            <FormSection title={tc.sectionWho}>
+              <AudienceFields controls={controls} errors={fieldErrors} />
+            </FormSection>
+          )}
 
           <FormSection title={tc.sectionLimits}>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -560,7 +568,7 @@ function DiscountFormBody({
                 error={fieldErrors.minimumSubtotal}
                 hint={t.minimumSubtotalHint}
               />
-              <MinQuantityField controls={controls} error={fieldErrors.minQuantity} />
+              {advanced && <MinQuantityField controls={controls} error={fieldErrors.minQuantity} />}
               <Field label={t.usageLimit} error={fieldErrors.usageLimit} hint={t.usageLimitHint}>
                 {({ id, ...aria }) => (
                   <Input
@@ -590,7 +598,7 @@ function DiscountFormBody({
                 )}
               </Field>
             </div>
-            <StrictLimitSwitch controls={controls} />
+            {advanced && <StrictLimitSwitch controls={controls} />}
           </FormSection>
 
           <DiscountSentence input={sentence} currency={currency} />

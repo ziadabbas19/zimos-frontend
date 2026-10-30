@@ -19,10 +19,12 @@ import {
   searchPresets,
   LIBRARY_PRESETS,
   offeredPresets,
+  GALLERY_TYPES,
   type Purpose,
 } from "./library/purposes";
 import { leftUi } from "./library/strings";
 import { XS_ONLY } from "./xsBlocks";
+import { usePlanFeatures } from "@/lib/usePlanFeatures";
 
 /**
  * The library of sections. Every preset is a card with a schematic of the
@@ -103,7 +105,8 @@ function BlockLibraryPanel({
   const ui = editorUi(locale);
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<GroupFilter>("all");
-  const offered = useMemo(() => offeredPresets(LIBRARY_PRESETS, XS_ONLY || templateBands), [templateBands]);
+  const galleryHeld = usePlanFeatures().gated("about_gallery");
+  const offered = useMemo(() => offeredPresets(LIBRARY_PRESETS, XS_ONLY || templateBands, galleryHeld ? GALLERY_TYPES : []), [templateBands, galleryHeld]);
 
   const searching = query.trim() !== "";
   // The popular row only makes sense as a first read of the full, unfiltered
@@ -311,7 +314,8 @@ function LibraryBrowser({
   const searching = query.trim() !== "";
   const savedCount = saved.list.length;
   const bands = XS_ONLY || templateBands;
-  const offer = useCallback((presets: readonly BlockPreset[]) => offeredPresets(presets, bands), [bands]);
+  const galleryHeld = usePlanFeatures().gated("about_gallery");
+  const offer = useCallback((presets: readonly BlockPreset[]) => offeredPresets(presets, bands, galleryHeld ? GALLERY_TYPES : []), [bands, galleryHeld]);
 
   const chips = useMemo(() => {
     const items: ChipItem<View>[] = [{ value: "all", label: t.all }];

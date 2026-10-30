@@ -21,11 +21,17 @@ export function isXsPreset(preset: BlockPreset): boolean {
 /**
  * `presets` as a store is offered them: the imported templates' bands only
  * with `templateBands` (a store that wears one of those templates, or while
- * XS_ONLY is on); without, the library every store had before.
+ * XS_ONLY is on); without, the library every store had before. A preset
+ * holding one of `heldBack` (element types the store's plan lacks, the
+ * About page's gallery) is left out.
  */
-export function offeredPresets(presets: readonly BlockPreset[], templateBands: boolean): BlockPreset[] {
-  return templateBands ? [...presets] : presets.filter((preset) => !isXsPreset(preset));
+export function offeredPresets(presets: readonly BlockPreset[], templateBands: boolean, heldBack: readonly string[] = []): BlockPreset[] {
+  const shown = templateBands ? [...presets] : presets.filter((preset) => !isXsPreset(preset));
+  return heldBack.length === 0 ? shown : shown.filter((preset) => !preset.elements.some((type) => heldBack.includes(type)));
 }
+
+/** Held back while the store's plan lacks the About page's gallery (about_gallery, lib/usePlanFeatures). */
+export const GALLERY_TYPES: readonly string[] = ["story_gallery"];
 import { elementLabel, groupLabel, presetText, type EditorLocale } from "../editorLocale";
 import { leftUi, type LeftUi } from "./strings";
 
