@@ -58,6 +58,10 @@ least 32 characters).
 After changing the Worker's code, paste it again and press **Deploy**: the
 repository never deploys it.
 
+The Worker can also keep store pages at the edge under the visitor's own URL
+(variable `EDGE_CACHE_ENABLED`, off unless `true`): docs/edge-cache/README.md,
+section 4. Never add a Cache Rule for merchant hostnames or the Railway host.
+
 ## 3. Edge settings
 
 - SSL/TLS → Edge Certificates → **Always Use HTTPS**: on.

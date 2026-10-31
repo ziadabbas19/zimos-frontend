@@ -21,7 +21,7 @@ cart, checkout, `/pay`, account, orders, tracking, funnels, previews (the
 editor's frame, `?storePreview=`, `?paymentsPreview=`), a visitor with a
 `zimos_store_*` cookie (language, light/dark, staff preview), any redirect,
 404/500, any response with `Set-Cookie`, the app's own navigations (RSC), and
-every merchant domain (see 4).
+every merchant domain unless section 4 is switched on.
 
 ## 2. The Cache Rule (zimos.co → Caching → Cache Rules → Create rule)
 
@@ -76,13 +76,76 @@ curl -sI https://<slug>.zimos.co/cart | grep -iE 'cf-cache-status|cache-control'
 curl -sI https://<slug>.zimos.co/ -H 'RSC: 1' | grep -iE '^HTTP|cf-cache-status|cache-control'
 ```
 
-## 4. Merchant domains
+## 4. Merchant domains (off by default)
 
-Not cached, by design: the storefront never marks a request that came through
-the Worker (`worker/custom-domains-worker.js`). Caching them needs the Worker
-to keep pages itself under the visitor's own URL (Cache API), only for
-responses carrying exactly the storefront's `public, max-age=0, s-maxage=…`
-header, and the storefront to trust a signal from the Worker that it does so.
+A merchant domain (`www.merchant-shop.com`) never reaches the Cache Rule above
+in a way it could use: the Worker on route `*/*` runs **before** Cloudflare's
+cache, and the only thing its `fetch()` to Railway could be kept under is the
+Railway URL (`https://<ORIGIN_HOST>/products/x`), one key for every merchant
+domain. Never add a Cache Rule for merchant hostnames or for the Railway host,
+never widen the rule above, and never add a "Cache Everything" Page Rule that
+could match the Railway host: one store's page would answer another's domain.
+
+Instead, the Worker keeps the pages itself in the zone's cache (Cache API)
+under the visitor's own URL — host, path and query — and the storefront marks a
+merchant page public only when the Worker says it does so. Three switches, all
+off by default, each one alone changing nothing a shopper sees:
+
+| Where | Variable | Value |
+| --- | --- | --- |
+| Worker `zimos-custom-domains` (Settings → Variables, plain text) | `EDGE_CACHE_ENABLED` | `true` |
+| Storefront (Railway) | `STOREFRONT_EDGE_CACHE_CUSTOM_DOMAINS` | `true` (with `STOREFRONT_EDGE_CACHE_ENABLED=true`) |
+| Backend (Railway) | `CLOUDFLARE_PURGE_CUSTOM_DOMAINS` | `true` (with `CLOUDFLARE_PURGE_ENABLED=true`) |
+
+What the Worker does with `EDGE_CACHE_ENABLED=true`
+(`worker/custom-domains-worker.js`, tests: `npm run test:worker`):
+
+- Only a `GET`/`HEAD` of a page (not `/_next/`, `/api/` or a file) from a
+  visitor with none of our cookies but `zimos_touch`, no `RSC`/`Next-Router-*`/
+  `Next-Url` header, no `_rsc`, `storePreview`, `paymentsPreview` or
+  `zimos-view` in the link, no `Range` or `Authorization`. Anything else goes to
+  the storefront exactly as before (`X-Zimos-Cache: BYPASS`).
+- A kept copy answers with `X-Zimos-Cache: HIT` without calling Railway. A `GET`
+  not kept goes to the storefront with `X-Zimos-Edge-Cache: 1` and
+  `cache: "no-store"` (the subrequest itself is never kept under the Railway
+  host), `X-Zimos-Cache: MISS`.
+- It keeps only a `200` `text/html` answer without `Set-Cookie` whose
+  `Cache-Control` is exactly the storefront's mark, as it came. It never adds,
+  changes or removes `Cache-Control`.
+- On a runtime whose compatibility date is before 2024-11-11 (no
+  `cache: "no-store"`), it keeps nothing and behaves as with the variable off.
+
+What the storefront does with `STOREFRONT_EDGE_CACHE_CUSTOM_DOMAINS=true`
+(`apps/storefront/src/lib/edgeCache.ts`): a merchant page is marked like a
+subdomain page only when the Worker proved itself (`X-Zimos-Edge`), sent
+`X-Zimos-Edge-Cache: 1`, the visitor's host is exactly the store's primary
+domain as `GET /store/resolve-host` answers it (verified, certificate issued),
+and the proxy rewrote to that very store. Every other rule of section 1, and
+the guard on the way out, is the same.
+
+Checking it (replace `www.merchant-shop.com` and the product):
+
+```bash
+for i in 1 2 3; do curl -s -o /dev/null -w '%{http_code} zimos=%header{x-zimos-cache} cc=%header{cache-control} ray=%header{cf-ray}\n' https://www.merchant-shop.com/products/<product>; done
+```
+
+`MISS` then `HIT` (the Cache API is per data center: the `cf-ray` suffix names
+it). These must never be `HIT`, and never `public` (GET, each run twice: a
+`HEAD` never fills the cache, so it proves nothing here):
+
+```bash
+h() { curl -s -o /dev/null -D - "$@" | grep -iE '^HTTP|x-zimos-cache|cache-control'; }
+h https://www.merchant-shop.com/products/<product> -H 'cookie: zimos_store_locale=en'
+h https://www.merchant-shop.com/cart
+h https://www.merchant-shop.com/pay/<order>
+h https://www.merchant-shop.com/products/<product> -H 'RSC: 1'
+h https://www.merchant-shop.com/store/<another-store-slug>
+```
+
+Turning it off: `EDGE_CACHE_ENABLED` to anything but `true` on the Worker
+(kept copies are no longer read at once), or
+`STOREFRONT_EDGE_CACHE_CUSTOM_DOMAINS=false` on the storefront (nothing new is
+kept; what is kept expires within `s-maxage`).
 
 ## 5. Purge on publish (the backend)
 
@@ -94,11 +157,14 @@ theme, products, collections, prices, stock going out or coming back, store
 settings, shipping shown, coupons and combos, an approved review, a new
 subdomain) purges that store's host by hostname, `<slug>.zimos.co`, a couple of
 seconds after the last save. Never anything wider, and never a platform host.
-Nothing changes here: no header to add.
+Nothing changes here: no header to add. With `CLOUDFLARE_PURGE_CUSTOM_DOMAINS=true`
+the same request also names the store's own verified domains, and a domain it
+just removed (section 4).
 
 | Variable (backend) | Value |
 | --- | --- |
 | `CLOUDFLARE_PURGE_ENABLED` | `true` (anything else: off, nothing is sent) |
+| `CLOUDFLARE_PURGE_CUSTOM_DOMAINS` | `true` to purge the store's own domains too (section 4) |
 | `CLOUDFLARE_API_TOKEN` | a token with **Zone › Cache Purge › Purge** on zimos.co |
 | `CLOUDFLARE_ZONE_ID` | zimos.co's zone id |
 

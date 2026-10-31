@@ -404,6 +404,14 @@ describe("proxy: merchant domains kept by the Worker (STOREFRONT_EDGE_CACHE_CUST
     expect(home.headers.get("cache-control")).toBeNull();
   });
 
+  it("never another store's page reached by its internal path on this store's domain", async () => {
+    on();
+    const res = await proxy(viaWorker("www.kept-a.com", "/store/kept-b/products/x"));
+    expect(isNext(res)).toBe(true);
+    expect(rewriteOf(res)).toBeNull();
+    expect(res.headers.get("cache-control")).toBeNull();
+  });
+
   it("never a preview link (its token goes in a cookie), a POST or the internal path", async () => {
     on();
     const preview = await proxy(viaWorker("www.kept-a.com", "/?storePreview=staffpreview0001.signature0001"));
