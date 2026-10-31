@@ -84,6 +84,24 @@ to keep pages itself under the visitor's own URL (Cache API), only for
 responses carrying exactly the storefront's `public, max-age=0, s-maxage=…`
 header, and the storefront to trust a signal from the Worker that it does so.
 
+## 5. Purge on publish (the backend)
+
+With the cache on, a merchant's change still waits up to `s-maxage` to show.
+The backend can drop the store's pages at once instead
+(`zimos/src/modules/storefront/cloudflarePurge.js`, its
+`REPORT-cloudflare-purge.md`): every change the store's shoppers see (design,
+theme, products, collections, prices, stock going out or coming back, store
+settings, shipping shown, coupons and combos, an approved review, a new
+subdomain) purges that store's host by hostname, `<slug>.zimos.co`, a couple of
+seconds after the last save. Never anything wider, and never a platform host.
+Nothing changes here: no header to add.
+
+| Variable (backend) | Value |
+| --- | --- |
+| `CLOUDFLARE_PURGE_ENABLED` | `true` (anything else: off, nothing is sent) |
+| `CLOUDFLARE_API_TOKEN` | a token with **Zone › Cache Purge › Purge** on zimos.co |
+| `CLOUDFLARE_ZONE_ID` | zimos.co's zone id |
+
 ## Turning it off
 
 Set `STOREFRONT_EDGE_CACHE_ENABLED` to anything but `true` and redeploy; pages
