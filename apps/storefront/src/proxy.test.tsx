@@ -282,3 +282,159 @@ describe("proxy: CDN caching of public store pages (STOREFRONT_EDGE_CACHE_ENABLE
   });
 });
 
+
+describe("proxy: merchant domains kept by the Worker (STOREFRONT_EDGE_CACHE_CUSTOM_DOMAINS)", () => {
+  const PUBLIC = "public, max-age=0, s-maxage=60, stale-while-revalidate=300";
+  const SECRET = "edge-secret-for-tests-0123456789abcdef";
+  const ORIGIN = "storefront-production.up.railway.app";
+  // GET /store/resolve-host, by host. Hosts of their own: lib/customDomains remembers answers for a minute.
+  const STORES: Record<string, object> = {
+    "www.kept-a.com": { slug: "kept-a", homeFunnel: null, primaryHost: "www.kept-a.com" },
+    "www.kept-b.com": { slug: "kept-b", homeFunnel: null, primaryHost: "www.kept-b.com" },
+    "shop.kept-a.com": { slug: "kept-a", homeFunnel: null, primaryHost: "www.kept-a.com" },
+    "www.kept-c.com": { slug: "kept-c", homeFunnel: null, primaryHost: null },
+    "www.kept-funnel.com": { slug: "kept-funnel", homeFunnel: { ref: "launch" }, primaryHost: "www.kept-funnel.com" },
+  };
+  const resolver = () =>
+    vi.fn(async (url: string) => {
+      const store = STORES[new URL(url).searchParams.get("host") ?? ""];
+      return store ? new Response(JSON.stringify({ store }), { status: 200 }) : new Response("{}", { status: 404 });
+    });
+  function viaWorker(host: string, path = "/", { keeps = true, edge = SECRET, cookie = "" }: { keeps?: boolean; edge?: string | null; cookie?: string } = {}) {
+    const headers: Record<string, string> = { host: ORIGIN, "x-zimos-host": host, "x-forwarded-host": ORIGIN, "x-forwarded-proto": "https", "x-zimos-client-ip": "203.0.113.7" };
+    if (edge !== null) headers["x-zimos-edge"] = edge;
+    if (keeps) headers["x-zimos-edge-cache"] = "1";
+    if (cookie) headers.cookie = cookie;
+    return new NextRequest(`https://${ORIGIN}${path}`, { headers });
+  }
+  const on = (custom = "true") => {
+    vi.stubEnv("CUSTOM_DOMAINS_ENABLED", "true");
+    vi.stubEnv("CUSTOM_DOMAIN_EDGE_SECRET", SECRET);
+    vi.stubEnv("STOREFRONT_EDGE_CACHE_ENABLED", "true");
+    if (custom !== "") vi.stubEnv("STOREFRONT_EDGE_CACHE_CUSTOM_DOMAINS", custom);
+    vi.stubGlobal("fetch", resolver());
+  };
+  const storeOf = (res: Response) => new URL(rewriteOf(res)!).pathname;
+
+  it("flag off (unset, false, anything but \"true\"): every response exactly as before", async () => {
+    for (const custom of ["", "false", "1", "TRUE"]) {
+      on(custom);
+      for (const [host, path] of [["www.kept-a.com", "/"], ["www.kept-a.com", "/products/x"], ["www.kept-b.com", "/about"]]) {
+        for (const keeps of [true, false]) {
+          const res = await proxy(viaWorker(host, path, { keeps }));
+          expect(res.headers.get("cache-control"), `${custom} ${host}${path}`).toBeNull();
+          expect(storeOf(res)).toBe(`/store/${host === "www.kept-a.com" ? "kept-a" : "kept-b"}${path === "/" ? "" : path}`);
+        }
+      }
+      // The store's subdomain, as before.
+      expect((await proxy(request("kept-a.zimos.co", "/products/x"))).headers.get("cache-control")).toBe(PUBLIC);
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("marks a public page on the store's primary domain when the Worker keeps it", async () => {
+    on();
+    for (const path of ["/", "/products", "/products/x", "/policies/refund", "/about"]) {
+      const res = await proxy(viaWorker("www.kept-a.com", path));
+      expect(res.headers.get("cache-control"), path).toBe(PUBLIC);
+      expect(storeOf(res)).toBe(`/store/kept-a${path === "/" ? "" : path}`);
+    }
+  });
+
+  it("two stores on two domains: each page is its own store's, marked for its own host only", async () => {
+    on();
+    const a = await proxy(viaWorker("www.kept-a.com", "/products/x"));
+    const b = await proxy(viaWorker("www.kept-b.com", "/products/x"));
+    expect(storeOf(a)).toBe("/store/kept-a/products/x");
+    expect(storeOf(b)).toBe("/store/kept-b/products/x");
+    expect(a.headers.get("x-middleware-request-x-store-slug")).toBe("kept-a");
+    expect(b.headers.get("x-middleware-request-x-store-slug")).toBe("kept-b");
+    expect(a.headers.get("cache-control")).toBe(PUBLIC);
+    expect(b.headers.get("cache-control")).toBe(PUBLIC);
+  });
+
+  it("never without the Worker's promise to keep it under the visitor's URL (an older Worker, or EDGE_CACHE_ENABLED off)", async () => {
+    on();
+    const res = await proxy(viaWorker("www.kept-a.com", "/products/x", { keeps: false }));
+    expect(storeOf(res)).toBe("/store/kept-a/products/x");
+    expect(res.headers.get("cache-control")).toBeNull();
+  });
+
+  it("never without the Worker's secret, whatever else the request says", async () => {
+    on();
+    for (const edge of [null, "", "wrong", `${SECRET}x`]) {
+      const res = await proxy(viaWorker("www.kept-a.com", "/products/x", { edge }));
+      expect(res.headers.get("cache-control"), String(edge)).toBeNull();
+    }
+  });
+
+  it("never on a host that is not the store's primary domain", async () => {
+    on();
+    // Another of the store's domains: sent on to the primary one, never marked.
+    const other = await proxy(viaWorker("shop.kept-a.com", "/products/x"));
+    expect(other.status).toBe(307);
+    expect(other.headers.get("location")).toBe("https://www.kept-a.com/products/x");
+    expect(other.headers.get("cache-control")).toBeNull();
+    // A store with no primary domain (or one set not to redirect): served, not kept.
+    const served = await proxy(viaWorker("www.kept-c.com", "/products/x"));
+    expect(storeOf(served)).toBe("/store/kept-c/products/x");
+    expect(served.headers.get("cache-control")).toBeNull();
+    // An unknown host: the platform's routing, nothing to keep.
+    expect((await proxy(viaWorker("www.unknown-kept.com", "/"))).headers.get("cache-control")).toBeNull();
+  });
+
+  it("never for a visitor with a cookie that changes the page; zimos_touch leaves it the same", async () => {
+    on();
+    for (const cookie of ["zimos_store_locale=en", "zimos_store_color_mode=dark", "zimos_store_preview=5a11fedd-23bc-48a4-b0bf-a543d90f1b45"]) {
+      expect((await proxy(viaWorker("www.kept-a.com", "/products/x", { cookie }))).headers.get("cache-control"), cookie).toBeNull();
+    }
+    expect((await proxy(viaWorker("www.kept-a.com", "/products/x", { cookie: "zimos_touch=x; _fbp=y" }))).headers.get("cache-control")).toBe(PUBLIC);
+  });
+
+  it("never /pay, /cart, checkout, account, orders, tracking or a funnel", async () => {
+    on();
+    for (const path of ["/pay/o1", "/pay", "/cart", "/checkout", "/account", "/account/orders/o1", "/orders/o1", "/track", "/offer/o1", "/f/ref"]) {
+      const res = await proxy(viaWorker("www.kept-a.com", path));
+      expect(storeOf(res), path).toBe(`/store/kept-a${path}`);
+      expect(res.headers.get("cache-control"), path).toBeNull();
+    }
+    // The domain's home funnel opens on its root: a funnel, never kept.
+    const home = await proxy(viaWorker("www.kept-funnel.com", "/"));
+    expect(storeOf(home)).toBe("/store/kept-funnel/f/launch");
+    expect(home.headers.get("cache-control")).toBeNull();
+  });
+
+  it("never another store's page reached by its internal path on this store's domain", async () => {
+    on();
+    const res = await proxy(viaWorker("www.kept-a.com", "/store/kept-b/products/x"));
+    expect(isNext(res)).toBe(true);
+    expect(rewriteOf(res)).toBeNull();
+    expect(res.headers.get("cache-control")).toBeNull();
+  });
+
+  it("never a preview link (its token goes in a cookie), a POST or the internal path", async () => {
+    on();
+    const preview = await proxy(viaWorker("www.kept-a.com", "/?storePreview=staffpreview0001.signature0001"));
+    expect(preview.headers.get("cache-control")).toBeNull();
+    const post = new NextRequest(`https://${ORIGIN}/products/x`, { method: "POST", headers: Object.fromEntries(viaWorker("www.kept-a.com").headers) });
+    expect((await proxy(post)).headers.get("cache-control")).toBeNull();
+    const internal = await proxy(viaWorker("www.kept-a.com", "/store/kept-a/products/x"));
+    expect(internal.status).toBe(307);
+    expect(internal.headers.get("cache-control")).toBeNull();
+  });
+
+  it("never with STOREFRONT_EDGE_CACHE_ENABLED off, whatever the new flag says", async () => {
+    on();
+    vi.stubEnv("STOREFRONT_EDGE_CACHE_ENABLED", "false");
+    expect((await proxy(viaWorker("www.kept-a.com", "/products/x"))).headers.get("cache-control")).toBeNull();
+  });
+
+  it("the Worker's promise never reaches the app, and a store's subdomain carrying it is not marked", async () => {
+    on();
+    const res = await proxy(viaWorker("www.kept-a.com", "/"));
+    expect(res.headers.get("x-middleware-request-x-zimos-edge-cache")).toBeNull();
+    expect(res.headers.get("x-middleware-override-headers") ?? "").not.toContain("x-zimos-edge-cache");
+    const forged = new NextRequest("http://kept-a.zimos.co/", { headers: { host: "kept-a.zimos.co", "x-zimos-edge-cache": "1" } });
+    expect((await proxy(forged)).headers.get("cache-control")).toBeNull();
+  });
+});

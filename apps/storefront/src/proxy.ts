@@ -18,8 +18,15 @@ import {
 import { resolveCustomHost, type ResolvedHost } from "@/lib/customDomains";
 import { STORE_REF_HEADER } from "@/lib/documentLocale";
 import { EDITOR_VIEW_HEADER, EDITOR_VIEW_PARAM, isViewToken } from "@/lib/editorView";
-import { EDGE_CLIENT_IP_HEADER, EDGE_HOST_HEADER, EDGE_SECRET_HEADER, visitorHost, type VisitorHost } from "@/lib/edgeHost";
-import { withEdgeCache } from "@/lib/edgeCache";
+import {
+  EDGE_CACHE_HEADER,
+  EDGE_CLIENT_IP_HEADER,
+  EDGE_HOST_HEADER,
+  EDGE_SECRET_HEADER,
+  visitorHost,
+  type VisitorHost,
+} from "@/lib/edgeHost";
+import { merchantPage, withEdgeCache, type MerchantPage } from "@/lib/edgeCache";
 import { subdomainRedirect } from "@/lib/subdomainRedirect";
 
 /**
@@ -36,8 +43,12 @@ import { subdomainRedirect } from "@/lib/subdomainRedirect";
  * read.
  */
 export async function proxy(request: NextRequest) {
-  return withEdgeCache(request, await route(request));
+  const response = await route(request);
+  return withEdgeCache(request, response, merchantPages.get(response) ?? null);
 }
+
+/** The responses that are a merchant domain's page the Worker keeps (lib/edgeCache merchantPage). */
+const merchantPages = new WeakMap<NextResponse, MerchantPage>();
 
 async function route(request: NextRequest) {
   if (process.env.CUSTOM_DOMAINS_ENABLED !== "true") return platformProxy(request);
@@ -64,6 +75,7 @@ function passEdgeHeaders(headers: Headers, visitor: VisitorHost) {
   headers.delete(EDGE_SECRET_HEADER);
   headers.delete(EDGE_HOST_HEADER);
   headers.delete(EDGE_CLIENT_IP_HEADER);
+  headers.delete(EDGE_CACHE_HEADER);
   if (visitor.forwarded && visitor.clientIp) headers.set("x-real-ip", visitor.clientIp);
 }
 
@@ -284,5 +296,15 @@ async function customDomainProxy(request: NextRequest, visitor: VisitorHost) {
       : `/store/${custom.slug}${pathname === "/" ? "" : pathname}`;
   headers.set(STORE_SLUG_HEADER, custom.slug);
   headers.set(STORE_REF_HEADER, custom.slug);
-  return keep(NextResponse.rewrite(url, { request: { headers } }));
+  const response = keep(NextResponse.rewrite(url, { request: { headers } }));
+  // Kept at the edge only by the Worker, under this host, and only on the store's primary domain.
+  const page = merchantPage({
+    forwarded: visitor.forwarded,
+    workerKeeps: request.headers.get(EDGE_CACHE_HEADER) === "1",
+    host: visitor.host,
+    slug: custom.slug,
+    primaryHost: custom.primaryHost,
+  });
+  if (page) merchantPages.set(response, page);
+  return response;
 }

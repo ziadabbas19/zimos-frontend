@@ -17,6 +17,9 @@ export const EDGE_HOST_HEADER = "x-zimos-host";
 // The shopper's IP as Cloudflare saw it (CF-Connecting-IP), set by the Worker:
 // behind it, x-real-ip is Cloudflare's address, not the shopper's.
 export const EDGE_CLIENT_IP_HEADER = "x-zimos-client-ip";
+// "1": the Worker keeps this page's answer itself, under the visitor's own URL
+// (its EDGE_CACHE_ENABLED, lib/edgeCache). Trusted only with the secret.
+export const EDGE_CACHE_HEADER = "x-zimos-edge-cache";
 const IP_LIKE = /^[0-9a-f:.]{2,45}$/i;
 // A shorter secret is treated as unset: the forwarded host is never trusted.
 const MIN_SECRET_LENGTH = 32;

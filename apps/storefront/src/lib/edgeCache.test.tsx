@@ -7,6 +7,8 @@ import {
   edgeCacheValue,
   isPublicStorePath,
   keepsEdgeCache,
+  merchantPage,
+  storeOfRewrite,
   storePathOfRewrite,
   type EdgeCacheInput,
 } from "./edgeCache";
@@ -114,6 +116,74 @@ describe("edgeCacheControl", () => {
     for (const header of ["x-zimos-edge", "x-zimos-host", "x-store-slug", "x-store-ref", "x-zimos-store-preview", "x-zimos-view"]) {
       expect(page("/", { headerNames: ["host", header] }), header).toBeNull();
     }
+  });
+});
+
+describe("storeOfRewrite", () => {
+  it("reads the store and the store-relative path from the proxy's rewrite", () => {
+    expect(storeOfRewrite("http://x/store/shop/products/x?a=1")).toEqual({ ref: "shop", path: "/products/x" });
+    expect(storeOfRewrite("http://x/store/shop")).toEqual({ ref: "shop", path: "/" });
+    expect(storeOfRewrite("http://x/products/x")).toBeNull();
+    expect(storeOfRewrite(null)).toBeNull();
+  });
+});
+
+describe("merchant domains kept by the Worker (STOREFRONT_EDGE_CACHE_CUSTOM_DOMAINS)", () => {
+  const BOTH = { STOREFRONT_EDGE_CACHE_ENABLED: "true", STOREFRONT_EDGE_CACHE_CUSTOM_DOMAINS: "true" };
+  const asked = { forwarded: true, workerKeeps: true, host: "www.store-a.com", slug: "store-a", primaryHost: "www.store-a.com" };
+  const WORKER_REQUEST_HEADERS = ["host", "accept", "x-forwarded-host", "x-zimos-edge", "x-zimos-host", "x-zimos-client-ip", "x-zimos-edge-cache"];
+  const merchant = (path: string, over: Partial<EdgeCacheInput> = {}) =>
+    page(path, {
+      customDomainsEnabled: true,
+      merchantPage: { host: "www.store-a.com", slug: "store-a" },
+      rewrite: `https://origin.up.railway.app/store/store-a${path === "/" ? "" : path}`,
+      headerNames: WORKER_REQUEST_HEADERS,
+      ...over,
+    });
+
+  it("merchantPage: only with both flags, the Worker's proof and promise, on the store's primary domain exactly", () => {
+    expect(merchantPage(asked, BOTH)).toEqual({ host: "www.store-a.com", slug: "store-a" });
+    for (const env of [{}, { STOREFRONT_EDGE_CACHE_ENABLED: "true" }, { STOREFRONT_EDGE_CACHE_CUSTOM_DOMAINS: "true" }, { ...BOTH, STOREFRONT_EDGE_CACHE_CUSTOM_DOMAINS: "1" }]) {
+      expect(merchantPage(asked, env), JSON.stringify(env)).toBeNull();
+    }
+    expect(merchantPage({ ...asked, forwarded: false }, BOTH)).toBeNull();
+    expect(merchantPage({ ...asked, workerKeeps: false }, BOTH)).toBeNull();
+    expect(merchantPage({ ...asked, primaryHost: null }, BOTH)).toBeNull();
+    expect(merchantPage({ ...asked, host: "shop.store-a.com" }, BOTH)).toBeNull();
+    expect(merchantPage({ ...asked, host: "www.store-a.com:8443" }, BOTH)).toBeNull();
+    expect(merchantPage({ ...asked, host: null }, BOTH)).toBeNull();
+    expect(merchantPage({ ...asked, slug: "" }, BOTH)).toBeNull();
+  });
+
+  it("marks a public page of the store the host resolved to, with the Worker's headers on the request", () => {
+    for (const path of ["/", "/products/x", "/about"]) expect(merchant(path), path).toBe(PUBLIC);
+  });
+
+  it("never with the flag off: the Worker's headers keep the page private, as before", () => {
+    expect(merchant("/", { customDomainsEnabled: false })).toBeNull();
+    expect(merchant("/", { customDomainsEnabled: undefined })).toBeNull();
+    expect(merchant("/", { merchantPage: null })).toBeNull();
+    expect(merchant("/", { enabled: false })).toBeNull();
+  });
+
+  it("never another store's page than the one the host resolved to", () => {
+    expect(merchant("/", { rewrite: "https://origin.up.railway.app/store/store-b" })).toBeNull();
+    expect(merchant("/products/x", { rewrite: "https://origin.up.railway.app/store/store-b/products/x" })).toBeNull();
+  });
+
+  it("the same refusals as a store's subdomain: cart, payment, cookies, previews, Set-Cookie, the proxy's own headers", () => {
+    for (const path of ["/cart", "/pay/o1", "/checkout", "/account", "/orders/o1", "/f/ref"]) expect(merchant(path), path).toBeNull();
+    expect(merchant("/", { cookieNames: ["zimos_store_locale"] })).toBeNull();
+    expect(merchant("/", { setsCookie: true })).toBeNull();
+    expect(merchant("/", { paramNames: ["storePreview"] })).toBeNull();
+    expect(merchant("/", { status: 307, redirected: true })).toBeNull();
+    for (const header of ["x-store-slug", "x-store-ref", "x-zimos-store-preview", "x-zimos-view"]) {
+      expect(merchant("/", { headerNames: [...WORKER_REQUEST_HEADERS, header] }), header).toBeNull();
+    }
+  });
+
+  it("a store's subdomain carrying the Worker's promise is not marked: only the Worker may send it", () => {
+    expect(page("/", { customDomainsEnabled: true, headerNames: ["host", "x-zimos-edge-cache"] })).toBeNull();
   });
 });
 
