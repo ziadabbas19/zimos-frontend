@@ -19,6 +19,14 @@
  * X-Forwarded-Host itself, to the host it was called on (ORIGIN_HOST), so the
  * value sent here never reaches the storefront under that name.
  *
+ * The files every store answers for itself (/robots.txt, /sitemap.xml,
+ * /manifest.webmanifest: STORE_FILES in apps/storefront/src/proxy.ts) are
+ * asked for with `cache: "no-store"` (`cf.cacheTtl: -1` on a runtime without
+ * it), always, whatever EDGE_CACHE_ENABLED says. Whatever Cloudflare keeps of
+ * this Worker's fetch() is keyed on ORIGIN_HOST's URL, one key for every
+ * merchant domain, and Cloudflare keeps robots.txt by default: one store's
+ * robots.txt (and its Sitemap line) would answer another store's domain.
+ *
  * Secrets (wrangler secret put / dashboard > Settings > Variables):
  *   ORIGIN_HOST  e.g. storefront-production.up.railway.app (no scheme)
  *   EDGE_SECRET  the same value as the storefront's CUSTOM_DOMAIN_EDGE_SECRET
@@ -71,6 +79,8 @@ const SKIP_HEADERS = [
 const SKIP_PARAMS = ["_rsc", "storePreview", "paymentsPreview", "zimos-view"];
 // Ours, read only by scripts in the browser (lib/edgeCache.ts PAGE_NEUTRAL_COOKIES).
 const NEUTRAL_COOKIES = ["zimos_touch"];
+// What the storefront answers per store at the root of its domain (proxy.ts STORE_FILES).
+const STORE_FILES = ["/robots.txt", "/sitemap.xml", "/manifest.webmanifest"];
 
 let noStoreTaken;
 
@@ -85,6 +95,17 @@ function canSkipFetchCache() {
     }
   }
   return noStoreTaken;
+}
+
+/** One of STORE_FILES, however the path is spelled (case, percent-encoding). */
+function isStoreFile(pathname) {
+  let path = pathname;
+  try {
+    path = decodeURIComponent(pathname);
+  } catch {
+    // Left as it came: a malformed escape is no store file to the storefront either.
+  }
+  return STORE_FILES.includes(path.toLowerCase());
 }
 
 /** A page: not Next's own files, a route handler, or anything that names a file. */
@@ -147,7 +168,12 @@ function forward(request, env, method, keep = false) {
     // The storefront's redirects already name the shopper's host: pass them on as they are.
     redirect: "manual",
   };
-  if (keep) init.cache = "no-store";
+  // A page this Worker keeps itself, or a file every store answers for itself:
+  // never kept under ORIGIN_HOST's URL.
+  if (keep || isStoreFile(incoming.pathname)) {
+    if (canSkipFetchCache()) init.cache = "no-store";
+    else init.cf = { cacheTtl: -1 };
+  }
   return fetch(target.toString(), init);
 }
 

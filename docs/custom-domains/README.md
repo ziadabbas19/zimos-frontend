@@ -62,6 +62,12 @@ The Worker can also keep store pages at the edge under the visitor's own URL
 (variable `EDGE_CACHE_ENABLED`, off unless `true`): docs/edge-cache/README.md,
 section 4. Never add a Cache Rule for merchant hostnames or the Railway host.
 
+Whatever that variable says, the Worker fetches `/robots.txt`, `/sitemap.xml`
+and `/manifest.webmanifest` with `cache: "no-store"`: each store answers them
+for itself, but their URL on the Railway host is one for every merchant domain.
+After deploying a Worker from before this, purge those three URLs on the
+Railway host once (docs/edge-cache/README.md, section 4).
+
 ## 3. Edge settings
 
 - SSL/TLS → Edge Certificates → **Always Use HTTPS**: on.

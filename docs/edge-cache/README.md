@@ -115,6 +115,24 @@ What the Worker does with `EDGE_CACHE_ENABLED=true`
 - On a runtime whose compatibility date is before 2024-11-11 (no
   `cache: "no-store"`), it keeps nothing and behaves as with the variable off.
 
+Always, whatever `EDGE_CACHE_ENABLED` says: the files every store answers for
+itself (`/robots.txt`, `/sitemap.xml`, `/manifest.webmanifest`, the proxy's
+`STORE_FILES`) are fetched with `cache: "no-store"` (`cf.cacheTtl: -1` on an
+older runtime). Their subrequest URL is the same Railway URL for every
+merchant domain, and Cloudflare keeps `robots.txt` by default: without this,
+one store's `robots.txt` could answer another store's domain. Once, after
+deploying a Worker from before this, drop what may already be kept under the
+Railway host (the purge token and zone, `<ORIGIN_HOST>` the Worker's):
+
+```bash
+curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
+  -H "Authorization: Bearer $CF_TOKEN" -H 'Content-Type: application/json' \
+  --data '{"files":["https://<ORIGIN_HOST>/robots.txt","https://<ORIGIN_HOST>/sitemap.xml","https://<ORIGIN_HOST>/manifest.webmanifest"]}'
+```
+
+Then each domain's `robots.txt` names its own sitemap:
+`curl -s https://www.merchant-shop.com/robots.txt | grep -i sitemap`.
+
 What the storefront does with `STOREFRONT_EDGE_CACHE_CUSTOM_DOMAINS=true`
 (`apps/storefront/src/lib/edgeCache.ts`): a merchant page is marked like a
 subdomain page only when the Worker proved itself (`X-Zimos-Edge`), sent

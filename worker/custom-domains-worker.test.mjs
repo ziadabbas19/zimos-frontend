@@ -3,6 +3,7 @@
 // Run: node --test worker/
 import { afterEach, beforeEach, describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import worker from "./custom-domains-worker.js";
 
 const ORIGIN = "storefront-production.up.railway.app";
@@ -230,7 +231,7 @@ describe("with EDGE_CACHE_ENABLED on", () => {
   });
 
   it("leaves assets, route handlers, files and non-GET requests exactly as before", async () => {
-    for (const [path, method] of [["/_next/static/chunks/a.js", "GET"], ["/api/x", "GET"], ["/robots.txt", "GET"], ["/logo.png", "GET"], ["/products/x", "POST"]]) {
+    for (const [path, method] of [["/_next/static/chunks/a.js", "GET"], ["/api/x", "GET"], ["/logo.png", "GET"], ["/products/x", "POST"]]) {
       calls = [];
       const res = await visit(`https://www.store-a.com${path}`, { method });
       assert.equal(res.headers.get("x-zimos-cache"), null, path);
@@ -283,6 +284,88 @@ describe("with EDGE_CACHE_ENABLED on", () => {
       assert.equal(calls[0].init.cache, undefined);
       assert.equal(calls[0].init.headers.get("x-zimos-edge-cache"), null);
       assert.deepEqual(cache.matched, []);
+    } finally {
+      globalThis.Request = RealRequest;
+    }
+  });
+});
+
+describe("the files every store answers for itself (robots.txt, sitemap.xml, manifest), whatever EDGE_CACHE_ENABLED says", () => {
+  // proxy.ts STORE_FILES: what the storefront rewrites to /store/<slug>/… at the root of a merchant domain.
+  const proxySource = readFileSync(new URL("../apps/storefront/src/proxy.ts", import.meta.url), "utf8");
+  const declared = /const STORE_FILES = new Set\(\[([^\]]*)\]\)/.exec(proxySource);
+  const STORE_FILES = declared ? [...declared[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]) : [];
+
+  it("covers every file the storefront answers per store", () => {
+    assert.deepEqual(STORE_FILES.slice().sort(), ["/manifest.webmanifest", "/robots.txt", "/sitemap.xml"]);
+  });
+
+  for (const env of [OFF, ON]) {
+    const state = env === ON ? "on" : "off";
+    it(`never lets Cloudflare keep them under ORIGIN_HOST (cache: "no-store"), with the variable ${state}`, async () => {
+      for (const path of STORE_FILES) {
+        for (const url of [`https://www.store-a.com${path}`, `https://www.store-b.com${path}?v=2`]) {
+          calls = [];
+          const res = await visit(url, { env, headers: { "cf-connecting-ip": "203.0.113.7" } });
+          assert.equal(calls.length, 1, url);
+          const { url: target, init } = calls[0];
+          assert.equal(target, url.replace(/www\.store-[ab]\.com/, ORIGIN), url);
+          assert.equal(init.cache, "no-store", url);
+          assert.equal(init.cf, undefined, url);
+          // Everything else as before: the visitor's host, the proof, no promise to keep, no label, no Cache API.
+          assert.equal(init.headers.get("x-zimos-host"), new URL(url).host);
+          assert.equal(init.headers.get("x-zimos-edge"), SECRET);
+          assert.equal(init.headers.get("x-zimos-client-ip"), "203.0.113.7");
+          assert.equal(init.headers.get("x-zimos-edge-cache"), null);
+          assert.equal(res.headers.get("x-zimos-cache"), null);
+          assert.equal(res.headers.get("cache-control"), PRIVATE);
+        }
+      }
+      assert.deepEqual(cache.matched, []);
+      assert.equal(cache.kept.size, 0);
+    });
+  }
+
+  it("however the path is spelled", async () => {
+    for (const path of ["/ROBOTS.TXT", "/robots%2Etxt", "/Sitemap.xml"]) {
+      calls = [];
+      await visit(`https://www.store-a.com${path}`, { env: OFF });
+      assert.equal(calls[0].init.cache, "no-store", path);
+    }
+  });
+
+  it("other files stay as they were: Cloudflare may still keep the build's assets", async () => {
+    for (const path of ["/_next/static/chunks/a.js", "/logo.png", "/favicon.ico", "/fonts/x.woff2", "/robots.txt.bak", "/blog/robots.txt"]) {
+      calls = [];
+      await visit(`https://www.store-a.com${path}`, { env: OFF });
+      assert.equal(calls[0].init.cache, undefined, path);
+      assert.equal(calls[0].init.cf, undefined, path);
+    }
+  });
+
+  it("on a runtime that refuses cache: \"no-store\", asks Cloudflare not to cache them (cf.cacheTtl: -1)", async () => {
+    const RealRequest = globalThis.Request;
+    globalThis.Request = class extends RealRequest {
+      constructor(input, init = {}) {
+        if (init.cache !== undefined) throw new TypeError("The 'cache' field on 'RequestInitializerDict' is not implemented.");
+        super(input, init);
+      }
+    };
+    try {
+      const { default: fresh } = await import(`./custom-domains-worker.js?store-files-no-cache-option=${Date.now()}`);
+      for (const env of [OFF, ON]) {
+        for (const path of STORE_FILES) {
+          calls = [];
+          await fresh.fetch(new RealRequest(`https://www.store-a.com${path}`), env, ctx());
+          assert.equal(calls[0].init.cache, undefined, path);
+          assert.deepEqual(calls[0].init.cf, { cacheTtl: -1 }, path);
+        }
+        // A page is left alone there, as before.
+        calls = [];
+        await fresh.fetch(new RealRequest("https://www.store-a.com/products/x"), env, ctx());
+        assert.equal(calls[0].init.cf, undefined);
+        assert.equal(calls[0].init.cache, undefined);
+      }
     } finally {
       globalThis.Request = RealRequest;
     }
