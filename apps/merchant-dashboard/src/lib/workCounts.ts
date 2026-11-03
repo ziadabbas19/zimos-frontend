@@ -102,6 +102,15 @@ export function refreshWorkCounts() {
 }
 
 /**
+ * The counts for `workspaceId` as the shell's poll last read them, without
+ * asking for anything: for a part of a page that shows one beside the menu's.
+ */
+export function useKnownWorkCounts(workspaceId: string | null | undefined): WorkCounts {
+  const counts = useSyncExternalStore(subscribe, snapshot, () => EMPTY);
+  return workspaceId && state.workspaceId === workspaceId ? counts : EMPTY;
+}
+
+/**
  * The counts for `workspaceId`. The first caller starts the poll; every
  * caller shares the same numbers, so the dock and the side menu never
  * disagree.
