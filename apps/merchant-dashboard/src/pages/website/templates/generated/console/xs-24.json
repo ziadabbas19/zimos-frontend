@@ -1,0 +1,821 @@
+{
+  "globalStyles": {
+    "primaryColor": "#E8415B",
+    "themeSettings": {
+      "xsLook": "24",
+      "header": {
+        "announcement": {
+          "enabled": true,
+          "text": "🚚 Free shipping on orders over EGP 1,500",
+          "messages": [
+            "🚚 Free shipping on orders over EGP 1,500",
+            "💵 Cash on delivery · Inspect before you pay",
+            "🎁 5% off orders over EGP 3,000",
+            "🔥 10% off orders over EGP 4,200"
+          ]
+        },
+        "menu": [
+          {
+            "label": "Home",
+            "href": "/",
+            "kind": "home"
+          },
+          {
+            "label": "Shop all",
+            "href": "/products",
+            "kind": "url"
+          },
+          {
+            "label": "Savings bundles",
+            "href": "/products?collection=bundles",
+            "kind": "url"
+          },
+          {
+            "label": "About",
+            "href": "/about",
+            "kind": "page"
+          },
+          {
+            "label": "Contact",
+            "href": "/contact",
+            "kind": "page"
+          }
+        ],
+        "show": {
+          "theme": false,
+          "trackOrder": false,
+          "language": false
+        },
+        "zones": {
+          "notice": [
+            {
+              "id": "notice",
+              "type": "notice"
+            }
+          ],
+          "links": [],
+          "brand": [
+            {
+              "id": "logo",
+              "type": "logo"
+            }
+          ],
+          "menu": [
+            {
+              "id": "menu",
+              "type": "menu"
+            }
+          ],
+          "icons": [
+            {
+              "id": "search",
+              "type": "search"
+            },
+            {
+              "id": "account",
+              "type": "account"
+            },
+            {
+              "id": "cart",
+              "type": "cart"
+            }
+          ]
+        }
+      },
+      "footer": {
+        "groups": [
+          {
+            "title": "Shop",
+            "links": [
+              {
+                "label": "All products",
+                "href": "/products",
+                "kind": "url"
+              },
+              {
+                "label": "Savings bundles",
+                "href": "/products?collection=bundles",
+                "kind": "url"
+              },
+              {
+                "label": "Best sellers",
+                "href": "/products?collection=best-sellers",
+                "kind": "url"
+              }
+            ]
+          },
+          {
+            "title": "Help",
+            "links": [
+              {
+                "label": "About",
+                "href": "/about",
+                "kind": "page"
+              },
+              {
+                "label": "Contact us",
+                "href": "/contact",
+                "kind": "page"
+              },
+              {
+                "label": "Track your order",
+                "href": "/track",
+                "kind": "track"
+              }
+            ]
+          }
+        ],
+        "text": "Everything for mother and baby, chosen with care. Cash on delivery · Inspect before you pay · 14-day exchange for manufacturing defects.",
+        "show": {
+          "help": false
+        }
+      }
+    }
+  },
+  "pages": [
+    {
+      "path": "/",
+      "title": "Home",
+      "pageType": "home",
+      "builderData": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "xs24-p1-s1",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s1-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s1-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s1-e1",
+                        "type": "xs_slider",
+                        "props": {
+                          "look": "24",
+                          "slides": [
+                            {
+                              "image": "/xs/24/slide-1.jpg",
+                              "phoneImage": "/xs/24/slide-1-phone.jpg",
+                              "heading": "What moms love",
+                              "text": "Everything your baby needs, in one place",
+                              "buttonLabel": "Shop Now",
+                              "buttonHref": "/products"
+                            },
+                            {
+                              "image": "/xs/24/slide-2.jpg",
+                              "phoneImage": "/xs/24/slide-2-phone.jpg",
+                              "heading": "With you all the way",
+                              "text": "Here in every moment of motherhood",
+                              "buttonLabel": "View the bundles",
+                              "buttonHref": "/products?collection=bundles"
+                            }
+                          ],
+                          "autoplay": true,
+                          "seconds": 5
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p1-s2",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s2-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s2-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s2-e1",
+                        "type": "xs_features",
+                        "props": {
+                          "look": "24",
+                          "heading": "",
+                          "text": "",
+                          "image": "",
+                          "items": [
+                            {
+                              "icon": "support",
+                              "image": "/xs/24/eye.svg",
+                              "title": "Inspect before you pay",
+                              "text": "Open it in front of the courier"
+                            },
+                            {
+                              "icon": "bag",
+                              "image": "/xs/24/card.svg",
+                              "title": "Cash on delivery",
+                              "text": "No upfront payment"
+                            },
+                            {
+                              "icon": "return",
+                              "image": "/xs/24/refresh.svg",
+                              "title": "14-day exchange",
+                              "text": "For manufacturing defects"
+                            },
+                            {
+                              "icon": "support",
+                              "image": "/xs/24/chat.svg",
+                              "title": "WhatsApp help daily",
+                              "text": "We help you choose"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p1-s3",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s3-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s3-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s3-e1",
+                        "type": "xs_banners",
+                        "props": {
+                          "look": "24",
+                          "items": [
+                            {
+                              "image": "/xs/24/cat-bundles.jpg",
+                              "title": "Savings bundles",
+                              "href": "/products?collection=bundles"
+                            },
+                            {
+                              "image": "/xs/24/cat-sleep.jpg",
+                              "title": "Sleep & comfort",
+                              "href": "/products?collection=sleep"
+                            },
+                            {
+                              "image": "/xs/24/cat-bath.jpg",
+                              "title": "Bath & care",
+                              "href": "/products?collection=bath"
+                            },
+                            {
+                              "image": "/xs/24/cat-feeding.jpg",
+                              "title": "Feeding essentials",
+                              "href": "/products?collection=feeding"
+                            },
+                            {
+                              "image": "/xs/24/cat-outings.jpg",
+                              "title": "Outings & changing",
+                              "href": "/products?collection=outings"
+                            },
+                            {
+                              "image": "/xs/24/cat-toys.jpg",
+                              "title": "Toys",
+                              "href": "/products?collection=toys"
+                            },
+                            {
+                              "image": "/xs/24/cat-best.jpg",
+                              "title": "Best sellers",
+                              "href": "/products?collection=best-sellers"
+                            }
+                          ],
+                          "heading": "Shop by category",
+                          "variant": "card"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p1-s4",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s4-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s4-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s4-e1",
+                        "type": "xs_products",
+                        "props": {
+                          "look": "24",
+                          "heading": "Savings offers",
+                          "collection": "bundles",
+                          "limit": 4,
+                          "showDiscount": true,
+                          "showTabs": false,
+                          "showSearch": false,
+                          "layout": "grid",
+                          "quickView": false,
+                          "text": "Save more with a bundle made for your baby's stage",
+                          "discountLabel": "Save {amount} EGP",
+                          "viewLabel": "Choose {option}",
+                          "linkLabel": "View all offers",
+                          "linkHref": "/products?collection=bundles"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p1-s5",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s5-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s5-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s5-e1",
+                        "type": "xs_products",
+                        "props": {
+                          "look": "24",
+                          "heading": "Best sellers",
+                          "collection": "best-sellers",
+                          "limit": 10,
+                          "showDiscount": true,
+                          "showTabs": false,
+                          "showSearch": false,
+                          "layout": "slider",
+                          "quickView": false,
+                          "discountLabel": "-{percent}%",
+                          "viewLabel": "Choose {option}",
+                          "linkLabel": "View all",
+                          "linkHref": "/products?collection=best-sellers"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p1-s6",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s6-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s6-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s6-e1",
+                        "type": "xs_journey",
+                        "props": {
+                          "look": "24",
+                          "heading": "What do you need right now?",
+                          "items": [
+                            {
+                              "icon": "moon",
+                              "pain": "Getting ready for the first time?",
+                              "name": "Getting started",
+                              "product": "baby-essentials-bundle",
+                              "also": "cozy-care-bundle",
+                              "image": "/xs/24/products/baby-essentials-bundle-1.jpg",
+                              "text": "The first months are all decisions, and you still do not know what you will actually use. This is what you need from day one, without buying things that end up in the cupboard.",
+                              "points": "A cosy spot for baby right beside you\nA feeding position that is easier on your back\nPrivacy when you feed on the go"
+                            },
+                            {
+                              "icon": "bottle",
+                              "pain": "Is feeding taking a long time?",
+                              "name": "Feeding",
+                              "product": "nursing-bundle",
+                              "also": "cozy-care-bundle",
+                              "image": "/xs/24/products/nursing-bundle-1.jpg",
+                              "text": "Feeding takes a long time, and the wrong position tires your back and arm. The pillow lifts your baby to a level that is comfortable for you, and the cover lets you feed outside without hunting for the right spot.",
+                              "points": "Support for your back and arm while you feed\nComfortable privacy when you are out\nCheaper than buying the two pieces apart"
+                            },
+                            {
+                              "icon": "bag",
+                              "pain": "Does going out take a lot of prep?",
+                              "name": "Going out",
+                              "product": "on-the-go-bundle",
+                              "also": "baby-daily-bundle",
+                              "image": "/xs/24/products/on-the-go-bundle-1.jpg",
+                              "text": "Packing for an outing takes longer than the outing itself. This set cuts the packing to minutes and lets you walk with your hands free.",
+                              "points": "Changing anywhere\nComfortable carrying for both\nEverything in one bag"
+                            },
+                            {
+                              "icon": "clock",
+                              "pain": "Want the whole day covered?",
+                              "name": "The whole day",
+                              "product": "baby-daily-bundle",
+                              "also": "first-year-bundle",
+                              "image": "/xs/24/products/baby-daily-bundle-1.jpg",
+                              "text": "Home and outings are not two separate things: the day is one. This set covers the whole day in one decision, and costs less than buying it twice.",
+                              "points": "Home and outings in one decision\nNothing missing halfway\nCheaper than buying them apart"
+                            },
+                            {
+                              "icon": "box",
+                              "pain": "Want to get it done in one go?",
+                              "name": "The full journey",
+                              "product": "motherhood-journey",
+                              "also": "first-year-bundle",
+                              "image": "/xs/24/products/motherhood-journey-1.jpg",
+                              "text": "No more thinking every month about something missing: sleep, feeding, outings and play, from day one until the first steps.",
+                              "points": "Everything from day one\nToys that engage the senses and movement\nOur best-value bundle"
+                            }
+                          ],
+                          "kicker": "Shop by need",
+                          "text": "Pick what you need today, and see the bundle that fits.",
+                          "ctaLabel": "View the bundle",
+                          "moreLabel": "Also in this set",
+                          "saveLabel": "Save [amount] EGP",
+                          "fallbackHref": "/products?collection=bundles"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p1-s7",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s7-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s7-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s7-e1",
+                        "type": "xs_reels",
+                        "props": {
+                          "look": "24",
+                          "heading": "See it for real",
+                          "items": [
+                            {
+                              "video": "/xs/24/reel-1.mp4",
+                              "image": "/xs/24/reel-1.jpg",
+                              "product": "on-the-go-bundle"
+                            },
+                            {
+                              "video": "/xs/24/reel-2.mp4",
+                              "image": "/xs/24/reel-2.jpg",
+                              "product": "baby-carrier"
+                            },
+                            {
+                              "video": "/xs/24/reel-3.mp4",
+                              "image": "/xs/24/reel-3.jpg",
+                              "product": "cozy-care-bundle"
+                            },
+                            {
+                              "video": "/xs/24/reel-4.mp4",
+                              "image": "/xs/24/reel-4.jpg",
+                              "product": "self-feeding-pillow"
+                            }
+                          ],
+                          "text": "Our products in everyday use",
+                          "cartLabel": "Add to cart"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p1-s8",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s8-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s8-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s8-e1",
+                        "type": "xs_products",
+                        "props": {
+                          "look": "24",
+                          "heading": "Shop all",
+                          "collection": "",
+                          "limit": 8,
+                          "showDiscount": true,
+                          "showTabs": false,
+                          "showSearch": false,
+                          "layout": "grid",
+                          "quickView": false,
+                          "text": "More everyday picks for you and your baby. Add what you need straight to the cart.",
+                          "discountLabel": "-{percent}%",
+                          "viewLabel": "Choose {option}",
+                          "linkLabel": "Shop all products",
+                          "linkHref": "/products"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p1-s9",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s9-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s9-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s9-e1",
+                        "type": "xs_slider",
+                        "props": {
+                          "look": "24",
+                          "slides": [
+                            {
+                              "image": "/xs/24/outings.jpg",
+                              "phoneImage": "/xs/24/outings-phone.jpg",
+                              "heading": "Easier outings for you and your baby",
+                              "text": "Mom bag, carrier and changing mat in one set: go out with your hands free, for less than buying each piece alone.",
+                              "buttonLabel": "Shop outings",
+                              "buttonHref": "/products?collection=outings"
+                            }
+                          ],
+                          "autoplay": false,
+                          "seconds": 6
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "seo": {}
+    },
+    {
+      "path": "/about",
+      "title": "About",
+      "pageType": "static",
+      "builderData": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "xs24-p2-s1",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p2-s1-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p2-s1-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p2-s1-e1",
+                        "type": "xs_title",
+                        "props": {
+                          "look": "24",
+                          "heading": "About us",
+                          "image": ""
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p2-s2",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p2-s2-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p2-s2-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p2-s2-e1",
+                        "type": "xs_story",
+                        "props": {
+                          "look": "24",
+                          "items": [
+                            {
+                              "title": "Our story",
+                              "body": "We started as mothers who wanted the first year to be a little easier: fewer things that end up in the cupboard, more that you reach for every day.\n\nWrite here how your store began, and who chooses what you sell.",
+                              "image": "/xs/24/story.jpg"
+                            },
+                            {
+                              "title": "What we promise",
+                              "body": "You inspect your order before you pay, you pay on delivery, and you can exchange within 14 days for any manufacturing defect. Write here what your customers can count on when they order from you.",
+                              "image": "/xs/24/story-wide.jpg"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "seo": {}
+    },
+    {
+      "path": "/contact",
+      "title": "Contact",
+      "pageType": "static",
+      "builderData": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "xs24-p3-s1",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p3-s1-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p3-s1-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p3-s1-e1",
+                        "type": "xs_title",
+                        "props": {
+                          "look": "24",
+                          "heading": "Contact us",
+                          "image": ""
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p3-s2",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p3-s2-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p3-s2-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p3-s2-e1",
+                        "type": "xs_contact",
+                        "props": {
+                          "look": "24",
+                          "heading": "Write to us",
+                          "info": [
+                            {
+                              "icon": "address",
+                              "title": "Visit us",
+                              "text": "Write your store's address here"
+                            },
+                            {
+                              "icon": "phone",
+                              "title": "Call us",
+                              "text": "Write your phone number here"
+                            },
+                            {
+                              "icon": "email",
+                              "title": "Email us",
+                              "text": "Write your email address here"
+                            }
+                          ],
+                          "contactPlaceholder": "Your email or phone",
+                          "messagePlaceholder": "Your message",
+                          "buttonLabel": "Send Now",
+                          "successMessage": "Thank you. We will reply within a day."
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "seo": {}
+    }
+  ],
+  "sections": []
+}

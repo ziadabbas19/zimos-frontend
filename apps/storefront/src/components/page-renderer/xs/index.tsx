@@ -10,7 +10,8 @@ import { XsLookStyles } from "@/components/xs/XsLookStyles";
 import { XsBackgroundPreload, XsPicture, pictureSize } from "@/components/xs/XsPicture";
 import { xsBox } from "@/lib/xsImages";
 import { listed } from "./listed";
-import { XsFeaturesElement, XsGalleryElement, XsHeroElement, XsMinisElement, XsNewsletterElement, XsPostsElement, XsQuotesElement, XsShowcaseElement, XsSplitElement, type XsHomeProps } from "./home";
+import { XsFeaturesElement, XsGalleryElement, XsHeroElement, XsMinisElement, XsNewsletterElement, XsPostsElement, XsQuotesElement, XsRailElement, XsShowcaseElement, XsSplitElement, XsStackElement, type XsHomeProps } from "./home";
+import { XsJourneyElement, XsReelsElement } from "./picked";
 import { XsContactElement, XsStoryElement, XsTeamElement, XsTitleElement, XsVideoElement, type XsPageProps } from "./pages";
 import { XsOwn } from "./own";
 import type { XsGridTab } from "./XsProductGrid";
@@ -79,6 +80,7 @@ function XsSliderElement({ props, locale, editable, eager }: ElementProps) {
       buttonLabel: str(slide, "buttonLabel"),
       buttonHref: linkOf(slide, "buttonHref"),
       focal: xsFocal(slide.imagePosition),
+      phoneImage: safeUrl(str(slide, "phoneImage")),
     }))
     .filter((slide) => slide.image);
   if (!look || slides.length === 0) return <Empty editable={editable} message={t.noSlides} />;
@@ -87,7 +89,16 @@ function XsSliderElement({ props, locale, editable, eager }: ElementProps) {
     <>
       {/* The first slide is what a shopper sees first: asked for before anything else on the page. */}
       {eager ? <XsBackgroundPreload src={slides[0].image} /> : null}
-      <XsSlider look={look} slides={slides} autoplay={bool(props, "autoplay", true)} seconds={seconds} prevLabel={t.prev} nextLabel={t.next} />
+      <XsSlider
+        look={look}
+        slides={slides}
+        autoplay={bool(props, "autoplay", true)}
+        seconds={seconds}
+        prevLabel={t.prev}
+        nextLabel={t.next}
+        openLabel={locale === "ar" ? "افتح" : "Open"}
+        dotLabel={locale === "ar" ? "الشريحة {n}" : "Slide {n}"}
+      />
     </>
   );
 }
@@ -95,7 +106,7 @@ function XsSliderElement({ props, locale, editable, eager }: ElementProps) {
 function XsBannersElement({ props, locale, editable, eager }: ElementProps) {
   const look = lookOf(props);
   const t = copy(locale);
-  const banners = listed(props, "items", 6)
+  const banners = listed(props, "items", 8)
     .map(({ item, at }) => ({
       at,
       size: pictureSize(item, "image"),
@@ -207,11 +218,13 @@ async function XsProductsElement({ props, workspaceId, currency, locale, editabl
       currency={currency}
       locale={locale}
       heading={str(props, "heading")}
+      text={str(props, "text")}
       linkLabel={str(props, "linkLabel")}
       linkHref={linkOf(props, "linkHref")}
       tabs={tabs}
       showSearch={bool(props, "showSearch", true)}
       showDiscount={bool(props, "showDiscount", true)}
+      discountLabel={str(props, "discountLabel")}
       layout={str(props, "layout") === "slider" ? "slider" : "grid"}
       quickView={bool(props, "quickView", true)}
       pageSize={limit}
@@ -267,6 +280,10 @@ const ELEMENTS: Record<string, (props: ElementProps) => ReactNode | Promise<Reac
   xs_gallery: homeBand(XsGalleryElement),
   xs_newsletter: homeBand(XsNewsletterElement),
   xs_posts: homeBand(XsPostsElement),
+  xs_rail: homeBand(XsRailElement),
+  xs_stack: homeBand(XsStackElement),
+  xs_journey: homeBand(XsJourneyElement),
+  xs_reels: homeBand(XsReelsElement),
 };
 
 /** Whether `type` is one of the xs sections. */
@@ -308,12 +325,13 @@ function looksIn(tree: PageTree | null): string[] {
  * can switch off: it goes when the last band of that look leaves the page.
  */
 export function XsCredit({ tree }: { tree: PageTree | null }) {
-  const looks = looksIn(tree);
+  // A look Zimos designed itself has no credit to give (lib/xsShell).
+  const looks = looksIn(tree).filter((look) => XS_CREDITS[look]);
   if (looks.length === 0) return null;
   return (
     <p className="xs-credit">
       {looks.map((look, index) => {
-        const { name, author, href, licence } = XS_CREDITS[look];
+        const { name, author, href, licence } = XS_CREDITS[look]!;
         return (
           <span key={look}>
             {index > 0 ? " · " : null}

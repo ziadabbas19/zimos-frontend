@@ -58,6 +58,16 @@
   visibility: hidden;
   transition: opacity 0.9s ease, visibility 0s linear 0.9s;
 }
+/* A slide that is a link as a whole (no button text): the picture is the press. */
+.xs-slider__cover {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+/* The dots under the slides: drawn for every look, shown by the looks that have them. */
+.xs-slider__dots {
+  display: none;
+}
 .xs-slider__slide[data-active] {
   opacity: 1;
   visibility: visible;
@@ -543,6 +553,10 @@ section:has(.xs-banners[data-xs-look="01"]) + section .xs-banners[data-xs-look="
   height: 100%;
   object-fit: cover;
   transition: transform 0.9s;
+}
+/* A product's second picture: undrawn (and so never fetched) unless a look shows it on hover. */
+.xs-products__img--alt {
+  display: none;
 }
 .xs-products__media:hover .xs-products__img {
   transform: scale(1.1);

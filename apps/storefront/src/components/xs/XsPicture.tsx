@@ -76,6 +76,7 @@ export function XsPicture({
   height,
   pic,
   size,
+  loading,
 }: {
   src: string;
   alt: string;
@@ -87,6 +88,8 @@ export function XsPicture({
   height?: number;
   pic?: string;
   size?: XsPictureSize | null;
+  /** "eager" for a picture lazy loading never reaches (one under another, as in a stack of cards), without the first-paint priority `eager` gives. */
+  loading?: "eager" | "lazy";
 }) {
   const path = xsPicturePath(src);
   const own = sizeAttributes(size);
@@ -101,7 +104,7 @@ export function XsPicture({
       // look's own rules size it; these only give it its shape before it loads.
       width={width ?? box?.[0]}
       height={height ?? box?.[1]}
-      loading={eager ? undefined : "lazy"}
+      loading={loading ?? (eager ? undefined : "lazy")}
       decoding="async"
       fetchPriority={eager ? "high" : undefined}
       data-xs-pic={pic}

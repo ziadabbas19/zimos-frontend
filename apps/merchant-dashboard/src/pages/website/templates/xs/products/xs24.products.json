@@ -1,0 +1,2664 @@
+{
+  "look": "24",
+  "currency": "EGP",
+  "linkedGroups": true,
+  "collections": [
+    {
+      "name": "Savings bundles",
+      "nameAr": "عروض التوفير",
+      "slug": "bundles"
+    },
+    {
+      "name": "Best sellers",
+      "nameAr": "الأكثر مبيعًا",
+      "slug": "best-sellers"
+    },
+    {
+      "name": "Sleep & comfort",
+      "nameAr": "النوم والراحة",
+      "slug": "sleep"
+    },
+    {
+      "name": "Feeding",
+      "nameAr": "مستلزمات الرضاعة",
+      "slug": "feeding"
+    },
+    {
+      "name": "Outings & changing",
+      "nameAr": "الخروجات والتغيير",
+      "slug": "outings"
+    },
+    {
+      "name": "Bath & care",
+      "nameAr": "العناية والاستحمام",
+      "slug": "bath"
+    },
+    {
+      "name": "Toys & play",
+      "nameAr": "ألعاب",
+      "slug": "toys"
+    }
+  ],
+  "products": [
+    {
+      "name": "Baby Bouncer",
+      "nameAr": "كرسي هزاز للبيبي",
+      "slug": "baby-bouncer",
+      "description": "Happy baby, easier days for mom 💛\nA comfortable Baby Bouncer for supervised sitting and play while you stay close during your daily routine.\n🛋️ Everyday comfort\nSoft cotton fabric with padded filling and a practical 80 × 40 cm size.\n🎶 Play & interaction\nA practical toy bar with hanging toys to keep your baby engaged.\n🛡️ Extra coverage\nIncludes a protective net canopy for added coverage.",
+      "descriptionAr": "لما محتاجة تحطي البيبي جنبك وإيدك ترجع فاضية شوية 💛\nكرسي هزاز بيديكي مكان مريح للبيبي وقت ما تكوني محتاجة تاكلي، ترتبي، تشتغلي أو حتى تاخدي دقيقة راحة وإنتي لسه قريبة منه.\nهيريّحك إزاي؟\n• إيدك تبقى فاضية: بدل ما الحمل يبقى الحل الوحيد كل مرة.\n• البيبي يفضل قريب منك: تحطي الكرسي في المكان اللي إنتي موجودة فيه وتتابعيه بسهولة.\n• الهز يساعد في التهدئة: الحركة الخفيفة ممكن تساعد في تهدئة البيبي أثناء اليقظة.\n• يتنقل بسهولة: مناسب إنك تغيري مكانه جوه البيت حسب يومك.\nمهم في الاستخدام\nاستخدميه تحت إشرافك، وثبتي الأحزمة حسب تعليمات المنتج. الكرسي الهزاز مش مخصص للنوم غير الخاضع للإشراف؛ لو البيبي نام انقليه لمكان نوم آمن ومناسب.",
+      "price": 915,
+      "compareAt": 1000,
+      "image": "/xs/24/products/baby-bouncer-1.jpg",
+      "images": [
+        "/xs/24/products/baby-bouncer-1.jpg",
+        "/xs/24/products/baby-bouncer-2.jpg"
+      ],
+      "collections": [
+        "best-sellers",
+        "sleep"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Pink",
+            "Baby Blue",
+            "Gray",
+            "Cream Beige",
+            "Safari"
+          ],
+          "valuesAr": [
+            "بينك",
+            "بيبي بلو",
+            "جراي",
+            "بيج كريمي",
+            "سفاري"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Pink"
+          ],
+          "price": 915,
+          "compareAt": 1000
+        },
+        {
+          "values": [
+            "Baby Blue"
+          ],
+          "price": 915,
+          "compareAt": 1000
+        },
+        {
+          "values": [
+            "Gray"
+          ],
+          "price": 915,
+          "compareAt": 1000
+        },
+        {
+          "values": [
+            "Cream Beige"
+          ],
+          "price": 915,
+          "compareAt": 1000
+        },
+        {
+          "values": [
+            "Safari"
+          ],
+          "price": 915,
+          "compareAt": 1000
+        }
+      ]
+    },
+    {
+      "name": "Baby Carrier",
+      "nameAr": "شيالة أطفال",
+      "slug": "baby-carrier",
+      "description": "Keep your baby close without the strain 💛\nThe Baby Carrier keeps your baby close while giving you more freedom to move. Its adjustable design helps distribute weight across your shoulders and waist for more comfortable carrying.\n🩺 Ergonomic M-shape support\nDesigned to support your baby's hips and thighs in a comfortable M-shaped position.\n💪 Comfortable for you\nA wide padded waistband helps spread the load across your waist, back and shoulders.\n🧵 Soft inside, durable outside\nSoft inner fabric for your baby with a strong outer material for everyday use.",
+      "descriptionAr": "خلي البيبي قريب منك… من غير ما ذراعك يفضل شايل طول اليوم 👶\nشيالة الأطفال بتساعدك تحملي البيبي وإنتي ماشية أو خارجة، مع توزيع الحمل على أكتر من نقطة بدل ما يبقى كله على ذراع واحدة أو ناحية واحدة من جسمك.\nهتريحك في إيه؟\n• إيدين فاضيين: تمشي، تدفعي العربية أو تمسكي شنطتك والبيبي معاكي.\n• حمل أريح: توزيع الحمل على الكتفين والوسط يقلل الإحساس إن الوزن مركز في مكان واحد.\n• مناسبة للمشاوير: عملية في الأماكن اللي العربية فيها مش مريحة أو مش متاحة.\n• قرب ومتابعة: البيبي يفضل قريب منك وإنتي قادرة تتابعيه بسهولة.\nمهم قبل الاستخدام\nاضبطي الأحزمة على جسمك، واستخدمي الوضع المناسب لعمر وحجم الطفل، وتأكدي إن الوجه ومجرى التنفس ظاهرين ومكشوفين.",
+      "price": 790,
+      "compareAt": 980,
+      "image": "/xs/24/products/baby-carrier-1.jpg",
+      "images": [
+        "/xs/24/products/baby-carrier-1.jpg",
+        "/xs/24/products/baby-carrier-2.jpg"
+      ],
+      "collections": [
+        "best-sellers",
+        "outings"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Gray",
+            "Black"
+          ],
+          "valuesAr": [
+            "جراي",
+            "أسود"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Gray"
+          ],
+          "price": 790,
+          "compareAt": 980
+        },
+        {
+          "values": [
+            "Black"
+          ],
+          "price": 790,
+          "compareAt": 980
+        }
+      ]
+    },
+    {
+      "name": "Changing Mat",
+      "nameAr": "مشمع غيار للبيبي",
+      "slug": "changing-mat",
+      "description": "Cleaner, easier diaper changes on the go 🧷\nThe Changing Mat folds into a compact wallet-style shape, making it easy to carry for quick changes wherever you are.\n💧 Waterproof protection\nTwo waterproof layers help protect surfaces from leaks, with a soft padded foam layer for comfort.\n👜 Practical foldable design\nCompact when folded, with useful pockets for diapers and wipes.\n✈️ Great for outings & travel\nLightweight and easy to wipe clean.",
+      "descriptionAr": "تغيير الحفاض برا البيت يبقى أسرع وأنضف 🧷\nمشمع الغيار بيديكي سطح مخصص للبيبي وقت التغيير بدل ما تضطري تستخدمي أي سطح متاح في العربية، النادي أو الزيارة.\nهيريّحك إزاي؟\n• تغيير أسرع: تفتحيه وتجهزي مكان التغيير في ثواني بدل ما ترتبي المكان من الأول.\n• سطح مخصص للبيبي: يقلل احتكاك مستلزمات التغيير بالأسطح العامة.\n• يتلم بسهولة: يتطوى ويتحط في شنطة الأم من غير ما ياخد مساحة كبيرة.\n• أقل فوضى: بدل استخدام فوطة أو بطانية وبعدها تقلقي من تنظيفها.\nمناسب للمشاوير اليومية\nخفيف وعملي، فممكن يفضل في شنطة الأم ويبقى جاهز كل مرة تحتاجي تغيّري للبيبي برا البيت.",
+      "price": 495,
+      "compareAt": 705,
+      "image": "/xs/24/products/changing-mat-1.jpg",
+      "images": [
+        "/xs/24/products/changing-mat-1.jpg",
+        "/xs/24/products/changing-mat-2.jpg"
+      ],
+      "collections": [
+        "outings"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Gray",
+            "Black"
+          ],
+          "valuesAr": [
+            "جراي",
+            "أسود"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Gray"
+          ],
+          "price": 495,
+          "compareAt": 705
+        },
+        {
+          "values": [
+            "Black"
+          ],
+          "price": 495,
+          "compareAt": 705
+        }
+      ]
+    },
+    {
+      "name": "Mosquito Net",
+      "nameAr": "ناموسية أطفال",
+      "slug": "mosquito-net",
+      "description": "Calmer rest with protection from insects 🛡️\nThe Mosquito Net helps protect your baby's space from mosquitoes and insects at home or while travelling.\n🦟 Full coverage\nDesigned to create a protective barrier around your baby's resting area.\n🌬️ Breathable fabric\nLightweight mesh allows airflow for a comfortable environment.\n⚡ Quick and practical\nEasy to use over a bed, baby nest or another suitable resting area, and easy to store when not in use.",
+      "descriptionAr": "قللي إزعاج الناموس حوالي البيبي من غير رش أو حلول كل شوية 🦟\nناموسية الأطفال بتديكي طبقة حماية بسيطة حوالين مساحة البيبي، فتبقي مطمنة أكتر خصوصًا في الصيف أو الأماكن اللي فيها ناموس، من غير ما تعتمدي كل مرة على حل مختلف.\nهتريحك في إيه؟\n• حماية إضافية من الحشرات: الشبكة تعمل حاجز بين البيبي والناموس أثناء الاستخدام.\n• أقل قلق بالليل أو في الزيارات: بدل ما تفضلي تراقبي المكان كل شوية.\n• خفيفة وسهلة التخزين: تتلم وتتخزن من غير مساحة كبيرة.\n• تنفع في أكتر من مكان: تستخدم حسب تصميمها مع مساحة البيبي المناسبة.\nليه عملية؟\nالشبكة تسمح بمرور الهوا وبتديكي حل بسيط يتفتح ويتلم بدل تجهيزات كتير.",
+      "price": 675,
+      "compareAt": 705,
+      "image": "/xs/24/products/mosquito-net-1.jpg",
+      "images": [
+        "/xs/24/products/mosquito-net-1.jpg",
+        "/xs/24/products/mosquito-net-2.jpg"
+      ],
+      "collections": [
+        "best-sellers",
+        "sleep"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Pink",
+            "Gray",
+            "Baby Blue",
+            "Cream Beige",
+            "Safari"
+          ],
+          "valuesAr": [
+            "بينك",
+            "جراي",
+            "بيبي بلو",
+            "بيج كريمي",
+            "سفاري"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Pink"
+          ],
+          "price": 675,
+          "compareAt": 705
+        },
+        {
+          "values": [
+            "Gray"
+          ],
+          "price": 675,
+          "compareAt": 705
+        },
+        {
+          "values": [
+            "Baby Blue"
+          ],
+          "price": 675,
+          "compareAt": 705
+        },
+        {
+          "values": [
+            "Cream Beige"
+          ],
+          "price": 675,
+          "compareAt": 705
+        },
+        {
+          "values": [
+            "Safari"
+          ],
+          "price": 675,
+          "compareAt": 705
+        }
+      ]
+    },
+    {
+      "name": "Baby Wrap",
+      "nameAr": "بيبي راب – حمالة قماش للبيبي",
+      "slug": "baby-wrap",
+      "description": "Hands freer, baby close 🤱\nThe Baby Wrap keeps your baby close while giving you more freedom to move at home or on the go.\n🧵 Soft & breathable\nLightweight cotton fabric that feels soft against your baby's skin and allows airflow.\n💪 Balanced carrying\nThe wrap spreads your baby's weight across your shoulders and back when fitted correctly.\n✨ Practical everyday design\nEasy to wash, compact to carry and designed for everyday use.",
+      "descriptionAr": "خلي بيبيك قريب منك… وإيدك تفضل فاضية 🤱\nالبيبي راب مناسب للأوقات اللي طفلك محتاج يكون قريب منك فيها وإنتي في نفس الوقت محتاجة تتحركي، ترتبي البيت أو تخرجي من غير ما تفضلي شايلاه بإيدك طول الوقت.\nهيريّحك إزاي؟\n• إيدين فاضيين: يساعدك تتحركي وتعملي مهامك والبيبي قريب منك.\n• حمل أريح: القماش بيلف حوالين جسمك فيوزّع الحمل بدل ما يبقى مركز على ذراع واحدة.\n• هدوء وقرب: وجود البيبي قريب من جسمك يسهّل عليكي متابعته وتهديته.\n• ينفع للبيت والخروج: خفيف وسهل يتاخد معاكي من غير حجم كبير.\nليه عملي في يومك؟\nقماش ناعم وخفيف يسمح بمرور الهوا، وسهل الغسيل والتخزين. وبعد ما تتعودي على طريقة اللف، بيبقى حل سريع للحمل اليومي.",
+      "price": 495,
+      "compareAt": 645,
+      "image": "/xs/24/products/baby-wrap-1.jpg",
+      "images": [
+        "/xs/24/products/baby-wrap-1.jpg",
+        "/xs/24/products/baby-wrap-2.jpg"
+      ],
+      "collections": [
+        "outings"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Black",
+            "Gray"
+          ],
+          "valuesAr": [
+            "أسود",
+            "جراي"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Black"
+          ],
+          "price": 495,
+          "compareAt": 645
+        },
+        {
+          "values": [
+            "Gray"
+          ],
+          "price": 495,
+          "compareAt": 645
+        }
+      ]
+    },
+    {
+      "name": "Nursing Pillow",
+      "nameAr": "مخدة رضاعة",
+      "slug": "nursing-pillow",
+      "description": "More comfortable feeding for you and your baby 🫖\nThe Nursing Pillow supports your baby's head and body while helping you maintain a more comfortable position during feeding.\n🧘‍♀️ Support for you\nHelps support a comfortable seated feeding position during longer sessions.\n👶 Support for baby\nProvides a stable surface to help position your baby during feeding.\n✨ Practical & easy\nSimple to use, carry and clean.",
+      "descriptionAr": "قربي البيبي منك… بدل ما تفضلي إنتي اللي منحنية عليه 🤱\nمخدة الرضاعة بتساعد ترفعي البيبي لمستوى أقرب ليكي وقت الرضعة، عشان وضعك يبقى أريح وما تفضليش معتمدة على ذراعك لوحدها طول الوقت.\nهتريحك في إيه؟\n• مجهود أقل على الذراع: المخدة تسند جزء من وزن البيبي أثناء الرضاعة.\n• وضعية أريح ليكي: تقرّب البيبي من صدرك بدل ما تفضلي متقوسة ناحيته.\n• رضعات طويلة أسهل: خصوصًا لما الرضعة تاخد وقت وإنتي محتاجة تفضلي ثابتة.\n• سهلة الاستخدام يوميًا: تحطيها حواليكي وتبدأي من غير تجهيز معقد.\nليه هتستخدميها كتير؟\nلأن الرضاعة بتتكرر كذا مرة في اليوم؛ أي حاجة تقلل المجهود في كل مرة بتفرق في آخر اليوم.",
+      "price": 550,
+      "compareAt": 715,
+      "image": "/xs/24/products/nursing-pillow-1.jpg",
+      "images": [
+        "/xs/24/products/nursing-pillow-1.jpg",
+        "/xs/24/products/nursing-pillow-2.jpg"
+      ],
+      "collections": [
+        "best-sellers",
+        "feeding"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Pink",
+            "Gray",
+            "Baby Blue",
+            "Cream Beige",
+            "Safari"
+          ],
+          "valuesAr": [
+            "بينك",
+            "جراي",
+            "بيبي بلو",
+            "بيج كريمي",
+            "سفاري"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Pink"
+          ],
+          "price": 550,
+          "compareAt": 715
+        },
+        {
+          "values": [
+            "Gray"
+          ],
+          "price": 550,
+          "compareAt": 715
+        },
+        {
+          "values": [
+            "Baby Blue"
+          ],
+          "price": 550,
+          "compareAt": 715
+        },
+        {
+          "values": [
+            "Cream Beige"
+          ],
+          "price": 550,
+          "compareAt": 715
+        },
+        {
+          "values": [
+            "Safari"
+          ],
+          "price": 550,
+          "compareAt": 715
+        }
+      ]
+    },
+    {
+      "name": "Nursing Cover",
+      "nameAr": "ساتر رضاعة",
+      "slug": "nursing-cover",
+      "description": "Comfortable feeding with more privacy 🤍\nThe Nursing Cover gives you full coverage when feeding your baby away from home, with soft fabric for everyday comfort.\n🧥 Full coverage\nDesigned for added privacy, with an adjustable neck strap for a comfortable fit.\n🧼 Easy to clean\nMachine washable for practical everyday use.\n🎒 Lightweight & portable\nEasy to fold and carry in your bag.",
+      "descriptionAr": "رضاعة برا البيت من غير توتر ولا تدوير على مكان مقفول 🤱\nساتر الرضاعة بيديكي خصوصية أكتر وقت الرضاعة، فبدل ما الخروج يتعطل أو تفضلي مستنية مكان مناسب، تقدري ترضعي البيبي براحة وإنتي شايفاه ومتابعاه.\nهيريّحك إزاي؟\n• خصوصية أكتر: يساعدك ترضعي في أماكن أكتر من غير إحساس بالانكشاف.\n• متابعة البيبي بسهولة: الفتحة الأمامية تخليكي شايفاه وإنتي بترضعيه.\n• خروج أبسط: بدل ما تخططي كل مشوار حوالين مكان رضاعة، يبقى معاكي حل خفيف في الشنطة.\n• أقل لخبطة: قطعة واحدة سريعة بدل استخدام شال أو غطاء بيتحرك كل شوية.\nليه عملي؟\nخفيف وسهل الطي والحمل، ومصمم للرضاعة بحيث يديكي تغطية مع مساحة متابعة للبيبي.",
+      "price": 330,
+      "compareAt": 445,
+      "image": "/xs/24/products/nursing-cover-1.jpg",
+      "images": [
+        "/xs/24/products/nursing-cover-1.jpg",
+        "/xs/24/products/nursing-cover-2.jpg"
+      ],
+      "collections": [
+        "best-sellers",
+        "feeding"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Pink",
+            "Gray",
+            "Baby Blue",
+            "Cream Beige",
+            "Safari"
+          ],
+          "valuesAr": [
+            "بينك",
+            "جراي",
+            "بيبي بلو",
+            "بيج كريمي",
+            "سفاري"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Pink"
+          ],
+          "price": 330,
+          "compareAt": 445
+        },
+        {
+          "values": [
+            "Gray"
+          ],
+          "price": 330,
+          "compareAt": 445
+        },
+        {
+          "values": [
+            "Baby Blue"
+          ],
+          "price": 330,
+          "compareAt": 445
+        },
+        {
+          "values": [
+            "Cream Beige"
+          ],
+          "price": 330,
+          "compareAt": 445
+        },
+        {
+          "values": [
+            "Safari"
+          ],
+          "price": 330,
+          "compareAt": 445
+        }
+      ]
+    },
+    {
+      "name": "Mom Bag",
+      "nameAr": "شنطة الأم – شنطة مستلزمات البيبي",
+      "slug": "mom-bag",
+      "description": "One bag for all your baby's essentials 👜\nThe Mom Bag keeps bottles, clothes, diapers and changing essentials organised for short outings, full days out or travel.\n🎒 Smart organisation\nSpacious, practical compartments help keep everyday baby essentials easy to find.\n💪 Comfortable to carry\nPadded shoulder straps help reduce pressure when the bag is full.\n🧼 Durable & easy to clean\nMade for everyday use with a practical wipe-clean finish.\n✨ Versatile\nSuitable for everyday outings, travel or use as a personal bag.",
+      "descriptionAr": "كل حاجة للبيبي في مكان واحد… وإيدك تفضل عليه مش على الشنطة 🎒\nشنطة الأم معمولة للمشاوير اللي كل دقيقة فيها مهمة. بدل ما تفتحي كذا كيس وتدوّري على الحفاض أو المناديل أو الببرونة، يبقى كل احتياج في مكانه وإنتي شايلة الشنطة على ضهرك.\nهتفرق معاكي في إيه؟\n• إيدين فاضيين: تتلبس على الظهر فتقدري تمسكي البيبي أو العربية براحتك.\n• تجهيز أسرع: تقسيم المستلزمات يقلل وقت التدوير جوه الشنطة.\n• مشاوير أقل توترًا: لما كل حاجة ليها مكان، تغيير الحفاض أو الرضاعة برا البيت يبقوا أسهل.\n• قطعة واحدة بدل كذا كيس: كل احتياجات الخروجة تتجمع في شنطة واحدة منظمة.\nمناسبة لمين؟\nللأم اللي بتخرج كتير، بتزور أهلها، أو عايزة شنطة يومية تشيل أساسيات البيبي من غير فوضى.",
+      "price": 940,
+      "compareAt": 1115,
+      "image": "/xs/24/products/mom-bag-1.jpg",
+      "images": [
+        "/xs/24/products/mom-bag-1.jpg",
+        "/xs/24/products/mom-bag-2.jpg"
+      ],
+      "collections": [
+        "best-sellers",
+        "outings"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Black",
+            "Gray",
+            "Navy"
+          ],
+          "valuesAr": [
+            "أسود",
+            "جراي",
+            "كحلي"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Black"
+          ],
+          "price": 940,
+          "compareAt": 1115
+        },
+        {
+          "values": [
+            "Gray"
+          ],
+          "price": 940,
+          "compareAt": 1115
+        },
+        {
+          "values": [
+            "Navy"
+          ],
+          "price": 940,
+          "compareAt": 1115
+        }
+      ]
+    },
+    {
+      "name": "Self-Feeding Pillow",
+      "nameAr": "مخدة الببرونة",
+      "slug": "self-feeding-pillow",
+      "description": "A practical feeding helper for easier bottle time 🍼\nThe Self-Feeding Pillow is designed to support the bottle in a stable position while helping reduce strain on your arms during feeding. Always use with close adult supervision.\n⭐ Practical bottle support\nA built-in holder helps keep the bottle positioned during supervised feeding.\n💪 More comfortable for you\nDesigned to reduce the need to hold the bottle continuously during a feed.\n🌙 Easy to use\nSoft materials and a practical design for home or outings.",
+      "descriptionAr": "وقت الببرونة يبقى أريح لإيدك… وإنتي لسه متابعة البيبي طول الوقت 🍼\nمخدة الببرونة بتساعدك تسندي الببرونة في وضع ثابت أثناء الرضاعة تحت إشرافك، فتقللي الضغط على إيدك بدل ما تفضلي ماسكاها بنفس الوضع طول الرضعة.\nهتريحك في إيه؟\n• مجهود أقل على الإيد: المخدة تساعد في تثبيت وضع الببرونة بدل الإمساك المستمر بنفس الزاوية.\n• رضعة أهدى: ترتيب الببرونة على المخدة يخلي الوضع أكثر ثباتًا أثناء المتابعة.\n• عملية في البيت: بدل ما تحتاجي تغيري وضع إيدك كتير خلال الرضعة.\n• سهلة النقل: تتنقل معاكي من أوضة لأوضة أو في الزيارات.",
+      "price": 595,
+      "compareAt": 660,
+      "image": "/xs/24/products/self-feeding-pillow-1.jpg",
+      "images": [
+        "/xs/24/products/self-feeding-pillow-1.jpg",
+        "/xs/24/products/self-feeding-pillow-2.jpg"
+      ],
+      "collections": [
+        "best-sellers",
+        "feeding"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "White",
+            "Cream Beige"
+          ],
+          "valuesAr": [
+            "أبيض",
+            "بيج كريمي"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "White"
+          ],
+          "price": 595,
+          "compareAt": 660
+        },
+        {
+          "values": [
+            "Cream Beige"
+          ],
+          "price": 595,
+          "compareAt": 660
+        }
+      ]
+    },
+    {
+      "name": "Baby Jumper",
+      "nameAr": "نطاطة أطفال – ألوان هادئة",
+      "slug": "baby-jump",
+      "description": "Movement, play and fun for your baby 🪀\nThe Baby Jumper combines movement and play in a lightweight design with breathable mesh fabric.\n🤸 Freedom to move\nA practical design that lets your baby bounce and explore while supervised.\n🌬️ Breathable mesh\nLightweight fabric helps airflow and comfort during play.\n🦵 Active play\nEncourages leg movement, balance and coordination through supervised play.",
+      "descriptionAr": "وقت لعب فيه حركة أكتر… بدل ما البيبي يمل بسرعة 🪀\nنطاطة الأطفال بتدي البيبي نشاط بسيط يعتمد على الحركة، فتبقى عندك وسيلة جاهزة تغيّري بيها روتين اللعب وإنتي متابعة من قريب.\nهتفيدك إزاي؟\n• تشغّله بنشاط واضح: بدل ما تفضلي كل مرة تدوري على فكرة لعب جديدة.\n• حركة وتفاعل: تساعد وقت اللعب يبقى أكثر نشاطًا من القعدة الثابتة.\n• قماش شبكي: يسمح بمرور الهوا أثناء الاستخدام.\n• سهلة في الروتين اليومي: نشاط سريع من غير تجهيزات أو قطع كتير.\nمهم: الاستخدام يكون تحت إشرافك وعلى سطح مناسب، ومع الالتزام بعمر ووزن الطفل وطريقة التثبيت الموضحة على المنتج.",
+      "price": 500,
+      "compareAt": 665,
+      "image": "/xs/24/products/baby-jump-1.jpg",
+      "images": [
+        "/xs/24/products/baby-jump-1.jpg",
+        "/xs/24/products/baby-jump-2.jpg"
+      ],
+      "collections": [
+        "toys"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Pink",
+            "Baby Blue",
+            "Gray",
+            "Cream Beige"
+          ],
+          "valuesAr": [
+            "بينك",
+            "بيبي بلو",
+            "جراي",
+            "بيج كريمي"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Pink"
+          ],
+          "price": 500,
+          "compareAt": 665
+        },
+        {
+          "values": [
+            "Baby Blue"
+          ],
+          "price": 500,
+          "compareAt": 665
+        },
+        {
+          "values": [
+            "Gray"
+          ],
+          "price": 500,
+          "compareAt": 665
+        },
+        {
+          "values": [
+            "Cream Beige"
+          ],
+          "price": 500,
+          "compareAt": 665
+        }
+      ]
+    },
+    {
+      "name": "Baby Nest Oval",
+      "nameAr": "بيبي نست بيضاوي",
+      "slug": "baby-nest-oval",
+      "description": "A cosy spot for your baby wherever you go 💙\nThe Oval Baby Nest is lightweight and portable, giving your baby a soft, familiar space for supervised rest and everyday use.\n🧩 Soft & comfortable\nBreathable cotton fabric with a padded mattress for everyday comfort.\n🦋 Reversible design + mosquito net\nOne printed side and one plain side, plus an integrated mosquito net for added insect protection.\n🎒 Easy to carry\nLightweight, easy to clean and fitted with a practical carry handle.",
+      "descriptionAr": "مكان مريح للبيبي… ينقل معاكي من أوضة لأوضة 💙\nالبيبي نست البيضاوي بيساعدك تعملي للبيبي مساحة محددة ومبطنة للراحة واللعب تحت إشرافك، بدل ما كل مرة تحتاري تحطيه فين وإنتي بتتحركي في البيت أو خارجة زيارة.\nهيريّحك إزاي؟\n• مكان ثابت للبيبي: بدل ما تجهزي مكان جديد كل مرة، يبقى عندك مساحة مخصصة جاهزة.\n• سهل النقل: خفيف ومقبضه يسهل عليكي تنقليه بين الغرف أو تاخديه معاكي.\n• تنضيف أسهل وتنظيم أكتر: مساحة البيبي تبقى محددة بدل ما مستلزماته تتوزع في كل مكان.\n• تصميم بوجهين: تقدري تغيّري الشكل حسب ذوقك من غير ما تحتاجي منتج تاني.\nتفاصيل عملية\nقماش ناعم، تبطين مريح، وناموسية مدمجة تساعد على تقليل إزعاج الحشرات أثناء الاستخدام.",
+      "price": 990,
+      "compareAt": 1205,
+      "image": "/xs/24/products/baby-nest-oval-1.jpg",
+      "images": [
+        "/xs/24/products/baby-nest-oval-1.jpg",
+        "/xs/24/products/baby-nest-oval-2.jpg"
+      ],
+      "collections": [
+        "best-sellers",
+        "sleep"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Gray",
+            "Pink",
+            "Cream Beige",
+            "Baby Blue",
+            "Safari"
+          ],
+          "valuesAr": [
+            "جراي",
+            "بينك",
+            "بيج كريمي",
+            "بيبي بلو",
+            "سفاري"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Gray"
+          ],
+          "price": 990,
+          "compareAt": 1205
+        },
+        {
+          "values": [
+            "Pink"
+          ],
+          "price": 990,
+          "compareAt": 1205
+        },
+        {
+          "values": [
+            "Cream Beige"
+          ],
+          "price": 990,
+          "compareAt": 1205
+        },
+        {
+          "values": [
+            "Baby Blue"
+          ],
+          "price": 990,
+          "compareAt": 1205
+        },
+        {
+          "values": [
+            "Safari"
+          ],
+          "price": 990,
+          "compareAt": 1205
+        }
+      ]
+    },
+    {
+      "name": "Baby Nest Circle",
+      "nameAr": "بيبي نست دائري",
+      "slug": "baby-nest-circle",
+      "description": "Everyday comfort in a portable circular design 💙\nThe Circle Baby Nest is soft, lightweight and easy to move around the home or take on visits for supervised rest and everyday use.\n🧵 Soft materials\nCotton fabric with soft fibre padding for a comfortable feel.\n🦋 Reversible design + mosquito net\nOne printed side and one plain side, with a practical mosquito net for insect protection.\n✈️ Easy to carry\nPortable and convenient for home, visits and travel.",
+      "descriptionAr": "مساحة صغيرة للبيبي… تخلي وجوده جنبك أسهل 💛\nالبيبي نست الدائري مناسب لما تكوني عايزة مساحة محددة ومبطنة للبيبي وقت الراحة أو اللعب تحت إشرافك، من غير ما تفضلي تنقلي بطاطين ومخدات من مكان لمكان.\nهيريّحك إزاي؟\n• مكان جاهز: تحطيه جنبك في الصالة أو الأوضة بدل ما تجهزي مساحة جديدة كل مرة.\n• إحساس احتواء: الحواف المرتفعة بتحدد مساحة البيبي وتخلي المكان أقل تشتتًا.\n• سهل التنقل: حجمه عملي للنقل بين الغرف أو أثناء الزيارات.\n• اختيارات ألوان متعددة: تختاري اللون اللي يناسبك من غير ما تغيري الوظيفة.\nليه عملي في يومك؟\nناعم ومبطن وخفيف، فبيساعدك ترتبي مساحة البيبي بسرعة بدل ما كل مرة تبدأي من الصفر.",
+      "price": 900,
+      "compareAt": 1085,
+      "image": "/xs/24/products/baby-nest-circle-1.jpg",
+      "images": [
+        "/xs/24/products/baby-nest-circle-1.jpg",
+        "/xs/24/products/baby-nest-circle-2.jpg"
+      ],
+      "collections": [
+        "best-sellers",
+        "sleep"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Gray",
+            "Pink",
+            "Cream Beige",
+            "Baby Blue",
+            "Safari"
+          ],
+          "valuesAr": [
+            "جراي",
+            "بينك",
+            "بيج كريمي",
+            "بيبي بلو",
+            "سفاري"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Gray"
+          ],
+          "price": 900,
+          "compareAt": 1085
+        },
+        {
+          "values": [
+            "Pink"
+          ],
+          "price": 900,
+          "compareAt": 1085
+        },
+        {
+          "values": [
+            "Cream Beige"
+          ],
+          "price": 900,
+          "compareAt": 1085
+        },
+        {
+          "values": [
+            "Baby Blue"
+          ],
+          "price": 900,
+          "compareAt": 1085
+        },
+        {
+          "values": [
+            "Safari"
+          ],
+          "price": 900,
+          "compareAt": 1085
+        }
+      ]
+    },
+    {
+      "name": "Nursing Bundle",
+      "nameAr": "طقم الرضاعة – مخدة + ساتر رضاعة",
+      "slug": "nursing-bundle",
+      "description": "Two essentials for more comfortable feeding 🤱\nBundle includes:\n• Nursing Cover — for privacy on the go\n• Nursing Pillow — for added support during feeding\nGet both pieces together at a better value than buying them separately.",
+      "descriptionAr": "رضاعة أريح ليكي… وتجهيز أقل كل مرة 🤱\nطقم الرضاعة بيجمع ساتر الرضاعة مع مخدة الرضاعة في قرار واحد، عشان وقت الرضعة يبقى أريح في البيت وأسهل برا البيت من غير ما تشتري كل قطعة لوحدها.\nهيريّحك إزاي؟\n• دعم أفضل وقت الرضاعة: مخدة الرضاعة ترفع البيبي لمستوى أقرب ليكي بدل ما تفضلي متقوسة عليه.\n• خصوصية في الخروج: الساتر يساعدك ترضعي برا البيت من غير تدوير طويل على مكان مناسب.\n• أقل تجهيز: القطعتين اللي بتستخدميهم في مواقف متكررة موجودين مع بعض.\n• أوفر من الشراء المنفصل: تاخدي الطقم كحل واحد بدل شراء كل قطعة لوحدها.\nمناسب ليومك من البيت للخروج\nالمخدة للراحة والدعم، والساتر للخصوصية — يعني نفس الطقم بيخدمك في أكتر من سيناريو خلال اليوم.",
+      "price": 735,
+      "compareAt": 880,
+      "image": "/xs/24/products/nursing-bundle-1.jpg",
+      "images": [
+        "/xs/24/products/nursing-bundle-1.jpg",
+        "/xs/24/products/nursing-bundle-2.jpg"
+      ],
+      "collections": [
+        "bundles",
+        "feeding"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Pink",
+            "Gray",
+            "Baby Blue",
+            "Cream Beige",
+            "Safari"
+          ],
+          "valuesAr": [
+            "بينك",
+            "جراي",
+            "بيبي بلو",
+            "بيج كريمي",
+            "سفاري"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Pink"
+          ],
+          "price": 735,
+          "compareAt": 880
+        },
+        {
+          "values": [
+            "Gray"
+          ],
+          "price": 735,
+          "compareAt": 880
+        },
+        {
+          "values": [
+            "Baby Blue"
+          ],
+          "price": 735,
+          "compareAt": 880
+        },
+        {
+          "values": [
+            "Cream Beige"
+          ],
+          "price": 735,
+          "compareAt": 880
+        },
+        {
+          "values": [
+            "Safari"
+          ],
+          "price": 735,
+          "compareAt": 880
+        }
+      ]
+    },
+    {
+      "name": "Musical Piano Play Mat for Babies",
+      "nameAr": "سجادة بيانو موسيقية للبيبي",
+      "slug": "musical-piano-play-mat",
+      "description": "Play, movement and music 🎹\nThe Musical Piano Play Mat gives your baby an interactive play experience with music, colour and movement from the early months.\n🎵 Interactive piano\nPlays fun sounds when pressed with hands or feet, encouraging movement and interaction.\n🌈 Sensory play\nBright colours and sounds help keep your baby engaged during playtime.\n🧸 Practical design\nSoft baby-friendly materials with a foldable design that is easy to store and carry.",
+      "descriptionAr": "وقت لعب يشغله… ويشجع الحركة بدل الملل 🎹\nسجادة البيانو الموسيقية بتدي البيبي حاجة يتفاعل معاها برجله وإيده، فبدل ما وقت اللعب يبقى مجرد فرجة، يبقى فيه صوت وحركة واستكشاف يخلوه مشغول وإنتي قريبة منه.\nهتفيدك إزاي كأم؟\n• وقت لعب أوضح: يبقى عندك نشاط جاهز بدل ما تدوري كل مرة تعمليله إيه.\n• تشجّع الحركة: الضغط على البيانو بالأرجل أو الأيدي يخليه يجرب الحركة ويتفاعل مع النتيجة.\n• تشغل أكتر من حاسة: ألوان وأصوات وحركة في نشاط واحد.\n• سهلة التخزين: تتطوى وتتلم بدل ما تاخد مساحة كبيرة.\nليه عملية في البيت؟\nمناسبة لجلسات اللعب تحت إشرافك، وسهلة تتنقل من أوضة لأوضة أو تتاخد معاكي في زيارة.",
+      "price": 825,
+      "compareAt": 995,
+      "image": "/xs/24/products/musical-piano-play-mat-1.jpg",
+      "images": [
+        "/xs/24/products/musical-piano-play-mat-1.jpg",
+        "/xs/24/products/musical-piano-play-mat-2.jpg"
+      ],
+      "collections": [
+        "best-sellers",
+        "toys"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Pink",
+            "Baby Blue"
+          ],
+          "valuesAr": [
+            "بينك",
+            "بيبي بلو"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Pink"
+          ],
+          "price": 825,
+          "compareAt": 995
+        },
+        {
+          "values": [
+            "Baby Blue"
+          ],
+          "price": 825,
+          "compareAt": 995
+        }
+      ]
+    },
+    {
+      "name": "Baby Care Kit — 13 Pieces",
+      "nameAr": "طقم العناية بالبيبي 13 قطعة",
+      "slug": "baby-care-kit-13-pieces",
+      "description": "Daily baby-care essentials in one organised kit 🧴\nThe 13-Piece Baby Care Kit brings together practical grooming and care tools in a compact storage case for home or travel.\n🎁 13-piece set includes:\n• Nail clipper, baby scissors and nail file\n• Soft hair brush and comb\n• Nasal aspirator and ear cleaner\n• Medicine dropper and baby medicine feeder\n• Tweezers and thermometer\n• Silicone finger toothbrush\n• Organised storage case\nDesigned with baby-friendly materials and rounded, practical tools for everyday care.",
+      "descriptionAr": "بدل ما أدوات العناية تتوزع في البيت… خليها كلها في طقم واحد 🧴\nطقم العناية بالبيبي 13 قطعة بيجمع أدوات الاستخدام اليومي في مكان واحد، عشان ما تفضليش كل مرة تدوري على أداة ناقصة وقت الاستحمام أو التجهيز.\nهيفيدك إزاي؟\n• تنظيم أسرع: الأدوات الأساسية تبقى مع بعض بدل ما تكون موزعة في أكتر من درج.\n• أقل نسيان: الطقم يساعدك تجهزي روتين العناية من غير ما تكتشفي في النص إن حاجة ناقصة.\n• ينفع للبيت والسفر: بدل ما تجمعي الأدوات واحدة واحدة قبل كل زيارة أو سفر.\n• قرار واحد بدل 13 قرار: أسهل من شراء كل أداة لوحدها ومقارنتها بشكل منفصل.\nمناسب لمين؟\nللأم اللي عايزة روتين عناية مرتب من غير فوضى أو مشتريات متفرقة.",
+      "price": 500,
+      "compareAt": 675,
+      "image": "/xs/24/products/baby-care-kit-13-pieces-1.jpg",
+      "images": [
+        "/xs/24/products/baby-care-kit-13-pieces-1.jpg",
+        "/xs/24/products/baby-care-kit-13-pieces-2.jpg"
+      ],
+      "collections": [
+        "best-sellers",
+        "bath"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Pink",
+            "Baby Blue"
+          ],
+          "valuesAr": [
+            "بينك",
+            "بيبي بلو"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Pink"
+          ],
+          "price": 500,
+          "compareAt": 675
+        },
+        {
+          "values": [
+            "Baby Blue"
+          ],
+          "price": 500,
+          "compareAt": 675
+        }
+      ]
+    },
+    {
+      "name": "Silicone Baby Rattle Set — 11 Pieces",
+      "nameAr": "طقم شخاليل سيليكون للبيبي 11 قطعة",
+      "slug": "silicone-baby-rattle-set-11-pieces",
+      "description": "Fun, easy-to-hold play for little hands 🎈\nThe 11-Piece Silicone Baby Rattle Set combines bright colours, gentle sounds and soft silicone elements for play from the early months.\n🦷 Soft silicone for teething\nSoft silicone sections can help give babies something suitable to mouth during teething.\n✋ Easy to hold\nShapes are designed for small hands, with colours and gentle rattling sounds to encourage interaction.\n🧸 11-piece set\nMade from baby-friendly materials for everyday supervised play.",
+      "descriptionAr": "11 قطعة تخلي وقت اللعب فيه تنويع بدل ما البيبي يزهق بسرعة 🎈\nطقم الشخاليل السيليكون بيديكي أكتر من شكل وصوت وإحساس في طقم واحد، فبدل ما تشتري لعبة واحدة ويتعود عليها بسرعة، يبقى عندك اختيارات تبدّلي بينها حسب وقت اللعب.\nهيفيدك إزاي كأم؟\n• تنويع جاهز: أكتر من قطعة في نفس الطقم بدل شراء لعبة جديدة كل شوية.\n• تشجيع الإمساك والاستكشاف: الأحجام والأشكال المختلفة تدي الطفل فرصًا متنوعة للمسك والتفاعل.\n• وقت لعب أسهل: اختاري قطعة مختلفة كل مرة بدل ما تحتاري هتشغليه بإيه.\n• يتجمع بسهولة: طقم واحد أسهل في التخزين والتنظيم من ألعاب متفرقة.\nمهم: استخدمي القطع تحت إشرافك، وافحصيها قبل كل استخدام، والتزمي بالعمر وطريقة الاستخدام الموضحة على المنتج.",
+      "price": 550,
+      "compareAt": 820,
+      "image": "/xs/24/products/silicone-baby-rattle-set-11-pieces-1.jpg",
+      "images": [
+        "/xs/24/products/silicone-baby-rattle-set-11-pieces-1.jpg",
+        "/xs/24/products/silicone-baby-rattle-set-11-pieces-2.jpg"
+      ],
+      "collections": [
+        "best-sellers",
+        "toys"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Baby Blue",
+            "Pink"
+          ],
+          "valuesAr": [
+            "بيبي بلو",
+            "بينك"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Baby Blue"
+          ],
+          "price": 550,
+          "compareAt": 820
+        },
+        {
+          "values": [
+            "Pink"
+          ],
+          "price": 550,
+          "compareAt": 820
+        }
+      ]
+    },
+    {
+      "name": "Baby Essentials Bundle",
+      "nameAr": "مجموعة أساسيات البيبي",
+      "slug": "baby-essentials-bundle",
+      "description": "Not sure where to start? This bundle covers the essentials, without the extras 💛\nThe Baby Essentials Bundle is made for moms who want to start right, without buying lots of things they later find they don't use. 3 pieces that help with rest, feeding and simple outings.\nHow it helps\n• Baby nest: a defined space for your baby's rest and play under your supervision, and easy to move around with you.\n• Nursing pillow: brings your baby closer to you, so you're not hunched over at every feed.\n• Nursing cover: more privacy when you're feeding outside the home.",
+      "descriptionAr": "لو محتارة تبدأي بإيه… المجموعة دي تجمع الأساسيات من غير مشتريات زيادة 💛\nمجموعة أساسيات البيبي معمولة للأم اللي عايزة تبدأ صح من غير ما تشتري حاجات كتير وبعدين تكتشف إنها مش بتستخدمها. 3 قطع تخدمك في الراحة والرضاعة والخروج البسيط.\nهتفيدك إزاي؟\n• بيبي نست: مساحة محددة للبيبي وقت الراحة واللعب تحت إشرافك، وسهلة التنقل معاكي.\n• مخدة رضاعة: تساعدك تقربي البيبي منك بدل ما تفضلي متقوسة في كل رضعة.\n• ساتر رضاعة: خصوصية أكتر وقت الرضاعة برا البيت.\nليه المجموعة عملية؟\n• 3 احتياجات متكررة بدل شراء حاجات كتير لمجرد “يمكن أحتاجها”.\n• تختاري الشكل: دائري، بيضاوي أو ناموسية حسب احتياجك.\n• تختاري اللون المناسب ليكي من الاختيارات المتاحة.",
+      "price": 1335,
+      "compareAt": 1555,
+      "image": "/xs/24/products/baby-essentials-bundle-1.jpg",
+      "images": [
+        "/xs/24/products/baby-essentials-bundle-1.jpg",
+        "/xs/24/products/baby-essentials-bundle-2.jpg"
+      ],
+      "collections": [
+        "bundles",
+        "best-sellers"
+      ],
+      "options": [
+        {
+          "name": "Nest type",
+          "nameAr": "الشكل",
+          "values": [
+            "Oval nest",
+            "Round nest",
+            "Mosquito net"
+          ],
+          "valuesAr": [
+            "بيضاوي",
+            "دائري",
+            "ناموسية"
+          ]
+        },
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Pink",
+            "Baby Blue",
+            "Gray",
+            "Cream Beige",
+            "Safari"
+          ],
+          "valuesAr": [
+            "بينك",
+            "بيبي بلو",
+            "جراي",
+            "بيج كريمي",
+            "سفاري"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Oval nest",
+            "Pink"
+          ],
+          "price": 1615,
+          "compareAt": 1870
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Baby Blue"
+          ],
+          "price": 1615,
+          "compareAt": 1870
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Gray"
+          ],
+          "price": 1615,
+          "compareAt": 1870
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Cream Beige"
+          ],
+          "price": 1615,
+          "compareAt": 1870
+        },
+        {
+          "values": [
+            "Round nest",
+            "Pink"
+          ],
+          "price": 1535,
+          "compareAt": 1780
+        },
+        {
+          "values": [
+            "Round nest",
+            "Baby Blue"
+          ],
+          "price": 1535,
+          "compareAt": 1780
+        },
+        {
+          "values": [
+            "Round nest",
+            "Gray"
+          ],
+          "price": 1535,
+          "compareAt": 1780
+        },
+        {
+          "values": [
+            "Round nest",
+            "Cream Beige"
+          ],
+          "price": 1535,
+          "compareAt": 1780
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Safari"
+          ],
+          "price": 1615,
+          "compareAt": 1870
+        },
+        {
+          "values": [
+            "Round nest",
+            "Safari"
+          ],
+          "price": 1535,
+          "compareAt": 1780
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Pink"
+          ],
+          "price": 1335,
+          "compareAt": 1555
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Baby Blue"
+          ],
+          "price": 1335,
+          "compareAt": 1555
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Gray"
+          ],
+          "price": 1335,
+          "compareAt": 1555
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Cream Beige"
+          ],
+          "price": 1335,
+          "compareAt": 1555
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Safari"
+          ],
+          "price": 1335,
+          "compareAt": 1555
+        }
+      ]
+    },
+    {
+      "name": "Cozy & Care Bundle",
+      "nameAr": "مجموعة الراحة والعناية",
+      "slug": "cozy-care-bundle",
+      "description": "More comfortable feeds… and a place to keep your baby close when your arms need a break 💛\nThe Cozy & Care Bundle brings together pieces for the moments that repeat all day long: feeding, soothing and resting in between.\nWhat difference will it make?\n• Baby bouncer: a spot to keep your baby close during awake time when you need your hands free for a bit.\n• Nursing pillow: takes the weight off your arms and brings your baby to a more comfortable height.\n• Nursing cover: more privacy when you're out of the house.\n• Sleep/protection option: choose a baby nest for supervised use or a mosquito net, depending on what you need.",
+      "descriptionAr": "رضاعة أريح… ومكان قريب للبيبي لما إيدك تحتاج ترتاح 💛\nمجموعة الراحة والعناية بتجمع قطع بتخدم نفس اللحظات اللي بتتكرر طول اليوم: الرضاعة، التهدئة، والراحة بين مرة والتانية.\nهتفرق معاكي في إيه؟\n• كرسي هزاز: مكان قريب للبيبي وقت اليقظة وإنتي محتاجة إيدك تبقى فاضية شوية.\n• مخدة رضاعة: تقلل اعتمادك على ذراعك وتقرّب البيبي لمستوى أريح.\n• ساتر رضاعة: خصوصية أكتر لما تكوني برا البيت.\n• اختيار النوم/الحماية: تختاري بين بيبي نست للاستخدام تحت الإشراف أو ناموسية حسب احتياجك.\nليه المجموعة منطقية؟\nلأن القطع دي مش استخدام مرة واحدة؛ هي مرتبطة بلحظات بتتكرر يوميًا. لما كل واحدة تقلل جزء من المجهود، يومك كله يبقى أخف.",
+      "price": 2145,
+      "compareAt": 2470,
+      "image": "/xs/24/products/cozy-care-bundle-1.jpg",
+      "images": [
+        "/xs/24/products/cozy-care-bundle-1.jpg",
+        "/xs/24/products/cozy-care-bundle-2.jpg"
+      ],
+      "collections": [
+        "bundles",
+        "best-sellers"
+      ],
+      "options": [
+        {
+          "name": "Nest type",
+          "nameAr": "الشكل",
+          "values": [
+            "Round nest",
+            "Oval nest",
+            "Mosquito net"
+          ],
+          "valuesAr": [
+            "دائري",
+            "بيضاوي",
+            "ناموسية"
+          ]
+        },
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Pink",
+            "Baby Blue",
+            "Gray",
+            "Cream Beige",
+            "Safari"
+          ],
+          "valuesAr": [
+            "بينك",
+            "بيبي بلو",
+            "جراي",
+            "بيج كريمي",
+            "سفاري"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Round nest",
+            "Pink"
+          ],
+          "price": 2345,
+          "compareAt": 2695
+        },
+        {
+          "values": [
+            "Round nest",
+            "Baby Blue"
+          ],
+          "price": 2345,
+          "compareAt": 2695
+        },
+        {
+          "values": [
+            "Round nest",
+            "Gray"
+          ],
+          "price": 2345,
+          "compareAt": 2695
+        },
+        {
+          "values": [
+            "Round nest",
+            "Cream Beige"
+          ],
+          "price": 2345,
+          "compareAt": 2695
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Pink"
+          ],
+          "price": 2425,
+          "compareAt": 2785
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Baby Blue"
+          ],
+          "price": 2425,
+          "compareAt": 2785
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Gray"
+          ],
+          "price": 2425,
+          "compareAt": 2785
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Cream Beige"
+          ],
+          "price": 2425,
+          "compareAt": 2785
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Pink"
+          ],
+          "price": 2145,
+          "compareAt": 2470
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Baby Blue"
+          ],
+          "price": 2145,
+          "compareAt": 2470
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Gray"
+          ],
+          "price": 2145,
+          "compareAt": 2470
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Cream Beige"
+          ],
+          "price": 2145,
+          "compareAt": 2470
+        },
+        {
+          "values": [
+            "Round nest",
+            "Safari"
+          ],
+          "price": 2345,
+          "compareAt": 2695
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Safari"
+          ],
+          "price": 2425,
+          "compareAt": 2785
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Safari"
+          ],
+          "price": 2145,
+          "compareAt": 2470
+        }
+      ]
+    },
+    {
+      "name": "Baby Daily Essentials Bundle",
+      "nameAr": "مجموعة يوميات البيبي",
+      "slug": "baby-daily-bundle",
+      "description": "From home to outings… without discovering something's missing every time 💛\nThe Baby Daily Bundle brings together the things you use at home and out and about, so you have one system for the day instead of preparing from scratch for every situation.\nAt home\n• Baby nest: a defined space for rest and play under your supervision.\n• Nursing pillow: eases the effort on your arms and brings your baby close during feeds.\n• Nursing cover: ready whenever you need privacy outside the home.\nOut and about\n• Mom bag: keeps all the essentials in one place.\n• Baby carrier: helps you move around with your baby close and your hands freer.",
+      "descriptionAr": "من البيت للخروج… من غير ما كل مرة تكتشفي إن حاجة ناقصة 💛\nمجموعة يوميات البيبي بتجمع احتياجات بتستخدميها جوه البيت وبرّه، عشان يبقى عندك نظام واحد لليوم بدل ما كل موقف يحتاج تجهيز جديد.\nفي البيت\n• بيبي نست: مساحة محددة للراحة واللعب تحت إشرافك.\n• مخدة رضاعة: تخفف المجهود على ذراعك وتقرّب البيبي منك وقت الرضعة.\n• ساتر رضاعة: جاهز لو احتجتي خصوصية برا البيت.\nبرا البيت\n• شنطة الأم: تجمع المستلزمات في مكان واحد.\n• شيالة الأطفال: تساعدك تتحركي والبيبي قريب منك وإيدك أهدى.\n• مشمع الغيار: سطح مخصص للتغيير أثناء المشاوير.",
+      "price": 3200,
+      "compareAt": 3780,
+      "image": "/xs/24/products/baby-daily-bundle-1.jpg",
+      "images": [
+        "/xs/24/products/baby-daily-bundle-1.jpg",
+        "/xs/24/products/baby-daily-bundle-2.jpg"
+      ],
+      "collections": [
+        "bundles"
+      ],
+      "options": [
+        {
+          "name": "Nest type",
+          "nameAr": "الشكل",
+          "values": [
+            "Oval nest",
+            "Round nest",
+            "Mosquito net"
+          ],
+          "valuesAr": [
+            "بيضاوي",
+            "دائري",
+            "ناموسية"
+          ]
+        },
+        {
+          "name": "Set color",
+          "nameAr": "لون الطقم",
+          "values": [
+            "Pink",
+            "Baby Blue",
+            "Gray",
+            "Cream Beige",
+            "Safari"
+          ],
+          "valuesAr": [
+            "بينك",
+            "بيبي بلو",
+            "جراي",
+            "بيج كريمي",
+            "سفاري"
+          ]
+        },
+        {
+          "name": "Bag color",
+          "nameAr": "لون شنطة الأم",
+          "values": [
+            "Black",
+            "Gray"
+          ],
+          "valuesAr": [
+            "أسود",
+            "جراي"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Oval nest",
+            "Pink",
+            "Black"
+          ],
+          "price": 3480,
+          "compareAt": 4095
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Pink",
+            "Gray"
+          ],
+          "price": 3480,
+          "compareAt": 4095
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Baby Blue",
+            "Black"
+          ],
+          "price": 3480,
+          "compareAt": 4095
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Baby Blue",
+            "Gray"
+          ],
+          "price": 3480,
+          "compareAt": 4095
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Gray",
+            "Black"
+          ],
+          "price": 3480,
+          "compareAt": 4095
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Gray",
+            "Gray"
+          ],
+          "price": 3480,
+          "compareAt": 4095
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Cream Beige",
+            "Black"
+          ],
+          "price": 3480,
+          "compareAt": 4095
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Cream Beige",
+            "Gray"
+          ],
+          "price": 3480,
+          "compareAt": 4095
+        },
+        {
+          "values": [
+            "Round nest",
+            "Pink",
+            "Black"
+          ],
+          "price": 3400,
+          "compareAt": 4005
+        },
+        {
+          "values": [
+            "Round nest",
+            "Pink",
+            "Gray"
+          ],
+          "price": 3400,
+          "compareAt": 4005
+        },
+        {
+          "values": [
+            "Round nest",
+            "Baby Blue",
+            "Black"
+          ],
+          "price": 3400,
+          "compareAt": 4005
+        },
+        {
+          "values": [
+            "Round nest",
+            "Baby Blue",
+            "Gray"
+          ],
+          "price": 3400,
+          "compareAt": 4005
+        },
+        {
+          "values": [
+            "Round nest",
+            "Gray",
+            "Black"
+          ],
+          "price": 3400,
+          "compareAt": 4005
+        },
+        {
+          "values": [
+            "Round nest",
+            "Gray",
+            "Gray"
+          ],
+          "price": 3400,
+          "compareAt": 4005
+        },
+        {
+          "values": [
+            "Round nest",
+            "Cream Beige",
+            "Black"
+          ],
+          "price": 3400,
+          "compareAt": 4005
+        },
+        {
+          "values": [
+            "Round nest",
+            "Cream Beige",
+            "Gray"
+          ],
+          "price": 3400,
+          "compareAt": 4005
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Safari",
+            "Black"
+          ],
+          "price": 3480,
+          "compareAt": 4095
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Safari",
+            "Gray"
+          ],
+          "price": 3480,
+          "compareAt": 4095
+        },
+        {
+          "values": [
+            "Round nest",
+            "Safari",
+            "Black"
+          ],
+          "price": 3400,
+          "compareAt": 4005
+        },
+        {
+          "values": [
+            "Round nest",
+            "Safari",
+            "Gray"
+          ],
+          "price": 3400,
+          "compareAt": 4005
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Pink",
+            "Black"
+          ],
+          "price": 3200,
+          "compareAt": 3780
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Pink",
+            "Gray"
+          ],
+          "price": 3200,
+          "compareAt": 3780
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Baby Blue",
+            "Black"
+          ],
+          "price": 3200,
+          "compareAt": 3780
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Baby Blue",
+            "Gray"
+          ],
+          "price": 3200,
+          "compareAt": 3780
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Gray",
+            "Black"
+          ],
+          "price": 3200,
+          "compareAt": 3780
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Gray",
+            "Gray"
+          ],
+          "price": 3200,
+          "compareAt": 3780
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Cream Beige",
+            "Black"
+          ],
+          "price": 3200,
+          "compareAt": 3780
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Cream Beige",
+            "Gray"
+          ],
+          "price": 3200,
+          "compareAt": 3780
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Safari",
+            "Black"
+          ],
+          "price": 3200,
+          "compareAt": 3780
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Safari",
+            "Gray"
+          ],
+          "price": 3200,
+          "compareAt": 3780
+        }
+      ]
+    },
+    {
+      "name": "First Year of Motherhood Bundle",
+      "nameAr": "مجموعة سنة أولى أمومة",
+      "slug": "first-year-bundle",
+      "description": "Instead of finding something missing every month… get most of the first year ready at once 💛\nThe First Year of Motherhood Bundle brings together the needs that come up again and again, from feeding and soothing to outings and changing, so you're not constantly starting a new shopping trip from scratch.\nWhat it takes off your plate\n• Feeding: a nursing pillow for support + a nursing cover for privacy outside the home.\n• Soothing and rest: a baby bouncer keeps your baby close during awake time while your hands get a break.\n• Outings: mom bag + baby carrier + changing mat for everyday trips.",
+      "descriptionAr": "بدل ما كل شهر تكتشفي حاجة ناقصة… جهّزي الجزء الأكبر من السنة الأولى مرة واحدة 💛\nمجموعة سنة أولى أمومة بتجمع احتياجات بتتكرر في يومك من الرضاعة والتهدئة لحد الخروج والتغيير، عشان ما تفضليش راجعة كل شوية تبدأي رحلة شراء جديدة من الصفر.\nالمجموعة بتخفف عنك إيه؟\n• الرضاعة: مخدة رضاعة للدعم + ساتر رضاعة للخصوصية برا البيت.\n• التهدئة والراحة: كرسي هزاز يخلي البيبي قريب منك وقت اليقظة وإيدك فاضية شوية.\n• الخروج: شنطة أم + شيالة أطفال + مشمع غيار للمشاوير اليومية.\n• اختيار مناسب لاحتياجك: تختاري بيبي نست أو ناموسية حسب النسخة اللي تناسب يومك.",
+      "price": 4015,
+      "compareAt": 4695,
+      "image": "/xs/24/products/first-year-bundle-1.jpg",
+      "images": [
+        "/xs/24/products/first-year-bundle-1.jpg",
+        "/xs/24/products/first-year-bundle-2.jpg"
+      ],
+      "collections": [
+        "bundles",
+        "best-sellers"
+      ],
+      "options": [
+        {
+          "name": "Nest type",
+          "nameAr": "الشكل",
+          "values": [
+            "Round nest",
+            "Oval nest",
+            "Mosquito net"
+          ],
+          "valuesAr": [
+            "دائري",
+            "بيضاوي",
+            "ناموسية"
+          ]
+        },
+        {
+          "name": "Set color",
+          "nameAr": "لون الطقم",
+          "values": [
+            "Pink",
+            "Baby Blue",
+            "Gray",
+            "Cream Beige",
+            "Safari"
+          ],
+          "valuesAr": [
+            "بينك",
+            "بيبي بلو",
+            "جراي",
+            "بيج كريمي",
+            "سفاري"
+          ]
+        },
+        {
+          "name": "Bag color",
+          "nameAr": "لون شنطة الأم",
+          "values": [
+            "Black",
+            "Gray"
+          ],
+          "valuesAr": [
+            "أسود",
+            "جراي"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Round nest",
+            "Pink",
+            "Black"
+          ],
+          "price": 4215,
+          "compareAt": 4920
+        },
+        {
+          "values": [
+            "Round nest",
+            "Pink",
+            "Gray"
+          ],
+          "price": 4215,
+          "compareAt": 4920
+        },
+        {
+          "values": [
+            "Round nest",
+            "Baby Blue",
+            "Black"
+          ],
+          "price": 4215,
+          "compareAt": 4920
+        },
+        {
+          "values": [
+            "Round nest",
+            "Baby Blue",
+            "Gray"
+          ],
+          "price": 4215,
+          "compareAt": 4920
+        },
+        {
+          "values": [
+            "Round nest",
+            "Gray",
+            "Black"
+          ],
+          "price": 4215,
+          "compareAt": 4920
+        },
+        {
+          "values": [
+            "Round nest",
+            "Gray",
+            "Gray"
+          ],
+          "price": 4215,
+          "compareAt": 4920
+        },
+        {
+          "values": [
+            "Round nest",
+            "Cream Beige",
+            "Black"
+          ],
+          "price": 4215,
+          "compareAt": 4920
+        },
+        {
+          "values": [
+            "Round nest",
+            "Cream Beige",
+            "Gray"
+          ],
+          "price": 4215,
+          "compareAt": 4920
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Pink",
+            "Black"
+          ],
+          "price": 4290,
+          "compareAt": 5010
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Pink",
+            "Gray"
+          ],
+          "price": 4290,
+          "compareAt": 5010
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Baby Blue",
+            "Black"
+          ],
+          "price": 4290,
+          "compareAt": 5010
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Baby Blue",
+            "Gray"
+          ],
+          "price": 4290,
+          "compareAt": 5010
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Gray",
+            "Black"
+          ],
+          "price": 4290,
+          "compareAt": 5010
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Gray",
+            "Gray"
+          ],
+          "price": 4290,
+          "compareAt": 5010
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Cream Beige",
+            "Black"
+          ],
+          "price": 4290,
+          "compareAt": 5010
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Cream Beige",
+            "Gray"
+          ],
+          "price": 4290,
+          "compareAt": 5010
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Pink",
+            "Black"
+          ],
+          "price": 4015,
+          "compareAt": 4695
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Pink",
+            "Gray"
+          ],
+          "price": 4015,
+          "compareAt": 4695
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Baby Blue",
+            "Black"
+          ],
+          "price": 4015,
+          "compareAt": 4695
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Baby Blue",
+            "Gray"
+          ],
+          "price": 4015,
+          "compareAt": 4695
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Gray",
+            "Black"
+          ],
+          "price": 4015,
+          "compareAt": 4695
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Gray",
+            "Gray"
+          ],
+          "price": 4015,
+          "compareAt": 4695
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Cream Beige",
+            "Black"
+          ],
+          "price": 4015,
+          "compareAt": 4695
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Cream Beige",
+            "Gray"
+          ],
+          "price": 4015,
+          "compareAt": 4695
+        },
+        {
+          "values": [
+            "Round nest",
+            "Safari",
+            "Black"
+          ],
+          "price": 4215,
+          "compareAt": 4920
+        },
+        {
+          "values": [
+            "Round nest",
+            "Safari",
+            "Gray"
+          ],
+          "price": 4215,
+          "compareAt": 4920
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Safari",
+            "Black"
+          ],
+          "price": 4290,
+          "compareAt": 5010
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Safari",
+            "Gray"
+          ],
+          "price": 4290,
+          "compareAt": 5010
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Safari",
+            "Black"
+          ],
+          "price": 4015,
+          "compareAt": 4695
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Safari",
+            "Gray"
+          ],
+          "price": 4015,
+          "compareAt": 4695
+        }
+      ]
+    },
+    {
+      "name": "On-the-Go Bundle",
+      "nameAr": "مجموعة التنقل والمشاوير",
+      "slug": "on-the-go-bundle",
+      "description": "An outing shouldn't start with half an hour of packing 🎒\nThe On-the-Go Bundle brings together the 3 things you need most outside the home: carry your baby's essentials, carry your baby with your hands free, and change diapers on a dedicated surface.\nHow it makes outings easier\n• Mom bag: keeps diapers, wipes, bottles and the rest of the essentials in one place.\n• Baby carrier: lets you move around with your baby close, without your arms being busy the whole time.\n• Changing mat: gives you a dedicated changing surface whenever you're out.",
+      "descriptionAr": "الخروجة ما تبدأش بنص ساعة تجهيز 🎒\nمجموعة التنقل والمشاوير معمولة عشان تجمع أهم 3 حاجات بتحتاجيهم برا البيت: تشيلي احتياجات البيبي، تحمليه وإيدك فاضية، وتغيّريله في مكان مخصص.\nهتسهّل عليكي الخروج إزاي؟\n• شنطة الأم: تجمع الحفاضات والمناديل والببرونة وباقي الأساسيات في مكان واحد.\n• شيالة الأطفال: تساعدك تتحركي والبيبي قريب منك من غير ما ذراعك تفضل مشغولة طول الوقت.\n• مشمع الغيار: يديكي سطح مخصص للتغيير وقت ما تكوني برا البيت.\nليه المجموعة أذكى من شراء القطع واحدة واحدة؟\n• كل قطعة بتحل جزء من نفس المشكلة: الخروج بالبيبي.\n• أقل وقت في التجهيز قبل المشوار.\n• أقل نسيان لأن الأساسيات متجمعة في نظام واحد.",
+      "price": 1870,
+      "compareAt": 2225,
+      "image": "/xs/24/products/on-the-go-bundle-1.jpg",
+      "images": [
+        "/xs/24/products/on-the-go-bundle-1.jpg",
+        "/xs/24/products/on-the-go-bundle-2.jpg"
+      ],
+      "collections": [
+        "bundles"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Black",
+            "Gray"
+          ],
+          "valuesAr": [
+            "أسود",
+            "جراي"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Black"
+          ],
+          "price": 1870,
+          "compareAt": 2225
+        },
+        {
+          "values": [
+            "Gray"
+          ],
+          "price": 1870,
+          "compareAt": 2225
+        }
+      ]
+    },
+    {
+      "name": "Baby Essentials Organizer",
+      "nameAr": "منظم مستلزمات البيبي",
+      "slug": "baby-essentials-organizer",
+      "description": "Diapers, wipes and cream… right in front of you instead of hunting for them every time 🧺\nThe baby essentials organizer gathers the things you use all day in one place close to you, so a diaper change or getting your baby ready doesn't turn into a trip between drawers.\nHow it makes life easier\n• Everything in view: see your essentials and reach them quickly instead of opening several drawers.\n• Faster changes: diapers, wipes and care products stay together.\n• Moves with you: the handles let you carry it from the bedroom to the living room instead of keeping several storage spots.",
+      "descriptionAr": "الحفاض والمناديل والكريم… يبقوا قدامك بدل ما تفضلي تدوري عليهم كل مرة 🧺\nمنظم مستلزمات البيبي بيجمع الحاجات اللي بتستخدميها طول اليوم في مكان واحد قريب منك، عشان تغيير الحفاض أو تجهيز البيبي ما يتحولش كل مرة لرحلة بين الأدراج.\nهيريّحك إزاي؟\n• كل حاجة قدامك: تشوفي المستلزمات وتوصلي لها بسرعة بدل ما تفتحي كذا درج.\n• تغيير أسرع: الحفاض والمناديل ومنتجات العناية يبقوا متجمعين مع بعض.\n• يتنقل معاكي: المقابض تخليكي تنقليه من الأوضة للصالة بدل ما تعملي كذا نقطة تخزين.\n• فوضى أقل: المستلزمات الصغيرة يبقى لها مكان ثابت بدل ما تتوزع حوالين البيت.\nمناسب لإيه؟\nالحفاضات، المناديل، الكريمات ومنتجات العناية اليومية اللي بتحبي تبقى في متناول إيدك.",
+      "price": 525,
+      "image": "/xs/24/products/baby-essentials-organizer-1.jpg",
+      "images": [
+        "/xs/24/products/baby-essentials-organizer-1.jpg",
+        "/xs/24/products/baby-essentials-organizer-2.jpg"
+      ],
+      "collections": [
+        "best-sellers",
+        "outings"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Cream Beige",
+            "Safari",
+            "Gray",
+            "Pink"
+          ],
+          "valuesAr": [
+            "بيج كريمي",
+            "سفاري",
+            "جراي",
+            "بينك"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Cream Beige"
+          ],
+          "price": 525
+        },
+        {
+          "values": [
+            "Safari"
+          ],
+          "price": 525
+        },
+        {
+          "values": [
+            "Gray"
+          ],
+          "price": 525
+        },
+        {
+          "values": [
+            "Pink"
+          ],
+          "price": 525
+        }
+      ]
+    },
+    {
+      "name": "Complete Motherhood Journey Bundle",
+      "nameAr": "مجموعة رحلة الأمومة الشاملة",
+      "slug": "motherhood-journey",
+      "description": "Want to prepare for motherhood as one complete system… instead of dozens of separate decisions? 💛\nThe Motherhood Journey Bundle is our most complete bundle, made for moms who want to cover as many daily needs as possible, from feeding and comfort to outings, care and play, without going back every few weeks to search and choose all over again.\nWhat it solves for you\n• Easier feeding: tools for support and privacy at home and outside.\n• Comfort and soothing: options that keep your baby close and reduce constant carrying.\n• Organized outings: solutions for carrying your baby, organizing essentials and changing diapers outside the home.",
+      "descriptionAr": "لو عايزة تجهزي رحلة الأمومة كمنظومة واحدة… بدل عشرات القرارات المتفرقة 💛\nمجموعة رحلة الأمومة هي المجموعة الأشمل عندنا، معمولة للأم اللي عايزة تغطي أكبر قدر من احتياجات اليوم من الرضاعة والراحة لحد الخروج والعناية واللعب، من غير ما ترجع كل فترة تبدأ تدور وتختار من الأول.\nإيه اللي المجموعة بتحله ليكي؟\n• رضاعة أسهل: أدوات تساعد على الدعم والخصوصية في البيت وبرّه.\n• راحة وتهدئة: اختيارات تخلي البيبي قريب منك وتقلل اعتمادك على الحمل المستمر.\n• خروج منظم: حلول للحمل، ترتيب المستلزمات وتغيير الحفاض برا البيت.\n• عناية ولعب: احتياجات تساعدك ترتبي الروتين وتدي البيبي أنشطة مناسبة للاستخدام تحت الإشراف.",
+      "price": 5835,
+      "compareAt": 6735,
+      "image": "/xs/24/products/motherhood-journey-1.jpg",
+      "images": [
+        "/xs/24/products/motherhood-journey-1.jpg",
+        "/xs/24/products/motherhood-journey-2.jpg"
+      ],
+      "collections": [
+        "bundles",
+        "best-sellers"
+      ],
+      "options": [
+        {
+          "name": "Nest type",
+          "nameAr": "الشكل",
+          "values": [
+            "Round nest",
+            "Oval nest",
+            "Mosquito net"
+          ],
+          "valuesAr": [
+            "دائري",
+            "بيضاوي",
+            "ناموسية"
+          ]
+        },
+        {
+          "name": "Set color",
+          "nameAr": "لون الطقم",
+          "values": [
+            "Pink",
+            "Baby Blue",
+            "Gray",
+            "Cream Beige",
+            "Safari"
+          ],
+          "valuesAr": [
+            "بينك",
+            "بيبي بلو",
+            "جراي",
+            "بيج كريمي",
+            "سفاري"
+          ]
+        },
+        {
+          "name": "Bag color",
+          "nameAr": "لون شنطة الأم",
+          "values": [
+            "Black",
+            "Gray"
+          ],
+          "valuesAr": [
+            "أسود",
+            "جراي"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Round nest",
+            "Pink",
+            "Black"
+          ],
+          "price": 6035,
+          "compareAt": 6960
+        },
+        {
+          "values": [
+            "Round nest",
+            "Pink",
+            "Gray"
+          ],
+          "price": 6035,
+          "compareAt": 6960
+        },
+        {
+          "values": [
+            "Round nest",
+            "Baby Blue",
+            "Black"
+          ],
+          "price": 6035,
+          "compareAt": 6960
+        },
+        {
+          "values": [
+            "Round nest",
+            "Baby Blue",
+            "Gray"
+          ],
+          "price": 6035,
+          "compareAt": 6960
+        },
+        {
+          "values": [
+            "Round nest",
+            "Gray",
+            "Black"
+          ],
+          "price": 6035,
+          "compareAt": 6960
+        },
+        {
+          "values": [
+            "Round nest",
+            "Gray",
+            "Gray"
+          ],
+          "price": 6035,
+          "compareAt": 6960
+        },
+        {
+          "values": [
+            "Round nest",
+            "Cream Beige",
+            "Black"
+          ],
+          "price": 6035,
+          "compareAt": 6960
+        },
+        {
+          "values": [
+            "Round nest",
+            "Cream Beige",
+            "Gray"
+          ],
+          "price": 6035,
+          "compareAt": 6960
+        },
+        {
+          "values": [
+            "Round nest",
+            "Safari",
+            "Black"
+          ],
+          "price": 6035,
+          "compareAt": 6960
+        },
+        {
+          "values": [
+            "Round nest",
+            "Safari",
+            "Gray"
+          ],
+          "price": 6035,
+          "compareAt": 6960
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Pink",
+            "Black"
+          ],
+          "price": 6115,
+          "compareAt": 7050
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Pink",
+            "Gray"
+          ],
+          "price": 6115,
+          "compareAt": 7050
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Baby Blue",
+            "Black"
+          ],
+          "price": 6115,
+          "compareAt": 7050
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Baby Blue",
+            "Gray"
+          ],
+          "price": 6115,
+          "compareAt": 7050
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Gray",
+            "Black"
+          ],
+          "price": 6115,
+          "compareAt": 7050
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Gray",
+            "Gray"
+          ],
+          "price": 6115,
+          "compareAt": 7050
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Cream Beige",
+            "Black"
+          ],
+          "price": 6115,
+          "compareAt": 7050
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Cream Beige",
+            "Gray"
+          ],
+          "price": 6115,
+          "compareAt": 7050
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Safari",
+            "Black"
+          ],
+          "price": 6115,
+          "compareAt": 7050
+        },
+        {
+          "values": [
+            "Oval nest",
+            "Safari",
+            "Gray"
+          ],
+          "price": 6115,
+          "compareAt": 7050
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Pink",
+            "Black"
+          ],
+          "price": 5835,
+          "compareAt": 6735
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Pink",
+            "Gray"
+          ],
+          "price": 5835,
+          "compareAt": 6735
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Baby Blue",
+            "Black"
+          ],
+          "price": 5835,
+          "compareAt": 6735
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Baby Blue",
+            "Gray"
+          ],
+          "price": 5835,
+          "compareAt": 6735
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Gray",
+            "Black"
+          ],
+          "price": 5835,
+          "compareAt": 6735
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Gray",
+            "Gray"
+          ],
+          "price": 5835,
+          "compareAt": 6735
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Cream Beige",
+            "Black"
+          ],
+          "price": 5835,
+          "compareAt": 6735
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Cream Beige",
+            "Gray"
+          ],
+          "price": 5835,
+          "compareAt": 6735
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Safari",
+            "Black"
+          ],
+          "price": 5835,
+          "compareAt": 6735
+        },
+        {
+          "values": [
+            "Mosquito net",
+            "Safari",
+            "Gray"
+          ],
+          "price": 5835,
+          "compareAt": 6735
+        }
+      ]
+    },
+    {
+      "name": "Twin Nursing Pillow",
+      "nameAr": "مخدة رضاعة التوأم",
+      "slug": "twin-nursing-pillow",
+      "description": "👶👶 Two babies in your arms… and more comfort for you! 💗\nFeeding twins doesn't have to be exhausting!\nThe twin nursing pillow is designed to help you feed both babies at the same time more comfortably. It supports each baby's body and helps you keep a comfortable position, without carrying their weight on your arms for the whole feed.\n👶 Feed both together\nA wide design gives both babies room side by side, so you can feed them at the same time instead of one after the other.\n💪 Rest your back and arms\nIt raises your babies to a comfortable feeding height and reduces pressure on your back and shoulders, especially during long feeds.",
+      "descriptionAr": "👶👶 طفلين في حضنك.. وراحة أكتر ليكي! 💗\nرضاعة التوأم مش لازم تكون متعبة!\nمخدة رضاعة التوأم من متصممة علشان تساعدك ترضعي طفليك في نفس الوقت براحة أكبر. بتسند جسم كل بيبي وبتساعدك تحافظي على وضعية مريحة، من غير ما تفضلي شايلة وزنهم على دراعاتك طول الرضعة.\n👶 رضّعي الاتنين مع بعض\nتصميم واسع بيوفر مساحة للطفلين جنب بعض، علشان تقدري ترضعيهم في نفس الوقت بدل ما ترضعي كل واحد لوحده.\n💪 ضهرك ودراعاتك يرتاحوا\nبتساعدك ترفعي البيبيهات لمستوى مناسب للرضاعة، وبتقلل الضغط على ضهرك وكتافك، خصوصًا في الرضعات الطويلة.\n☁️ راحة ودعم لكل بيبي\nبتوفر دعم لجسم كل طفل أثناء الرضاعة، وبتساعدك تثبتي وضعيتهم بشكل مريح تحت إشرافك.",
+      "price": 850,
+      "image": "/xs/24/products/twin-nursing-pillow-1.jpg",
+      "images": [
+        "/xs/24/products/twin-nursing-pillow-1.jpg",
+        "/xs/24/products/twin-nursing-pillow-2.jpg"
+      ],
+      "collections": [
+        "feeding"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Safari",
+            "Cream Beige"
+          ],
+          "valuesAr": [
+            "سفاري",
+            "بيج كريمي"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Safari"
+          ],
+          "price": 850
+        },
+        {
+          "values": [
+            "Cream Beige"
+          ],
+          "price": 850
+        }
+      ]
+    },
+    {
+      "name": "Twin Feeding Set",
+      "nameAr": "طقم رضاعة التوأم",
+      "slug": "twin-feeding-bundle",
+      "description": "Twins mean two feeds at the same time… let's make it easier for you 🤱🤱\nThe twin feeding set combines the twin nursing pillow with 2 bottle holder pillows, so you can feed both babies together with lighter hands.\n• Twin nursing pillow: a wide surface that supports both babies side by side\n• 2 bottle holder pillows: hold each baby's bottle, so your hands are free\nSave EGP 295 compared with buying each piece separately.",
+      "descriptionAr": "توأم يعني رضعتين في نفس الوقت… خليها أسهل عليكي 🤱🤱\nطقم رضاعة التوأم بيجمع مخدة رضاعة التوأم مع 2 مخدة ببرونة، عشان تقدري ترضّعي الاتنين مع بعض وإيدك أخف.\n• مخدة رضاعة التوأم: مساحة واسعة تسند البيبيهات الاتنين جنب بعض\n• 2 مخدة ببرونة: تسند الببرونة لكل بيبي، فإيدك تفضى\nوفّري 295 جنيه عن شراء كل قطعة لوحدها.",
+      "price": 1745,
+      "compareAt": 2040,
+      "image": "/xs/24/products/twin-feeding-bundle-1.jpg",
+      "images": [
+        "/xs/24/products/twin-feeding-bundle-1.jpg",
+        "/xs/24/products/twin-feeding-bundle-2.jpg"
+      ],
+      "collections": [
+        "bundles",
+        "best-sellers",
+        "feeding"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Safari",
+            "Cream Beige"
+          ],
+          "valuesAr": [
+            "سفاري",
+            "بيج كريمي"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Safari"
+          ],
+          "price": 1745,
+          "compareAt": 2040
+        },
+        {
+          "values": [
+            "Cream Beige"
+          ],
+          "price": 1745,
+          "compareAt": 2040
+        }
+      ]
+    },
+    {
+      "name": "Foldable Silicone Baby Bathtub with Digital Thermometer",
+      "nameAr": "بانيو استحمام سيليكون بالمخدة ديجيتال",
+      "slug": "foldable-silicone-baby-bathtub-with-digital-thermometer",
+      "description": "Foldable Digital Silicone Baby Bathtub with Pillow and Thermometer\nMake your baby's bath time easier and more comfortable with the digital silicone baby bathtub, a practical design that combines comfort and ease of use, so you can enjoy sweet moments with your little one every day.\nThe bathtub comes with a digital thermometer to check the water temperature, plus a soft bath pillow that helps support your baby's body during the bath. You can also fold it and store it easily without taking up much space.\nFeatures\n• Digital thermometer: check the water temperature easily while preparing the bath.",
+      "descriptionAr": "بانيو استحمام سيليكون ديجيتال قابل للطي بالمخدة والترمومتر\nخلي وقت استحمام طفلك أسهل وأكثر راحة مع بانيو الاستحمام السيليكون الديجيتال من UO Kids، بتصميم عملي يجمع بين الراحة وسهولة الاستخدام، علشان تستمتعي بلحظات لطيفة مع صغيرك كل يوم.\nالبانيو مزود بترمومتر ديجيتال لمتابعة درجة حرارة المياه، مع مخدة استحمام ناعمة تساعد على دعم جسم البيبي أثناء الاستحمام. وكمان تقدري تطويه وتخزنيه بسهولة من غير ما ياخد مساحة كبيرة.\nمميزات البانيو\n• ترمومتر ديجيتال: لمتابعة درجة حرارة المياه بسهولة أثناء تجهيز الحمام.\n• مخدة استحمام مريحة: تساعد على دعم جسم البيبي وتوفير وضعية مريحة.\n• تصميم قابل للطي: لتوفير المساحة وسهولة التخزين بعد الاستخدام.",
+      "price": 1300,
+      "compareAt": 1500,
+      "image": "/xs/24/products/foldable-silicone-baby-bathtub-with-digital-thermometer-1.jpg",
+      "images": [
+        "/xs/24/products/foldable-silicone-baby-bathtub-with-digital-thermometer-1.jpg",
+        "/xs/24/products/foldable-silicone-baby-bathtub-with-digital-thermometer-2.jpg"
+      ],
+      "collections": [
+        "best-sellers",
+        "bath"
+      ],
+      "options": [
+        {
+          "name": "Color",
+          "nameAr": "اللون",
+          "values": [
+            "Pink",
+            "Gray",
+            "Baby Blue",
+            "Mauve"
+          ],
+          "valuesAr": [
+            "بينك",
+            "جراي",
+            "بيبي بلو",
+            "موڤ"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "values": [
+            "Pink"
+          ],
+          "price": 1300,
+          "compareAt": 1500
+        },
+        {
+          "values": [
+            "Gray"
+          ],
+          "price": 1300,
+          "compareAt": 1500
+        },
+        {
+          "values": [
+            "Baby Blue"
+          ],
+          "price": 1300,
+          "compareAt": 1500
+        },
+        {
+          "values": [
+            "Mauve"
+          ],
+          "price": 1300,
+          "compareAt": 1500
+        }
+      ]
+    },
+    {
+      "name": "Fruit-Shaped Baby Bath Sponges – 4 Pieces",
+      "nameAr": "سفنج استحمام للأطفال بأشكال الفواكه – 4 قطعة",
+      "slug": "fruit-shaped-baby-bath-sponges-4-pieces",
+      "description": "Make your baby's bath time fun and gentle with the fruit-shaped bath sponges from.\nThey feel soft and gentle on your baby's skin, with colorful fruit shapes that add a touch of fun to bath time.\nFeatures:\n• Soft and gentle on your baby's skin.\n• Cute fruit shapes in cheerful colors.\n• Easy to use and clean.\n• The pack includes 4 sponges in different shapes.",
+      "descriptionAr": "خلي وقت استحمام طفلك ممتع ولطيف مع سفنج الاستحمام بأشكال الفواكه من UO Kids.\nتتميز بملمس ناعم ولطيف على بشرة البيبي، مع تصميم ملون بأشكال الفواكه يضيف لمسة من المرح لوقت الاستحمام.\nمميزات المنتج:\n• ملمس ناعم ولطيف على بشرة الطفل.\n• أشكال فواكه جذابة وألوان مبهجة.\n• سهلة الاستخدام والتنظيف.\n• العبوة تحتوي على 4 سفنجة بأشكال مختلفة.",
+      "price": 300,
+      "compareAt": 400,
+      "image": "/xs/24/products/fruit-shaped-baby-bath-sponges-4-pieces-1.jpg",
+      "images": [
+        "/xs/24/products/fruit-shaped-baby-bath-sponges-4-pieces-1.jpg",
+        "/xs/24/products/fruit-shaped-baby-bath-sponges-4-pieces-2.jpg"
+      ],
+      "collections": [
+        "bath"
+      ]
+    }
+  ]
+}

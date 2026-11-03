@@ -1,0 +1,650 @@
+{
+  "globalStyles": {
+    "primaryColor": "#1D1B18",
+    "themeSettings": {
+      "xsLook": "23",
+      "primaryColorDark": "#D9C2A0",
+      "header": {
+        "announcement": {
+          "enabled": true,
+          "text": "توصيل لكل المحافظات · استبدال خلال ١٤ يوم"
+        },
+        "menu": [
+          {
+            "label": "الرئيسية",
+            "href": "/",
+            "kind": "home"
+          },
+          {
+            "label": "المتجر",
+            "href": "/products",
+            "kind": "url"
+          },
+          {
+            "label": "عن أتيليه",
+            "href": "/about",
+            "kind": "page"
+          },
+          {
+            "label": "تواصل معنا",
+            "href": "/contact",
+            "kind": "page"
+          }
+        ],
+        "show": {
+          "theme": false,
+          "trackOrder": false,
+          "language": false
+        },
+        "zones": {
+          "notice": [
+            {
+              "id": "notice",
+              "type": "notice"
+            }
+          ],
+          "links": [],
+          "brand": [
+            {
+              "id": "logo",
+              "type": "logo"
+            }
+          ],
+          "menu": [
+            {
+              "id": "menu",
+              "type": "menu"
+            }
+          ],
+          "icons": [
+            {
+              "id": "search",
+              "type": "search"
+            },
+            {
+              "id": "account",
+              "type": "account"
+            },
+            {
+              "id": "cart",
+              "type": "cart"
+            }
+          ]
+        }
+      },
+      "footer": {
+        "groups": [
+          {
+            "title": "المتجر",
+            "links": [
+              {
+                "label": "كل القطع",
+                "href": "/products",
+                "kind": "url"
+              },
+              {
+                "label": "السلة",
+                "href": "/cart",
+                "kind": "cart"
+              }
+            ]
+          },
+          {
+            "title": "المساعدة",
+            "links": [
+              {
+                "label": "عن أتيليه",
+                "href": "/about",
+                "kind": "page"
+              },
+              {
+                "label": "تواصل معنا",
+                "href": "/contact",
+                "kind": "page"
+              },
+              {
+                "label": "تتبّع طلبك",
+                "href": "/track",
+                "kind": "track"
+              }
+            ]
+          }
+        ],
+        "text": "قطع مختارة بعناية، بتتعلّق على شمّاعتنا قبل ما توصلك.",
+        "show": {
+          "help": false
+        }
+      }
+    }
+  },
+  "pages": [
+    {
+      "path": "/",
+      "title": "الرئيسية",
+      "pageType": "home",
+      "builderData": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "xs23-p1-s1",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p1-s1-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p1-s1-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p1-s1-e1",
+                        "type": "xs_rail",
+                        "props": {
+                          "look": "23",
+                          "eyebrow": "موسم جديد · على الشمّاعة",
+                          "heading": "قلّب الهدوم بإيدك",
+                          "caption": "عدّي على الشمّاعة، حرّك أي شمّاعة، وارفع القطعة عشان تشوف ضهرها.",
+                          "ctaLabel": "تسوّق التشكيلة",
+                          "ctaHref": "/products",
+                          "limit": 10,
+                          "collectionId": "",
+                          "hanger": "wood",
+                          "sidePhotos": false,
+                          "autoplay": true
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs23-p1-s2",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p1-s2-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p1-s2-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p1-s2-e1",
+                        "type": "xs_banners",
+                        "props": {
+                          "look": "23",
+                          "items": [
+                            {
+                              "image": "/xs/23/kind-tees.jpg",
+                              "title": "تيشيرتات",
+                              "linkLabel": "اكتشف",
+                              "href": "/products"
+                            },
+                            {
+                              "image": "/xs/23/kind-shirts.jpg",
+                              "title": "قمصان",
+                              "linkLabel": "اكتشف",
+                              "href": "/products"
+                            },
+                            {
+                              "image": "/xs/23/kind-knits.jpg",
+                              "title": "تريكو",
+                              "linkLabel": "اكتشف",
+                              "href": "/products"
+                            },
+                            {
+                              "image": "/xs/23/kind-outerwear.jpg",
+                              "title": "جواكت وبالطوهات",
+                              "linkLabel": "اكتشف",
+                              "href": "/products"
+                            }
+                          ],
+                          "heading": "تسوّق حسب النوع",
+                          "variant": "tile"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs23-p1-s3",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p1-s3-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p1-s3-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p1-s3-e1",
+                        "type": "xs_products",
+                        "props": {
+                          "look": "23",
+                          "heading": "وصل جديد",
+                          "collection": "",
+                          "limit": 8,
+                          "showDiscount": true,
+                          "showTabs": true,
+                          "showSearch": false,
+                          "layout": "grid",
+                          "quickView": true,
+                          "allLabel": "الكل",
+                          "viewLabel": "نظرة سريعة",
+                          "openLabel": "شوف القطعة",
+                          "loadMoreLabel": "اعرض أكتر"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs23-p1-s4",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p1-s4-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p1-s4-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p1-s4-e1",
+                        "type": "xs_stack",
+                        "props": {
+                          "look": "23",
+                          "heading": "التشكيلات",
+                          "items": [
+                            {
+                              "image": "/xs/23/stack-1.jpg",
+                              "badge": "صيفي",
+                              "title": "أيام الكتان",
+                              "text": "طبقات خفيفة للأيام الطويلة الدافية.",
+                              "href": "/products"
+                            },
+                            {
+                              "image": "/xs/23/stack-2.jpg",
+                              "badge": "خريفي",
+                              "title": "موسم التريكو",
+                              "text": "صوف ناعم وألوان غامقة وصباحات هادية.",
+                              "href": "/products"
+                            },
+                            {
+                              "image": "/xs/23/stack-3.jpg",
+                              "badge": "ويك إند",
+                              "title": "يوم أجازة",
+                              "text": "قطع مريحة وبرضه شكلها مظبوط.",
+                              "href": "/products"
+                            },
+                            {
+                              "image": "/xs/23/stack-4.jpg",
+                              "badge": "تفصيل",
+                              "title": "خطوط حادة",
+                              "text": "قَصّة مظبوطة، معمولة عشان تتشاف.",
+                              "href": "/products"
+                            },
+                            {
+                              "image": "/xs/23/stack-5.jpg",
+                              "badge": "الأساسيات",
+                              "title": "كل يوم",
+                              "text": "التيشيرتات والجينز اللي بتمد إيدك عليهم الأول.",
+                              "href": "/products"
+                            }
+                          ],
+                          "text": "خمس طرق تلبس بيها الموسم. اسحب وقلّب بينهم."
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs23-p1-s5",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p1-s5-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p1-s5-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p1-s5-e1",
+                        "type": "xs_split",
+                        "props": {
+                          "look": "23",
+                          "heading": "معمولة عشان تفضل معاك",
+                          "text": "بنختار كل قطعة على قماشتها وقَصّتها، عشان تفضل حلوة في سنتها الخامسة زي أول سنة.",
+                          "images": [
+                            "/xs/23/lookbook.jpg"
+                          ],
+                          "points": [],
+                          "buttonLabel": "حكايتنا",
+                          "buttonHref": "/about"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs23-p1-s6",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p1-s6-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p1-s6-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p1-s6-e1",
+                        "type": "xs_features",
+                        "props": {
+                          "look": "23",
+                          "heading": "",
+                          "text": "",
+                          "image": "",
+                          "items": [
+                            {
+                              "icon": "truck",
+                              "title": "توصيل لكل المحافظات",
+                              "text": "لحد باب بيتك من يومين لخمسة."
+                            },
+                            {
+                              "icon": "return",
+                              "title": "استبدال خلال ١٤ يوم",
+                              "text": "المقاس مش مظبوط؟ بدّله."
+                            },
+                            {
+                              "icon": "bag",
+                              "title": "الدفع عند الاستلام",
+                              "text": "ادفع لما طلبك يوصلك."
+                            },
+                            {
+                              "icon": "support",
+                              "title": "معاك في أي وقت",
+                              "text": "كلّمنا أي يوم، من عشرة الصبح لعشرة بالليل."
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs23-p1-s7",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p1-s7-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p1-s7-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p1-s7-e1",
+                        "type": "xs_newsletter",
+                        "props": {
+                          "look": "23",
+                          "heading": "رسايل من الأتيليه",
+                          "text": "قطع جديدة وعروض خاصة، مرة في الشهر. بس كده.",
+                          "placeholder": "بريدك الإلكتروني",
+                          "buttonLabel": "اشترك"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "seo": {}
+    },
+    {
+      "path": "/about",
+      "title": "عن أتيليه",
+      "pageType": "static",
+      "builderData": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "xs23-p2-s1",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p2-s1-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p2-s1-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p2-s1-e1",
+                        "type": "xs_title",
+                        "props": {
+                          "look": "23",
+                          "heading": "عن أتيليه",
+                          "image": ""
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs23-p2-s2",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p2-s2-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p2-s2-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p2-s2-e1",
+                        "type": "xs_story",
+                        "props": {
+                          "look": "23",
+                          "items": [
+                            {
+                              "title": "حكايتنا",
+                              "body": "أتيليه بدأ بشمّاعة واحدة وقاعدة بسيطة: منعلّقش غير اللي نلبسه إحنا. كل قطعة بنختارها على قماشتها وقَصّتها وإحساسها بعد مية غسلة.\n\nاكتب هنا إزاي بدأ متجرك، ومين اللي بيختار اللي بيتعلّق على شمّاعتك.",
+                              "image": "/xs/23/story.jpg"
+                            },
+                            {
+                              "title": "بنختار إزاي",
+                              "body": "خامات طبيعية على قد ما نقدر، وأسعار عادلة دايمًا، وكميات صغيرة بدل أكوام مخزون. اكتب هنا اللي عملاءك يقدروا يعتمدوا عليه لما يطلبوا منك.",
+                              "image": "/xs/23/kind-knits.jpg"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "seo": {}
+    },
+    {
+      "path": "/contact",
+      "title": "تواصل معنا",
+      "pageType": "static",
+      "builderData": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "xs23-p3-s1",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p3-s1-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p3-s1-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p3-s1-e1",
+                        "type": "xs_title",
+                        "props": {
+                          "look": "23",
+                          "heading": "تواصل معنا",
+                          "image": ""
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs23-p3-s2",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p3-s2-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p3-s2-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p3-s2-e1",
+                        "type": "xs_contact",
+                        "props": {
+                          "look": "23",
+                          "heading": "ابعتلنا",
+                          "info": [
+                            {
+                              "icon": "address",
+                              "title": "زورنا",
+                              "text": "اكتب عنوان متجرك هنا"
+                            },
+                            {
+                              "icon": "phone",
+                              "title": "اتصل بينا",
+                              "text": "اكتب رقم تليفونك هنا"
+                            },
+                            {
+                              "icon": "email",
+                              "title": "ابعتلنا بريد",
+                              "text": "اكتب بريدك الإلكتروني هنا"
+                            }
+                          ],
+                          "contactPlaceholder": "بريدك أو تليفونك",
+                          "messagePlaceholder": "رسالتك",
+                          "buttonLabel": "ابعت",
+                          "successMessage": "شكرًا. هنرد عليك خلال يوم."
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "seo": {}
+    }
+  ],
+  "sections": []
+}

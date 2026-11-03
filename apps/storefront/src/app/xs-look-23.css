@@ -1,0 +1,714 @@
+/*
+ * Look 23 · Atelier (Zimos) — a boutique made around the clothing rail
+ * (components/immersive/ClothingRail, band `xs_rail`): a warm paper ground,
+ * near-black ink, one terracotta accent kept for what is on sale, square
+ * buttons and classical headings. Zimos's own design, so it carries no credit
+ * line (lib/xsShell XS_CREDITS "23": null). Deleting this file (and its
+ * pictures under public/xs/23, its entries in lib/xsShell.ts and the editor's
+ * xsBlocks.ts) removes the template.
+ *
+ * Headings in Marcellus (Arabic: El Messiri), text in Jost (Arabic: IBM Plex
+ * Sans Arabic) — all served by this app (xs-fonts.css).
+ */
+
+[data-xs-look="23"],
+.brand-theme[data-xs-shell="23"] {
+  --xs-sans: "Jost", "XS Ar IBM Plex Sans Arabic", var(--font-sans), sans-serif;
+  --xs-display: "Marcellus", "XS Ar El Messiri", Georgia, serif;
+  --xs-ink: #1d1b18;
+  --xs-ink-soft: #4b463f;
+  --xs-muted: #6b655c;
+  --xs-brand: #1d1b18;
+  --xs-accent: #a4482a;
+  --xs-button: #1d1b18;
+  --xs-highlight: #a4482a;
+  --xs-tint: #ebe5da;
+  --xs-dark: #1d1b18;
+  --xs-line: #ddd6c9;
+  --xs-ground: #f5f1ea;
+  --xs-footer-ink: #cfc8bb;
+  --xs-badge: #a4482a;
+  --xs-btn-radius: 0;
+  --xs-container: 1240px;
+  /* One rhythm for the whole page: the space between bands, and two heading sizes. */
+  --xs-section: clamp(64px, 7vw, 104px);
+  --xs-h1: clamp(38px, 5.6vw, 78px);
+  --xs-h2: clamp(30px, 3.4vw, 46px);
+  --xs-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  color: var(--xs-ink-soft);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+/*
+ * The whole store wears the look's paper and ink: the storefront's own pages
+ * (catalogue, product, cart, checkout) and the rail, which read these tokens.
+ */
+.brand-theme[data-xs-shell="23"] {
+  --color-ink: #1d1b18;
+  --color-ink-soft: #4b463f;
+  --color-paper: #f5f1ea;
+  --color-paper-raised: #fffdf9;
+  --color-line: #ddd6c9;
+  --color-line-strong: #8f887c;
+  --color-danger: #a4482a;
+  background: var(--xs-ground);
+}
+
+/* --- headings and buttons ------------------------------------------------- */
+
+[data-xs-look="23"] .xs-heading,
+[data-xs-look="23"] .xs-products__heading,
+[data-xs-look="23"] .xs-title__heading,
+[data-xs-look="23"] .xs-story__title {
+  font-family: var(--xs-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: var(--xs-ink);
+}
+[data-xs-look="23"] .xs-btn {
+  padding: 15px 34px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition: background-color 0.25s, color 0.25s;
+}
+[data-xs-look="23"] .xs-btn:lang(ar),
+:lang(ar) [data-xs-look="23"] .xs-btn {
+  letter-spacing: 0;
+  font-size: 15px;
+}
+[data-xs-look="23"] .xs-btn[data-tone="outline"] {
+  border: 1px solid var(--xs-ink);
+  background: transparent;
+  color: var(--xs-ink);
+}
+[data-xs-look="23"] .xs-btn[data-tone="outline"]:hover {
+  background: var(--xs-ink);
+  color: var(--xs-ground);
+}
+
+/* --- header: a thin ink strip, then a calm bar with the name in the middle - */
+
+.xs-header[data-xs-look="23"] .xs-header__strip {
+  background: var(--xs-ink);
+  color: #efe9df;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.xs-header[data-xs-look="23"] .xs-header__strip:lang(ar),
+:lang(ar) .xs-header[data-xs-look="23"] .xs-header__strip {
+  letter-spacing: 0;
+  font-size: 13px;
+}
+.xs-header[data-xs-look="23"] .xs-header__bar {
+  background: color-mix(in srgb, var(--xs-ground) 92%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--xs-line);
+}
+.xs-header[data-xs-look="23"] .xs-header__logo-name {
+  font-family: var(--xs-display);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--xs-ink);
+}
+.xs-header[data-xs-look="23"] .xs-header__menu {
+  margin-inline: auto;
+}
+.xs-header[data-xs-look="23"] .xs-header__link {
+  position: relative;
+  margin-inline: 18px;
+  padding: 4px 0;
+  color: var(--xs-ink);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.xs-header[data-xs-look="23"] .xs-header__link:lang(ar),
+:lang(ar) .xs-header[data-xs-look="23"] .xs-header__link {
+  font-size: 15px;
+  letter-spacing: 0;
+}
+.xs-header[data-xs-look="23"] .xs-header__link::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -2px;
+  height: 1px;
+  transform: scaleX(0);
+  background: var(--xs-ink);
+  transition: transform 0.35s ease;
+}
+.xs-header[data-xs-look="23"] .xs-header__link:hover::after {
+  transform: scaleX(1);
+}
+.xs-header[data-xs-look="23"] .zt-icon-btn > span {
+  border-radius: 50%;
+  background: var(--xs-accent);
+}
+
+/* --- footer: ink, the name large, columns in small capitals ---------------- */
+
+.xs-footer[data-xs-look="23"] {
+  padding-top: 72px;
+  background: var(--xs-dark);
+  color: var(--xs-footer-ink);
+  font-size: 15px;
+  line-height: 2;
+}
+.xs-footer[data-xs-look="23"] .xs-footer__title {
+  padding-bottom: 14px;
+  color: #f5f1ea;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.xs-footer[data-xs-look="23"] .xs-footer__title:lang(ar),
+:lang(ar) .xs-footer[data-xs-look="23"] .xs-footer__title {
+  font-size: 14px;
+  letter-spacing: 0;
+}
+.xs-footer[data-xs-look="23"] a:hover {
+  color: #fff;
+}
+.xs-footer[data-xs-look="23"] .xs-footer__bottom {
+  margin-top: 40px;
+  padding-block: 22px;
+  border-top: 1px solid rgba(245, 241, 234, 0.12);
+  font-size: 13px;
+}
+
+/* --- xs_rail: the opening band, the rail on paper with a soft floor -------- */
+
+.xs-rail[data-xs-look="23"] {
+  background: linear-gradient(to bottom, var(--xs-ground) 0%, var(--xs-ground) 62%, var(--xs-tint) 100%);
+  padding-block: 18px 30px;
+}
+.xs-rail[data-xs-look="23"] [data-slot="clothing-rail"] header p {
+  color: var(--xs-muted);
+  font-family: var(--xs-sans);
+  letter-spacing: 0.3em;
+}
+.xs-rail[data-xs-look="23"] [data-slot="clothing-rail"] h2 {
+  font-family: var(--xs-display);
+  font-weight: 400;
+  font-size: clamp(30px, 4.2vw, 54px);
+  line-height: 1.15;
+  color: var(--xs-ink);
+}
+.xs-rail[data-xs-look="23"] [data-slot="clothing-rail"] [aria-live] p:first-child {
+  font-family: var(--xs-display);
+  font-size: 18px;
+}
+
+/* --- xs_banners: shop by kind, tall tiles with the name on the picture ----- */
+
+.xs-banners[data-xs-look="23"] {
+  padding-block: 72px;
+}
+.xs-banners[data-xs-look="23"] .xs-banners__intro .xs-heading {
+  font-size: clamp(28px, 3vw, 40px);
+}
+/* Four kinds side by side, every picture the same tall shape. */
+.xs-banners[data-xs-look="23"] .xs-banners__grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  padding-inline: 15px;
+}
+.xs-banners[data-xs-look="23"] .xs-banners__item {
+  overflow: hidden;
+  border: 0;
+  background: var(--xs-tint);
+}
+.xs-banners[data-xs-look="23"] .xs-banners__img {
+  aspect-ratio: 3 / 4;
+  height: auto;
+  object-fit: cover;
+  transition: transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@media (max-width: 991px) {
+  .xs-banners[data-xs-look="23"] .xs-banners__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+.xs-banners[data-xs-look="23"] .xs-banners__item:hover .xs-banners__img {
+  transform: scale(1.04);
+}
+/* The name and its link sit at the foot of the picture, white on a soft fall of ink, so any photo reads. */
+.xs-banners[data-xs-look="23"] .xs-banners__text,
+.xs-banners[data-xs-look="23"] .xs-banners__item:hover .xs-banners__text {
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 26px 24px;
+  background: linear-gradient(to top, rgba(29, 27, 24, 0.62) 0%, rgba(29, 27, 24, 0.18) 38%, transparent 62%);
+}
+.xs-banners[data-xs-look="23"] .xs-banners__title,
+.xs-banners[data-xs-look="23"] .xs-banners__item:hover .xs-banners__title {
+  padding-bottom: 0;
+  font-family: var(--xs-display);
+  font-weight: 400;
+  font-size: 26px;
+  color: #fff;
+}
+.xs-banners[data-xs-look="23"] .xs-banners__more {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+  transform: none;
+}
+.xs-banners[data-xs-look="23"] .xs-banners__link {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  transform: none;
+}
+.xs-banners[data-xs-look="23"] .xs-banners__link:lang(ar),
+:lang(ar) .xs-banners[data-xs-look="23"] .xs-banners__link {
+  font-size: 14px;
+  letter-spacing: 0;
+}
+@media (max-width: 767px) {
+  .xs-banners[data-xs-look="23"] .xs-banners__text,
+  .xs-banners[data-xs-look="23"] .xs-banners__item:hover .xs-banners__text {
+    gap: 6px;
+    padding: 16px 14px;
+  }
+  .xs-banners[data-xs-look="23"] .xs-banners__title,
+  .xs-banners[data-xs-look="23"] .xs-banners__item:hover .xs-banners__title {
+    font-size: 20px;
+  }
+}
+
+/* --- xs_products: quiet cards, the name in text, the price below ---------- */
+
+.xs-products[data-xs-look="23"] .xs-products__tab {
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.xs-products[data-xs-look="23"] .xs-products__media {
+  background: var(--xs-tint);
+}
+/* Clothes shot on their own (the rail's cut-outs) stand whole in the middle of the card. */
+.xs-products[data-xs-look="23"] .xs-products__img {
+  padding: 9% 8%;
+  object-fit: contain;
+}
+.xs-products[data-xs-look="23"] .xs-products__name {
+  color: var(--xs-ink);
+  font-weight: 400;
+}
+.xs-products[data-xs-look="23"] .xs-products__price {
+  color: var(--xs-ink-soft);
+}
+.xs-products[data-xs-look="23"] .xs-products__badge {
+  border-radius: 0;
+  background: var(--xs-accent);
+  letter-spacing: 0.08em;
+}
+.xs-products[data-xs-look="23"] .xs-products__more-btn {
+  border: 1px solid var(--xs-ink);
+  border-radius: 0;
+  background: transparent;
+  color: var(--xs-ink);
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.xs-products[data-xs-look="23"] .xs-products__more-btn:lang(ar),
+:lang(ar) .xs-products[data-xs-look="23"] .xs-products__more-btn {
+  font-size: 15px;
+  letter-spacing: 0;
+}
+.xs-products[data-xs-look="23"] .xs-products__more-btn:hover:not(:disabled) {
+  background: var(--xs-ink);
+  color: var(--xs-ground);
+}
+
+/* --- xs_split: the lookbook, a tall picture beside its words --------------- */
+
+.xs-split[data-xs-look="23"] {
+  background: var(--xs-tint);
+}
+/* One picture here: the words sit level with its middle, the picture square-cornered like the rest. */
+.xs-split[data-xs-look="23"] .xs-split__inner {
+  align-items: center;
+}
+.xs-split[data-xs-look="23"] .xs-split__pic img {
+  border-radius: 0;
+}
+.xs-split[data-xs-look="23"] .xs-split__grid::before {
+  content: none;
+}
+.xs-split[data-xs-look="23"] .xs-split__text {
+  font-size: 17px;
+}
+
+/* --- xs_features: promises in a thin-lined row ----------------------------- */
+
+.xs-features[data-xs-look="23"] {
+  padding-block: 64px;
+  border-block: 1px solid var(--xs-line);
+}
+/* No picture beside them here: the promises take the whole row, four across. */
+.xs-features[data-xs-look="23"] .xs-features__inner {
+  grid-template-columns: minmax(0, 1fr);
+}
+.xs-features[data-xs-look="23"] .xs-features__list {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0 32px;
+  margin: 0;
+}
+.xs-features[data-xs-look="23"] .xs-features__icon::before {
+  background: var(--xs-tint);
+}
+@media (max-width: 991px) {
+  .xs-features[data-xs-look="23"] .xs-features__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.xs-features[data-xs-look="23"] .xs-features__item h3 {
+  font-family: var(--xs-display);
+  font-weight: 400;
+  color: var(--xs-ink);
+}
+
+/* --- xs_newsletter: an ink band with an underlined field ------------------- */
+
+.xs-newsletter[data-xs-look="23"] {
+  background: var(--xs-dark);
+  color: var(--xs-footer-ink);
+}
+.xs-newsletter[data-xs-look="23"] .xs-heading {
+  color: #f5f1ea;
+}
+.xs-newsletter[data-xs-look="23"] input {
+  border: 0;
+  border-bottom: 1px solid rgba(245, 241, 234, 0.4);
+  background: transparent;
+  color: #f5f1ea;
+}
+.xs-newsletter[data-xs-look="23"] .xs-newsletter__form button {
+  background: #f5f1ea;
+  color: var(--xs-ink);
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.xs-newsletter[data-xs-look="23"] .xs-newsletter__form button:hover:not(:disabled) {
+  background: #fff;
+}
+.xs-newsletter[data-xs-look="23"] .xs-newsletter__form button:lang(ar),
+:lang(ar) .xs-newsletter[data-xs-look="23"] .xs-newsletter__form button {
+  font-size: 15px;
+  letter-spacing: 0;
+}
+
+/* --- inner pages: a plain title band ---------------------------------------- */
+
+.xs-title[data-xs-look="23"] {
+  background: var(--xs-tint);
+}
+
+/* --- xs_story and xs_contact: square corners, the headings in the display face */
+
+/* Words and picture in even halves, level with each other; every picture the same upright shape. */
+.xs-story[data-xs-look="23"] .xs-story__part,
+.xs-story[data-xs-look="23"] .xs-story__part[data-flip] {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 64px;
+  align-items: center;
+}
+.xs-story[data-xs-look="23"] .xs-story__part + .xs-story__part {
+  margin-top: 110px;
+}
+.xs-story[data-xs-look="23"] .xs-story__text,
+.xs-story[data-xs-look="23"] .xs-story__part[data-flip] .xs-story__text {
+  padding-inline: 0;
+}
+.xs-story[data-xs-look="23"] .xs-story__title {
+  font-size: clamp(26px, 2.6vw, 34px);
+}
+.xs-story[data-xs-look="23"] .xs-story__body {
+  color: var(--xs-muted);
+  font-size: 16px;
+  font-weight: 400;
+}
+.xs-story[data-xs-look="23"] .xs-story__frame {
+  justify-self: center;
+  width: 100%;
+  max-width: 460px;
+}
+.xs-story[data-xs-look="23"] .xs-story__frame::before {
+  border: 1px solid var(--xs-line);
+}
+.xs-story[data-xs-look="23"] .xs-story__zoom img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  height: auto;
+  border-radius: 0;
+  object-fit: cover;
+}
+@media (max-width: 991px) {
+  .xs-story[data-xs-look="23"] .xs-story__part,
+  .xs-story[data-xs-look="23"] .xs-story__part[data-flip] {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
+  }
+  .xs-story[data-xs-look="23"] .xs-story__part[data-flip] .xs-story__text {
+    order: 0;
+  }
+}
+.xs-contact[data-xs-look="23"] .xs-contact__heading {
+  font-family: var(--xs-display);
+  color: var(--xs-ink);
+}
+.xs-contact[data-xs-look="23"] .xs-contact__field,
+.xs-contact[data-xs-look="23"] .xs-contact__message {
+  border-radius: 0;
+  background: #fffdf9;
+}
+.xs-contact[data-xs-look="23"] .xs-contact__submit {
+  height: 52px;
+  border-radius: 0;
+  background: var(--xs-ink);
+  font-size: 13px;
+  letter-spacing: 0.18em;
+}
+.xs-contact[data-xs-look="23"] .xs-contact__submit:lang(ar),
+:lang(ar) .xs-contact[data-xs-look="23"] .xs-contact__submit {
+  font-size: 15px;
+  letter-spacing: 0;
+}
+.xs-contact[data-xs-look="23"] .xs-contact__submit:hover:not(:disabled) {
+  background: var(--xs-accent);
+}
+
+/* --- editorial finish: one type scale, one rhythm, calm motion ---------------
+ *
+ * Headings are set large and balanced, as a fashion house sets them; every
+ * band keeps to the same space; prices sit on tabular figures so they do not
+ * shift; anything that moves holds still for a visitor who asked for less
+ * motion; and every link and button shows where the keyboard is.
+ */
+
+/* Headings: one size for every band's title, the opening one larger; Latin
+   tightened a touch, Arabic left as drawn (spacing breaks its joins). */
+[data-xs-look="23"] :is(.xs-heading, .xs-products__heading, .xs-banners__intro h2, .xs-stack__heading),
+.xs-rail[data-xs-look="23"] [data-slot="clothing-rail"] h2,
+.xs-title[data-xs-look="23"] .xs-title__heading {
+  text-wrap: balance;
+}
+[data-xs-look="23"] :is(.xs-heading, .xs-products__heading, .xs-banners__intro h2) {
+  margin-bottom: 0.5em;
+  color: var(--xs-ink);
+  font-family: var(--xs-display);
+  font-size: var(--xs-h2);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -0.005em;
+}
+.xs-rail[data-xs-look="23"] [data-slot="clothing-rail"] h2 {
+  font-size: var(--xs-h1);
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+}
+.xs-title[data-xs-look="23"] .xs-title__heading {
+  font-family: var(--xs-display);
+  font-size: var(--xs-h1);
+  font-weight: 400;
+  line-height: 1.04;
+}
+[data-xs-look="23"]:lang(ar) :is(.xs-heading, .xs-products__heading, .xs-banners__intro h2, h2),
+:lang(ar) [data-xs-look="23"] :is(.xs-heading, .xs-products__heading, .xs-banners__intro h2, h2, .xs-title__heading) {
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
+/* The space between bands: a band on the page's own paper shares it with its
+   neighbour; one with a ground of its own keeps it whole. */
+.xs-banners[data-xs-look="23"] {
+  padding-block: var(--xs-section) calc(var(--xs-section) / 2);
+}
+.xs-banners[data-xs-look="23"] .xs-banners__intro {
+  margin-bottom: clamp(24px, 3vw, 40px);
+}
+.xs-products[data-xs-look="23"] {
+  padding-block: calc(var(--xs-section) / 2) var(--xs-section);
+}
+.xs-stack[data-xs-look="23"],
+.xs-split[data-xs-look="23"],
+.xs-newsletter[data-xs-look="23"],
+.xs-story[data-xs-look="23"],
+.xs-contact[data-xs-look="23"] {
+  padding-block: var(--xs-section);
+}
+.xs-features[data-xs-look="23"] {
+  padding-block: calc(var(--xs-section) * 0.7);
+}
+.xs-title[data-xs-look="23"] {
+  padding-block: clamp(56px, 7vw, 96px);
+}
+
+/* Product cards: the name and price in ink, the price on tabular figures; the
+   tabs readable (the shared grey reads 3.2:1 on this paper). */
+.xs-products[data-xs-look="23"] .xs-products__name {
+  padding-bottom: 4px;
+  color: var(--xs-ink);
+  font-size: 15px;
+}
+.xs-products[data-xs-look="23"] .xs-products__name:hover {
+  color: var(--xs-accent);
+}
+.xs-products[data-xs-look="23"] .xs-products__price {
+  color: var(--xs-ink);
+  font-size: 15px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.xs-products[data-xs-look="23"] .xs-products__price s {
+  font-weight: 400;
+  color: var(--xs-muted);
+}
+.xs-products[data-xs-look="23"] .xs-products__tab {
+  min-height: 32px;
+  color: var(--xs-muted);
+}
+.xs-products[data-xs-look="23"] .xs-products__tab:hover,
+.xs-products[data-xs-look="23"] .xs-products__tab[data-active] {
+  border-bottom-color: var(--xs-ink);
+  color: var(--xs-ink);
+}
+.xs-products[data-xs-look="23"] .xs-products__view {
+  height: 44px;
+  border-radius: 0;
+  background: var(--xs-ink);
+  color: var(--xs-ground);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.xs-products[data-xs-look="23"] .xs-products__view:lang(ar),
+:lang(ar) .xs-products[data-xs-look="23"] .xs-products__view {
+  font-size: 14px;
+  letter-spacing: 0;
+}
+.xs-products[data-xs-look="23"] .xs-products__media:hover .xs-products__img {
+  transform: scale(1.04);
+}
+.xs-products[data-xs-look="23"] .xs-products__img {
+  transition: transform 0.7s var(--xs-ease), opacity 0.45s var(--xs-ease);
+}
+/* The back of the piece on hover, faded over the front — where there is a
+   pointer to hover with; a phone never draws it, so never fetches it. */
+@media (hover: hover) {
+  .xs-products[data-xs-look="23"] .xs-products__img--alt {
+    display: block;
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.45s var(--xs-ease), transform 0.7s var(--xs-ease);
+  }
+  .xs-products[data-xs-look="23"] .xs-products__media:hover .xs-products__img--alt {
+    opacity: 1;
+  }
+  /* Cut-outs are see-through: the front gives way rather than showing behind the back. */
+  .xs-products[data-xs-look="23"] .xs-products__media:has(.xs-products__img--alt):hover .xs-products__img:not(.xs-products__img--alt) {
+    opacity: 0;
+  }
+}
+
+/* The promises: a quiet service bar, centred, a hairline between each. */
+.xs-features[data-xs-look="23"] .xs-features__list {
+  gap: 32px 0;
+}
+.xs-features[data-xs-look="23"] .xs-features__item {
+  margin: 0;
+  padding: 4px clamp(16px, 2vw, 32px);
+  border-inline-start: 1px solid var(--xs-line);
+  text-align: center;
+}
+.xs-features[data-xs-look="23"] .xs-features__item:first-child {
+  border-inline-start: 0;
+}
+.xs-features[data-xs-look="23"] .xs-features__icon {
+  margin-bottom: 14px;
+}
+.xs-features[data-xs-look="23"] .xs-features__icon::before {
+  content: none;
+}
+.xs-features[data-xs-look="23"] .xs-features__item h3 {
+  margin-bottom: 6px;
+  font-size: 18px;
+}
+.xs-features[data-xs-look="23"] .xs-features__item p {
+  color: var(--xs-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+@media (max-width: 991px) {
+  .xs-features[data-xs-look="23"] .xs-features__item:nth-child(odd) {
+    border-inline-start: 0;
+  }
+}
+
+/* The card stack in the look's square cut: a hairline radius, the badge a
+   paper label, the title in the display face, the arrows square. */
+.xs-stack[data-xs-look="23"] .xs-stack__card {
+  border-radius: 2px;
+}
+.xs-stack[data-xs-look="23"] .xs-stack__badge {
+  border-radius: 0;
+  background: var(--xs-ground);
+  color: var(--xs-ink);
+  font-weight: 500;
+}
+.xs-stack[data-xs-look="23"] .xs-stack__title {
+  font-family: var(--xs-display);
+  font-size: 22px;
+  font-weight: 400;
+}
+.xs-stack[data-xs-look="23"] .xs-stack__arrow {
+  border-color: var(--xs-ink);
+  border-radius: 0;
+}
+
+/* Words in the lookbook and the story keep to a readable measure. */
+.xs-split[data-xs-look="23"] .xs-split__text {
+  max-width: 34em;
+}
+.xs-story[data-xs-look="23"] .xs-story__text {
+  max-width: 38em;
+}
+
+/* Fields at 16px, so a phone does not zoom into the page when one is tapped. */
+.xs-newsletter[data-xs-look="23"] input,
+.xs-contact[data-xs-look="23"] :is(.xs-contact__field input, .xs-contact__message) {
+  font-size: 16px;
+}
+
+/* Where the keyboard is: a clear ring on every link, button and field — light
+   on the ink bands. */
+.brand-theme[data-xs-shell="23"] :is(a, button, input, textarea, select, summary, [tabindex]):focus-visible,
+[data-xs-look="23"] :is(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--xs-ink);
+  outline-offset: 3px;
+}
+:is(.xs-newsletter, .xs-footer)[data-xs-look="23"] :is(a, button, input):focus-visible,
+.xs-header[data-xs-look="23"] .xs-header__strip :is(a, button):focus-visible {
+  outline-color: #f5f1ea;
+}
+
+/* Less motion, when asked for: pictures hold still and nothing glides. */
+@media (prefers-reduced-motion: reduce) {
+  [data-xs-look="23"] :is(.xs-banners__img, .xs-products__img, .xs-story__zoom img, .xs-header__link::after) {
+    transition: none;
+  }
+  [data-xs-look="23"] :is(.xs-banners__item:hover .xs-banners__img, .xs-products__media:hover .xs-products__img, .xs-story__zoom:hover img) {
+    transform: none;
+  }
+}

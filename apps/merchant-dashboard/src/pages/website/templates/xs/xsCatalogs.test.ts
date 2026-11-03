@@ -63,6 +63,33 @@ describe("the imported templates' catalogues", () => {
     }
   });
 
+  it("give a product's choices in both languages, and each variant one value of each at a real price", () => {
+    for (const catalog of Object.values(XS_CATALOGS)) {
+      const slugs = catalog.products.flatMap((product) => (product.slug ? [product.slug] : []));
+      expect(new Set(slugs).size, `${catalog.look}: a slug is used twice`).toBe(slugs.length);
+      for (const slug of slugs) expect(slug, catalog.look).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+      for (const product of catalog.products) {
+        const label = `${catalog.look}: ${product.name}`;
+        expect(Boolean(product.options?.length), label).toBe(Boolean(product.variants?.length));
+        if (!product.options || !product.variants) continue;
+        for (const option of product.options) {
+          expect(option.values.length, label).toBeGreaterThan(0);
+          expect(option.nameAr ?? "", label).toMatch(/[؀-ۿ]/);
+          expect(option.valuesAr?.length, `${label}: ${option.name}`).toBe(option.values.length);
+        }
+        const combos = product.variants.map((variant) => variant.values.join("|"));
+        expect(new Set(combos).size, `${label}: a combination is listed twice`).toBe(combos.length);
+        for (const variant of product.variants) {
+          expect(variant.values.length, label).toBe(product.options.length);
+          variant.values.forEach((value, i) => expect(product.options![i].values, label).toContain(value));
+          expect(Number.isInteger(variant.price) && variant.price > 0, label).toBe(true);
+          if (variant.compareAt !== undefined) expect(variant.compareAt, label).toBeGreaterThan(variant.price);
+        }
+        expect(product.price, `${label}: the lowest variant price`).toBe(Math.min(...product.variants.map((variant) => variant.price)));
+      }
+    }
+  });
+
   it("fill every group they list, so no tab of the template's product grid is empty", () => {
     for (const catalog of Object.values(XS_CATALOGS)) {
       for (const collection of catalog.collections) {

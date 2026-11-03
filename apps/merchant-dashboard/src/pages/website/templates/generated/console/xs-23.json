@@ -1,0 +1,650 @@
+{
+  "globalStyles": {
+    "primaryColor": "#1D1B18",
+    "themeSettings": {
+      "xsLook": "23",
+      "primaryColorDark": "#D9C2A0",
+      "header": {
+        "announcement": {
+          "enabled": true,
+          "text": "Delivery across Egypt · Exchange in 14 days"
+        },
+        "menu": [
+          {
+            "label": "Home",
+            "href": "/",
+            "kind": "home"
+          },
+          {
+            "label": "Shop",
+            "href": "/products",
+            "kind": "url"
+          },
+          {
+            "label": "About",
+            "href": "/about",
+            "kind": "page"
+          },
+          {
+            "label": "Contact",
+            "href": "/contact",
+            "kind": "page"
+          }
+        ],
+        "show": {
+          "theme": false,
+          "trackOrder": false,
+          "language": false
+        },
+        "zones": {
+          "notice": [
+            {
+              "id": "notice",
+              "type": "notice"
+            }
+          ],
+          "links": [],
+          "brand": [
+            {
+              "id": "logo",
+              "type": "logo"
+            }
+          ],
+          "menu": [
+            {
+              "id": "menu",
+              "type": "menu"
+            }
+          ],
+          "icons": [
+            {
+              "id": "search",
+              "type": "search"
+            },
+            {
+              "id": "account",
+              "type": "account"
+            },
+            {
+              "id": "cart",
+              "type": "cart"
+            }
+          ]
+        }
+      },
+      "footer": {
+        "groups": [
+          {
+            "title": "Shop",
+            "links": [
+              {
+                "label": "All pieces",
+                "href": "/products",
+                "kind": "url"
+              },
+              {
+                "label": "Cart",
+                "href": "/cart",
+                "kind": "cart"
+              }
+            ]
+          },
+          {
+            "title": "Help",
+            "links": [
+              {
+                "label": "About",
+                "href": "/about",
+                "kind": "page"
+              },
+              {
+                "label": "Contact us",
+                "href": "/contact",
+                "kind": "page"
+              },
+              {
+                "label": "Track your order",
+                "href": "/track",
+                "kind": "track"
+              }
+            ]
+          }
+        ],
+        "text": "Pieces chosen with care, hung on our rail before they reach you.",
+        "show": {
+          "help": false
+        }
+      }
+    }
+  },
+  "pages": [
+    {
+      "path": "/",
+      "title": "Home",
+      "pageType": "home",
+      "builderData": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "xs23-p1-s1",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p1-s1-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p1-s1-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p1-s1-e1",
+                        "type": "xs_rail",
+                        "props": {
+                          "look": "23",
+                          "eyebrow": "New season · On the rail",
+                          "heading": "Turn the clothes over with your own hands",
+                          "caption": "Brush along the rail, slide a hanger, lift a piece to see its back.",
+                          "ctaLabel": "Shop the collection",
+                          "ctaHref": "/products",
+                          "limit": 10,
+                          "collectionId": "",
+                          "hanger": "wood",
+                          "sidePhotos": false,
+                          "autoplay": true
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs23-p1-s2",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p1-s2-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p1-s2-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p1-s2-e1",
+                        "type": "xs_banners",
+                        "props": {
+                          "look": "23",
+                          "items": [
+                            {
+                              "image": "/xs/23/kind-tees.jpg",
+                              "title": "T-shirts",
+                              "linkLabel": "Discover",
+                              "href": "/products"
+                            },
+                            {
+                              "image": "/xs/23/kind-shirts.jpg",
+                              "title": "Shirts",
+                              "linkLabel": "Discover",
+                              "href": "/products"
+                            },
+                            {
+                              "image": "/xs/23/kind-knits.jpg",
+                              "title": "Knitwear",
+                              "linkLabel": "Discover",
+                              "href": "/products"
+                            },
+                            {
+                              "image": "/xs/23/kind-outerwear.jpg",
+                              "title": "Outerwear",
+                              "linkLabel": "Discover",
+                              "href": "/products"
+                            }
+                          ],
+                          "heading": "Shop by kind",
+                          "variant": "tile"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs23-p1-s3",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p1-s3-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p1-s3-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p1-s3-e1",
+                        "type": "xs_products",
+                        "props": {
+                          "look": "23",
+                          "heading": "New in",
+                          "collection": "",
+                          "limit": 8,
+                          "showDiscount": true,
+                          "showTabs": true,
+                          "showSearch": false,
+                          "layout": "grid",
+                          "quickView": true,
+                          "allLabel": "All",
+                          "viewLabel": "Quick View",
+                          "openLabel": "View Piece",
+                          "loadMoreLabel": "Load More"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs23-p1-s4",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p1-s4-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p1-s4-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p1-s4-e1",
+                        "type": "xs_stack",
+                        "props": {
+                          "look": "23",
+                          "heading": "The edits",
+                          "items": [
+                            {
+                              "image": "/xs/23/stack-1.jpg",
+                              "badge": "Summer",
+                              "title": "Linen days",
+                              "text": "Light layers for long, warm days.",
+                              "href": "/products"
+                            },
+                            {
+                              "image": "/xs/23/stack-2.jpg",
+                              "badge": "Autumn",
+                              "title": "Knit season",
+                              "text": "Soft wool, deep colours, slow mornings.",
+                              "href": "/products"
+                            },
+                            {
+                              "image": "/xs/23/stack-3.jpg",
+                              "badge": "Weekend",
+                              "title": "Off duty",
+                              "text": "Relaxed pieces that still look considered.",
+                              "href": "/products"
+                            },
+                            {
+                              "image": "/xs/23/stack-4.jpg",
+                              "badge": "Tailoring",
+                              "title": "Sharp lines",
+                              "text": "Cut close, made to be noticed.",
+                              "href": "/products"
+                            },
+                            {
+                              "image": "/xs/23/stack-5.jpg",
+                              "badge": "Essentials",
+                              "title": "Every day",
+                              "text": "The tees and denim you reach for first.",
+                              "href": "/products"
+                            }
+                          ],
+                          "text": "Five ways to wear the season. Drag through them."
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs23-p1-s5",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p1-s5-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p1-s5-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p1-s5-e1",
+                        "type": "xs_split",
+                        "props": {
+                          "look": "23",
+                          "heading": "Made to be kept",
+                          "text": "We choose every piece for its fabric and its cut, so it looks as good in its fifth year as in its first.",
+                          "images": [
+                            "/xs/23/lookbook.jpg"
+                          ],
+                          "points": [],
+                          "buttonLabel": "Our story",
+                          "buttonHref": "/about"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs23-p1-s6",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p1-s6-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p1-s6-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p1-s6-e1",
+                        "type": "xs_features",
+                        "props": {
+                          "look": "23",
+                          "heading": "",
+                          "text": "",
+                          "image": "",
+                          "items": [
+                            {
+                              "icon": "truck",
+                              "title": "Delivery across Egypt",
+                              "text": "To your door in two to five days."
+                            },
+                            {
+                              "icon": "return",
+                              "title": "Exchange in 14 days",
+                              "text": "Not the right size? Swap it."
+                            },
+                            {
+                              "icon": "bag",
+                              "title": "Pay on delivery",
+                              "text": "Pay when your order reaches you."
+                            },
+                            {
+                              "icon": "support",
+                              "title": "Here to help",
+                              "text": "Message us any day, from ten to ten."
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs23-p1-s7",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p1-s7-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p1-s7-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p1-s7-e1",
+                        "type": "xs_newsletter",
+                        "props": {
+                          "look": "23",
+                          "heading": "Letters from the atelier",
+                          "text": "New pieces and private sales, once a month. Nothing else.",
+                          "placeholder": "Your email address",
+                          "buttonLabel": "Subscribe"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "seo": {}
+    },
+    {
+      "path": "/about",
+      "title": "About",
+      "pageType": "static",
+      "builderData": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "xs23-p2-s1",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p2-s1-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p2-s1-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p2-s1-e1",
+                        "type": "xs_title",
+                        "props": {
+                          "look": "23",
+                          "heading": "About Atelier",
+                          "image": ""
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs23-p2-s2",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p2-s2-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p2-s2-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p2-s2-e1",
+                        "type": "xs_story",
+                        "props": {
+                          "look": "23",
+                          "items": [
+                            {
+                              "title": "Our story",
+                              "body": "Atelier began with one rail and a simple rule: hang only what we would wear ourselves. Every piece is chosen for its fabric, its cut and how it feels after a hundred washes.\n\nWrite here how your store began, and who chooses what hangs on your rail.",
+                              "image": "/xs/23/story.jpg"
+                            },
+                            {
+                              "title": "How we choose",
+                              "body": "Natural fibres where we can, honest prices always, and small runs instead of piles of stock. Write here what your customers can count on when they order from you.",
+                              "image": "/xs/23/kind-knits.jpg"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "seo": {}
+    },
+    {
+      "path": "/contact",
+      "title": "Contact",
+      "pageType": "static",
+      "builderData": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "xs23-p3-s1",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p3-s1-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p3-s1-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p3-s1-e1",
+                        "type": "xs_title",
+                        "props": {
+                          "look": "23",
+                          "heading": "Contact us",
+                          "image": ""
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs23-p3-s2",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs23-p3-s2-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs23-p3-s2-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs23-p3-s2-e1",
+                        "type": "xs_contact",
+                        "props": {
+                          "look": "23",
+                          "heading": "Write to us",
+                          "info": [
+                            {
+                              "icon": "address",
+                              "title": "Visit us",
+                              "text": "Write your store's address here"
+                            },
+                            {
+                              "icon": "phone",
+                              "title": "Call us",
+                              "text": "Write your phone number here"
+                            },
+                            {
+                              "icon": "email",
+                              "title": "Email us",
+                              "text": "Write your email address here"
+                            }
+                          ],
+                          "contactPlaceholder": "Your email or phone",
+                          "messagePlaceholder": "Your message",
+                          "buttonLabel": "Send Now",
+                          "successMessage": "Thank you. We will reply within a day."
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "seo": {}
+    }
+  ],
+  "sections": []
+}

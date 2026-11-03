@@ -8,7 +8,9 @@ import { xsBox } from "@/lib/xsImages";
 import { XsPicture, listPictureSize, pictureSize } from "@/components/xs/XsPicture";
 import { EmptyBlock } from "../commerce";
 import { type Props, collectionProducts, items, linkOf, num, pricing, safeUrl, str } from "../showcase/shared";
-import { XsCountdown, XsNewsletterForm, XsQuotes } from "../lazy";
+import { XsCountdown, XsNewsletterForm, XsQuotes, XsStack } from "../lazy";
+import { ClothingRail } from "@/components/immersive/lazy";
+import { loadRail } from "../immersive";
 import { listed } from "./listed";
 import type { XsQuote } from "./XsQuotes";
 
@@ -17,7 +19,7 @@ import type { XsQuote } from "./XsQuotes";
  * (first carried over for look 02):
  *
  *   xs_hero · xs_showcase · xs_features · xs_split · xs_minis · xs_quotes
- *   xs_gallery · xs_newsletter · xs_posts
+ *   xs_gallery · xs_newsletter · xs_posts · xs_rail · xs_stack
  *
  * Server components; the two product bands fetch the merchant's real
  * catalogue here. Each renders nothing when it has nothing to show, and a
@@ -313,6 +315,57 @@ export function XsNewsletterElement({ props, look, workspaceId, locale, editable
           }
         />
       </div>
+    </div>
+  );
+}
+
+/**
+ * `xs_rail` — the store's clothes on a rail (components/immersive/ClothingRail),
+ * drawn in the look: its type, its colours and its own button under the rail.
+ * Its products come from `loadRail` (page-renderer/immersive.tsx).
+ */
+export async function XsRailElement({ props, look, workspaceId, currency, locale, editable }: XsHomeProps): Promise<ReactNode> {
+  const rail = await loadRail(props, workspaceId, currency, locale);
+  if (!rail) return null;
+  if (rail.items.length === 0) return <Empty editable={editable} message={noProducts(locale)} />;
+  const { ctaLabel, ctaHref, ...drawn } = rail;
+  return (
+    <div className="xs-rail" data-xs-look={look}>
+      <ClothingRail
+        {...drawn}
+        action={ctaLabel && ctaHref ? <Button key="action" label={ctaLabel} href={ctaHref} tone="solid" /> : undefined}
+      />
+    </div>
+  );
+}
+
+/**
+ * `xs_stack` — pictures dealt like a hand of cards (./XsStack): each with a
+ * small badge, a title, a line and a link, under the band's own heading.
+ */
+export function XsStackElement({ props, look, locale }: XsHomeProps): ReactNode {
+  const slides = listed(props, "items", 8)
+    .map(({ item, at }) => ({
+      key: `${at}`,
+      image: safeUrl(str(item, "image")) ?? "",
+      title: str(item, "title"),
+      text: str(item, "text"),
+      badge: str(item, "badge"),
+      href: linkOf(item, "href"),
+    }))
+    .filter((slide) => slide.image);
+  if (slides.length === 0) return null;
+  const heading = str(props, "heading");
+  const ar = locale === "ar";
+  return (
+    <div className="xs-stack" data-xs-look={look}>
+      {heading || str(props, "text") ? (
+        <div className="xs-stack__intro">
+          {heading ? <h2 className="xs-heading">{heading}</h2> : null}
+          {str(props, "text") ? <p>{str(props, "text")}</p> : null}
+        </div>
+      ) : null}
+      <XsStack look={look} slides={slides} prevLabel={ar ? "السابق" : "Previous"} nextLabel={ar ? "التالي" : "Next"} />
     </div>
   );
 }

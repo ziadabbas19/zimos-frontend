@@ -5,8 +5,8 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { StoreLink } from "@/components/StoreRoute";
 import { XsPicture } from "@/components/xs/XsPicture";
 import { createStorefrontApiClient } from "@/lib/apiClient";
-import { formatPrice, type Locale } from "@/lib/i18n";
-import { compareAtOf, discountPercent, firstImage, priceOf } from "@/lib/product";
+import { formatNumber, formatPrice, type Locale } from "@/lib/i18n";
+import { compareAtOf, discountPercent, priceOf, productImages } from "@/lib/product";
 import dynamic from "next/dynamic";
 
 export interface XsGridTab {
@@ -47,11 +47,13 @@ export function XsProductGrid({
   currency,
   locale,
   heading,
+  text = "",
   linkLabel,
   linkHref,
   tabs,
   showSearch,
   showDiscount,
+  discountLabel = "",
   layout,
   quickView,
   pageSize,
@@ -64,12 +66,16 @@ export function XsProductGrid({
   currency: string;
   locale: Locale;
   heading: string;
+  /** A line under the heading; empty draws none. */
+  text?: string;
   /** A link beside the heading ("View all products"); drawn only with both a label and somewhere to go. */
   linkLabel: string;
   linkHref: string | null;
   tabs: XsGridTab[];
   showSearch: boolean;
   showDiscount: boolean;
+  /** The badge's wording: "{percent}" and "{amount}" (what it saves, in whole units) are filled in. Empty: "-{percent}%". */
+  discountLabel?: string;
   /** "slider": one row the shopper moves along, with arrows; otherwise a grid that wraps. */
   layout: "grid" | "slider";
   /** The label on a card opens the product in a panel on this page; otherwise it is part of the link to the product's page. */
@@ -139,9 +145,14 @@ export function XsProductGrid({
 
   return (
     <div className="xs-products" data-xs-look={look}>
-      {heading || (linkLabel && linkHref) ? (
+      {heading || text || (linkLabel && linkHref) ? (
         <div className="xs-products__head">
-          {heading ? <h2 className="xs-products__heading">{heading}</h2> : null}
+          {heading || text ? (
+            <div className="xs-products__intro">
+              {heading ? <h2 className="xs-products__heading">{heading}</h2> : null}
+              {text ? <p className="xs-products__text">{text}</p> : null}
+            </div>
+          ) : null}
           {linkLabel && linkHref ? (
             <StoreLink href={linkHref} className="xs-products__all">
               {linkLabel}
@@ -208,25 +219,33 @@ export function XsProductGrid({
           ) : null}
         <div ref={track} className="xs-products__grid" data-layout={layout === "slider" ? "slider" : undefined} aria-busy={loading || undefined}>
           {products.map((product) => {
-            const image = firstImage(product);
+            // The second picture (the back, by the clothing rail's convention): a look
+            // that wants it shows it on hover; the rest leave it undrawn, and unfetched.
+            const [image, second] = productImages(product);
             const price = priceOf(product);
             const compareAt = compareAtOf(product);
             const percent = price !== undefined ? discountPercent(price, compareAt) : null;
             const href = `/products/${product.slug}`;
+            // "Choose {option}": the product's first option by name ("Colour"), else the plain label without it.
+            const option = Object.keys(product.variants[0]?.optionValues ?? {})[0] ?? "";
+            const view = copy.view.includes("{option}") ? (option ? copy.view.replace("{option}", option) : copy.view.replace(/\s*\{option\}\s*/, " ").trim()) : copy.view;
             return (
               <article key={product.id} className="xs-products__card">
                 <div className="xs-products__media">
                   <StoreLink href={href} className="xs-products__shot" tabIndex={-1} aria-hidden>
                     {image ? <XsPicture src={image} alt={product.name} className="xs-products__img" /> : null}
-                    {showDiscount && percent ? <span className="xs-products__badge">-{percent}%</span> : null}
+                    {image && second ? <XsPicture src={second} alt="" className="xs-products__img xs-products__img--alt" /> : null}
+                    {showDiscount && percent ? (
+                      <span className="xs-products__badge">{badgeText(discountLabel, percent, price, compareAt, locale)}</span>
+                    ) : null}
                   </StoreLink>
                   {quickView ? (
                     <button type="button" className="xs-products__view" aria-label={`${copy.open}: ${product.name}`} onClick={() => setViewing(product)}>
-                      {copy.view}
+                      {view}
                     </button>
                   ) : (
                     <StoreLink href={href} className="xs-products__view" tabIndex={-1} aria-hidden>
-                      {copy.view}
+                      {view}
                     </StoreLink>
                   )}
                 </div>
@@ -264,4 +283,11 @@ export function XsProductGrid({
       )}
     </div>
   );
+}
+
+/** A discount badge in the band's own words ("{percent}", "{amount}"), "-{percent}%" by default. */
+function badgeText(label: string, percent: number, price: number | undefined, compareAt: number | null, locale: Locale): string {
+  if (!label.trim()) return `-${percent}%`;
+  const amount = price !== undefined && compareAt ? formatNumber(Math.round((compareAt - price) / 100), locale) : "";
+  return label.replace("{percent}", formatNumber(percent, locale)).replace("{amount}", amount);
 }

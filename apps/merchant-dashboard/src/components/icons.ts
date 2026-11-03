@@ -208,6 +208,7 @@ export {
   Share2 as IconShare,
   ShieldCheck as IconShield,
   Truck as IconShipping,
+  Shirt as IconShirt,
   MousePointerClick as IconShoppableImages,
   Shuffle as IconShuffle,
   PanelLeft as IconSidebar,

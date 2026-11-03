@@ -1,0 +1,821 @@
+{
+  "globalStyles": {
+    "primaryColor": "#E8415B",
+    "themeSettings": {
+      "xsLook": "24",
+      "header": {
+        "announcement": {
+          "enabled": true,
+          "text": "🚚 شحن مجاني للطلبات من 1500 جنيه",
+          "messages": [
+            "🚚 شحن مجاني للطلبات من 1500 جنيه",
+            "💵 الدفع عند الاستلام · معاينة قبل الدفع",
+            "🎁 خصم 5% على الطلبات من 3000 جنيه",
+            "🔥 خصم 10% على الطلبات من 4200 جنيه"
+          ]
+        },
+        "menu": [
+          {
+            "label": "الصفحة الرئيسية",
+            "href": "/",
+            "kind": "home"
+          },
+          {
+            "label": "كل المنتجات",
+            "href": "/products",
+            "kind": "url"
+          },
+          {
+            "label": "عروض التوفير",
+            "href": "/products?collection=bundles",
+            "kind": "url"
+          },
+          {
+            "label": "من نحن",
+            "href": "/about",
+            "kind": "page"
+          },
+          {
+            "label": "تواصلي معانا",
+            "href": "/contact",
+            "kind": "page"
+          }
+        ],
+        "show": {
+          "theme": false,
+          "trackOrder": false,
+          "language": false
+        },
+        "zones": {
+          "notice": [
+            {
+              "id": "notice",
+              "type": "notice"
+            }
+          ],
+          "links": [],
+          "brand": [
+            {
+              "id": "logo",
+              "type": "logo"
+            }
+          ],
+          "menu": [
+            {
+              "id": "menu",
+              "type": "menu"
+            }
+          ],
+          "icons": [
+            {
+              "id": "search",
+              "type": "search"
+            },
+            {
+              "id": "account",
+              "type": "account"
+            },
+            {
+              "id": "cart",
+              "type": "cart"
+            }
+          ]
+        }
+      },
+      "footer": {
+        "groups": [
+          {
+            "title": "تسوّقي",
+            "links": [
+              {
+                "label": "كل المنتجات",
+                "href": "/products",
+                "kind": "url"
+              },
+              {
+                "label": "عروض التوفير",
+                "href": "/products?collection=bundles",
+                "kind": "url"
+              },
+              {
+                "label": "الأكثر مبيعًا",
+                "href": "/products?collection=best-sellers",
+                "kind": "url"
+              }
+            ]
+          },
+          {
+            "title": "المساعدة",
+            "links": [
+              {
+                "label": "من نحن",
+                "href": "/about",
+                "kind": "page"
+              },
+              {
+                "label": "تواصلي معانا",
+                "href": "/contact",
+                "kind": "page"
+              },
+              {
+                "label": "تتبّعي طلبك",
+                "href": "/track",
+                "kind": "track"
+              }
+            ]
+          }
+        ],
+        "text": "كل اللي محتاجاه ليكي ولبيبيك، مختار بعناية. الدفع عند الاستلام · معاينة قبل الدفع · استبدال 14 يوم لعيوب الصناعة.",
+        "show": {
+          "help": false
+        }
+      }
+    }
+  },
+  "pages": [
+    {
+      "path": "/",
+      "title": "الصفحة الرئيسية",
+      "pageType": "home",
+      "builderData": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "xs24-p1-s1",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s1-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s1-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s1-e1",
+                        "type": "xs_slider",
+                        "props": {
+                          "look": "24",
+                          "slides": [
+                            {
+                              "image": "/xs/24/slide-1.jpg",
+                              "phoneImage": "/xs/24/slide-1-phone.jpg",
+                              "heading": "اختيار الأمهات",
+                              "text": "كل اللي بيبيك محتاجه في مكان واحد",
+                              "buttonLabel": "تسوّقي دلوقتي",
+                              "buttonHref": "/products"
+                            },
+                            {
+                              "image": "/xs/24/slide-2.jpg",
+                              "phoneImage": "/xs/24/slide-2-phone.jpg",
+                              "heading": "معاكي خطوة بخطوة",
+                              "text": "دليلك في رحلة الأمومة",
+                              "buttonLabel": "شوفي العروض",
+                              "buttonHref": "/products?collection=bundles"
+                            }
+                          ],
+                          "autoplay": true,
+                          "seconds": 5
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p1-s2",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s2-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s2-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s2-e1",
+                        "type": "xs_features",
+                        "props": {
+                          "look": "24",
+                          "heading": "",
+                          "text": "",
+                          "image": "",
+                          "items": [
+                            {
+                              "icon": "support",
+                              "image": "/xs/24/eye.svg",
+                              "title": "معاينة قبل الدفع",
+                              "text": "تفتحي وتتأكدي قدام المندوب"
+                            },
+                            {
+                              "icon": "bag",
+                              "image": "/xs/24/card.svg",
+                              "title": "الدفع عند الاستلام",
+                              "text": "مفيش أي دفع مقدّم"
+                            },
+                            {
+                              "icon": "return",
+                              "image": "/xs/24/refresh.svg",
+                              "title": "استبدال 14 يوم",
+                              "text": "لعيوب الصناعة"
+                            },
+                            {
+                              "icon": "support",
+                              "image": "/xs/24/chat.svg",
+                              "title": "رد يومي على الواتساب",
+                              "text": "نساعدك تختاري"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p1-s3",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s3-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s3-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s3-e1",
+                        "type": "xs_banners",
+                        "props": {
+                          "look": "24",
+                          "items": [
+                            {
+                              "image": "/xs/24/cat-bundles.jpg",
+                              "title": "عروض التوفير",
+                              "href": "/products?collection=bundles"
+                            },
+                            {
+                              "image": "/xs/24/cat-sleep.jpg",
+                              "title": "النوم والراحة",
+                              "href": "/products?collection=sleep"
+                            },
+                            {
+                              "image": "/xs/24/cat-bath.jpg",
+                              "title": "العناية والاستحمام",
+                              "href": "/products?collection=bath"
+                            },
+                            {
+                              "image": "/xs/24/cat-feeding.jpg",
+                              "title": "مستلزمات الرضاعة",
+                              "href": "/products?collection=feeding"
+                            },
+                            {
+                              "image": "/xs/24/cat-outings.jpg",
+                              "title": "الخروجات والتغيير",
+                              "href": "/products?collection=outings"
+                            },
+                            {
+                              "image": "/xs/24/cat-toys.jpg",
+                              "title": "ألعاب",
+                              "href": "/products?collection=toys"
+                            },
+                            {
+                              "image": "/xs/24/cat-best.jpg",
+                              "title": "الأكثر مبيعًا",
+                              "href": "/products?collection=best-sellers"
+                            }
+                          ],
+                          "heading": "تسوّقي حسب القسم",
+                          "variant": "card"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p1-s4",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s4-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s4-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s4-e1",
+                        "type": "xs_products",
+                        "props": {
+                          "look": "24",
+                          "heading": "عروض التوفير",
+                          "collection": "bundles",
+                          "limit": 4,
+                          "showDiscount": true,
+                          "showTabs": false,
+                          "showSearch": false,
+                          "layout": "grid",
+                          "quickView": false,
+                          "text": "مجموعات كاملة بسعر أقل من شراء كل قطعة لوحدها — اختاري اللي يناسب مرحلة بيبيك",
+                          "discountLabel": "وفّري {amount} جنيه",
+                          "viewLabel": "اختاري {option}",
+                          "linkLabel": "شوفي كل العروض",
+                          "linkHref": "/products?collection=bundles"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p1-s5",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s5-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s5-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s5-e1",
+                        "type": "xs_products",
+                        "props": {
+                          "look": "24",
+                          "heading": "الأكثر مبيعًا",
+                          "collection": "best-sellers",
+                          "limit": 10,
+                          "showDiscount": true,
+                          "showTabs": false,
+                          "showSearch": false,
+                          "layout": "slider",
+                          "quickView": false,
+                          "discountLabel": "خصم {percent}%",
+                          "viewLabel": "اختاري {option}",
+                          "linkLabel": "شوفي الكل",
+                          "linkHref": "/products?collection=best-sellers"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p1-s6",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s6-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s6-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s6-e1",
+                        "type": "xs_journey",
+                        "props": {
+                          "look": "24",
+                          "heading": "إيه اللي محتاجاه دلوقتي؟",
+                          "items": [
+                            {
+                              "icon": "moon",
+                              "pain": "بتجهّزي لأول مرة؟",
+                              "name": "البداية",
+                              "product": "baby-essentials-bundle",
+                              "also": "cozy-care-bundle",
+                              "image": "/xs/24/products/baby-essentials-bundle-1.jpg",
+                              "text": "أول شهور فيها قرارات كتيرة، وصعب تعرفي إيه اللي هيتستخدم فعلًا. المجموعة دي فيها الأساسيات اللي بتتستخدم من أول يوم — من غير حاجة هتتساب في الدولاب.",
+                              "points": "مكان مريح للبيبي جنبك\nوضعية رضاعة أريح لضهرك\nخصوصية وقت الرضاعة برا البيت"
+                            },
+                            {
+                              "icon": "bottle",
+                              "pain": "الرضاعة واخدة وقت طويل؟",
+                              "name": "الرضاعة",
+                              "product": "nursing-bundle",
+                              "also": "cozy-care-bundle",
+                              "image": "/xs/24/products/nursing-bundle-1.jpg",
+                              "text": "الرضاعة بتاخد وقت طويل، والوضعية الغلط بتتعب ضهرك وذراعك. المخدة بترفع البيبي لمستوى مريح ليكي، والساتر بيخليكي ترضعي برا البيت من غير ما تدوري على مكان مناسب.",
+                              "points": "دعم لضهرك وذراعك وقت الرضعة\nخصوصية مريحة وإنتي برا البيت\nأوفر من شراء القطعتين منفصلين"
+                            },
+                            {
+                              "icon": "bag",
+                              "pain": "الخروج محتاج تجهيز كتير؟",
+                              "name": "الخروج",
+                              "product": "on-the-go-bundle",
+                              "also": "baby-daily-bundle",
+                              "image": "/xs/24/products/on-the-go-bundle-1.jpg",
+                              "text": "التجهيز للخروج بياخد وقت أطول من الخروج نفسه. المجموعة دي بتخلّي التجهيز دقايق، وتمشي وإيدك فاضية.",
+                              "points": "تغيير في أي مكان\nحمل مريح للاتنين\nكل حاجة في شنطة واحدة"
+                            },
+                            {
+                              "icon": "clock",
+                              "pain": "عايزة اليوم كله يتغطّي؟",
+                              "name": "اليوم كامل",
+                              "product": "baby-daily-bundle",
+                              "also": "first-year-bundle",
+                              "image": "/xs/24/products/baby-daily-bundle-1.jpg",
+                              "text": "البيت والخروج مش حاجتين منفصلين — اليوم واحد. المجموعة دي بتغطّي اليوم كله بقرار واحد، وأوفر من شرائها على مرتين.",
+                              "points": "البيت والخروج في قرار واحد\nمن غير حاجة ناقصة في النص\nأوفر من شرائها منفصلة"
+                            },
+                            {
+                              "icon": "box",
+                              "pain": "عايزة تجهّزي مرة واحدة؟",
+                              "name": "الرحلة كاملة",
+                              "product": "motherhood-journey",
+                              "also": "first-year-bundle",
+                              "image": "/xs/24/products/motherhood-journey-1.jpg",
+                              "text": "من غير ما تفكري كل شهر في حاجة ناقصة: النوم والرضاعة والخروج واللعب — من أول يوم لحد ما يمشي.",
+                              "points": "كل الأساسيات من أول يوم\nألعاب بتشغّل حواسه وحركته\nأوفر عرض عندنا"
+                            }
+                          ],
+                          "kicker": "اختاري حسب احتياجك",
+                          "text": "اختاري احتياجك دلوقتي — وشوفي العرض اللي يناسبه.",
+                          "ctaLabel": "شوفي العرض",
+                          "moreLabel": "وكمان في نفس المرحلة",
+                          "saveLabel": "وفّري [amount] جنيه",
+                          "fallbackHref": "/products?collection=bundles"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p1-s7",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s7-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s7-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s7-e1",
+                        "type": "xs_reels",
+                        "props": {
+                          "look": "24",
+                          "heading": "شوفيها على الحقيقة",
+                          "items": [
+                            {
+                              "video": "/xs/24/reel-1.mp4",
+                              "image": "/xs/24/reel-1.jpg",
+                              "product": "on-the-go-bundle"
+                            },
+                            {
+                              "video": "/xs/24/reel-2.mp4",
+                              "image": "/xs/24/reel-2.jpg",
+                              "product": "baby-carrier"
+                            },
+                            {
+                              "video": "/xs/24/reel-3.mp4",
+                              "image": "/xs/24/reel-3.jpg",
+                              "product": "cozy-care-bundle"
+                            },
+                            {
+                              "video": "/xs/24/reel-4.mp4",
+                              "image": "/xs/24/reel-4.jpg",
+                              "product": "self-feeding-pillow"
+                            }
+                          ],
+                          "text": "منتجاتنا وهي بتتستخدم فعلًا",
+                          "cartLabel": "أضيفي للسلة"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p1-s8",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s8-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s8-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s8-e1",
+                        "type": "xs_products",
+                        "props": {
+                          "look": "24",
+                          "heading": "كل المنتجات",
+                          "collection": "",
+                          "limit": 8,
+                          "showDiscount": true,
+                          "showTabs": false,
+                          "showSearch": false,
+                          "layout": "grid",
+                          "quickView": false,
+                          "text": "اختيارات أكتر ليكي ولبيبيك — أضيفي اللي محتاجاه للسلة مباشرة.",
+                          "discountLabel": "خصم {percent}%",
+                          "viewLabel": "اختاري {option}",
+                          "linkLabel": "تسوّقي كل المنتجات",
+                          "linkHref": "/products"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p1-s9",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p1-s9-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p1-s9-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p1-s9-e1",
+                        "type": "xs_slider",
+                        "props": {
+                          "look": "24",
+                          "slides": [
+                            {
+                              "image": "/xs/24/outings.jpg",
+                              "phoneImage": "/xs/24/outings-phone.jpg",
+                              "heading": "خروجات أسهل ليكي ولبيبيك",
+                              "text": "شنطة الأم والشيالة ومشمع الغيار في مجموعة واحدة — اخرجي وإيدك فاضية، وبسعر أقل من شراء كل قطعة لوحدها.",
+                              "buttonLabel": "تسوّقي مستلزمات الخروج",
+                              "buttonHref": "/products?collection=outings"
+                            }
+                          ],
+                          "autoplay": false,
+                          "seconds": 6
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "seo": {}
+    },
+    {
+      "path": "/about",
+      "title": "من نحن",
+      "pageType": "static",
+      "builderData": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "xs24-p2-s1",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p2-s1-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p2-s1-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p2-s1-e1",
+                        "type": "xs_title",
+                        "props": {
+                          "look": "24",
+                          "heading": "من نحن",
+                          "image": ""
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p2-s2",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p2-s2-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p2-s2-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p2-s2-e1",
+                        "type": "xs_story",
+                        "props": {
+                          "look": "24",
+                          "items": [
+                            {
+                              "title": "حكايتنا",
+                              "body": "بدأنا كأمهات عايزين السنة الأولى تبقى أسهل شوية: حاجات أقل بتتساب في الدولاب، وحاجات أكتر بتستخدميها كل يوم.\n\nاكتبي هنا إزاي بدأ متجرك، ومين بيختار المنتجات اللي بتبيعيها.",
+                              "image": "/xs/24/story.jpg"
+                            },
+                            {
+                              "title": "وعدنا ليكي",
+                              "body": "بتعايني طلبك قبل ما تدفعي، وبتدفعي عند الاستلام، وتقدري تستبدلي خلال 14 يوم لأي عيب صناعة. اكتبي هنا اللي تقدر عميلاتك تعتمد عليه لما يطلبوا منك.",
+                              "image": "/xs/24/story-wide.jpg"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "seo": {}
+    },
+    {
+      "path": "/contact",
+      "title": "تواصلي معانا",
+      "pageType": "static",
+      "builderData": {
+        "version": 1,
+        "sections": [
+          {
+            "id": "xs24-p3-s1",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p3-s1-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p3-s1-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p3-s1-e1",
+                        "type": "xs_title",
+                        "props": {
+                          "look": "24",
+                          "heading": "تواصلي معانا",
+                          "image": ""
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "xs24-p3-s2",
+            "type": "section",
+            "settings": {
+              "width": "full",
+              "padding": "tight"
+            },
+            "rows": [
+              {
+                "id": "xs24-p3-s2-r1",
+                "type": "row",
+                "columns": [
+                  {
+                    "id": "xs24-p3-s2-c1",
+                    "type": "column",
+                    "span": 12,
+                    "elements": [
+                      {
+                        "id": "xs24-p3-s2-e1",
+                        "type": "xs_contact",
+                        "props": {
+                          "look": "24",
+                          "heading": "ابعتيلنا رسالة",
+                          "info": [
+                            {
+                              "icon": "address",
+                              "title": "زورينا",
+                              "text": "اكتبي عنوان متجرك هنا"
+                            },
+                            {
+                              "icon": "phone",
+                              "title": "كلّمينا",
+                              "text": "اكتبي رقم تليفونك هنا"
+                            },
+                            {
+                              "icon": "email",
+                              "title": "راسلينا",
+                              "text": "اكتبي بريدك الإلكتروني هنا"
+                            }
+                          ],
+                          "contactPlaceholder": "بريدك أو رقم تليفونك",
+                          "messagePlaceholder": "رسالتك",
+                          "buttonLabel": "ابعتي",
+                          "successMessage": "شكرًا ليكي. هنرد عليكي خلال يوم."
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "seo": {}
+    }
+  ],
+  "sections": []
+}

@@ -491,6 +491,12 @@ export const fr: Dictionary = {
     next: "Suivant",
     ticketOrder: "Commande",
     ticketTotal: "Total",
+    railFront: "Devant",
+    railBack: "Dos",
+    railClose: "Fermer",
+    railShow: "Afficher",
+    railView: "Voir le produit",
+    railNew: "Nouveau",
   },
   funnel: {
     metaTitle: "Offre spéciale",

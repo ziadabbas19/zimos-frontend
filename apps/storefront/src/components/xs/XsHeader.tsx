@@ -6,6 +6,7 @@ import { AccountHeaderLink, useAccountMenuLink } from "@/components/account/Acco
 import { CartIcon } from "@/components/CartIcon";
 import { ColorModeSwitch } from "@/components/ColorModeSwitch";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
+import { XsNotice } from "./XsNotice";
 import { SearchBox } from "@/components/SearchBox";
 import { headerMenuOf } from "@/components/shell/headerMenu";
 import { NavDropdown } from "@/components/shell/NavDropdown";
@@ -35,7 +36,7 @@ import { headerSizeCss } from "./shellSizes";
  * Announcement panels (`themeSettings.header`, read through useStoreShell so
  * the preview shows unsaved changes):
  *
- *   strip, start side   the announcement line (its first message)
+ *   strip, start side   the announcement line (several take turns: ./XsNotice)
  *   strip, end side     the template's own links (lib/xsShell XS_STRIP_LINKS), then order
  *                       tracking and the language switch only if the merchant turns them on
  *                       (the switch: Languages → "language button", lib/shopperDisplay; it
@@ -110,7 +111,7 @@ export function XsHeader({
   // Its own sizes, per screen: a small stylesheet of their own (./shellSizes).
   const sizeCss = headerSizeCss(header.sizes);
 
-  const message = announcement ? (announcement.messages?.[0] ?? announcement.text) : "";
+  const messages = announcement ? (announcement.messages ?? [announcement.text]) : [];
 
   // The logo: the one set for this header, else the store's own, else the template's (lib/xsShell XS_LOGOS), else the name —
   // or the name straight away, when the merchant asked for it in place of any picture.
@@ -140,7 +141,11 @@ export function XsHeader({
       case "notice":
         return (
           <span key={item.id} data-xs-part={item.id}>
-            {announcement?.href ? <StoreLink href={announcement.href}>{message}</StoreLink> : message}
+            <XsNotice
+              messages={messages}
+              href={announcement?.href ?? null}
+              labels={locale === "ar" ? { prev: "الإعلان السابق", next: "الإعلان التالي" } : { prev: "Previous announcement", next: "Next announcement" }}
+            />
           </span>
         );
       case "link":
@@ -237,7 +242,7 @@ export function XsHeader({
               links={links}
               subLinks={children}
               extras={phoneExtras}
-              notice={message}
+              notice={messages[0] ?? ""}
               noticeHref={announcement?.href}
               showLanguage={has("language")}
               colorMode={colorModeButton && has("mode") ? colorMode : null}
