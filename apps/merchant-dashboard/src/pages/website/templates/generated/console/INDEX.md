@@ -61,3 +61,7 @@ version, and Publish. The key only names the files.
 | 46 | xs-21-ar | XS 21 عربي | food_beverage | xs, ar | true | #50A06C | xs-21-ar.json |
 | 47 | xs-22 | XS 22 | general | xs | false | #937AFF | xs-22.json |
 | 48 | xs-22-ar | XS 22 عربي | general | xs, ar | true | #937AFF | xs-22-ar.json |
+| 49 | xs-23 | Atelier | fashion | xs | false | #1D1B18 | xs-23.json |
+| 50 | xs-23-ar | Atelier عربي | fashion | xs, ar | true | #1D1B18 | xs-23-ar.json |
+| 51 | xs-24 | Cradle | kids_toys | xs | false | #E8415B | xs-24.json |
+| 52 | xs-24-ar | Cradle عربي | kids_toys | xs, ar | true | #E8415B | xs-24-ar.json |

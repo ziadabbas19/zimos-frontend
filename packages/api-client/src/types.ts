@@ -520,6 +520,10 @@ export const PAGE_ELEMENT_TYPES = [
   "xs_team",
   "xs_video",
   "xs_posts",
+  "xs_rail",
+  "xs_stack",
+  "xs_journey",
+  "xs_reels",
 ] as const;
 
 /** The backend's ALLOWED_ELEMENT_TYPES allowlist — anything else is a 422. */

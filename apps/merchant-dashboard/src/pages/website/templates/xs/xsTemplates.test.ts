@@ -88,7 +88,7 @@ describe("the imported (xs) templates", () => {
       expect(arabic!.rtl).toBe(true);
       // Shown words only: settings, addresses, e-mail addresses and phone numbers stay as they are.
       const shown = (value: unknown, key = ""): string[] => {
-        if (/^(look|variant|layout|image|images|icon|kind|url|collection|align|headingWeight|imageRatio|imageFit|endsAt|xsLook|primaryColor|primaryColorSource|id|type|width|padding|pageType|path)$/.test(key) || /(Href|href|Color|Url)$/.test(key)) return [];
+        if (/^(look|variant|layout|hanger|image|images|phoneImage|video|product|also|icon|kind|url|collection|align|headingWeight|imageRatio|imageFit|endsAt|xsLook|primaryColor|primaryColorSource|id|type|width|padding|pageType|path)$/.test(key) || /(Href|href|Color|Url)$/.test(key)) return [];
         if (typeof value === "string") return [value];
         if (Array.isArray(value)) return value.flatMap((item) => shown(item, key));
         if (value && typeof value === "object") return Object.entries(value).flatMap(([k, v]) => shown(v, k));
@@ -99,9 +99,9 @@ describe("the imported (xs) templates", () => {
     }
   });
 
-  it("are 48: 22 looks and look 01's two other home pages, each in English and in Arabic", () => {
-    expect(templates).toHaveLength(48);
-    expect(new Set(templates.map((t) => t.key)).size).toBe(48);
+  it("are 52: 24 looks (22 imported, Zimos's own Atelier, a merchant's own Cradle) and look 01's two other home pages, each in English and in Arabic", () => {
+    expect(templates).toHaveLength(52);
+    expect(new Set(templates.map((t) => t.key)).size).toBe(52);
     expect(templates.filter((t) => t.rtl).map((t) => t.key)).toEqual(templates.filter((t) => !t.rtl).map((t) => `${t.key}-ar`));
     for (const template of templates) {
       expect(template.kind, template.key).toBe("store");

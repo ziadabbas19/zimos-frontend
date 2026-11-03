@@ -1,0 +1,115 @@
+{
+  "xsLook": "23",
+  "primaryColorDark": "#D9C2A0",
+  "header": {
+    "announcement": {
+      "enabled": true,
+      "text": "Delivery across Egypt · Exchange in 14 days"
+    },
+    "menu": [
+      {
+        "label": "Home",
+        "href": "/",
+        "kind": "home"
+      },
+      {
+        "label": "Shop",
+        "href": "/products",
+        "kind": "url"
+      },
+      {
+        "label": "About",
+        "href": "/about",
+        "kind": "page"
+      },
+      {
+        "label": "Contact",
+        "href": "/contact",
+        "kind": "page"
+      }
+    ],
+    "show": {
+      "theme": false,
+      "trackOrder": false,
+      "language": false
+    },
+    "zones": {
+      "notice": [
+        {
+          "id": "notice",
+          "type": "notice"
+        }
+      ],
+      "links": [],
+      "brand": [
+        {
+          "id": "logo",
+          "type": "logo"
+        }
+      ],
+      "menu": [
+        {
+          "id": "menu",
+          "type": "menu"
+        }
+      ],
+      "icons": [
+        {
+          "id": "search",
+          "type": "search"
+        },
+        {
+          "id": "account",
+          "type": "account"
+        },
+        {
+          "id": "cart",
+          "type": "cart"
+        }
+      ]
+    }
+  },
+  "footer": {
+    "groups": [
+      {
+        "title": "Shop",
+        "links": [
+          {
+            "label": "All pieces",
+            "href": "/products",
+            "kind": "url"
+          },
+          {
+            "label": "Cart",
+            "href": "/cart",
+            "kind": "cart"
+          }
+        ]
+      },
+      {
+        "title": "Help",
+        "links": [
+          {
+            "label": "About",
+            "href": "/about",
+            "kind": "page"
+          },
+          {
+            "label": "Contact us",
+            "href": "/contact",
+            "kind": "page"
+          },
+          {
+            "label": "Track your order",
+            "href": "/track",
+            "kind": "track"
+          }
+        ]
+      }
+    ],
+    "text": "Pieces chosen with care, hung on our rail before they reach you.",
+    "show": {
+      "help": false
+    }
+  }
+}

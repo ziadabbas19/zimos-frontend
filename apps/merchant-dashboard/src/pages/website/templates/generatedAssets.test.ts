@@ -59,8 +59,8 @@ const sets = [
 ];
 
 describe("the generated templates' files", () => {
-  it.each(sets)("$name: hold the 48 templates", ({ dir }) => {
-    expect(jsonFiles(dir)).toHaveLength(48);
+  it.each(sets)("$name: hold the 52 templates", ({ dir }) => {
+    expect(jsonFiles(dir)).toHaveLength(52);
   });
 
   it.each(sets)("$name: name no file the storefront does not carry", ({ dir }) => {
@@ -90,7 +90,7 @@ describe("the generated templates' files", () => {
 describe("the stylesheets the templates are drawn with", () => {
   it("carry every face and picture they point at: each look's, and the phone header's", () => {
     const sheets = [...Object.values(manifest.looks), manifest.phone];
-    expect(sheets.length).toBe(23);
+    expect(sheets.length).toBe(25);
     for (const sheet of sheets) {
       expect(onStorefront(sheet), sheet).toBe(true);
       for (const address of cssAddresses(read(join(PUBLIC, sheet.slice(1))))) expect(onStorefront(address), `${sheet}: ${address}`).toBe(true);

@@ -126,13 +126,13 @@ async function run(argv, options = {}) {
 // ------------------------------------------------------------------ the files
 
 describe("the generated files", () => {
-  it("lists the 48 templates in INDEX.md's order, every one complete and consistent", () => {
+  it("lists the 52 templates in INDEX.md's order, every one complete and consistent", () => {
     const { rows, problems } = parseIndex(realFiles.index);
     expect(problems).toEqual([]);
-    expect(rows).toHaveLength(48);
+    expect(rows).toHaveLength(52);
     expect(rows[0]).toMatchObject({ n: 1, key: "xs-01", name: "XS 01", rtl: false, tags: ["xs"], versionFile: "xs-01.json" });
     expect(rows[1]).toMatchObject({ n: 2, key: "xs-01-ar", rtl: true, tags: ["xs", "ar"], versionFile: "xs-01-ar.json" });
-    expect(rows.at(-1).key).toBe("xs-22-ar");
+    expect(rows.at(-1).key).toBe("xs-24-ar");
 
     expect(real.problems).toEqual([]);
     expect(real.entries.map((e) => e.key)).toEqual(rows.map((r) => r.key));
@@ -141,12 +141,12 @@ describe("the generated files", () => {
 
   it("marks exactly the Arabic copies right-to-left", () => {
     for (const entry of real.entries) expect(entry.meta.rtl, entry.key).toBe(entry.key.endsWith("-ar"));
-    expect(real.entries.filter((e) => e.meta.rtl)).toHaveLength(24);
+    expect(real.entries.filter((e) => e.meta.rtl)).toHaveLength(26);
   });
 
-  it("counts the pages and elements the backend review counted (130 pages, 506 elements)", () => {
-    expect(real.entries.reduce((sum, e) => sum + e.stats.pages, 0)).toBe(130);
-    expect(real.entries.reduce((sum, e) => sum + e.stats.elements, 0)).toBe(506);
+  it("counts the pages and elements the backend review counted (142 pages, 554 elements)", () => {
+    expect(real.entries.reduce((sum, e) => sum + e.stats.pages, 0)).toBe(142);
+    expect(real.entries.reduce((sum, e) => sum + e.stats.elements, 0)).toBe(554);
   });
 });
 
@@ -266,17 +266,17 @@ describe("the checks", () => {
 // ------------------------------------------------------------------ dry run
 
 describe("dry run (the default)", () => {
-  it("prints all 48 with name, kind, rtl and size, and sends nothing", async () => {
+  it("prints all 52 with name, kind, rtl and size, and sends nothing", async () => {
     const net = noNetwork();
     const { code, out } = await run([], { fetchImpl: net.fetchImpl });
     expect(code).toBe(0);
     expect(net.calls).toHaveLength(0);
     expect(out.lines[0]).toBe("Dry run: nothing is sent.");
     const rows = out.lines.filter((line) => /^\d+\s+xs-/.test(line));
-    expect(rows).toHaveLength(48);
+    expect(rows).toHaveLength(52);
     expect(rows[0]).toMatch(/^1\s+xs-01\s+XS 01\s+store\s+fashion\s+false\s+xs\s+#717FE0\s+3\s+8\s+6\.\d KB$/);
     expect(rows[1]).toMatch(/^2\s+xs-01-ar\s+XS 01 عربي\s+store\s+fashion\s+true\s+xs,ar\s/);
-    expect(out.text()).toContain("48 templates check out");
+    expect(out.text()).toContain("52 templates check out");
     expect(out.text()).toContain(`With --apply they would go to ${API}.`);
   });
 
@@ -293,7 +293,7 @@ describe("dry run (the default)", () => {
     expect(only.out.lines.filter((line) => /^\d+\s+xs-/.test(line))).toEqual([expect.stringMatching(/^1\s+xs-01\s/)]);
     const from = await run(["--from=xs-05"], { fetchImpl: noNetwork().fetchImpl });
     const rows = from.out.lines.filter((line) => /^\d+\s+xs-/.test(line));
-    expect(rows).toHaveLength(36);
+    expect(rows).toHaveLength(40);
     expect(rows[0]).toMatch(/^13\s+xs-05\s/);
   });
 
@@ -391,13 +391,13 @@ describe("--apply", () => {
     server = null;
   });
 
-  it("creates, versions and publishes all 48 in INDEX.md's order", async () => {
+  it("creates, versions and publishes all 52 in INDEX.md's order", async () => {
     server = fakeConsole();
     const { code, out } = await run(["--apply"], { fetchImpl: server.fetchImpl });
     expect(code).toBe(0);
     expect(server.requests[0]).toMatchObject({ method: "GET", path: "/admin/templates" });
     const posts = server.posts();
-    expect(posts).toHaveLength(48 * 3);
+    expect(posts).toHaveLength(52 * 3);
     real.entries.forEach((entry, i) => {
       const [create, version, publish] = posts.slice(i * 3, i * 3 + 3);
       const id = server.rows[i].id;
@@ -410,7 +410,7 @@ describe("--apply", () => {
     expect(server.rows.filter((t) => t.rtl).map((t) => t.name)).toEqual(
       real.entries.filter((e) => e.key.endsWith("-ar")).map((e) => e.meta.name)
     );
-    expect(out.text()).toContain("created and published (48)");
+    expect(out.text()).toContain("created and published (52)");
   });
 
   it("skips what is already there, so a second run sends no writes", async () => {
@@ -420,8 +420,8 @@ describe("--apply", () => {
     const again = await run(["--apply"], { fetchImpl: server.fetchImpl });
     expect(again.code).toBe(0);
     expect(server.posts()).toHaveLength(writes);
-    expect(server.rows).toHaveLength(48);
-    expect(again.out.text()).toContain("already there, left alone (48)");
+    expect(server.rows).toHaveLength(52);
+    expect(again.out.text()).toContain("already there, left alone (52)");
   });
 
   it("does one template with --only and carries on with --from", async () => {
@@ -429,8 +429,8 @@ describe("--apply", () => {
     await run(["--apply", "--only", "xs-01"], { fetchImpl: server.fetchImpl });
     expect(server.rows.map((t) => t.name)).toEqual(["XS 01"]);
     const { out } = await run(["--apply", "--from", "xs-21"], { fetchImpl: server.fetchImpl });
-    expect(server.rows.map((t) => t.name)).toEqual(["XS 01", "XS 21", "XS 21 عربي", "XS 22", "XS 22 عربي"]);
-    expect(out.text()).toContain("created and published (4): xs-21, xs-21-ar, xs-22, xs-22-ar");
+    expect(server.rows.map((t) => t.name)).toEqual(["XS 01", "XS 21", "XS 21 عربي", "XS 22", "XS 22 عربي", "Atelier", "Atelier عربي", "Cradle", "Cradle عربي"]);
+    expect(out.text()).toContain("created and published (8): xs-21, xs-21-ar, xs-22, xs-22-ar, xs-23, xs-23-ar, xs-24, xs-24-ar");
   });
 
   it("stops at the first failure with the whole error, and says what was done", async () => {
@@ -460,7 +460,7 @@ describe("--apply", () => {
     expect(text).toMatch(/does not know an element type/);
     expect(text).toContain("the template exists (id t3), with no version, not published.");
     expect(text).toContain("--from xs-01b --resume-incomplete");
-    expect(text).toContain("Before it (2 of 48):");
+    expect(text).toContain("Before it (2 of 52):");
     expect(text).toContain("created and published (2): xs-01, xs-01-ar");
     // Nothing after the failed request.
     expect(server.requests.at(-1)).toMatchObject({ method: "POST", path: "/admin/templates/t3/versions" });
@@ -503,7 +503,7 @@ describe("--apply", () => {
     expect(text).toMatch(/#1 xs-01 \("XS 01"\): already in the gallery .*rtl is true in the console, false in the file/);
     expect(text).toMatch(/#7 xs-02 \("XS 02"\): already there unpublished/);
     expect(text).toMatch(/#11 xs-04 \("XS 04"\): 2 store templates already have this name/);
-    expect(text).toContain("created and published (45)");
+    expect(text).toContain("created and published (49)");
   });
 
   it("stops before writing anything when the token is refused", async () => {

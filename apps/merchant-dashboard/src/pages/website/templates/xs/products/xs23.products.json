@@ -1,0 +1,108 @@
+{
+  "look": "23",
+  "currency": "EGP",
+  "collections": [
+    {
+      "name": "T-shirts",
+      "nameAr": "تيشيرتات",
+      "slug": "tees"
+    },
+    {
+      "name": "Shirts",
+      "nameAr": "قمصان",
+      "slug": "shirts"
+    },
+    {
+      "name": "Knitwear",
+      "nameAr": "تريكو",
+      "slug": "knitwear"
+    },
+    {
+      "name": "Outerwear",
+      "nameAr": "جواكت",
+      "slug": "outerwear"
+    }
+  ],
+  "products": [
+    {
+      "name": "Navy Everyday Tee",
+      "nameAr": "تيشيرت كحلي يومي",
+      "description": "A soft navy cotton tee with a curved hem, cut a little longer so it sits right tucked in or worn loose.",
+      "descriptionAr": "تيشيرت قطن كحلي ناعم بطرف مدوّر، طوله زيادة سنة عشان يقعد مظبوط جوه البنطلون أو برّه.",
+      "price": 450,
+      "image": "/xs/23/products/p01.png",
+      "collections": [
+        "tees"
+      ]
+    },
+    {
+      "name": "Navy Linen Shirt",
+      "nameAr": "قميص كتان كحلي",
+      "description": "Washed linen in deep navy, roll-up sleeves and a relaxed fit. Wear it open over a tee on warm evenings.",
+      "descriptionAr": "كتان مغسول بلون كحلي غامق، أكمام تتطبّق وقصّة مريحة. البسه مفتوح على تيشيرت في الليالي الدافية.",
+      "price": 890,
+      "image": "/xs/23/products/p02.png",
+      "collections": [
+        "shirts"
+      ]
+    },
+    {
+      "name": "Chambray Dot Shirt",
+      "nameAr": "قميص شامبراي منقّط",
+      "description": "Mid-blue chambray with a small woven dot, buttoned collar and three-quarter sleeves.",
+      "descriptionAr": "شامبراي أزرق متوسط بنقط صغيرة منسوجة، بياقة بزراير وأكمام لحد نص الدراع.",
+      "price": 950,
+      "compareAt": 1150,
+      "image": "/xs/23/products/p03.png",
+      "collections": [
+        "shirts"
+      ]
+    },
+    {
+      "name": "Red Ribbed Cardigan",
+      "nameAr": "كارديجان تريكو أحمر",
+      "description": "A chunky rib-knit cardigan in deep red, with tortoiseshell buttons and a relaxed, dropped shoulder.",
+      "descriptionAr": "كارديجان تريكو مضلّع تقيل بلون أحمر غامق، بزراير لون صدف السلحفاة وكتف نازل مريح.",
+      "price": 1250,
+      "image": "/xs/23/products/p06.png",
+      "collections": [
+        "knitwear"
+      ]
+    },
+    {
+      "name": "Brown Hand-Knit Sweater",
+      "nameAr": "بلوفر تريكو يدوي بني",
+      "description": "A loose hand-knit sweater in warm brown, soft enough to wear straight on the skin.",
+      "descriptionAr": "بلوفر تريكو شغل إيد بلون بني دافي، واسع وناعم يتلبس على الجلد على طول.",
+      "price": 1100,
+      "compareAt": 1350,
+      "image": "/xs/23/products/p07.png",
+      "collections": [
+        "knitwear"
+      ]
+    },
+    {
+      "name": "Orange Hooded Jacket",
+      "nameAr": "جاكيت برتقالي بكابيشون",
+      "description": "A warm orange jacket with a lined hood, a two-way zip and deep pockets for cold mornings.",
+      "descriptionAr": "جاكيت برتقالي دافي بكابيشون مبطّن، وسوستة من الناحيتين، وجيوب عميقة للصبح البارد.",
+      "price": 1650,
+      "image": "/xs/23/products/p04.png",
+      "collections": [
+        "outerwear"
+      ]
+    },
+    {
+      "name": "Navy Fleece-Collar Jacket",
+      "nameAr": "جاكيت كحلي بياقة فرو",
+      "description": "A navy zip jacket with a soft fleece collar and ribbed cuffs, light enough for every day.",
+      "descriptionAr": "جاكيت كحلي بسوستة وياقة فرو ناعمة وأساور مضلّعة، خفيف يتلبس كل يوم.",
+      "price": 1850,
+      "compareAt": 2200,
+      "image": "/xs/23/products/p05.png",
+      "collections": [
+        "outerwear"
+      ]
+    }
+  ]
+}

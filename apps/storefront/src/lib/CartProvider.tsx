@@ -111,6 +111,11 @@ export function useCart(): CartContextValue {
   return ctx;
 }
 
+/** The cart where there is one, else null: for a part that can also be drawn outside a store page (a page rendered on its own). */
+export function useOptionalCart(): CartContextValue | null {
+  return useContext(CartContext);
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   // The provider lives in the root layout, so it renders on every route. It only
   // does anything on `/store/[workspaceId]/...`, where this param is filled in.

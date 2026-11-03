@@ -5,8 +5,12 @@
  * (page-renderer/xs XsCredit) or, on a store that wears the look's whole
  * shell, in its footer (components/xs/XsFooter) — and it stays for as long
  * as the look does.
+ *
+ * A look designed by Zimos itself owes no one a line: its entry is null, which
+ * still makes it a look the storefront knows (xsShellOf, page-renderer/xs).
  */
-export const XS_CREDITS: Record<string, { name: string; author: string; href: string; licence: string }> = {
+export type XsCredit = { name: string; author: string; href: string; licence: string };
+export const XS_CREDITS: Record<string, XsCredit | null> = {
   "01": { name: "Coza Store", author: "Colorlib", href: "https://colorlib.com", licence: "CC BY 3.0" },
   "02": { name: "Furni", author: "Untree.co", href: "https://untree.co", licence: "CC BY 3.0" },
   "03": { name: "Kaira", author: "TemplatesJungle", href: "https://templatesjungle.com", licence: "free with attribution" },
@@ -29,6 +33,10 @@ export const XS_CREDITS: Record<string, { name: string; author: string; href: st
   "20": { name: "Restoran", author: "HTML Codex", href: "https://htmlcodex.com", licence: "CC BY 4.0" },
   "21": { name: "Restaurant", author: "ThemeWagon", href: "https://themewagon.com", licence: "GPL v3" },
   "22": { name: "Automark", author: "Themefisher", href: "https://themefisher.com", licence: "MIT" },
+  // Atelier: Zimos's own, made around the clothing rail.
+  "23": null,
+  // Cradle: a merchant's own theme brought over from Shopify (mother and baby).
+  "24": null,
 };
 
 /**
@@ -125,6 +133,8 @@ const XS_PHONE_MENUS: Record<string, XsPhoneMenuMode> = {
   "20": "drop",
   "21": "drop",
   "22": "drop",
+  "23": "start",
+  "24": "start",
 };
 export function xsPhoneMenuOf(look: string): XsPhoneMenuMode {
   return XS_PHONE_MENUS[look] ?? "drop";

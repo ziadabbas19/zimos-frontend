@@ -1,22 +1,45 @@
-import { ApiError, type StorefrontProduct } from "@store-builder/api-client";
+import { ApiError, parseMoney, type StorefrontProduct } from "@store-builder/api-client";
 import { BoxIcon } from "@/components/Icons";
 // Split into their own chunks (see immersive/lazy.tsx): pages without these
 // elements pay nothing for them.
 import { OrbitStage, Product3D, ScrollStory, ShaderHero } from "@/components/immersive/lazy";
+import type { ClothingRailProps, RailGarment } from "@/components/immersive/ClothingRail";
 import type { StoryStep } from "@/components/immersive/ScrollStory";
 import { ProductCard } from "@/components/ProductCard";
 import { StoreLink } from "@/components/StoreRoute";
 import { btnPrimary } from "@/components/ui";
-import { getDictionary, type Locale } from "@/lib/i18n";
-import { firstImage } from "@/lib/product";
+import { formatPrice, getDictionary, intlLocaleFor, type Locale } from "@/lib/i18n";
+import {
+  compareAtOf,
+  defaultOfferOf,
+  discountPercent,
+  firstImage,
+  needsProductPage,
+  offerAppliesTo,
+  priceOf,
+  productImages,
+  variantUnitPrice,
+} from "@/lib/product";
+import {
+  buyGroups,
+  compactPrice,
+  fabricAt,
+  garmentColour,
+  garmentKind,
+  garmentText,
+  isNewProduct,
+  optionDetails,
+  plainDescription,
+} from "@/lib/railGarment";
 import { createServerStorefrontApiClient } from "@/lib/serverApiClient";
 import { EmptyBlock } from "./commerce";
-import { num, resolveHref, safeUrl, str, type Props } from "./props";
+import { bool, num, resolveHref, safeUrl, str, type Props } from "./props";
 
 /**
  * The four immersive element types: a hero drawn in the store's colours, a
  * spinnable 3D product, a turning product carousel, and a story that advances
- * as the page scrolls.
+ * as the page scrolls. Also the catalogue behind a template's clothing rail
+ * (`loadRail`, drawn by the `xs_rail` band).
  *
  * Like the commerce elements, these are server components that fetch the
  * merchant's real catalogue; the moving parts are small client components they
@@ -178,4 +201,120 @@ export function ScrollStoryElement({ props }: { props: Props }) {
 
   if (steps.length === 0) return null;
   return <ScrollStory steps={steps} title={str(props, "title") || undefined} />;
+}
+
+/**
+ * One product as a piece on the rail: its first photo hangs, its second is
+ * the back, and — when the merchant says their photos come that way — its
+ * third shows the side it rests on. Without a photo it is drawn as the
+ * garment its name says, in its colour option (lib/railGarment). The
+ * hang-tag carries the price.
+ */
+function railGarment(product: StorefrontProduct, index: number, currency: string, locale: Locale, sidePhotos: boolean, newLabel: string): RailGarment {
+  const [image, backImage, sidePhoto] = productImages(product);
+  const sideImage = sidePhotos ? sidePhoto : undefined;
+  const money = (amount: number) => compactPrice(formatPrice(amount, currency, locale));
+  const price = priceOf(product);
+  const compareAt = compareAtOf(product);
+  const percent = price !== undefined ? discountPercent(price, compareAt) : null;
+  const description = plainDescription(product.description);
+  const details = optionDetails(product);
+  const badge: RailGarment["badge"] = percent
+    ? { text: new Intl.NumberFormat(intlLocaleFor(locale), { style: "percent" }).format(-percent / 100), tone: "sale" }
+    : isNewProduct(product)
+      ? { text: newLabel, tone: "new" }
+      : undefined;
+  return {
+    id: product.id,
+    name: product.name,
+    ...(description ? { description } : {}),
+    ...(image
+      ? { image, ...(backImage ? { backImage } : {}), ...(sideImage ? { sideImage } : {}) }
+      : { kind: garmentKind(garmentText(product)), color: garmentColour(product) ?? fabricAt(index) }),
+    ...(price !== undefined ? { tag: money(price) } : {}),
+    ...(compareAt ? { tagWas: money(compareAt) } : {}),
+    ...(badge ? { badge } : {}),
+    ...(details.length > 0 ? { details } : {}),
+    href: `/products/${product.slug}`,
+    ...(railBuy(product, money) ?? {}),
+  };
+}
+
+/**
+ * What the detail view sells: every variant with its own price, ready to add.
+ * Nothing when the product has fields to fill or menu options to pick — those
+ * are bought from its own page (lib/product needsProductPage), as on a card.
+ */
+function railBuy(product: StorefrontProduct, money: (amount: number) => string): Pick<RailGarment, "buy"> | null {
+  if (product.variants.length === 0 || needsProductPage(product)) return null;
+  const only = product.variants.length === 1 ? product.variants[0] : undefined;
+  const offer = only ? defaultOfferOf(product) : undefined;
+  return {
+    buy: {
+      groups: buyGroups(product),
+      variants: product.variants.map((variant) => {
+        const unit = variantUnitPrice(product, variant);
+        const compare = variant.compareAtAmount === null ? 0 : parseMoney(variant.compareAtAmount);
+        return {
+          id: variant.id,
+          values: variant.optionValues ?? {},
+          inStock: variant.inStock,
+          price: money(unit),
+          ...(compare > unit ? { was: money(compare) } : {}),
+        };
+      }),
+      ...(offer && only && offerAppliesTo(offer, only.id) ? { offerId: offer.id } : {}),
+    },
+  };
+}
+
+const HANGERS = ["wood", "matte", "none"] as const;
+
+/** A rail ready to draw: everything but its button, which the band draws in its look. */
+export type LoadedRail = Omit<ClothingRailProps, "action"> & { ctaLabel: string; ctaHref: string | null };
+
+/**
+ * The rail a band's props describe, with the store's products on it, for the
+ * template look's `xs_rail` (xs/home.tsx). Null when the catalogue could not
+ * be read; `items` is empty when it has nothing to hang.
+ */
+export async function loadRail(props: Props, workspaceId: string, currency: string, locale: Locale): Promise<LoadedRail | null> {
+  const t = getDictionary(locale);
+  const limit = num(props, "limit", 8, 3, 16);
+  const collectionId = str(props, "collectionId").trim();
+
+  let products: StorefrontProduct[] = [];
+  try {
+    const client = await createServerStorefrontApiClient();
+    const res = await client.listStorefrontProducts(workspaceId, {
+      limit,
+      ...(collectionId ? { collectionId } : {}),
+    });
+    products = res.products;
+  } catch {
+    return null;
+  }
+  const sidePhotos = bool(props, "sidePhotos", false);
+  return {
+    items: products.map((product, index) => railGarment(product, index, currency, locale, sidePhotos, t.immersive.railNew)),
+    eyebrow: str(props, "eyebrow") || undefined,
+    heading: str(props, "heading") || undefined,
+    caption: str(props, "caption") || undefined,
+    autoplay: bool(props, "autoplay", true),
+    hanger: HANGERS.find((h) => h === str(props, "hanger")) ?? "wood",
+    labels: {
+      front: t.immersive.railFront,
+      back: t.immersive.railBack,
+      close: t.immersive.railClose,
+      show: t.immersive.railShow,
+      view: t.immersive.railView,
+      addToCart: t.product.addToCart,
+      adding: t.product.adding,
+      added: t.product.added,
+      addFailed: t.product.addFailed,
+      outOfStock: t.common.outOfStock,
+    },
+    ctaLabel: str(props, "ctaLabel"),
+    ctaHref: resolveHref(str(props, "ctaHref", "/products")),
+  };
 }

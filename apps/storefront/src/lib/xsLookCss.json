@@ -1,28 +1,30 @@
 {
   "looks": {
-    "10": "/xs/10/look.4c9c4daf28.css",
+    "10": "/xs/10/look.a75d4c314d.css",
     "11": "/xs/11/look.b375db7ec1.css",
-    "12": "/xs/12/look.5f04bb3b00.css",
-    "13": "/xs/13/look.242cbce680.css",
+    "12": "/xs/12/look.620821aa32.css",
+    "13": "/xs/13/look.3d40f9b735.css",
     "14": "/xs/14/look.ac7b3b15aa.css",
     "15": "/xs/15/look.de05e1e436.css",
     "16": "/xs/16/look.8d59e696f8.css",
-    "17": "/xs/17/look.d414642719.css",
+    "17": "/xs/17/look.8dfb4fb969.css",
     "18": "/xs/18/look.2d225c9cac.css",
     "19": "/xs/19/look.ffea3be81d.css",
     "20": "/xs/20/look.25ce4ec7df.css",
     "21": "/xs/21/look.f38de03ec3.css",
     "22": "/xs/22/look.6edc6224c9.css",
-    "01": "/xs/01/look.277147cc8a.css",
+    "23": "/xs/23/look.7fc3124832.css",
+    "24": "/xs/24/look.f1f50bf8eb.css",
+    "01": "/xs/01/look.a95a9e17ee.css",
     "02": "/xs/02/look.861fa4ead3.css",
-    "03": "/xs/03/look.1651483e74.css",
+    "03": "/xs/03/look.8f9eb7c920.css",
     "04": "/xs/04/look.f403d2b360.css",
     "05": "/xs/05/look.c246081216.css",
-    "06": "/xs/06/look.0f6a86f153.css",
+    "06": "/xs/06/look.bf0678dece.css",
     "07": "/xs/07/look.375c502506.css",
     "08": "/xs/08/look.3e5cd0b6f9.css",
     "09": "/xs/09/look.b5c6188155.css"
   },
   "phone": "/xs/phone.b79ffc5dd1.css",
-  "dark": "/xs/dark.58a0a72e3a.css"
+  "dark": "/xs/dark.a8aa55c233.css"
 }

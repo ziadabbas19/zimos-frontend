@@ -15,3 +15,6 @@ export const XsQuotes = dynamic(() => import("./xs/XsQuotes").then((m) => m.XsQu
 export const XsCountdown = dynamic(() => import("./xs/XsCountdown").then((m) => m.XsCountdown));
 export const XsNewsletterForm = dynamic(() => import("./xs/XsNewsletterForm").then((m) => m.XsNewsletterForm));
 export const XsContactForm = dynamic(() => import("./xs/XsContactForm").then((m) => m.XsContactForm));
+export const XsStack = dynamic(() => import("./xs/XsStack").then((m) => m.XsStack));
+export const XsJourney = dynamic(() => import("./xs/XsJourney").then((m) => m.XsJourney));
+export const XsReels = dynamic(() => import("./xs/XsReels").then((m) => m.XsReels));

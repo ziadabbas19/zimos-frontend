@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { renderToPipeableStream } from "react-dom/server.node";
 import type { PageElement, PageTree, StorefrontProduct } from "@store-builder/api-client";
 import { StoreContextProvider, type StoreInfo } from "@/lib/StoreContext";
+import { XS_CREDITS } from "@/lib/xsShell";
 import { PageRenderer } from "./PageRenderer";
 
 /**
@@ -29,7 +30,8 @@ vi.mock("@/components/StoreRoute", () => ({
   useStoreBasePath: () => "",
 }));
 vi.mock("@/lib/storeMeta", () => ({ getStoreMeta: async () => null }));
-vi.mock("@/lib/CartProvider", () => ({ useCart: () => ({ addItem: async () => undefined, openDrawer: () => undefined, itemCount: 0 }) }));
+const cartStub = vi.hoisted(() => ({ addItem: async () => undefined, openDrawer: () => undefined, itemCount: 0 }));
+vi.mock("@/lib/CartProvider", () => ({ useCart: () => cartStub, useOptionalCart: () => cartStub }));
 
 const catalogue = vi.hoisted(() => ({ products: [] as unknown[] }));
 vi.mock("@/lib/serverApiClient", () => ({
@@ -91,6 +93,15 @@ const byKey = templates.map((t) => [t.key, t] as const);
 /** A template is drawn in its own language: an Arabic store wears the Arabic one. */
 const localeOf = (template: Template) => (template.rtl ? "ar" : "en");
 
+const CATALOGUES = resolve(__dirname, "../../../../merchant-dashboard/src/pages/website/templates/xs/products");
+/** The groups a template makes in the store whether or not its products come too (its catalogue's `linkedGroups`). */
+function groupsOf(template: Template): string[] {
+  const file = resolve(CATALOGUES, `xs${template.key.replace(/^xs-/, "").slice(0, 2)}.products.json`);
+  if (!existsSync(file)) return [];
+  const catalogue = JSON.parse(readFileSync(file, "utf8")) as { linkedGroups?: boolean; collections: Array<{ slug: string }> };
+  return catalogue.linkedGroups ? catalogue.collections.map((c) => c.slug) : [];
+}
+
 /** The whole page as the server sends it: the catalogue sections wait for their products before the markup is taken. */
 async function draw(tree: PageTree, locale: "ar" | "en", editable = false): Promise<HTMLElement> {
   const rendered = await PageRenderer({ tree, workspaceId: "w1", currency: "EGP", locale, editable });
@@ -133,10 +144,10 @@ const PICTURE = /\/xs\/[A-Za-z0-9/_.-]+\.(?:jpe?g|png|webp|gif|svg)/g;
 const fromStore = (src: string) => src.startsWith("https://cdn.zimos.test/product-") || (src.startsWith("/") && existsSync(resolve(PUBLIC, decodeURI(src.split("?")[0]).slice(1))));
 
 describe("the store templates on the storefront", () => {
-  it("are the generated files: 48, each English one with its Arabic twin, right to left", () => {
-    expect(templates).toHaveLength(48);
+  it("are the generated files: 52, each English one with its Arabic twin, right to left", () => {
+    expect(templates).toHaveLength(52);
     const english = templates.filter((t) => !t.rtl);
-    expect(english).toHaveLength(24);
+    expect(english).toHaveLength(26);
     for (const template of english) expect(templates.find((t) => t.key === `${template.key}-ar`)?.rtl, template.key).toBe(true);
   });
 
@@ -178,8 +189,11 @@ describe("the store templates on the storefront", () => {
       }
     }
     // The design's attribution, which its licence asks for (page-renderer/xs XsCredit), is on every page
-    // and names its author's site; every other link stays in the store.
-    expect(root.querySelector(".xs-credit"), "attribution").not.toBeNull();
+    // and names its author's site; every other link stays in the store. A look Zimos designed itself
+    // (lib/xsShell XS_CREDITS null) owes no one a line, so it has none.
+    const look = String((template.version.globalStyles.themeSettings as { xsLook?: unknown } | undefined)?.xsLook ?? "");
+    if (XS_CREDITS[look]) expect(root.querySelector(".xs-credit"), "attribution").not.toBeNull();
+    else expect(root.querySelector(".xs-credit"), "no attribution on Zimos's own look").toBeNull();
     for (const link of Array.from(root.querySelectorAll("a"))) {
       const href = link.getAttribute("href") ?? "";
       if (link.closest(".xs-credit")) expect(href, link.textContent ?? "").toMatch(/^https:\/\//);
@@ -188,7 +202,9 @@ describe("the store templates on the storefront", () => {
   });
 
   it.each(byKey)("%s: every link it writes leads to one of its own pages or the catalogue", (_key, template) => {
-    const paths = new Set([...template.version.pages.map((p) => p.path), "/products"]);
+    // A template whose catalogue's groups are made with it (`linkedGroups`) may also link to those groups.
+    const groups = groupsOf(template).map((slug) => `/products?collection=${slug}`);
+    const paths = new Set([...template.version.pages.map((p) => p.path), "/products", ...groups]);
     const links: string[] = [];
     const walk = (value: unknown, key = ""): void => {
       if (typeof value === "string") {

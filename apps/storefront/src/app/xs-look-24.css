@@ -1,0 +1,888 @@
+/*
+ * Look 24 · Cradle — a mother-and-baby store's own Shopify theme (Horizon with
+ * the merchant's own sections) carried over: white ground, navy
+ * headings (#235d90), one pink (#e8415b) for prices, badges and the main
+ * buttons, a teal (#0bb3b8) for small marks, soft rounded cards and a wave
+ * under the big pictures. The merchant's own design, so it carries no credit
+ * line (lib/xsShell XS_CREDITS "24": null).
+ *
+ * Text in Tajawal, headings in Baloo Bhaijaan 2 — both served by this app
+ * (xs-fonts.css: "XS24 Sans", "XS24 Display", and their Arabic faces).
+ */
+
+[data-xs-look="24"],
+.brand-theme[data-xs-shell="24"] {
+  --xs-sans: "XS24 Sans", "XS Ar Tajawal", var(--font-sans), system-ui, sans-serif;
+  --xs-display: "XS24 Display", "XS Ar Baloo Bhaijaan 2", "XS Ar Tajawal", system-ui, sans-serif;
+  --xs-ink: #21303b;
+  --xs-ink-soft: #45525c;
+  --xs-muted: #687985;
+  --xs-brand: #e8415b;
+  --xs-accent: #e8415b;
+  --xs-button: #e8415b;
+  --xs-highlight: #e8415b;
+  --xs-tint: #f7f9fb;
+  --xs-dark: #235d90;
+  --xs-line: #e6edf2;
+  --xs-ground: #fff;
+  --xs-footer-ink: #fff;
+  --xs-badge: #e8415b;
+  --xs-btn-radius: 12px;
+  --xs-container: 1360px;
+  --uo-navy: #235d90;
+  --uo-navy-deep: #1b4a74;
+  --uo-pink: #e8415b;
+  --uo-pink-soft: #fdecef;
+  --uo-blush: #f7d9e1;
+  --uo-blush-soft: #fff4f6;
+  --uo-teal: #0bb3b8;
+  --uo-teal-deep: #087d81;
+  --uo-teal-soft: #eaf9f9;
+  --uo-soft: #f7f9fb;
+  --uo-sky: #17a8c7;
+  --uo-ink-deep: #14304f;
+  color: var(--xs-ink);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* The whole store wears the look's ground and ink: catalogue, product, cart and checkout pages too. */
+.brand-theme[data-xs-shell="24"] {
+  --color-ink: #21303b;
+  --color-ink-soft: #45525c;
+  --color-paper: #fff;
+  --color-paper-raised: #fff;
+  --color-line: #e6edf2;
+  --color-line-strong: #b9c6d0;
+  --color-danger: #e8415b;
+  background: #fff;
+}
+
+/* --- headings and buttons ------------------------------------------------- */
+
+[data-xs-look="24"] .xs-heading,
+[data-xs-look="24"] h2.xs-heading {
+  color: var(--uo-navy);
+  font-family: var(--xs-display);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+[data-xs-look="24"] .xs-btn {
+  border-radius: var(--xs-btn-radius);
+  font-weight: 800;
+  box-shadow: 0 6px 16px rgba(232, 65, 91, 0.12);
+}
+
+/* --- header: the pink strip, a white bar with a hairline under it ----------- */
+
+.brand-theme[data-xs-shell="24"] .xs-header__strip {
+  height: 30px;
+  background: var(--uo-pink);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 30px;
+}
+.brand-theme[data-xs-shell="24"] .xs-header__strip-inner {
+  justify-content: center;
+}
+.brand-theme[data-xs-shell="24"] .xs-header {
+  padding-bottom: var(--xs-own-bar-h, 83px);
+}
+.brand-theme[data-xs-shell="24"] .xs-header__bar {
+  top: 30px;
+  height: 83px;
+  border-bottom: 1px solid var(--xs-line);
+}
+.brand-theme[data-xs-shell="24"] .xs-header[data-scrolled] .xs-header__bar {
+  top: 0;
+  height: 72px;
+  box-shadow: 0 4px 18px rgba(35, 93, 144, 0.06);
+}
+/* On a phone the pink strip stays too (the live theme shows it there); the bar sits under it and
+   holds to the top of the screen only once the page is scrolled, as on a computer. */
+@media (max-width: 991px) {
+  .brand-theme[data-xs-shell="24"] .xs-header__strip {
+    display: block;
+  }
+  .brand-theme[data-xs-shell="24"] .xs-header__bar {
+    position: absolute;
+  }
+  .brand-theme[data-xs-shell="24"] .xs-header[data-scrolled] .xs-header__bar {
+    position: fixed;
+  }
+}
+.brand-theme[data-xs-shell="24"] .xs-header__bar-inner {
+  max-width: 1440px;
+  padding-inline: 40px;
+}
+.brand-theme[data-xs-shell="24"] .xs-header__logo {
+  height: 80%;
+  margin-inline-end: 28px;
+}
+/* The logo file is square with room round the mark (as on the live theme): drawn larger than the bar, its empty edges spill over. */
+.brand-theme[data-xs-shell="24"] .xs-header__logo-img {
+  width: auto;
+  max-width: none;
+  height: 112px;
+  margin-block: -23px;
+}
+.brand-theme[data-xs-shell="24"] .xs-header__menu a,
+.brand-theme[data-xs-shell="24"] .xs-header__link {
+  color: var(--xs-ink);
+  font-size: 15px;
+  font-weight: 500;
+}
+.brand-theme[data-xs-shell="24"] .xs-header__menu a:hover,
+.brand-theme[data-xs-shell="24"] .xs-header__link:hover {
+  color: var(--uo-pink);
+}
+.brand-theme[data-xs-shell="24"] .xs-header__icons {
+  color: var(--uo-navy);
+}
+
+/* --- footer: the blush band, navy words ----------------------------------- */
+
+.brand-theme[data-xs-shell="24"] .xs-footer,
+.xs-footer[data-xs-look="24"] {
+  margin-top: 72px;
+  padding: 36px 40px 16px;
+  background: var(--uo-blush);
+  color: var(--xs-ink);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.brand-theme[data-xs-shell="24"] .xs-footer__grid {
+  max-width: 1360px;
+  gap: 0 40px;
+}
+.brand-theme[data-xs-shell="24"] .xs-footer__title {
+  padding-bottom: 14px;
+  color: var(--uo-navy);
+  font-size: 20px;
+  font-weight: 700;
+  text-transform: none;
+}
+.brand-theme[data-xs-shell="24"] .xs-footer a {
+  color: var(--uo-navy);
+}
+.brand-theme[data-xs-shell="24"] .xs-footer a:hover {
+  color: var(--uo-pink);
+}
+.brand-theme[data-xs-shell="24"] .xs-footer__text {
+  max-width: 420px;
+  color: var(--xs-ink);
+  font-size: 15px;
+}
+.brand-theme[data-xs-shell="24"] .xs-footer__logo {
+  max-height: 72px;
+}
+.brand-theme[data-xs-shell="24"] .xs-footer__social a {
+  color: var(--uo-navy);
+}
+.brand-theme[data-xs-shell="24"] .xs-footer__bottom {
+  max-width: 1360px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(35, 93, 144, 0.14);
+  color: var(--xs-ink);
+  font-size: 12px;
+}
+
+/* --- the big pictures: the hero (two slides or more) and the banner (one) ---- */
+
+/* Both: a merchant's picture drawn whole across the screen, with the wave under it. */
+.xs-slider[data-xs-look="24"] {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+}
+.xs-slider[data-xs-look="24"]::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 64px;
+  background: no-repeat bottom / 100% 100%
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 64' preserveAspectRatio='none'%3E%3Cpath fill='%23fff' d='M0 40C240 12 480 6 720 26s480 30 720 2v36H0z'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+.xs-slider[data-xs-look="24"] .xs-slider__slide {
+  background-size: cover;
+  background-position: center;
+}
+/* The hero: as tall as its pictures are (2020 × 779), the words are in them. */
+.xs-slider[data-xs-look="24"]:has(> .xs-slider__slide + .xs-slider__slide) {
+  aspect-ratio: 2020 / 779;
+  background: #fff7f3;
+}
+.xs-slider[data-xs-look="24"] .xs-slider__arrow {
+  top: 50%;
+  display: flex;
+  width: 44px;
+  height: 44px;
+  margin-top: -22px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--uo-navy);
+  font-size: 26px;
+  opacity: 1;
+  box-shadow: 0 6px 18px rgba(35, 93, 144, 0.12);
+}
+.xs-slider[data-xs-look="24"] .xs-slider__arrow:hover {
+  background: #fff;
+  color: var(--uo-pink);
+}
+.xs-slider[data-xs-look="24"] .xs-slider__arrow--prev {
+  inset-inline-start: 18px;
+}
+.xs-slider[data-xs-look="24"] .xs-slider__arrow--next {
+  inset-inline-end: 18px;
+}
+.xs-slider[data-xs-look="24"] .xs-slider__dots {
+  position: absolute;
+  z-index: 3;
+  bottom: 54px;
+  left: 50%;
+  display: flex;
+  gap: 8px;
+  transform: translateX(-50%);
+  direction: ltr;
+}
+.xs-slider[data-xs-look="24"] .xs-slider__dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(35, 93, 144, 0.22);
+  cursor: pointer;
+  transition:
+    width 0.3s ease,
+    background-color 0.3s ease;
+}
+.xs-slider[data-xs-look="24"] .xs-slider__dot[aria-current] {
+  width: 24px;
+  background: var(--uo-pink);
+}
+/* The banner: a fixed height, its words on the start side over the picture. */
+.xs-slider[data-xs-look="24"]:not(:has(> .xs-slider__slide + .xs-slider__slide)) {
+  height: 490px;
+  margin-block: 40px;
+}
+.xs-slider[data-xs-look="24"] .xs-slider__inner {
+  max-width: 1360px;
+  margin-inline: auto;
+  padding: 40px 80px 60px;
+}
+.xs-slider[data-xs-look="24"] .xs-slider__heading {
+  max-width: 620px;
+  margin: 0 0 14px;
+  padding: 0;
+  color: #fff;
+  font-family: var(--xs-sans);
+  font-size: clamp(30px, 3vw, 43px);
+  font-weight: 700;
+  line-height: 1.18;
+  text-transform: none;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.22);
+}
+.xs-slider[data-xs-look="24"] .xs-slider__line {
+  max-width: 520px;
+  margin: 0 0 22px;
+  color: #fff;
+  font-size: 15px;
+  line-height: 1.8;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.25);
+}
+.xs-slider[data-xs-look="24"] .xs-slider__button {
+  display: inline-flex;
+  height: 44px;
+  align-items: center;
+  padding: 0 28px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--uo-pink);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: none;
+  box-shadow: 0 9px 22px rgba(232, 65, 91, 0.14);
+}
+.xs-slider[data-xs-look="24"] .xs-slider__button:hover {
+  background: #d93650;
+}
+/* The hero's own words, where its pictures leave room for them: the left part on a computer
+   (the template's pictures keep a light, empty ground there), the top on a phone. The pictures
+   are never mirrored for Arabic: what is printed on the products would read backwards. */
+.xs-slider[data-xs-look="24"]:has(> .xs-slider__slide + .xs-slider__slide) .xs-slider__inner {
+  position: absolute;
+  top: 0;
+  bottom: 9%;
+  left: 3.5%;
+  width: 39%;
+  max-width: none;
+  height: auto;
+  margin: 0;
+  padding: 0 1.5%;
+  align-items: center;
+  text-align: center;
+}
+.xs-slider[data-xs-look="24"]:has(> .xs-slider__slide + .xs-slider__slide) .xs-slider__heading {
+  max-width: none;
+  margin: 0 0 0.25em;
+  color: var(--uo-sky);
+  font-family: var(--xs-display);
+  font-size: clamp(30px, 4.3vw, 82px);
+  font-weight: 800;
+  line-height: 1.08;
+  text-shadow: none;
+}
+.xs-slider[data-xs-look="24"]:has(> .xs-slider__slide + .xs-slider__slide) .xs-slider__line {
+  max-width: none;
+  margin: 0 0 1.2em;
+  color: var(--uo-ink-deep);
+  font-size: clamp(15px, 1.65vw, 32px);
+  font-weight: 700;
+  line-height: 1.35;
+  text-shadow: none;
+}
+[dir="rtl"] .xs-slider[data-xs-look="24"] .xs-slider__slide[style*="--xs-bg:"] > .xs-slider__photo {
+  transform: none;
+}
+
+/* --- trust cards (xs_features without a heading or picture): four in a row ---- */
+
+.xs-features[data-xs-look="24"] {
+  padding: 16px 20px;
+}
+.xs-features[data-xs-look="24"] .xs-features__inner {
+  display: block;
+  max-width: 1392px;
+}
+.xs-features[data-xs-look="24"] .xs-features__list {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+.xs-features[data-xs-look="24"] .xs-features__item {
+  display: flex;
+  min-height: 126px;
+  margin: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 10px;
+  border: 1px solid var(--xs-line);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(35, 93, 144, 0.04);
+  text-align: center;
+}
+.xs-features[data-xs-look="24"] .xs-features__icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  margin: 0 0 4px;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--uo-teal-soft);
+}
+.xs-features[data-xs-look="24"] .xs-features__icon::before {
+  display: none;
+}
+.xs-features[data-xs-look="24"] .xs-features__icon img {
+  width: 20px;
+  height: 20px;
+}
+.xs-features[data-xs-look="24"] .xs-features__item h3 {
+  margin: 0;
+  color: var(--xs-ink);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.xs-features[data-xs-look="24"] .xs-features__item p {
+  color: var(--xs-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* --- shop by category (xs_banners, "card"): rounded square pictures, the name under each ---- */
+
+.xs-banners[data-xs-look="24"] {
+  padding: 52px 24px 60px;
+}
+.xs-banners[data-xs-look="24"] .xs-banners__intro {
+  max-width: 1392px;
+  margin-bottom: 34px;
+}
+.xs-banners[data-xs-look="24"] .xs-banners__intro h2 {
+  margin: 0;
+  color: var(--uo-navy);
+  font-family: var(--xs-display);
+  font-size: clamp(32px, 3.05vw, 44px);
+  font-weight: 600;
+  line-height: 1.06;
+}
+.xs-banners[data-xs-look="24"] .xs-banners__grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 34px 16px;
+  max-width: 1392px;
+}
+.xs-banners[data-xs-look="24"] .xs-banners__item {
+  border: 0;
+  color: var(--uo-navy);
+}
+.xs-banners[data-xs-look="24"] .xs-banners__img {
+  aspect-ratio: 1;
+  height: auto;
+  object-fit: cover;
+  border-radius: 18px;
+  background: var(--uo-soft);
+  transition: transform 0.35s ease;
+}
+.xs-banners[data-xs-look="24"] .xs-banners__item:hover .xs-banners__img {
+  transform: translateY(-3px);
+}
+.xs-banners[data-xs-look="24"] .xs-banners__text,
+.xs-banners[data-xs-look="24"] .xs-banners__item:hover .xs-banners__text {
+  position: static;
+  align-items: center;
+  padding: 16px 4px 0;
+  background: none;
+  direction: inherit;
+}
+.xs-banners[data-xs-look="24"] .xs-banners__top {
+  align-items: center;
+}
+.xs-banners[data-xs-look="24"] .xs-banners__title,
+.xs-banners[data-xs-look="24"] .xs-banners__item:hover .xs-banners__title {
+  padding: 0;
+  color: var(--uo-navy);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+}
+.xs-banners[data-xs-look="24"] .xs-banners__more {
+  display: none;
+}
+
+/* --- product rows (xs_products): rounded cards, a pink button under each ---- */
+
+.xs-products[data-xs-look="24"] {
+  display: flex;
+  flex-direction: column;
+  padding: 36px 24px 48px;
+}
+.xs-products[data-xs-look="24"] .xs-products__head {
+  display: contents;
+}
+.xs-products[data-xs-look="24"] .xs-products__intro {
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+}
+.xs-products[data-xs-look="24"] .xs-products__heading {
+  padding: 0;
+  color: var(--uo-navy);
+  font-family: var(--xs-display);
+  font-size: clamp(30px, 3vw, 43px);
+  font-weight: 700;
+  line-height: 1.1;
+  text-transform: none;
+}
+.xs-products[data-xs-look="24"] .xs-products__text {
+  margin: 8px 0 0;
+  color: var(--xs-muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+.xs-products[data-xs-look="24"] .xs-products__stage,
+.xs-products[data-xs-look="24"] > .xs-products__grid {
+  order: 1;
+  width: 100%;
+  max-width: 1360px;
+  margin-inline: auto;
+}
+.xs-products[data-xs-look="24"] .xs-products__grid {
+  gap: 18px;
+  margin-top: 28px;
+}
+.xs-products[data-xs-look="24"] .xs-products__all {
+  order: 2;
+  align-self: center;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  margin-top: 28px;
+  padding: 0 26px;
+  border: 1.5px solid var(--uo-pink);
+  border-radius: 999px;
+  color: var(--uo-pink);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+.xs-products[data-xs-look="24"] .xs-products__all:hover {
+  background: var(--uo-pink);
+  color: #fff;
+}
+/* "Load more" gives way to the link to the whole collection. */
+.xs-products[data-xs-look="24"] .xs-products__more {
+  display: none;
+}
+.xs-products[data-xs-look="24"] .xs-products__card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(35, 93, 144, 0.12);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 6px 22px rgba(35, 93, 144, 0.043);
+}
+/* The picture box opens up so its label can sit under the words as the card's button. */
+.xs-products[data-xs-look="24"] .xs-products__media {
+  display: contents;
+}
+.xs-products[data-xs-look="24"] .xs-products__shot {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 1;
+  height: auto;
+  background: var(--uo-soft);
+}
+.xs-products[data-xs-look="24"] .xs-products__img {
+  transition: transform 0.6s ease;
+}
+.xs-products[data-xs-look="24"] .xs-products__card:hover .xs-products__img {
+  transform: scale(1.04);
+}
+.xs-products[data-xs-look="24"] .xs-products__badge {
+  top: 12px;
+  inset-inline-start: 12px;
+  height: auto;
+  min-width: 0;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: var(--uo-pink-soft);
+  color: #c8253f;
+  font-size: 12.5px;
+  font-weight: 800;
+  line-height: 20px;
+}
+.xs-products[data-xs-look="24"] .xs-products__meta {
+  order: 1;
+  flex: 1 1 auto;
+  padding: 14px 14px 12px;
+}
+.xs-products[data-xs-look="24"] .xs-products__name {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-bottom: 8px;
+  padding: 0;
+  color: var(--uo-navy);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.xs-products[data-xs-look="24"] .xs-products__name:hover {
+  color: var(--uo-pink);
+}
+.xs-products[data-xs-look="24"] .xs-products__price {
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  color: var(--uo-pink);
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.xs-products[data-xs-look="24"] .xs-products__price s {
+  order: 2;
+  color: var(--xs-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+.xs-products[data-xs-look="24"] .xs-products__view,
+.xs-products[data-xs-look="24"] .xs-products__card:hover .xs-products__view {
+  position: static;
+  order: 2;
+  min-width: 0;
+  height: 42px;
+  margin: 0 14px 14px;
+  transform: none;
+  border-radius: 12px;
+  background: var(--uo-pink);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: 0 6px 16px rgba(232, 65, 91, 0.12);
+  transition: background-color 0.2s;
+}
+.xs-products[data-xs-look="24"] .xs-products__view:hover {
+  background: #d93650;
+  color: #fff;
+}
+.xs-products[data-xs-look="24"] .xs-products__grid[data-layout="slider"] {
+  grid-auto-columns: calc((100% - 3 * 18px) / 4);
+  column-gap: 18px;
+  padding-bottom: 6px;
+}
+.xs-products[data-xs-look="24"] .xs-products__arrow {
+  top: 32%;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--uo-navy);
+  box-shadow: 0 6px 18px rgba(35, 93, 144, 0.14);
+}
+
+/* --- what do you need now? (xs_journey) ------------------------------------- */
+
+.xs-journey[data-xs-look="24"] {
+  --xs-brand: var(--uo-pink);
+  max-width: none;
+  background: #eff9fc;
+  padding-inline: max(22px, calc((100% - 1240px) / 2));
+}
+.xs-journey[data-xs-look="24"] .xs-journey__kicker {
+  color: var(--uo-teal-deep);
+}
+.xs-journey[data-xs-look="24"] .xs-journey__kicker::before,
+.xs-journey[data-xs-look="24"] .xs-journey__kicker::after {
+  background: var(--uo-teal);
+}
+.xs-journey[data-xs-look="24"] .xs-heading {
+  margin: 0 0 10px;
+  font-size: clamp(30px, 4vw, 46px);
+}
+.xs-journey[data-xs-look="24"] .xs-journey__tab {
+  color: var(--uo-navy);
+}
+.xs-journey[data-xs-look="24"] .xs-journey__tab-icon {
+  background: var(--uo-teal-soft);
+  color: var(--uo-teal-deep);
+}
+.xs-journey[data-xs-look="24"] .xs-journey__tab[aria-selected="true"] .xs-journey__tab-icon {
+  background: var(--uo-pink);
+  color: #fff;
+}
+.xs-journey[data-xs-look="24"] .xs-journey__tab-pain {
+  color: var(--uo-teal-deep);
+}
+.xs-journey[data-xs-look="24"] .xs-journey__tab[aria-selected="true"] .xs-journey__tab-pain {
+  color: var(--uo-pink);
+}
+.xs-journey[data-xs-look="24"] .xs-journey__eyebrow p {
+  color: var(--uo-teal-deep);
+}
+.xs-journey[data-xs-look="24"] .xs-journey__no {
+  background: var(--uo-blush);
+  color: var(--uo-pink);
+}
+.xs-journey[data-xs-look="24"] .xs-journey__title,
+.xs-journey[data-xs-look="24"] .xs-journey__price strong {
+  color: var(--uo-navy);
+}
+.xs-journey[data-xs-look="24"] .xs-journey__points li {
+  background: #fcfbfa;
+}
+.xs-journey[data-xs-look="24"] .xs-journey__points li::before {
+  background: var(--uo-teal);
+}
+.xs-journey[data-xs-look="24"] .xs-journey__more a {
+  color: var(--uo-navy);
+}
+.xs-journey[data-xs-look="24"] .xs-journey__cta {
+  background: var(--uo-navy);
+  box-shadow: 0 8px 20px rgba(41, 96, 144, 0.15);
+}
+.xs-journey[data-xs-look="24"] .xs-journey__cta:hover {
+  background: #214f79;
+}
+
+/* --- see it for real (xs_reels) ----------------------------------------------- */
+
+.xs-reels[data-xs-look="24"] {
+  background: var(--uo-blush-soft);
+}
+.xs-reels[data-xs-look="24"] .xs-heading {
+  margin: 0;
+  color: #111;
+  font-family: var(--xs-sans);
+  font-size: clamp(31px, 2.8vw, 44px);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+/* --- a phone -------------------------------------------------------------- */
+
+@media (max-width: 989px) {
+  .xs-features[data-xs-look="24"] .xs-features__list {
+    display: flex;
+    gap: 10px;
+    margin-inline: -20px;
+    padding-inline: 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .xs-features[data-xs-look="24"] .xs-features__list::-webkit-scrollbar {
+    display: none;
+  }
+  .xs-features[data-xs-look="24"] .xs-features__item {
+    flex: 0 0 44%;
+    scroll-snap-align: start;
+  }
+  .xs-products[data-xs-look="24"] .xs-products__grid[data-layout="slider"] {
+    grid-auto-columns: calc((100% - 2 * 14px) / 3);
+    column-gap: 14px;
+  }
+}
+@media (max-width: 767px) {
+  .brand-theme[data-xs-shell="24"] .xs-header__bar-inner {
+    padding-inline: 14px;
+  }
+  .brand-theme[data-xs-shell="24"] .xs-header__logo-img {
+    height: 92px;
+    margin-block: -20px;
+  }
+  .xs-slider[data-xs-look="24"]::after {
+    height: 36px;
+  }
+  .xs-slider[data-xs-look="24"]:has(> .xs-slider__slide + .xs-slider__slide) {
+    aspect-ratio: 1100 / 1430;
+  }
+  .xs-slider[data-xs-look="24"]:not(:has(> .xs-slider__slide + .xs-slider__slide)) {
+    height: 390px;
+  }
+  .xs-slider[data-xs-look="24"] .xs-slider__arrow {
+    display: none;
+  }
+  .xs-slider[data-xs-look="24"] .xs-slider__dots {
+    bottom: 30px;
+  }
+  .xs-slider[data-xs-look="24"] .xs-slider__inner {
+    padding-inline: 20px;
+  }
+  .xs-slider[data-xs-look="24"]:has(> .xs-slider__slide + .xs-slider__slide) .xs-slider__inner {
+    top: 4%;
+    bottom: auto;
+    left: 8%;
+    width: 84%;
+    height: 23%;
+    padding: 0;
+  }
+  .xs-slider[data-xs-look="24"]:has(> .xs-slider__slide + .xs-slider__slide) .xs-slider__heading {
+    font-size: clamp(24px, 7.4vw, 44px);
+  }
+  .xs-slider[data-xs-look="24"]:has(> .xs-slider__slide + .xs-slider__slide) .xs-slider__line {
+    margin-bottom: 0.7em;
+    font-size: clamp(14px, 3.9vw, 22px);
+  }
+  .xs-slider[data-xs-look="24"]:has(> .xs-slider__slide + .xs-slider__slide) .xs-slider__button {
+    height: 36px;
+    padding: 0 20px;
+    font-size: 13px;
+  }
+  .xs-banners[data-xs-look="24"] {
+    padding: 40px 14px 48px;
+  }
+  .xs-banners[data-xs-look="24"] .xs-banners__intro {
+    margin-bottom: 28px;
+  }
+  .xs-banners[data-xs-look="24"] .xs-banners__grid {
+    gap: 22px 10px;
+  }
+  .xs-banners[data-xs-look="24"] .xs-banners__img {
+    border-radius: 14px;
+  }
+  .xs-banners[data-xs-look="24"] .xs-banners__text {
+    padding-top: 10px;
+  }
+  .xs-banners[data-xs-look="24"] .xs-banners__title {
+    font-size: 14px;
+  }
+  .xs-products[data-xs-look="24"] {
+    padding: 28px 12px 36px;
+  }
+  .xs-products[data-xs-look="24"] .xs-products__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .xs-products[data-xs-look="24"] .xs-products__grid[data-layout="slider"] {
+    grid-auto-columns: 64%;
+    column-gap: 10px;
+  }
+  .xs-products[data-xs-look="24"] .xs-products__meta {
+    padding: 10px 10px 8px;
+  }
+  .xs-products[data-xs-look="24"] .xs-products__name {
+    font-size: 13px;
+  }
+  .xs-products[data-xs-look="24"] .xs-products__price {
+    font-size: 14px;
+  }
+  .xs-products[data-xs-look="24"] .xs-products__view {
+    height: 38px;
+    margin: 0 10px 10px;
+    font-size: 13px;
+  }
+  .xs-products[data-xs-look="24"] .xs-products__badge {
+    top: 8px;
+    inset-inline-start: 8px;
+    padding: 3px 9px;
+    font-size: 11px;
+  }
+  .brand-theme[data-xs-shell="24"] .xs-footer,
+  .xs-footer[data-xs-look="24"] {
+    padding: 30px 18px 14px;
+  }
+}
+
+/* The announcements take turns, with an arrow at either end of the strip. */
+.brand-theme[data-xs-shell="24"] .xs-header__notice {
+  flex: 1;
+  text-align: center;
+}
+.brand-theme[data-xs-shell="24"] .xs-notice {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+.brand-theme[data-xs-shell="24"] .xs-notice__step {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  background: none;
+  color: #fff;
+  cursor: pointer;
+}
+.brand-theme[data-xs-shell="24"] .xs-notice__step svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+[dir="ltr"] .brand-theme[data-xs-shell="24"] .xs-notice__step svg {
+  transform: scaleX(-1);
+}

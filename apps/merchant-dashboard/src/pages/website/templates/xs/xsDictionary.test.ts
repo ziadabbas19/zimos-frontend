@@ -26,9 +26,9 @@ const dictionary = buildXsDictionary(pairs, catalogs);
 const content = `${JSON.stringify(dictionary, null, 2)}\n`;
 
 describe("the imported templates' dictionary", () => {
-  it("pairs every English template with its Arabic copy: the 22 looks, and XS 01's B and C", () => {
-    expect(keys).toHaveLength(24);
-    expect(keys).toEqual(expect.arrayContaining(["xs-01", "xs-01b", "xs-01c", "xs-22"]));
+  it("pairs every English template with its Arabic copy: the 24 looks, and XS 01's B and C", () => {
+    expect(keys).toHaveLength(26);
+    expect(keys).toEqual(expect.arrayContaining(["xs-01", "xs-01b", "xs-01c", "xs-22", "xs-23", "xs-24"]));
   });
 
   it("finds something at the same place in the Arabic copy for every text of the English template", () => {

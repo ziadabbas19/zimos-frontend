@@ -16,3 +16,4 @@ export const ShaderHero = dynamic(() => import("./ShaderHero").then((m) => m.Sha
 export const ScrollStory = dynamic(() => import("./ScrollStory").then((m) => m.ScrollStory));
 export const OrbitStage = dynamic(() => import("./OrbitStage").then((m) => m.OrbitStage));
 export const Product3D = dynamic(() => import("./Product3D").then((m) => m.Product3D));
+export const ClothingRail = dynamic(() => import("./ClothingRail").then((m) => m.ClothingRail));

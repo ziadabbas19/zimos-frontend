@@ -1,7 +1,8 @@
-import { IconBlog, IconCarousel, IconEmail, IconGridDense, IconGridView, IconHeadingOne, IconImage, IconLayoutSplit, IconPanelTop, IconPeople, IconQuote, IconShield, IconVideoBlock, type IconComponent } from "@/components/icons";
+import { IconBlog, IconCarousel, IconChecklist, IconEmail, IconGridDense, IconGridView, IconHeadingOne, IconImage, IconLayoutSplit, IconPanelTop, IconPeople, IconQuote, IconShield, IconShirt, IconVideoBlock, type IconComponent } from "@/components/icons";
 import type { PageElementType } from "@store-builder/api-client";
 import { XS_ONLY_ENABLED } from "@/lib/features";
 import type { BlockPreset, FieldSpec } from "./blocks";
+import { RAIL_DEFAULTS, RAIL_FIELDS } from "./railFields";
 
 /**
  * The "xs" sections in the editor — bands drawn in the look of an imported
@@ -21,7 +22,7 @@ import type { BlockPreset, FieldSpec } from "./blocks";
  * and the backend) once no page uses it.
  */
 
-export const XS_TYPES = ["xs_slider", "xs_banners", "xs_products", "xs_title", "xs_story", "xs_contact", "xs_hero", "xs_showcase", "xs_features", "xs_split", "xs_minis", "xs_quotes", "xs_gallery", "xs_newsletter", "xs_team", "xs_video", "xs_posts"] as const satisfies readonly PageElementType[];
+export const XS_TYPES = ["xs_slider", "xs_banners", "xs_products", "xs_title", "xs_story", "xs_contact", "xs_hero", "xs_showcase", "xs_features", "xs_split", "xs_minis", "xs_quotes", "xs_gallery", "xs_newsletter", "xs_team", "xs_video", "xs_posts", "xs_rail", "xs_stack", "xs_journey", "xs_reels"] as const satisfies readonly PageElementType[];
 
 type XsType = (typeof XS_TYPES)[number];
 
@@ -61,6 +62,7 @@ export const XS_ELEMENT_SPECS: Record<XsType, XsSpec> = {
         max: 8,
         fields: [
           { key: "image", label: "Picture", labelAr: "الصورة", kind: "image" },
+          { key: "phoneImage", label: "Picture on a phone (an upright one; empty uses the one above)", labelAr: "صورة للموبايل (طولية؛ الفارغة تستخدم الصورة السابقة)", kind: "image" },
           { key: "eyebrow", label: "Small line above the heading", labelAr: "سطر صغير فوق العنوان", kind: "text" },
           { key: "heading", label: "Heading", labelAr: "العنوان", kind: "text" },
           { key: "text", label: "Sentence under the heading", labelAr: "جملة تحت العنوان", kind: "textarea" },
@@ -98,7 +100,7 @@ export const XS_ELEMENT_SPECS: Record<XsType, XsSpec> = {
         itemLabel: "Banner",
         itemLabelAr: "بانر",
         titleKey: "title",
-        max: 6,
+        max: 8,
         fields: [
           { key: "image", label: "Picture", labelAr: "الصورة", kind: "image" },
           { key: "title", label: "Title", labelAr: "العنوان", kind: "text" },
@@ -115,6 +117,7 @@ export const XS_ELEMENT_SPECS: Record<XsType, XsSpec> = {
     defaultProps: { look: "01", heading: "", collection: "", limit: 8, showDiscount: true, showTabs: true, showSearch: true, layout: "grid", quickView: true },
     fields: [
       { key: "heading", label: "Heading", kind: "text" },
+      { key: "text", label: "Line under the heading", kind: "textarea" },
       {
         key: "collection",
         label: "Collection",
@@ -124,6 +127,7 @@ export const XS_ELEMENT_SPECS: Record<XsType, XsSpec> = {
       },
       { key: "limit", label: "How many at a time", kind: "number", min: 1, max: 24, hint: "A Load more button brings the next ones." },
       { key: "showDiscount", label: "Show the discount", kind: "boolean" },
+      { key: "discountLabel", label: "Wording: the discount badge", kind: "text", placeholder: "-{percent}%", hint: "{percent} is the discount, {amount} what it saves." },
       { key: "showTabs", label: "Show your collections as tabs", kind: "boolean" },
       { key: "showSearch", label: "Show the search button", kind: "boolean" },
       {
@@ -142,7 +146,7 @@ export const XS_ELEMENT_SPECS: Record<XsType, XsSpec> = {
       { key: "searchLabel", label: "Wording: the search button", kind: "text", placeholder: "Search" },
       { key: "searchPlaceholder", label: "Wording: hint in the search box", kind: "text", placeholder: "Search" },
       { key: "loadMoreLabel", label: "Wording: the load-more button", kind: "text", placeholder: "Load More" },
-      { key: "viewLabel", label: "Wording: the label on a card", kind: "text", placeholder: "Quick View" },
+      { key: "viewLabel", label: "Wording: the label on a card", kind: "text", placeholder: "Quick View", hint: "{option} is the product's first option (Colour, Size)." },
       { key: "openLabel", label: "Wording: the button in the quick-view panel", kind: "text", placeholder: "View product" },
       { key: "emptyText", label: "Wording: when nothing is found", kind: "text" },
     ],
@@ -421,6 +425,111 @@ export const XS_ELEMENT_SPECS: Record<XsType, XsSpec> = {
       },
     ],
   },
+  // The clothing rail (railFields.ts), drawn in the template's look.
+  xs_rail: {
+    label: "Clothing rail (template look)",
+    icon: IconShirt,
+    defaultProps: { look: "01", ...RAIL_DEFAULTS },
+    fields: RAIL_FIELDS,
+  },
+  // A tab per need, each opening on the product that answers it (storefront xs/picked.tsx).
+  xs_journey: {
+    label: "Shop by need (template look)",
+    icon: IconChecklist,
+    defaultProps: { look: "01", heading: "", items: [] },
+    fields: [
+      { key: "kicker", label: "Small line above the heading", kind: "text" },
+      { key: "heading", label: "Heading", kind: "text" },
+      { key: "text", label: "Line under it", kind: "textarea" },
+      { key: "ctaLabel", label: "Button text", kind: "text", placeholder: "View the bundle" },
+      { key: "saveLabel", label: "Wording: what it saves", kind: "text", placeholder: "Save [amount] EGP", hint: "[amount] is what the product saves against its old price." },
+      { key: "moreLabel", label: "Wording: before the other products", kind: "text", placeholder: "Also in this set" },
+      { key: "fallbackHref", label: "Where the button goes when a product is missing", kind: "text", placeholder: "/products" },
+      {
+        key: "items",
+        label: "Needs",
+        kind: "itemList",
+        itemLabel: "Need",
+        itemLabelAr: "احتياج",
+        titleKey: "name",
+        max: 8,
+        fields: [
+          {
+            key: "icon",
+            label: "Icon",
+            labelAr: "الأيقونة",
+            kind: "select",
+            options: [
+              { value: "moon", label: "Moon (sleep)", labelAr: "قمر (النوم)" },
+              { value: "bottle", label: "Bottle (feeding)", labelAr: "رضّاعة (الرضاعة)" },
+              { value: "bag", label: "Bag (going out)", labelAr: "شنطة (الخروج)" },
+              { value: "clock", label: "Clock (all day)", labelAr: "ساعة (اليوم كله)" },
+              { value: "heart", label: "Heart", labelAr: "قلب" },
+              { value: "star", label: "Star", labelAr: "نجمة" },
+              { value: "box", label: "Box (a set)", labelAr: "صندوق (مجموعة)" },
+            ],
+          },
+          { key: "pain", label: "The worry, in one line", labelAr: "المشكلة في سطر", kind: "text" },
+          { key: "name", label: "Name of the need", labelAr: "اسم الاحتياج", kind: "text" },
+          { key: "product", label: "The product (its address name, slug)", labelAr: "المنتج (اسمه في الرابط)", kind: "text", ltr: true },
+          { key: "also", label: "Other products for it (slugs, separated by commas)", labelAr: "منتجات أخرى له (أسماؤها في الرابط، بينها فاصلة)", kind: "text", ltr: true },
+          { key: "image", label: "Picture (empty: the product's)", labelAr: "الصورة (الفارغة: صورة المنتج)", kind: "image" },
+          { key: "text", label: "Why it helps", labelAr: "إزاي بيساعد", kind: "textarea" },
+          { key: "points", label: "Points (one per line)", labelAr: "النقاط (كل نقطة في سطر)", kind: "textarea" },
+        ],
+      },
+    ],
+  },
+  // Upright videos of products in use, each with its product and a cart button (storefront xs/XsReels.tsx).
+  xs_reels: {
+    label: "Product videos (template look)",
+    icon: IconVideoBlock,
+    defaultProps: { look: "01", heading: "", items: [] },
+    fields: [
+      { key: "heading", label: "Heading", kind: "text" },
+      { key: "text", label: "Line under it", kind: "textarea" },
+      { key: "cartLabel", label: "Wording: the cart button's name (read aloud)", kind: "text", placeholder: "Add to cart" },
+      {
+        key: "items",
+        label: "Videos",
+        kind: "itemList",
+        itemLabel: "Video",
+        itemLabelAr: "فيديو",
+        titleKey: "product",
+        max: 12,
+        fields: [
+          { key: "video", label: "Video address (an .mp4 file)", labelAr: "رابط الفيديو (ملف mp4)", kind: "text", ltr: true },
+          { key: "image", label: "Picture before it plays (empty: the product's)", labelAr: "صورة قبل التشغيل (الفارغة: صورة المنتج)", kind: "image" },
+          { key: "product", label: "The product in it (its address name, slug)", labelAr: "المنتج اللي فيه (اسمه في الرابط)", kind: "text", ltr: true },
+        ],
+      },
+    ],
+  },
+  xs_stack: {
+    label: "Stacked cards (template look)",
+    icon: IconCarousel,
+    defaultProps: { look: "01", heading: "", items: [] },
+    fields: [
+      { key: "heading", label: "Heading", kind: "text" },
+      { key: "text", label: "Line under it", kind: "textarea" },
+      {
+        key: "items",
+        label: "Cards",
+        kind: "itemList",
+        itemLabel: "Card",
+        itemLabelAr: "كارت",
+        titleKey: "title",
+        max: 8,
+        fields: [
+          { key: "image", label: "Picture", labelAr: "الصورة", kind: "image" },
+          { key: "badge", label: "Small label", labelAr: "الشارة", kind: "text" },
+          { key: "title", label: "Title", labelAr: "العنوان", kind: "text" },
+          { key: "text", label: "A line", labelAr: "سطر", kind: "text" },
+          { key: "href", label: "Links to", labelAr: "الرابط", kind: "text", ltr: true },
+        ],
+      },
+    ],
+  },
 };
 
 /** Which bands a choice about look makes sense on. */
@@ -644,6 +753,16 @@ export const XS_CONTENT_AR: Record<string, string> = {
   points: "النقاط",
   countdownLabels: "النص تحت العداد (أيام، ساعات، دقائق، ثوان)",
   url: "رابط الفيديو",
+  "xs_products.text": "سطر تحت العنوان",
+  discountLabel: "نص شارة الخصم",
+  kicker: "سطر صغير فوق العنوان",
+  ctaLabel: "نص الزر",
+  saveLabel: "نص التوفير",
+  moreLabel: "النص قبل المنتجات الأخرى",
+  fallbackHref: "وجهة الزر لو المنتج مش موجود",
+  cartLabel: "اسم زر السلة (يُقرأ لقارئ الشاشة)",
+  "xs_journey.items": "الاحتياجات",
+  "xs_reels.items": "الفيديوهات",
 };
 
 /** Arabic for those fields' hints, by key: the same on every band that has the field. */
@@ -668,6 +787,9 @@ export const XS_HINT_AR: Record<string, string> = {
   quickView: "عند إيقافه، يفتح النص الموجود على البطاقة صفحة المنتج.",
   endsAt: "يظهر العداد حتى هذا الموعد. اتركه فارغا إذا لم ترد عدادا.",
   url: "رابط يوتيوب أو فيميو، أو رابط ملف فيديو.",
+  discountLabel: "{percent} هي نسبة الخصم، و{amount} هو المبلغ اللي بيوفره.",
+  viewLabel: "{option} هو أول اختيار للمنتج (اللون، المقاس).",
+  saveLabel: "[amount] هو المبلغ اللي بيوفره المنتج عن سعره القديم.",
 };
 
 /** Arabic for those fields' choices (`key.value`), merged into the editor's option labels. */
@@ -719,6 +841,10 @@ export const XS_LABEL_AR: Record<XsType, string> = {
   xs_team: "فريق العمل (شكل قالب)",
   xs_video: "فيديو (شكل قالب)",
   xs_posts: "بطاقات مقالات (شكل قالب)",
+  xs_rail: "شمّاعة الملابس (شكل قالب)",
+  xs_stack: "كروت متراصّة تتقلّب (شكل قالب)",
+  xs_journey: "اختاري حسب احتياجك (شكل قالب)",
+  xs_reels: "فيديوهات المنتجات (شكل قالب)",
 };
 
 /** Where in the library each kind of band is offered — beside Zimos's own blocks of that kind. */
@@ -740,6 +866,10 @@ const GROUP: Record<XsType, BlockPreset["group"]> = {
   xs_team: "story",
   xs_video: "story",
   xs_posts: "story",
+  xs_rail: "hero",
+  xs_stack: "story",
+  xs_journey: "commerce",
+  xs_reels: "commerce",
 };
 
 interface XsBand {
@@ -3822,6 +3952,482 @@ const XS_TEMPLATES: XsTemplate[] = [
           info: [
             { icon: "email", title: "Email Us", text: "We reply to every message within one business day" },
             { icon: "phone", title: "Call or Text Us", text: "Sunday to Thursday, 9 am to 6 pm" },
+          ],
+        },
+        page: { path: "/contact", title: "Contact" },
+      },
+    ],
+  },
+  // Atelier — Zimos's own boutique, made around the clothing rail (no credit line: storefront lib/xsShell).
+  {
+    look: "23",
+    bands: [
+      {
+        type: "xs_rail",
+        label: "Clothing rail 23",
+        labelAr: "شمّاعة الملابس ٢٣",
+        description: "Your clothes on a rail across the opening screen: they turn as the shopper passes, slide along, and lift to show their back and be bought.",
+        descriptionAr: "ملابسك على شمّاعة بعرض الشاشة: تدور القطعة لما يمر عليها العميل، وتتحرك على الشمّاعة، وترتفع ليرى ظهرها ويشتريها.",
+        content: {
+          eyebrow: "New season · On the rail",
+          heading: "Turn the clothes over with your own hands",
+          caption: "Brush along the rail, slide a hanger, lift a piece to see its back.",
+          ctaLabel: "Shop the collection",
+          ctaHref: "/products",
+          limit: 10,
+          collectionId: "",
+          hanger: "wood",
+          sidePhotos: false,
+          autoplay: true,
+        },
+      },
+      {
+        type: "xs_banners",
+        label: "Shop by kind 23",
+        labelAr: "تسوّق حسب النوع ٢٣",
+        description: "Four tall pictures, one per kind of clothing, each with its name and a link that leads to your shop.",
+        descriptionAr: "أربع صور طويلة، صورة لكل نوع من الملابس، وعلى كل واحدة اسمها ورابط يوصّل لمتجرك.",
+        content: {
+          heading: "Shop by kind",
+          variant: "tile",
+          items: [
+            { image: art("23", "kind-tees.jpg"), title: "T-shirts", linkLabel: "Discover", href: "/products" },
+            { image: art("23", "kind-shirts.jpg"), title: "Shirts", linkLabel: "Discover", href: "/products" },
+            { image: art("23", "kind-knits.jpg"), title: "Knitwear", linkLabel: "Discover", href: "/products" },
+            { image: art("23", "kind-outerwear.jpg"), title: "Outerwear", linkLabel: "Discover", href: "/products" },
+          ],
+        },
+      },
+      {
+        type: "xs_products",
+        label: "New in 23",
+        labelAr: "وصل جديد ٢٣",
+        description: "Your newest pieces in four quiet columns, your collections as tabs above them.",
+        descriptionAr: "أحدث قطعك في أربعة أعمدة هادئة، وأقسامك كتبويبات فوقها.",
+        content: { heading: "New in", allLabel: "All", limit: 8, showSearch: false, viewLabel: "Quick View", openLabel: "View Piece", loadMoreLabel: "Load More" },
+      },
+      {
+        type: "xs_stack",
+        label: "The edits 23",
+        labelAr: "التشكيلات ٢٣",
+        description: "Pictures dealt like a hand of cards: the shopper drags through them, each with a small label, a title and a line.",
+        descriptionAr: "صور متراصّة زي كروت في الإيد: العميل يسحب بينها، وعلى كل واحدة شارة صغيرة وعنوان وسطر.",
+        content: {
+          heading: "The edits",
+          text: "Five ways to wear the season. Drag through them.",
+          items: [
+            { image: art("23", "stack-1.jpg"), badge: "Summer", title: "Linen days", text: "Light layers for long, warm days.", href: "/products" },
+            { image: art("23", "stack-2.jpg"), badge: "Autumn", title: "Knit season", text: "Soft wool, deep colours, slow mornings.", href: "/products" },
+            { image: art("23", "stack-3.jpg"), badge: "Weekend", title: "Off duty", text: "Relaxed pieces that still look considered.", href: "/products" },
+            { image: art("23", "stack-4.jpg"), badge: "Tailoring", title: "Sharp lines", text: "Cut close, made to be noticed.", href: "/products" },
+            { image: art("23", "stack-5.jpg"), badge: "Essentials", title: "Every day", text: "The tees and denim you reach for first.", href: "/products" },
+          ],
+        },
+      },
+      {
+        type: "xs_split",
+        label: "Lookbook 23",
+        labelAr: "صورة التشكيلة ٢٣",
+        description: "One tall picture beside a classical heading, a sentence and a square button, on a warm ground.",
+        descriptionAr: "صورة طويلة بجانب عنوان كلاسيكي وجملة وزر مربع، على خلفية دافئة.",
+        content: {
+          images: [art("23", "lookbook.jpg")],
+          heading: "Made to be kept",
+          text: "We choose every piece for its fabric and its cut, so it looks as good in its fifth year as in its first.",
+          buttonLabel: "Our story",
+          buttonHref: "/about",
+        },
+      },
+      {
+        type: "xs_features",
+        label: "Promises 23",
+        labelAr: "مميزاتنا ٢٣",
+        description: "Four promises in a thin-lined row: delivery, exchange, paying on delivery and help.",
+        descriptionAr: "أربع مميزات في صف بخطوط رفيعة: التوصيل والاستبدال والدفع عند الاستلام والمساعدة.",
+        content: {
+          items: [
+            { icon: "truck", title: "Delivery across Egypt", text: "To your door in two to five days." },
+            { icon: "return", title: "Exchange in 14 days", text: "Not the right size? Swap it." },
+            { icon: "bag", title: "Pay on delivery", text: "Pay when your order reaches you." },
+            { icon: "support", title: "Here to help", text: "Message us any day, from ten to ten." },
+          ],
+        },
+      },
+      {
+        type: "xs_newsletter",
+        label: "Newsletter 23",
+        labelAr: "النشرة البريدية ٢٣",
+        description: "An ink band with a classical heading, a line and an underlined email field.",
+        descriptionAr: "شريط غامق فيه عنوان كلاسيكي وسطر وخانة بريد بخط تحتها.",
+        content: { heading: "Letters from the atelier", text: "New pieces and private sales, once a month. Nothing else.", placeholder: "Your email address", buttonLabel: "Subscribe" },
+      },
+      {
+        type: "xs_title",
+        label: "Page title 23",
+        labelAr: "عنوان صفحة ٢٣",
+        description: "",
+        descriptionAr: "",
+        content: { heading: "About Atelier", image: "" },
+        page: { path: "/about", title: "About" },
+        library: false,
+      },
+      {
+        type: "xs_story",
+        label: "Story 23",
+        labelAr: "قصة ٢٣",
+        description: "Text beside a picture of the workroom, the sides swapping from one part to the next.",
+        descriptionAr: "نص بجانب صورة لورشة العمل، ويتبادلان الجهة من جزء للتاني.",
+        content: {
+          items: [
+            {
+              title: "Our story",
+              body: "Atelier began with one rail and a simple rule: hang only what we would wear ourselves. Every piece is chosen for its fabric, its cut and how it feels after a hundred washes.\n\nWrite here how your store began, and who chooses what hangs on your rail.",
+              image: art("23", "story.jpg"),
+            },
+            {
+              title: "How we choose",
+              body: "Natural fibres where we can, honest prices always, and small runs instead of piles of stock. Write here what your customers can count on when they order from you.",
+              image: art("23", "kind-knits.jpg"),
+            },
+          ],
+        },
+        page: { path: "/about", title: "About" },
+      },
+      {
+        type: "xs_title",
+        label: "Page title 23",
+        labelAr: "عنوان صفحة ٢٣",
+        description: "",
+        descriptionAr: "",
+        content: { heading: "Contact us", image: "" },
+        page: { path: "/contact", title: "Contact" },
+        library: false,
+      },
+      {
+        type: "xs_contact",
+        label: "Contact 23",
+        labelAr: "تواصل معنا ٢٣",
+        description: "A message form beside your address, phone and email.",
+        descriptionAr: "نموذج رسالة بجانب عنوانك ورقم تليفونك وبريدك.",
+        content: {
+          heading: "Write to us",
+          contactPlaceholder: "Your email or phone",
+          messagePlaceholder: "Your message",
+          buttonLabel: "Send Now",
+          successMessage: "Thank you. We will reply within a day.",
+          info: [
+            { icon: "address", title: "Visit us", text: "Write your store's address here" },
+            { icon: "phone", title: "Call us", text: "Write your phone number here" },
+            { icon: "email", title: "Email us", text: "Write your email address here" },
+          ],
+        },
+        page: { path: "/contact", title: "Contact" },
+      },
+    ],
+  },
+  // Cradle — a mother-and-baby store, carried over from a merchant's own Shopify theme
+  // with its name taken out of the pictures and the words (no credit line: storefront lib/xsShell).
+  {
+    look: "24",
+    bands: [
+      {
+        type: "xs_slider",
+        label: "Hero 24",
+        labelAr: "الواجهة ٢٤",
+        description: "Wide pictures with a wave under them, your words on their light side, dots and arrows; a picture of its own on a phone.",
+        descriptionAr: "صور عريضة تحتها موجة، وكلامك على الجزء الفاتح منها، بنقط وأسهم؛ ولكل صورة صورة خاصة بالموبايل.",
+        content: {
+          autoplay: true,
+          seconds: 5,
+          slides: [
+            {
+              image: art("24", "slide-1.jpg"),
+              phoneImage: art("24", "slide-1-phone.jpg"),
+              heading: "What moms love",
+              text: "Everything your baby needs, in one place",
+              buttonLabel: "Shop Now",
+              buttonHref: "/products",
+            },
+            {
+              image: art("24", "slide-2.jpg"),
+              phoneImage: art("24", "slide-2-phone.jpg"),
+              heading: "With you all the way",
+              text: "Here in every moment of motherhood",
+              buttonLabel: "View the bundles",
+              buttonHref: "/products?collection=bundles",
+            },
+          ],
+        },
+      },
+      {
+        type: "xs_features",
+        label: "Trust cards 24",
+        labelAr: "كروت الثقة ٢٤",
+        description: "Four small cards under the hero: inspecting before paying, cash on delivery, exchange and help.",
+        descriptionAr: "أربع كروت صغيرة تحت الواجهة: المعاينة قبل الدفع والدفع عند الاستلام والاستبدال والمساعدة.",
+        content: {
+          heading: "",
+          items: [
+            { icon: "support", image: art("24", "eye.svg"), title: "Inspect before you pay", text: "Open it in front of the courier" },
+            { icon: "bag", image: art("24", "card.svg"), title: "Cash on delivery", text: "No upfront payment" },
+            { icon: "return", image: art("24", "refresh.svg"), title: "14-day exchange", text: "For manufacturing defects" },
+            { icon: "support", image: art("24", "chat.svg"), title: "WhatsApp help daily", text: "We help you choose" },
+          ],
+        },
+      },
+      {
+        type: "xs_banners",
+        label: "Shop by category 24",
+        labelAr: "تسوّق حسب القسم ٢٤",
+        description: "Rounded square pictures, one per category, each with its name under it and a link to it.",
+        descriptionAr: "صور مربعة بحواف دائرية، صورة لكل قسم، واسمه تحتها ورابط ليه.",
+        content: {
+          heading: "Shop by category",
+          variant: "card",
+          items: [
+            { image: art("24", "cat-bundles.jpg"), title: "Savings bundles", href: "/products?collection=bundles" },
+            { image: art("24", "cat-sleep.jpg"), title: "Sleep & comfort", href: "/products?collection=sleep" },
+            { image: art("24", "cat-bath.jpg"), title: "Bath & care", href: "/products?collection=bath" },
+            { image: art("24", "cat-feeding.jpg"), title: "Feeding essentials", href: "/products?collection=feeding" },
+            { image: art("24", "cat-outings.jpg"), title: "Outings & changing", href: "/products?collection=outings" },
+            { image: art("24", "cat-toys.jpg"), title: "Toys", href: "/products?collection=toys" },
+            { image: art("24", "cat-best.jpg"), title: "Best sellers", href: "/products?collection=best-sellers" },
+          ],
+        },
+      },
+      {
+        type: "xs_products",
+        label: "Savings offers 24",
+        labelAr: "عروض التوفير ٢٤",
+        description: "Your bundles in rounded cards, each with what it saves and a full-width button to choose its colour.",
+        descriptionAr: "مجموعاتك في كروت بحواف دائرية، على كل واحدة المبلغ اللي بتوفّره وزر بعرضها لاختيار اللون.",
+        content: {
+          heading: "Savings offers",
+          text: "Save more with a bundle made for your baby's stage",
+          collection: "bundles",
+          limit: 4,
+          showTabs: false,
+          showSearch: false,
+          showDiscount: true,
+          discountLabel: "Save {amount} EGP",
+          layout: "grid",
+          quickView: false,
+          viewLabel: "Choose {option}",
+          linkLabel: "View all offers",
+          linkHref: "/products?collection=bundles",
+        },
+      },
+      {
+        type: "xs_products",
+        label: "Best sellers 24",
+        labelAr: "الأكثر مبيعًا ٢٤",
+        description: "",
+        descriptionAr: "",
+        library: false,
+        content: {
+          heading: "Best sellers",
+          collection: "best-sellers",
+          limit: 10,
+          showTabs: false,
+          showSearch: false,
+          showDiscount: true,
+          discountLabel: "-{percent}%",
+          layout: "slider",
+          quickView: false,
+          viewLabel: "Choose {option}",
+          linkLabel: "View all",
+          linkHref: "/products?collection=best-sellers",
+        },
+      },
+      {
+        type: "xs_journey",
+        label: "Shop by need 24",
+        labelAr: "اختاري حسب احتياجك ٢٤",
+        description: "A tab for each need — sleep, feeding, going out — opening on the bundle that answers it, its price and what it saves.",
+        descriptionAr: "تبويب لكل احتياج — النوم والرضاعة والخروج — يفتح على المجموعة اللي تناسبه بسعرها واللي بتوفّره.",
+        content: {
+          kicker: "Shop by need",
+          heading: "What do you need right now?",
+          text: "Pick what you need today, and see the bundle that fits.",
+          ctaLabel: "View the bundle",
+          moreLabel: "Also in this set",
+          saveLabel: "Save [amount] EGP",
+          fallbackHref: "/products?collection=bundles",
+          items: [
+            {
+              icon: "moon",
+              pain: "Getting ready for the first time?",
+              name: "Getting started",
+              product: "baby-essentials-bundle",
+              also: "cozy-care-bundle",
+              image: art("24", "products/baby-essentials-bundle-1.jpg"),
+              text: "The first months are all decisions, and you still do not know what you will actually use. This is what you need from day one, without buying things that end up in the cupboard.",
+              points: "A cosy spot for baby right beside you\nA feeding position that is easier on your back\nPrivacy when you feed on the go",
+            },
+            {
+              icon: "bottle",
+              pain: "Is feeding taking a long time?",
+              name: "Feeding",
+              product: "nursing-bundle",
+              also: "cozy-care-bundle",
+              image: art("24", "products/nursing-bundle-1.jpg"),
+              text: "Feeding takes a long time, and the wrong position tires your back and arm. The pillow lifts your baby to a level that is comfortable for you, and the cover lets you feed outside without hunting for the right spot.",
+              points: "Support for your back and arm while you feed\nComfortable privacy when you are out\nCheaper than buying the two pieces apart",
+            },
+            {
+              icon: "bag",
+              pain: "Does going out take a lot of prep?",
+              name: "Going out",
+              product: "on-the-go-bundle",
+              also: "baby-daily-bundle",
+              image: art("24", "products/on-the-go-bundle-1.jpg"),
+              text: "Packing for an outing takes longer than the outing itself. This set cuts the packing to minutes and lets you walk with your hands free.",
+              points: "Changing anywhere\nComfortable carrying for both\nEverything in one bag",
+            },
+            {
+              icon: "clock",
+              pain: "Want the whole day covered?",
+              name: "The whole day",
+              product: "baby-daily-bundle",
+              also: "first-year-bundle",
+              image: art("24", "products/baby-daily-bundle-1.jpg"),
+              text: "Home and outings are not two separate things: the day is one. This set covers the whole day in one decision, and costs less than buying it twice.",
+              points: "Home and outings in one decision\nNothing missing halfway\nCheaper than buying them apart",
+            },
+            {
+              icon: "box",
+              pain: "Want to get it done in one go?",
+              name: "The full journey",
+              product: "motherhood-journey",
+              also: "first-year-bundle",
+              image: art("24", "products/motherhood-journey-1.jpg"),
+              text: "No more thinking every month about something missing: sleep, feeding, outings and play, from day one until the first steps.",
+              points: "Everything from day one\nToys that engage the senses and movement\nOur best-value bundle",
+            },
+          ],
+        },
+      },
+      {
+        type: "xs_reels",
+        label: "See it for real 24",
+        labelAr: "شوفيها على الحقيقة ٢٤",
+        description: "Upright videos of your products in use; one plays at a time, each with its product, price and a cart button under it.",
+        descriptionAr: "فيديوهات طولية لمنتجاتك وهي بتتستخدم؛ واحد بس بيشتغل في المرة، وتحت كل واحد منتجه وسعره وزر للسلة.",
+        content: {
+          heading: "See it for real",
+          text: "Our products in everyday use",
+          cartLabel: "Add to cart",
+          items: [
+            { video: art("24", "reel-1.mp4"), image: art("24", "reel-1.jpg"), product: "on-the-go-bundle" },
+            { video: art("24", "reel-2.mp4"), image: art("24", "reel-2.jpg"), product: "baby-carrier" },
+            { video: art("24", "reel-3.mp4"), image: art("24", "reel-3.jpg"), product: "cozy-care-bundle" },
+            { video: art("24", "reel-4.mp4"), image: art("24", "reel-4.jpg"), product: "self-feeding-pillow" },
+          ],
+        },
+      },
+      {
+        type: "xs_products",
+        label: "Shop all 24",
+        labelAr: "كل المنتجات ٢٤",
+        description: "",
+        descriptionAr: "",
+        library: false,
+        content: {
+          heading: "Shop all",
+          text: "More everyday picks for you and your baby. Add what you need straight to the cart.",
+          collection: "",
+          limit: 8,
+          showTabs: false,
+          showSearch: false,
+          showDiscount: true,
+          discountLabel: "-{percent}%",
+          layout: "grid",
+          quickView: false,
+          viewLabel: "Choose {option}",
+          linkLabel: "Shop all products",
+          linkHref: "/products",
+        },
+      },
+      {
+        type: "xs_slider",
+        label: "Banner 24",
+        labelAr: "بانر ٢٤",
+        description: "",
+        descriptionAr: "",
+        library: false,
+        content: {
+          autoplay: false,
+          seconds: 6,
+          slides: [
+            {
+              image: art("24", "outings.jpg"),
+              phoneImage: art("24", "outings-phone.jpg"),
+              heading: "Easier outings for you and your baby",
+              text: "Mom bag, carrier and changing mat in one set: go out with your hands free, for less than buying each piece alone.",
+              buttonLabel: "Shop outings",
+              buttonHref: "/products?collection=outings",
+            },
+          ],
+        },
+      },
+      {
+        type: "xs_title",
+        label: "Page title 24",
+        labelAr: "عنوان صفحة ٢٤",
+        description: "",
+        descriptionAr: "",
+        content: { heading: "About us", image: "" },
+        page: { path: "/about", title: "About" },
+        library: false,
+      },
+      {
+        type: "xs_story",
+        label: "Story 24",
+        labelAr: "قصة ٢٤",
+        description: "Text beside a picture of mother and baby, the sides swapping from one part to the next.",
+        descriptionAr: "نص بجانب صورة لأم وبيبي، ويتبادلان الجهة من جزء للتاني.",
+        content: {
+          items: [
+            {
+              title: "Our story",
+              body: "We started as mothers who wanted the first year to be a little easier: fewer things that end up in the cupboard, more that you reach for every day.\n\nWrite here how your store began, and who chooses what you sell.",
+              image: art("24", "story.jpg"),
+            },
+            {
+              title: "What we promise",
+              body: "You inspect your order before you pay, you pay on delivery, and you can exchange within 14 days for any manufacturing defect. Write here what your customers can count on when they order from you.",
+              image: art("24", "story-wide.jpg"),
+            },
+          ],
+        },
+        page: { path: "/about", title: "About" },
+      },
+      {
+        type: "xs_title",
+        label: "Page title 24",
+        labelAr: "عنوان صفحة ٢٤",
+        description: "",
+        descriptionAr: "",
+        content: { heading: "Contact us", image: "" },
+        page: { path: "/contact", title: "Contact" },
+        library: false,
+      },
+      {
+        type: "xs_contact",
+        label: "Contact 24",
+        labelAr: "تواصل معنا ٢٤",
+        description: "A message form beside your address, phone and email.",
+        descriptionAr: "نموذج رسالة بجانب عنوانك ورقم تليفونك وبريدك.",
+        content: {
+          heading: "Write to us",
+          contactPlaceholder: "Your email or phone",
+          messagePlaceholder: "Your message",
+          buttonLabel: "Send Now",
+          successMessage: "Thank you. We will reply within a day.",
+          info: [
+            { icon: "address", title: "Visit us", text: "Write your store's address here" },
+            { icon: "phone", title: "Call us", text: "Write your phone number here" },
+            { icon: "email", title: "Email us", text: "Write your email address here" },
           ],
         },
         page: { path: "/contact", title: "Contact" },

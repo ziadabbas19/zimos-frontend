@@ -1,0 +1,130 @@
+{
+  "xsLook": "24",
+  "header": {
+    "announcement": {
+      "enabled": true,
+      "text": "🚚 Free shipping on orders over EGP 1,500",
+      "messages": [
+        "🚚 Free shipping on orders over EGP 1,500",
+        "💵 Cash on delivery · Inspect before you pay",
+        "🎁 5% off orders over EGP 3,000",
+        "🔥 10% off orders over EGP 4,200"
+      ]
+    },
+    "menu": [
+      {
+        "label": "Home",
+        "href": "/",
+        "kind": "home"
+      },
+      {
+        "label": "Shop all",
+        "href": "/products",
+        "kind": "url"
+      },
+      {
+        "label": "Savings bundles",
+        "href": "/products?collection=bundles",
+        "kind": "url"
+      },
+      {
+        "label": "About",
+        "href": "/about",
+        "kind": "page"
+      },
+      {
+        "label": "Contact",
+        "href": "/contact",
+        "kind": "page"
+      }
+    ],
+    "show": {
+      "theme": false,
+      "trackOrder": false,
+      "language": false
+    },
+    "zones": {
+      "notice": [
+        {
+          "id": "notice",
+          "type": "notice"
+        }
+      ],
+      "links": [],
+      "brand": [
+        {
+          "id": "logo",
+          "type": "logo"
+        }
+      ],
+      "menu": [
+        {
+          "id": "menu",
+          "type": "menu"
+        }
+      ],
+      "icons": [
+        {
+          "id": "search",
+          "type": "search"
+        },
+        {
+          "id": "account",
+          "type": "account"
+        },
+        {
+          "id": "cart",
+          "type": "cart"
+        }
+      ]
+    }
+  },
+  "footer": {
+    "groups": [
+      {
+        "title": "Shop",
+        "links": [
+          {
+            "label": "All products",
+            "href": "/products",
+            "kind": "url"
+          },
+          {
+            "label": "Savings bundles",
+            "href": "/products?collection=bundles",
+            "kind": "url"
+          },
+          {
+            "label": "Best sellers",
+            "href": "/products?collection=best-sellers",
+            "kind": "url"
+          }
+        ]
+      },
+      {
+        "title": "Help",
+        "links": [
+          {
+            "label": "About",
+            "href": "/about",
+            "kind": "page"
+          },
+          {
+            "label": "Contact us",
+            "href": "/contact",
+            "kind": "page"
+          },
+          {
+            "label": "Track your order",
+            "href": "/track",
+            "kind": "track"
+          }
+        ]
+      }
+    ],
+    "text": "Everything for mother and baby, chosen with care. Cash on delivery · Inspect before you pay · 14-day exchange for manufacturing defects.",
+    "show": {
+      "help": false
+    }
+  }
+}

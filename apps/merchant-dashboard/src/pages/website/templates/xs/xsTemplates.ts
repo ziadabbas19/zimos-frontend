@@ -22,6 +22,8 @@ import xs19Shell from "./xs19.shell.json";
 import xs20Shell from "./xs20.shell.json";
 import xs21Shell from "./xs21.shell.json";
 import xs22Shell from "./xs22.shell.json";
+import xs23Shell from "./xs23.shell.json";
+import xs24Shell from "./xs24.shell.json";
 
 /**
  * The imported templates ("xs" looks) as whole store templates for the
@@ -70,8 +72,8 @@ const ARABIC: Record<string, XsArabic> = Object.fromEntries(
   Object.values(import.meta.glob<XsArabic>("./ar/xs*.ar.json", { eager: true, import: "default" })).map((arabic) => [arabic.look, arabic])
 );
 
-/** Props and settings that are never words: what they hold is a choice, an address or a picture. */
-const NOT_WORDS = new Set(["look", "variant", "layout", "image", "images", "icon", "kind", "url", "collection", "align", "headingWeight", "imageRatio", "imageFit", "endsAt", "xsLook", "primaryColor", "primaryColorSource", "id", "type", "width", "padding"]);
+/** Props and settings that are never words: what they hold is a choice, an address, a picture or a product's slug. */
+const NOT_WORDS = new Set(["look", "variant", "layout", "image", "images", "phoneImage", "video", "product", "also", "icon", "kind", "url", "collection", "align", "headingWeight", "imageRatio", "imageFit", "endsAt", "xsLook", "primaryColor", "primaryColorSource", "id", "type", "width", "padding"]);
 
 /** `value` with every shown English string that `strings` knows put in Arabic. */
 export function inArabic<T>(value: T, strings: Record<string, string>, key = ""): T {
@@ -119,6 +121,10 @@ const DRAFTS: XsDraft[] = [
   { look: "20", name: "XS 20", category: "food_beverage", primaryColor: "#FEA116", shell: xs20Shell },
   { look: "21", name: "XS 21", category: "food_beverage", primaryColor: "#50A06C", shell: xs21Shell },
   { look: "22", name: "XS 22", category: "general", primaryColor: "#937AFF", shell: xs22Shell },
+  // Zimos's own boutique around the clothing rail.
+  { look: "23", name: "Atelier", category: "fashion", primaryColor: "#1D1B18", shell: xs23Shell },
+  // A mother-and-baby store, from the merchant's own Shopify theme.
+  { look: "24", name: "Cradle", category: "kids_toys", primaryColor: "#E8415B", shell: xs24Shell },
 ];
 
 /** A full-bleed section holding one band, with ids fixed by its place so a rebuild writes the same file. */

@@ -20,7 +20,7 @@ import { DevicePreview } from "./DevicePreview";
 import { TemplatePlaceholder } from "./TemplatePlaceholder";
 import { dropXsShell, storeHasOwnLook, takeTemplateLook, takeXsShell, templateColour, templateStoreTheme, templateXsLook, useTemplatePreviewTheme, withTemplateTheme } from "./templateLook";
 import { useMountedOpen } from "./useMountedOpen";
-import { addXsCatalog, xsCatalogOf } from "./xsCatalog";
+import { addXsCatalog, addXsGroups, xsCatalogOf } from "./xsCatalog";
 
 const STRINGS = {
   en: {
@@ -264,6 +264,9 @@ export function TemplateSheet({
         } finally {
           setProgress(null);
         }
+      } else if (catalog?.linkedGroups) {
+        // Its pages link to its groups: they come (empty) even without its products.
+        await addXsGroups(workspaceId, catalog, template.rtl ? "ar" : "en").catch(() => undefined);
       }
       // The website page's remembered list no longer holds every site.
       invalidateCached(`website:sites:${workspaceId}`);

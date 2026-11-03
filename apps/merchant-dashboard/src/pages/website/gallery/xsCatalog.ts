@@ -17,17 +17,26 @@ export interface XsCatalog {
   look: string;
   /** What the prices are in. */
   currency?: string;
+  /** The template's pages link to its groups (`/products?collection=<slug>`), so they are made even when its products are left out. */
+  linkedGroups?: boolean;
   collections: Array<{ name: string; nameAr?: string; slug: string }>;
   products: Array<{
     name: string;
     nameAr?: string;
+    /** Its address name, for the bands that name products one by one (xs_journey, xs_reels); absent, made from its name. */
+    slug?: string;
     description?: string;
     descriptionAr?: string;
+    /** The lowest of its prices, shown before a choice is made. */
     price: number;
     compareAt?: number;
     image: string;
     images?: string[];
     collections: string[];
+    /** Its choices (colour, size…), each in English and in Arabic, value for value. */
+    options?: Array<{ name: string; nameAr?: string; values: string[]; valuesAr?: string[] }>;
+    /** One per combination of choices: its values in the options' order (English) and its own price. */
+    variants?: Array<{ values: string[]; price: number; compareAt?: number }>;
   }>;
   wording?: Record<string, string>;
   wordingAr?: Record<string, string>;
@@ -75,28 +84,22 @@ function firstPicturePath(media: ProductMedia[] | undefined): string {
 /** Money as the API stores it: whole minor units. */
 const minor = (amount: number) => Math.max(0, Math.round(amount * 100));
 
-export interface CatalogResult {
-  added: number;
-  skipped: number;
-  failed: number;
-}
+type CatalogOption = NonNullable<XsCatalog["products"][number]["options"]>[number];
+
+/** A choice's name in the store's language. */
+const optionName = (option: CatalogOption, ar: boolean) => (ar && option.nameAr) || option.name;
+
+/** The `i`th value of a choice in the store's language. */
+const optionValue = (option: CatalogOption, i: number, ar: boolean) => (ar && option.valuesAr?.[i]) || option.values[i];
 
 /**
- * Brings a template's catalogue into a store: its groups as collections (one
- * already there by the same address is used as it is) and its products, active
- * and stocked, each in its groups. A product the store already has with the same
- * name and first picture is left alone, so taking the template again adds
- * nothing twice (cards of one name with different pictures are each a product).
+ * A template's groups as collections in the store, by their address (one
+ * already there is used as it is); what each address's collection id is.
+ * Also run alone for a catalogue whose pages link to its groups, when its
+ * products are left out, so those links lead to a group and not to nothing.
  */
-export async function addXsCatalog(
-  workspaceId: string,
-  catalog: XsCatalog,
-  onProgress?: (done: number, total: number) => void,
-  language: CatalogLanguage = "en"
-): Promise<CatalogResult> {
-  const result: CatalogResult = { added: 0, skipped: 0, failed: 0 };
+export async function addXsGroups(workspaceId: string, catalog: XsCatalog, language: CatalogLanguage = "en"): Promise<Map<string, string>> {
   const ar = language === "ar";
-
   const collectionIds = new Map<string, string>();
   const existingCollections = await apiClient.listCollections(workspaceId);
   for (const collection of existingCollections) collectionIds.set(collection.slug, collection.id);
@@ -109,6 +112,32 @@ export async function addXsCatalog(
       /* the products still come; they are just not grouped */
     }
   }
+  return collectionIds;
+}
+
+export interface CatalogResult {
+  added: number;
+  skipped: number;
+  failed: number;
+}
+
+/**
+ * Brings a template's catalogue into a store: its groups as collections (one
+ * already there by the same address is used as it is) and its products, active
+ * and stocked, each in its groups — one with choices gets a variant per
+ * combination, at that combination's price. A product the store already has with the same
+ * name and first picture is left alone, so taking the template again adds
+ * nothing twice (cards of one name with different pictures are each a product).
+ */
+export async function addXsCatalog(
+  workspaceId: string,
+  catalog: XsCatalog,
+  onProgress?: (done: number, total: number) => void,
+  language: CatalogLanguage = "en"
+): Promise<CatalogResult> {
+  const result: CatalogResult = { added: 0, skipped: 0, failed: 0 };
+  const ar = language === "ar";
+  const collectionIds = await addXsGroups(workspaceId, catalog, language);
 
   const names = new Set<string>();
   let cursor: string | undefined;
@@ -132,17 +161,39 @@ export async function addXsCatalog(
     }
     try {
       const pictures = product.images && product.images.length > 0 ? product.images : [product.image];
+      const options = product.variants?.length ? (product.options ?? []) : [];
       const { product: created } = await apiClient.createProduct(workspaceId, {
         name,
+        ...(product.slug ? { slug: product.slug } : {}),
         status: "active",
         ...(description ? { description } : {}),
         media: pictures.map(mediaOf),
-        variant: {
-          priceAmount: minor(product.price),
-          compareAtAmount: product.compareAt && product.compareAt > product.price ? minor(product.compareAt) : null,
-          stockOnHand: 50,
-        },
+        ...(options.length > 0
+          ? { options: options.map((option) => ({ name: optionName(option, ar), values: option.values.map((_, i) => optionValue(option, i, ar)) })) }
+          : {
+              variant: {
+                priceAmount: minor(product.price),
+                compareAtAmount: product.compareAt && product.compareAt > product.price ? minor(product.compareAt) : null,
+                stockOnHand: 50,
+              },
+            }),
       });
+      // A product with choices gets one variant per combination, a few at a time.
+      const variants = options.length > 0 ? (product.variants ?? []) : [];
+      for (let at = 0; at < variants.length; at += 5) {
+        await Promise.all(
+          variants.slice(at, at + 5).map((variant) =>
+            apiClient.createVariant(workspaceId, created.id, {
+              optionValues: Object.fromEntries(
+                options.map((option, i) => [optionName(option, ar), optionValue(option, Math.max(0, option.values.indexOf(variant.values[i])), ar)])
+              ),
+              priceAmount: minor(variant.price),
+              compareAtAmount: variant.compareAt && variant.compareAt > variant.price ? minor(variant.compareAt) : null,
+              stockOnHand: 50,
+            })
+          )
+        );
+      }
       names.add(cardKey(name, product.image));
       for (const slug of product.collections) {
         const id = collectionIds.get(slug);
