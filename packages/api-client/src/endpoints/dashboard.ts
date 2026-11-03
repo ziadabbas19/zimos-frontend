@@ -79,6 +79,42 @@ export async function dashboardSetShortcuts(client: ApiClient, workspaceId: stri
 }
 
 /**
+ * The Home page's shortcuts row of this member in this store (backend:
+ * dashboard/homeShortcuts.js). Ids from a fixed catalogue; the server has
+ * already left out what the member's role, the store's plan or this deploy's
+ * switches do not allow.
+ */
+export interface HomeShortcuts {
+  /** False: the member never arranged the row and `shortcuts` is the default one. */
+  customized: boolean;
+  /** The row, in order. */
+  shortcuts: string[];
+  /** The default row, for going back to it. */
+  defaults: string[];
+  /** Every id this member may put on the row. */
+  available: string[];
+  /** How many the row may hold. */
+  max: number;
+}
+
+export async function dashboardGetHomeShortcuts(client: ApiClient, workspaceId: string): Promise<HomeShortcuts> {
+  const { homeShortcuts } = await client.request<{ homeShortcuts: HomeShortcuts }>(`${base(workspaceId)}/home-shortcuts`);
+  return homeShortcuts;
+}
+
+/** Replaces the row. 422 for an id outside the catalogue, a repeat or too many; 403 HOME_SHORTCUT_NOT_ALLOWED for a page this member may not open. */
+export async function dashboardSetHomeShortcuts(client: ApiClient, workspaceId: string, shortcuts: string[]): Promise<HomeShortcuts> {
+  const { homeShortcuts } = await client.request<{ homeShortcuts: HomeShortcuts }>(`${base(workspaceId)}/home-shortcuts`, { method: "PUT", body: { shortcuts } });
+  return homeShortcuts;
+}
+
+/** Back to the default row. */
+export async function dashboardResetHomeShortcuts(client: ApiClient, workspaceId: string): Promise<HomeShortcuts> {
+  const { homeShortcuts } = await client.request<{ homeShortcuts: HomeShortcuts }>(`${base(workspaceId)}/home-shortcuts`, { method: "DELETE" });
+  return homeShortcuts;
+}
+
+/**
  * `GET /workspaces/:id/bootstrap` — what the dashboard's frame reads on every
  * page load, in one answer. Each part is the body (or the named part of the
  * body) of the endpoint beside it, built by the same code on the server; a
@@ -101,6 +137,8 @@ export interface DashboardBootstrap {
   notifications: unknown;
   /** `GET /workspaces/:id/shortcuts` → `shortcuts`. */
   shortcuts: string[];
+  /** `GET /workspaces/:id/home-shortcuts` → `homeShortcuts`. Absent from an API that does not have them yet. */
+  homeShortcuts?: HomeShortcuts;
   /** `GET /workspaces/:id/confirmation-tasks/counts` → `counts`. */
   confirmationCounts: unknown | null;
   /** `GET /workspaces/:id/inbox/conversations?status=open&unread=true&limit=1`, the whole body. */
