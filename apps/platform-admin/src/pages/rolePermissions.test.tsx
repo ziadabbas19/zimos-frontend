@@ -6,12 +6,15 @@ import { CanLink } from "@/components/Can";
 import { ToastProvider } from "@/components/Toast";
 import { LocaleProvider } from "@/i18n/LocaleContext";
 import * as adminApi from "@/lib/adminApi";
+import * as notificationsApi from "@/lib/notificationsApi";
 import { P, hasPermission, type PermissionCheck } from "@/lib/permissions";
+import { AdminLayout } from "@/components/AdminLayout";
 import { AdminUsersPage } from "./AdminUsersPage";
 import { AnnouncementsPage } from "./AnnouncementsPage";
 import { BlocklistPage } from "./BlocklistPage";
 import { FeatureFlagsPage } from "./FeatureFlagsPage";
 import { FraudSignalsPage } from "./FraudSignalsPage";
+import { NotificationsPage } from "./NotificationsPage";
 import { OverviewPage } from "./OverviewPage";
 import { PlansPage } from "./PlansPage";
 import { TicketDetailPage } from "./TicketDetailPage";
@@ -56,7 +59,13 @@ vi.mock("@/lib/adminApi", async (importOriginal) => {
 
 vi.mock("@/components/storeAccess", () => ({ StoreAccessPanel: () => null }));
 
+vi.mock("@/lib/notificationsApi", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/notificationsApi")>();
+  return { ...actual, unreadCount: vi.fn(), listNotifications: vi.fn(), getPrefs: vi.fn() };
+});
+
 const api = vi.mocked(adminApi);
+const notifications = vi.mocked(notificationsApi);
 
 function viewer(permissions: string[], platformRole = "support_desk_a1b2c3") {
   h.user = { id: "me", email: "me@example.com", platformRole, platformPermissions: permissions } as unknown as AuthUser;
@@ -151,10 +160,11 @@ const ROLES = {
   roles: [
     { key: "creator", name: "Creator", description: null, defaultPermissions: ["*"], builtIn: true, holders: 1 },
     { key: "admin", name: "Admin", description: null, defaultPermissions: [P.PLANS_VIEW], builtIn: true, holders: 0 },
+    { key: "agent", name: "Agent", description: null, defaultPermissions: [P.REFERRALS_VIEW_OWN], builtIn: true, holders: 0 },
     { key: "support_desk_a1b2c3", name: "Support desk", description: "Answers merchants", defaultPermissions: [P.SUPPORT_VIEW], builtIn: false, holders: 1 },
     { key: "billing_d4e5f6", name: "Billing", description: null, defaultPermissions: [P.PAYMENTS_RECORD], builtIn: false, holders: 0 },
   ],
-  permissions: [P.SUPPORT_VIEW, P.SUPPORT_MANAGE, P.PAYMENTS_RECORD, P.PLANS_VIEW, P.ADMINS_VIEW, P.ADMINS_MANAGE],
+  permissions: [P.SUPPORT_VIEW, P.SUPPORT_MANAGE, P.PAYMENTS_RECORD, P.PLANS_VIEW, P.ADMINS_VIEW, P.ADMINS_MANAGE, P.REFERRALS_VIEW_OWN],
 };
 
 const ADMINS = [
@@ -174,6 +184,9 @@ beforeEach(() => {
   api.getTicket.mockResolvedValue(THREAD as never);
   api.listAdmins.mockResolvedValue(ADMINS as never);
   api.listRoles.mockResolvedValue(ROLES as never);
+  notifications.unreadCount.mockReset().mockResolvedValue(0);
+  notifications.listNotifications.mockReset().mockResolvedValue({ notifications: [], nextCursor: null, unread: 0 } as never);
+  notifications.getPrefs.mockReset().mockResolvedValue({ prefs: [], emailDelivery: false } as never);
 });
 afterEach(cleanup);
 
@@ -327,6 +340,39 @@ describe("a store's page", () => {
   });
 });
 
+describe("the notifications", () => {
+  it("has the bell in the frame for an account with no keys, and asks the API for the count", async () => {
+    viewer([]);
+    render(
+      <LocaleProvider>
+        <MemoryRouter>
+          <AdminLayout />
+        </MemoryRouter>
+      </LocaleProvider>
+    );
+
+    expect((await screen.findAllByRole("button", { name: "Notifications" })).length).toBeGreaterThan(0);
+    await waitFor(() => expect(notifications.unreadCount).toHaveBeenCalled());
+    expect(screen.getAllByRole("link", { name: "Notifications" }).length).toBeGreaterThan(0);
+  });
+
+  it("offers in the page's filter only the types the API says this account can see", async () => {
+    notifications.getPrefs.mockResolvedValue({
+      prefs: [
+        { type: "support_ticket", enabled: true, email: false },
+        { type: "suggestion", enabled: true, email: false },
+      ],
+      emailDelivery: false,
+    } as never);
+    viewer([P.SUPPORT_VIEW]);
+    show(<NotificationsPage />);
+
+    const filter = await screen.findByRole("combobox", { name: "All types" });
+    await waitFor(() => expect(within(filter).getAllByRole("option")).toHaveLength(3));
+    expect(notifications.listNotifications).toHaveBeenCalled();
+  });
+});
+
 describe("CanLink", () => {
   it("is a link for an account that can open the page, and plain words otherwise", () => {
     viewer([P.WORKSPACES_VIEW]);
@@ -394,7 +440,7 @@ describe("admin users and roles", () => {
   });
 
   it("offers edit on a custom role, not a seeded one or the viewer's own, and delete only with no holders", async () => {
-    viewer([P.ADMINS_VIEW, P.ADMINS_MANAGE], "support_desk_a1b2c3");
+    viewer([P.ADMINS_VIEW, P.ADMINS_MANAGE, P.SUPPORT_VIEW, P.PAYMENTS_RECORD], "support_desk_a1b2c3");
     show(<AdminUsersPage />);
 
     await screen.findByRole("button", { name: /New role/ });
@@ -407,16 +453,47 @@ describe("admin users and roles", () => {
     expect(within(roleRow("Billing")).getByRole("button", { name: "Delete Billing" })).toBeTruthy();
   });
 
-  it("leaves a custom role the viewer can't fully hand out off the grant form", async () => {
+  it("offers nothing on a custom role holding a key the viewer doesn't hold", async () => {
     viewer([P.ADMINS_VIEW, P.ADMINS_MANAGE, P.SUPPORT_VIEW], "admin");
     show(<AdminUsersPage />);
 
+    await screen.findByRole("button", { name: /New role/ });
+    const billing = screen.getAllByText("Billing").at(-1)?.closest("tr") as HTMLElement;
+    expect(within(billing).queryByRole("button")).toBeNull();
+  });
+
+  const grantFormOptions = async () => {
     fireEvent.click(await screen.findByRole("button", { name: /Grant access/ }));
     const dialog = await screen.findByRole("dialog");
-    const options = within(within(dialog).getByLabelText(/Role/)).getAllByRole("option").map((o) => o.textContent);
-    expect(options).toContain("Support desk");
-    expect(options).toContain("Admin");
-    expect(options).not.toContain("Billing");
-    expect(options).not.toContain("Creator");
+    const select = within(dialog).getByLabelText("Role", { exact: true }) as HTMLSelectElement;
+    return { select, options: within(select).getAllByRole("option").map((o) => o.textContent) };
+  };
+
+  it("offers on the grant form only the roles the viewer holds all of, and the agent role", async () => {
+    viewer([P.ADMINS_VIEW, P.ADMINS_MANAGE, P.SUPPORT_VIEW], "admin");
+    show(<AdminUsersPage />);
+
+    const { select, options } = await grantFormOptions();
+    expect(options).toEqual(["Agent", "Support desk"]);
+    // The form starts on a role it offers, or it would submit one it doesn't.
+    expect(select.value).toBe("agent");
+  });
+
+  it("starts the grant form on the admin role for a viewer holding all of it", async () => {
+    viewer([P.ADMINS_VIEW, P.ADMINS_MANAGE, P.PLANS_VIEW], "admin");
+    show(<AdminUsersPage />);
+
+    const { select, options } = await grantFormOptions();
+    expect(options).toEqual(["Admin", "Agent"]);
+    expect(select.value).toBe("admin");
+  });
+
+  it("offers a creator every role", async () => {
+    viewer([], "creator");
+    show(<AdminUsersPage />);
+
+    const { select, options } = await grantFormOptions();
+    expect(options).toEqual(["Creator", "Admin", "Agent", "Support desk", "Billing"]);
+    expect(select.value).toBe("admin");
   });
 });

@@ -17,7 +17,7 @@ import { useAsync } from "@/lib/useAsync";
 import { getErrorMessage } from "@/lib/errors";
 import * as adminApi from "@/lib/adminApi";
 import { formatDate, formatDateTime, formatRelative } from "@/lib/format";
-import { CREATOR_ROLE, P, isCreator, permissionLabel, permissionSummary } from "@/lib/permissions";
+import { AGENT_ROLE, CREATOR_ROLE, P, isCreator, permissionLabel, permissionSummary } from "@/lib/permissions";
 
 const ROLE_TONES: Record<string, Tone> = { creator: "primary", admin: "info", agent: "warning" };
 
@@ -210,27 +210,28 @@ function AccessModal({
   const { can } = useAuth();
   const editing = !!admin;
   const [email, setEmail] = useState("");
-  const [roleKey, setRoleKey] = useState(admin?.role ?? "admin");
+  // Mirrors the API: only a creator hands out the creator role, and any other
+  // role goes only from someone holding all of it. The agent role is the exception.
+  const canGive = (r: AdminPlatformRole) =>
+    r.key === CREATOR_ROLE ? viewerIsCreator : r.key === AGENT_ROLE || r.defaultPermissions.every((key) => can(key));
+  const [roleKey, setRoleKey] = useState(
+    () => admin?.role ?? (roles.roles.some((r) => r.key === "admin" && canGive(r)) ? "admin" : AGENT_ROLE)
+  );
   const role: AdminPlatformRole | undefined = roles.roles.find((r) => r.key === roleKey);
   const [custom, setCustom] = useState(false);
   const [permissions, setPermissions] = useState<string[]>(() => admin?.permissions ?? role?.defaultPermissions ?? []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Mirrors the API: only a creator hands out the creator role, and a custom
-  // role goes only from someone holding all of it (or to the account already on it).
-  const roleOptions = roles.roles.filter(
-    (r) =>
-      r.key === admin?.role ||
-      (r.key === CREATOR_ROLE ? viewerIsCreator : r.builtIn || r.defaultPermissions.every((key) => can(key)))
-  );
+  // The account's own role stays on the list: keeping it gives nothing.
+  const roleOptions = roles.roles.filter((r) => r.key === admin?.role || canGive(r));
   const isWildcard = permissions.includes("*");
 
-  // What this person can tick for that role: what they hold themselves, a
-  // seeded role's own default set, and what the account already has under it.
+  // What this person can tick for that role: what they hold themselves, the
+  // agent role's own default set, and what the account already has under it.
   const kept = admin && roleKey === admin.role ? admin.permissions : [];
   const offered = roles.permissions.filter(
-    (key) => can(key) || kept.includes(key) || (role?.builtIn && role.defaultPermissions.includes(key))
+    (key) => can(key) || kept.includes(key) || (roleKey === AGENT_ROLE && role?.defaultPermissions.includes(key))
   );
 
   function chooseRole(key: string) {

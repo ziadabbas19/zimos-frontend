@@ -50,7 +50,8 @@ export function PermissionPicker({
  * The roles the console offers: the three seeded ones, which are fixed, and the
  * custom ones. Saving a custom role changes the accounts holding it (the API
  * adds and removes the keys that changed), so a person can't edit one they
- * hold themselves, and a role with accounts on it can't be deleted.
+ * hold themselves, and a role with accounts on it can't be deleted. Mirrors the
+ * API: a role with a key the viewer doesn't hold offers them nothing.
  */
 export function RolesPanel({
   roles,
@@ -64,6 +65,7 @@ export function RolesPanel({
   const canManage = can(P.ADMINS_MANAGE);
   const [editing, setEditing] = useState<AdminPlatformRole | "new" | null>(null);
   const [deleting, setDeleting] = useState<AdminPlatformRole | null>(null);
+  const withinReach = (role: AdminPlatformRole) => !role.builtIn && role.defaultPermissions.every((key) => can(key));
 
   return (
     <Panel
@@ -110,12 +112,12 @@ export function RolesPanel({
               <Td className="tabular text-end">{role.holders}</Td>
               {canManage && (
                 <Td className="text-end whitespace-nowrap">
-                  {!role.builtIn && user?.platformRole !== role.key && (
+                  {withinReach(role) && user?.platformRole !== role.key && (
                     <Button size="sm" variant="ghost" onClick={() => setEditing(role)}>
                       <Pencil /> Edit
                     </Button>
                   )}
-                  {!role.builtIn && role.holders === 0 && (
+                  {withinReach(role) && role.holders === 0 && (
                     <Button size="icon-sm" variant="ghost" aria-label={`Delete ${role.name}`} onClick={() => setDeleting(role)}>
                       <Trash2 className="text-danger" />
                     </Button>
@@ -176,8 +178,8 @@ function RoleModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // What the API lets this person hand out: what they hold, and what the role has already.
-  const offered = allKeys.filter((key) => can(key) || role?.defaultPermissions.includes(key));
+  // What the API lets this person hand out: what they hold.
+  const offered = allKeys.filter((key) => can(key));
 
   async function submit(e: FormEvent) {
     e.preventDefault();

@@ -32,14 +32,14 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { P, PAYMENT_METHODS_PAGE, type PermissionCheck } from "@/lib/permissions";
+import { ANY_CONSOLE_ACCOUNT, P, PAYMENT_METHODS_PAGE, type PermissionCheck } from "@/lib/permissions";
 import { STORE_TRAFFIC_ENABLED } from "@/lib/features";
 
 export interface NavItem {
   label: string;
   to: string;
   icon: LucideIcon;
-  /** The view permission the page's endpoints need; hidden without it. */
+  /** The view permission the page's endpoints need; hidden without it. Notifications is any console account's. */
   permission: PermissionCheck;
 }
 
@@ -56,7 +56,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: null,
     items: [
       { label: "Overview", to: "/", icon: LayoutDashboard, permission: P.OVERVIEW_VIEW },
-      { label: "Notifications", to: "/notifications", icon: Bell, permission: P.OVERVIEW_VIEW },
+      { label: "Notifications", to: "/notifications", icon: Bell, permission: ANY_CONSOLE_ACCOUNT },
       { label: "Site traffic", to: "/site-traffic", icon: Globe, permission: P.OVERVIEW_VIEW },
       // Every store's visitors are store data: workspaces.view (VITE_STORE_TRAFFIC_ENABLED).
       ...(STORE_TRAFFIC_ENABLED ? [{ label: "Store traffic", to: "/store-traffic", icon: Footprints, permission: P.WORKSPACES_VIEW }] : []),
@@ -147,10 +147,20 @@ export function useVisibleNav() {
   return visibleNavGroups(can);
 }
 
-/** The first console page this account can open, in sidebar order. */
+/**
+ * The first page this check opens, in sidebar order. Notifications is every
+ * account's, so it is nobody's first page: an agent still lands on My referrals,
+ * and an account with no keys is told it has no sections.
+ */
+export function landingPath(can: (permission: PermissionCheck) => boolean): string | null {
+  const items = visibleNavGroups(can).flatMap((g) => g.items);
+  return items.find((item) => item.permission !== ANY_CONSOLE_ACCOUNT)?.to ?? null;
+}
+
+/** The first console page this account can open. */
 export function useLandingPath(): string | null {
-  const groups = useVisibleNav();
-  return groups[0]?.items[0]?.to ?? null;
+  const { can } = useAuth();
+  return landingPath(can);
 }
 
 /**

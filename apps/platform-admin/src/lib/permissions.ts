@@ -50,8 +50,11 @@ export const P = {
 
 export type PermissionKey = (typeof P)[keyof typeof P];
 
-/** One key, or several when holding any of them is enough. */
-export type PermissionCheck = string | readonly string[];
+/** One key, several when holding any of them is enough, or ANY_CONSOLE_ACCOUNT. */
+export type PermissionCheck = string | readonly string[] | null;
+
+/** For what opens to everyone with a console role, whatever they hold: their notifications. */
+export const ANY_CONSOLE_ACCOUNT = null;
 
 /** A boolean answer for one key: what `useAuth().can` gives a plain function. */
 export type Can = (permission: string) => boolean;
@@ -60,6 +63,7 @@ export type Can = (permission: string) => boolean;
 export const PAYMENT_METHODS_PAGE = [P.PAYMENTS_RECORD, P.PAYMENT_METHODS_MANAGE, P.PAYMENT_METHODS_EDIT_NUMBERS] as const;
 
 export const CREATOR_ROLE = "creator";
+export const AGENT_ROLE = "agent";
 
 export function isCreator(user: AuthUser | null): boolean {
   return user?.platformRole === CREATOR_ROLE;
@@ -71,7 +75,7 @@ export function isCreator(user: AuthUser | null): boolean {
  */
 export function hasPermission(user: AuthUser | null, permission: PermissionCheck): boolean {
   if (!user || !user.platformRole) return false;
-  if (isCreator(user)) return true;
+  if (isCreator(user) || permission === ANY_CONSOLE_ACCOUNT) return true;
   const held = user.platformPermissions ?? [];
   return typeof permission === "string" ? held.includes(permission) : permission.some((key) => held.includes(key));
 }

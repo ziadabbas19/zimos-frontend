@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { AuthUser } from "@store-builder/api-client";
 import appSource from "@/App.tsx?raw";
 import { STORE_TRAFFIC_ENABLED } from "./features";
-import { NAV_GROUPS, findNavItem, visibleNavGroups } from "./nav";
-import { P, PAYMENT_METHODS_PAGE, PERMISSION_LABELS, PERMISSION_NEEDS, hasPermission, isCreator, permissionLabel, withPermission, type PermissionCheck } from "./permissions";
+import { NAV_GROUPS, findNavItem, landingPath, visibleNavGroups } from "./nav";
+import { ANY_CONSOLE_ACCOUNT, P, PAYMENT_METHODS_PAGE, PERMISSION_LABELS, PERMISSION_NEEDS, hasPermission, isCreator, permissionLabel, withPermission, type PermissionCheck } from "./permissions";
 
 /** The one check behind `can`, `<Can>` and `<CanLink>`, and what the menu and the routes make of it. */
 
@@ -43,6 +43,13 @@ describe("hasPermission", () => {
     expect(hasPermission(account("admin", [P.PAYMENT_METHODS_MANAGE]), PAYMENT_METHODS_PAGE)).toBe(true);
     expect(hasPermission(account("admin", [P.PLANS_VIEW]), PAYMENT_METHODS_PAGE)).toBe(false);
   });
+
+  it("opens ANY_CONSOLE_ACCOUNT to anyone with a console role, and to nobody else", () => {
+    expect(hasPermission(account("admin", []), ANY_CONSOLE_ACCOUNT)).toBe(true);
+    expect(hasPermission(account("agent", ["referrals.view_own"]), ANY_CONSOLE_ACCOUNT)).toBe(true);
+    expect(hasPermission(account(null, []), ANY_CONSOLE_ACCOUNT)).toBe(false);
+    expect(hasPermission(null, ANY_CONSOLE_ACCOUNT)).toBe(false);
+  });
 });
 
 describe("the permission keys", () => {
@@ -73,16 +80,17 @@ describe("the menu", () => {
 
   it("leaves out each page the account can't open, and a section with nothing left", () => {
     const groups = visibleNavGroups(canFor(account("admin", [P.SUPPORT_VIEW])));
-    expect(groups.map((g) => g.id)).toEqual(["support"]);
-    expect(groups[0].items.map((i) => i.to)).toEqual(["/tickets", "/suggestions"]);
+    expect(groups.map((g) => g.id)).toEqual(["main", "support"]);
+    expect(groups[1].items.map((i) => i.to)).toEqual(["/tickets", "/suggestions"]);
   });
 
-  it("is empty for an account with no permissions", () => {
-    expect(visibleNavGroups(canFor(account("admin", [])))).toEqual([]);
+  it("offers an account with no permissions its notifications and nothing else", () => {
+    const groups = visibleNavGroups(canFor(account("admin", [])));
+    expect(groups.flatMap((g) => g.items.map((i) => i.to))).toEqual(["/notifications"]);
   });
 
   it("starts with the first page the account can open, not the overview it can't", () => {
-    const first = (permissions: string[]) => visibleNavGroups(canFor(account("admin", permissions)))[0]?.items[0]?.to ?? null;
+    const first = (permissions: string[]) => landingPath(canFor(account("admin", permissions)));
     expect(first([P.OVERVIEW_VIEW, P.SUPPORT_VIEW])).toBe("/");
     expect(first([P.SUPPORT_VIEW, P.PLANS_VIEW])).toBe("/plans");
     expect(first([P.REFERRALS_VIEW_OWN])).toBe("/my-referrals");
@@ -91,15 +99,19 @@ describe("the menu", () => {
 
   it("opens the payment methods page for whoever holds a key it edits", () => {
     const pages = (key: string) => visibleNavGroups(canFor(account("admin", [key]))).flatMap((g) => g.items.map((i) => i.to));
-    expect(pages(P.PAYMENT_METHODS_EDIT_NUMBERS)).toEqual(["/payment-methods"]);
-    expect(pages(P.PAYMENT_METHODS_MANAGE)).toEqual(["/payment-methods"]);
+    expect(pages(P.PAYMENT_METHODS_EDIT_NUMBERS)).toContain("/payment-methods");
+    expect(pages(P.PAYMENT_METHODS_MANAGE)).toContain("/payment-methods");
   });
 });
 
 describe("the routes", () => {
   // `gated(P.X, <Page />)` or `gated(NAME, <Page />)`, as App.tsx writes them.
   const routes = [...appSource.matchAll(/path="([^"]+)" element=\{gated\(([A-Za-z_.]+),/g)].map(([, path, permission]) => ({ path, permission }));
-  const keyOf = (name: string): PermissionCheck => (name === "PAYMENT_METHODS_PAGE" ? PAYMENT_METHODS_PAGE : P[name.replace("P.", "") as keyof typeof P]);
+  const keyOf = (name: string): PermissionCheck => {
+    if (name === "PAYMENT_METHODS_PAGE") return PAYMENT_METHODS_PAGE;
+    if (name === "ANY_CONSOLE_ACCOUNT") return ANY_CONSOLE_ACCOUNT;
+    return P[name.replace("P.", "") as keyof typeof P];
+  };
 
   it("are all behind a permission, /login aside", () => {
     expect(routes.length).toBeGreaterThan(30);
