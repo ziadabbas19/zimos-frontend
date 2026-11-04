@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- the plain <img> is the fallback on purpose, see below. */
 import Image from "next/image";
 import type { ImgHTMLAttributes } from "react";
+import { thumbnailSrcSet } from "@store-builder/image-tools/thumbnails";
 import { isOptimizableImage } from "@/lib/imageOrigins";
 import { xsPicturePath, xsSrcSet } from "@/lib/xsPicture";
 
@@ -26,8 +27,14 @@ type StoreImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "width"
  * (lib/xsPicture). Everything else — and every image while the variable is
  * unset — is the same plain <img> the storefront always drew, with the same
  * width, height, loading and priority attributes.
+ *
+ * A picture uploaded with its smaller copies (backend media/thumbnails.js; its
+ * name says so) picks among those by `sizes`, with no work for this server. Its
+ * own file stays the src, for a browser that does not read srcset.
  */
 export function StoreImage({ src, alt, width, height, sizes, ...rest }: StoreImageProps) {
+  const copies = thumbnailSrcSet(src);
+  if (copies) return <img src={src} srcSet={copies} sizes={sizes} alt={alt} width={width} height={height} {...rest} />;
   if (isOptimizableImage(src)) {
     return <Image src={src} alt={alt} width={width} height={height} sizes={sizes} {...rest} />;
   }

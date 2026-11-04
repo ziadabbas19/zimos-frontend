@@ -1,3 +1,4 @@
+import { thumbnailSrcSet } from "@store-builder/image-tools/thumbnails";
 import { useRef, useState } from "react";
 import { Image as ImageIcon, ImageOff, Trash2, Upload } from "lucide-react";
 import { Alert, Button, ZLoader } from "@store-builder/ui";
@@ -101,6 +102,8 @@ function Thumb({
         ) : (
           <img
             src={imageSrc(asset.url) ?? asset.url}
+            srcSet={thumbnailSrcSet(imageSrc(asset.url) ?? asset.url) ?? undefined}
+            sizes="(max-width: 640px) 50vw, 200px"
             alt={t.preview}
             loading="lazy"
             className="size-full object-cover"

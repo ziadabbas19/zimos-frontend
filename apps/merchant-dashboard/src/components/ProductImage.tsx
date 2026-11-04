@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ImageIcon } from "lucide-react";
 import { cn } from "@store-builder/ui";
+import { thumbnailSrcSet } from "@store-builder/image-tools/thumbnails";
 import type { ProductMedia } from "@store-builder/api-client";
 import { mediaSrc } from "@/lib/media";
 
@@ -24,15 +25,17 @@ interface ProductImageProps {
  * image glyph) when there's no media or the file fails to load.
  *
  * The API gives one file per picture (url/path/mimeType/size, the upload
- * re-encoded to at most 2000px): there is no smaller copy to ask for, so a
- * 40px thumbnail still downloads the whole picture. It is fetched only near
- * the screen and decoded off the main thread.
+ * re-encoded to at most 2000px). A picture uploaded with its smaller copies says
+ * so in its name (backend media/thumbnails.js), and the browser picks one by the
+ * box's size; for any other, a 40px thumbnail still downloads the whole picture.
+ * Either way it is fetched only near the screen and decoded off the main thread.
  */
 export function ProductImage({ media, alt, className, iconClassName, size }: ProductImageProps) {
   // Track which src failed so a prop change to a new src clears the error
   // without needing an effect.
   const [erroredSrc, setErroredSrc] = useState<string | null>(null);
   const src = media ? mediaSrc(media) : null;
+  const copies = thumbnailSrcSet(src);
 
   const box = cn(
     "flex shrink-0 items-center justify-center overflow-hidden rounded-[0.5rem] border border-line bg-paper",
@@ -51,6 +54,7 @@ export function ProductImage({ media, alt, className, iconClassName, size }: Pro
     <div className={box}>
       <img
         src={src}
+        {...(copies ? { srcSet: copies, sizes: size ? `${size}px` : "(max-width: 640px) 50vw, 240px" } : {})}
         alt={alt}
         loading="lazy"
         decoding="async"
