@@ -17,6 +17,8 @@ import { NavSkeletonProvider, NavSkeletonSlot } from "@/lib/navSkeleton";
 import { StoreFooter } from "@/components/StoreFooter";
 import { StoreHeader } from "@/components/StoreHeader";
 import { StoreAnalytics } from "@/components/StoreAnalytics";
+import { StoreWebVitals } from "@/components/StoreWebVitals";
+import { WEB_VITALS_SAMPLE_RATE } from "@/lib/webVitals";
 import { BotGuard } from "@/components/BotGuard";
 import { OtpGate } from "@/components/OtpGate";
 import { TrackingPixels } from "@/components/TrackingPixels";
@@ -235,6 +237,7 @@ export default async function StoreLayout({
               <StoreAnalytics workspaceId={workspaceId} websiteId={typeof websiteId === "string" ? websiteId : undefined} />
               <BotGuard workspaceId={workspaceId} />
               <OtpGate />
+              {WEB_VITALS_SAMPLE_RATE > 0 && <StoreWebVitals storeId={store.id} />}
             </Suspense>
             {pixels.length > 0 && (
               // Reads the search params to send page views on navigation.
