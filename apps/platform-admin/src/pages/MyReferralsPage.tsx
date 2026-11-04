@@ -16,13 +16,13 @@ import {
 } from "@/components/referrals";
 import { ReferralCodeFormModal } from "@/components/referralCodeForm";
 import { useAuth } from "@/context/AuthContext";
-import { PAYOUT_OPTIONS, neverApproved } from "@/lib/referrals";
+import { PAYOUT_OPTIONS, codeToEdit, neverApproved } from "@/lib/referrals";
 import { describeCodeCommission, describeCodeDiscount } from "@/lib/referralCodes";
 import { CreateAgentModal } from "@/pages/AgentsPage";
 import { Pager } from "@/pages/BlocklistPage";
 import { useAsync } from "@/lib/useAsync";
 import * as adminApi from "@/lib/adminApi";
-import { P } from "@/lib/permissions";
+import { P, isCreator } from "@/lib/permissions";
 
 type StatusFilter = "all" | CommissionListStatus;
 
@@ -41,7 +41,8 @@ function reviewHint(code: AdminReferralCode | undefined): string {
  */
 export function MyReferralsPage() {
   const toast = useToast();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
+  const creator = isCreator(user);
   const mine = useAsync(() => adminApi.getMyReferrals(), []);
   const plans = useAsync(() => (can(P.PLANS_VIEW) ? adminApi.listPlans() : Promise.resolve([])), []);
   // { code: undefined }: a new one.
@@ -58,7 +59,7 @@ export function MyReferralsPage() {
   const agent = mine.data?.agent;
   const v2 = mine.data?.v2Enabled ?? false;
   const defaultRateBp = mine.data?.defaultCommissionRateBp ?? 3000;
-  const hint = can(P.REFERRAL_CODES_APPROVE) ? undefined : reviewHint(form?.code);
+  const hint = creator ? undefined : reviewHint(form?.code);
 
   const save = (input: AdminReferralCodeInput & { code?: string }) =>
     form?.code
@@ -190,7 +191,7 @@ export function MyReferralsPage() {
 
       {form && agent && v2 && (
         <ReferralCodeFormModal
-          code={form.code ? (form.code.proposed ?? form.code) : undefined}
+          code={form.code ? codeToEdit(form.code, creator) : undefined}
           ownerId={agent.id}
           agents={[]}
           plans={plans.data ?? []}
@@ -203,7 +204,7 @@ export function MyReferralsPage() {
       )}
       {form && agent && !v2 && (
         <CodeModal
-          code={form.code ? (form.code.proposed ?? form.code) : undefined}
+          code={form.code ? codeToEdit(form.code, creator) : undefined}
           hideActive
           defaultRateBp={defaultRateBp}
           description={hint}

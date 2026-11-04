@@ -546,13 +546,22 @@ describe("admin users and roles", () => {
     return { select, options: within(select).getAllByRole("option").map((o) => o.textContent) };
   };
 
-  it("offers on the grant form only the roles the viewer holds all of, and the agent role", async () => {
+  it("offers on the grant form only the roles the viewer holds all of, and no agent role without agents.create", async () => {
     viewer([P.ADMINS_VIEW, P.ADMINS_MANAGE, P.SUPPORT_VIEW], "admin");
     show(<AdminUsersPage />);
 
     const { select, options } = await grantFormOptions();
-    expect(options).toEqual(["Agent", "Support desk"]);
+    expect(options).toEqual(["Support desk"]);
     // The form starts on a role it offers, or it would submit one it doesn't.
+    expect(select.options[select.selectedIndex].textContent).toBe("Support desk");
+  });
+
+  it("offers the agent role to whoever holds agents.create, without holding the agent's own key", async () => {
+    viewer([P.ADMINS_VIEW, P.ADMINS_MANAGE, P.AGENTS_CREATE], "admin");
+    show(<AdminUsersPage />);
+
+    const { select, options } = await grantFormOptions();
+    expect(options).toEqual(["Agent"]);
     expect(select.value).toBe("agent");
   });
 
@@ -561,7 +570,7 @@ describe("admin users and roles", () => {
     show(<AdminUsersPage />);
 
     const { select, options } = await grantFormOptions();
-    expect(options).toEqual(["Admin", "Agent"]);
+    expect(options).toEqual(["Admin"]);
     expect(select.value).toBe("admin");
   });
 

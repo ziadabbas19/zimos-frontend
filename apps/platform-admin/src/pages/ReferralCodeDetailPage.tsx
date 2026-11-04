@@ -29,8 +29,8 @@ import {
   describeGrant,
   usesLabel,
 } from "@/lib/referralCodes";
-import { P } from "@/lib/permissions";
-import { neverApproved } from "@/lib/referrals";
+import { P, isCreator } from "@/lib/permissions";
+import { CONSOLE_REVIEW_HINT, codeToEdit, neverApproved } from "@/lib/referrals";
 import { STATE_TONE } from "./ReferralCodesPage";
 
 /**
@@ -63,7 +63,8 @@ function readingOf(code: AdminReferralCode, plans: AdminPlan[]): [string, string
 export function ReferralCodeDetailPage() {
   const { id = "" } = useParams();
   const toast = useToast();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
+  const creator = isCreator(user);
   const { data, loading, error, refresh } = useAsync(() => adminApi.getReferralCode(id), [id]);
   const [editing, setEditing] = useState(false);
   const [review, setReview] = useState<"approve" | "edit" | "reject" | null>(null);
@@ -225,15 +226,16 @@ export function ReferralCodeDetailPage() {
 
       {editing && (
         <ReferralCodeFormModal
-          code={code}
+          code={codeToEdit(code, creator)}
           impact={impact}
           agents={agents.data?.agents ?? []}
           plans={plans.data ?? []}
           defaultRateBp={data.defaultCommissionRateBp}
+          description={creator ? undefined : CONSOLE_REVIEW_HINT}
           onClose={() => setEditing(false)}
-          onSaved={() => {
+          onSaved={(saved) => {
             setEditing(false);
-            toast.success("Saved. It applies from the next payment.");
+            toast.success(saved.approvalStatus === "pending" ? "Sent for review." : "Saved. It applies from the next payment.");
             void refresh({ silent: true });
           }}
         />
@@ -241,7 +243,7 @@ export function ReferralCodeDetailPage() {
       {review === "edit" && data.v2Enabled && (
         <ReferralCodeFormModal
           code={proposed ?? code}
-          ownerId={code.agentId ?? undefined}
+          ownerId={code.agentId}
           agents={[]}
           plans={plans.data ?? []}
           defaultRateBp={data.defaultCommissionRateBp}

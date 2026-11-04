@@ -50,6 +50,19 @@ export function neverApproved(code: Pick<AdminReferralCode, "approvalStatus" | "
   return (code.approvalStatus === "pending" || code.approvalStatus === "rejected") && !code.proposed;
 }
 
+/**
+ * The code a form edits. A creator's changes go on the code as it stands;
+ * anyone else's are read against what would apply once reviewed, so saving a
+ * form that shows the live values would throw away the change waiting.
+ */
+export function codeToEdit(code: AdminReferralCode, creator: boolean): AdminReferralCode {
+  return creator ? code : (code.proposed ?? code);
+}
+
+/** What saving means for someone whose changes wait for a creator's review, from the console. */
+export const CONSOLE_REVIEW_HINT =
+  "The label, the agent and the on/off switch change at once. Anything else waits for a creator's review: until it's approved, stores using this code keep what was approved, and new stores can't enter it.";
+
 export function initialCodeForm(code?: AdminReferralCode): CodeFormState {
   if (!code) {
     return {

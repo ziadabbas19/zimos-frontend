@@ -21,20 +21,21 @@ import {
   MarkPaidModal,
   MerchantsTable,
 } from "@/components/referrals";
-import { PAYOUT_OPTIONS, describeDiscount, neverApproved } from "@/lib/referrals";
+import { CONSOLE_REVIEW_HINT, PAYOUT_OPTIONS, codeToEdit, describeDiscount, neverApproved } from "@/lib/referrals";
 import { Pager } from "@/pages/BlocklistPage";
 import { useAuth } from "@/context/AuthContext";
 import { useAsync } from "@/lib/useAsync";
 import * as adminApi from "@/lib/adminApi";
 import { formatBp, formatDate } from "@/lib/format";
-import { P } from "@/lib/permissions";
+import { P, isCreator } from "@/lib/permissions";
 
 type StatusFilter = "all" | CommissionListStatus;
 
 export function AgentDetailPage() {
   const { id = "" } = useParams();
   const toast = useToast();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
+  const creator = isCreator(user);
   const detail = useAsync(() => adminApi.getAgent(id), [id]);
 
   const [editing, setEditing] = useState<AdminReferralCode | null>(null);
@@ -153,13 +154,14 @@ export function AgentDetailPage() {
       )}
       {editing && (
         <CodeModal
-          code={editing}
+          code={codeToEdit(editing, creator)}
           hideActive={neverApproved(editing)}
           defaultRateBp={defaultRateBp}
+          description={creator ? undefined : CONSOLE_REVIEW_HINT}
           onClose={() => setEditing(null)}
           onSubmit={async (input) => {
             const code = await adminApi.updateReferralCode(editing.id, input);
-            toast.success(`Code ${code.code} saved.`);
+            toast.success(code.approvalStatus === "pending" ? `Code ${code.code} was sent for review.` : `Code ${code.code} saved.`);
             setEditing(null);
             void detail.refresh({ silent: true });
           }}

@@ -266,11 +266,11 @@ export function ReferralCodeFormModal({
   plans: AdminPlan[];
   defaultRateBp: number;
   /**
-   * The account the code stays with (My referrals, and a creator's review,
-   * migration 742): its agent and its on/off switch aren't this form's to
-   * change, and aren't sent.
+   * The account the code stays with, null for none (My referrals, and a
+   * creator's review, migration 742): its agent and its on/off switch aren't
+   * this form's to change, and aren't sent.
    */
-  ownerId?: string;
+  ownerId?: string | null;
   /** Saves it somewhere other than the console's own routes. */
   submit?: (input: AdminReferralCodeInput & { code?: string }) => Promise<AdminReferralCode>;
   description?: string;
@@ -280,9 +280,10 @@ export function ReferralCodeFormModal({
 }) {
   const { can } = useAuth();
   const creating = !code;
+  const fixedOwner = ownerId !== undefined;
   const [form, setForm] = useState<CodeForm>(() => {
     const initial = initialCodeForm(code, defaultRateBp);
-    return ownerId ? { ...initial, agentId: ownerId } : initial;
+    return fixedOwner ? { ...initial, agentId: ownerId ?? "" } : initial;
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -299,7 +300,7 @@ export function ReferralCodeFormModal({
       input = toCodeInput(form, { creating });
       // The agent only when it changes: a code whose agent has since lost the role stays editable.
       if (!creating && (input.agentId ?? null) === (code.agentId ?? null)) delete input.agentId;
-      if (ownerId) {
+      if (fixedOwner) {
         delete input.agentId;
         delete input.active;
       }
@@ -357,7 +358,7 @@ export function ReferralCodeFormModal({
             hint={creating ? "3–32 letters, digits or dashes. It can't be changed later." : "Codes can't be renamed."}
           />
           <TextField label="Label" value={form.label} onChange={(e) => set({ label: e.target.value })} maxLength={120} hint="Internal only — merchants never see it." />
-          {!ownerId && (
+          {!fixedOwner && (
             <SelectField label="Agent" value={form.agentId} onChange={(e) => set({ agentId: e.target.value })} hint="Optional. No agent: a discount only, no commission. Stores already linked keep their agent.">
               <option value="">No agent</option>
               {agents
@@ -376,7 +377,7 @@ export function ReferralCodeFormModal({
               </option>
             ))}
           </SelectField>
-          {!creating && !ownerId && !neverApproved(code) && (
+          {!creating && !fixedOwner && !neverApproved(code) && (
             <Toggle
               label="Active"
               description="Off: it can't be entered, and gives no discount or commission on any payment from now on — including charges already priced with it."
