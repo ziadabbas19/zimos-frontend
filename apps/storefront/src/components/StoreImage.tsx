@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- the plain <img> is the fallback on purpose, see below. */
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import type { ImgHTMLAttributes } from "react";
 import { isOptimizableImage } from "@/lib/imageOrigins";
 import { xsPicturePath, xsSrcSet } from "@/lib/xsPicture";
@@ -40,6 +40,29 @@ export function StoreImage({ src, alt, width, height, sizes, ...rest }: StoreIma
       <source type="image/avif" srcSet={xsSrcSet(path, "avif")} sizes={sizes} />
       <source type="image/webp" srcSet={xsSrcSet(path, "webp")} sizes={sizes} />
       {img}
+    </picture>
+  );
+}
+
+type StorePictureProps = StoreImageProps & {
+  /** Another file for phones, when the merchant gave one. */
+  mobileSrc?: string | null;
+  /** When the phone file applies, e.g. "(max-width: 749px)". */
+  media: string;
+};
+
+/**
+ * A merchant photo with a separate file for phones (the hero and the banner).
+ * Each file comes resized by the optimizer when its origin is listed, as in
+ * StoreImage; otherwise this is the same <picture> of the original files.
+ */
+export function StorePicture({ src, mobileSrc, media, alt, width, height, sizes, ...rest }: StorePictureProps) {
+  const main = isOptimizableImage(src) ? getImageProps({ src, alt, width, height, sizes }).props : null;
+  const phone = mobileSrc && isOptimizableImage(mobileSrc) ? getImageProps({ src: mobileSrc, alt, width, height, sizes }).props : null;
+  return (
+    <picture>
+      {mobileSrc ? <source media={media} srcSet={phone?.srcSet ?? mobileSrc} sizes={phone?.sizes} /> : null}
+      <img src={main?.src ?? src} srcSet={main?.srcSet} sizes={main?.sizes} alt={alt} width={width} height={height} {...rest} />
     </picture>
   );
 }

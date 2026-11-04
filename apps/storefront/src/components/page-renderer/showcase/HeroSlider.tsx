@@ -5,6 +5,7 @@ import { StoreLink } from "@/components/StoreRoute";
 import { swipeStep } from "@/lib/swipe";
 import type { HeroSide, HeroVertical } from "./heroLook";
 import { HeroVideo } from "./HeroVideo";
+import { StorePicture } from "@/components/StoreImage";
 
 export interface HeroSlide {
   key: string;
@@ -149,21 +150,19 @@ export function HeroSlider({
             inert={on ? undefined : true}
           >
             <div className="zs-hero__media">
-              <picture>
-                {slide.mobileImage ? <source media="(max-width: 749px)" srcSet={slide.mobileImage} /> : null}
-                {/* Merchant media are arbitrary remote URLs (no next/image allowlist). */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={slide.image}
-                  alt={slide.alt}
-                  width={2400}
-                  height={926}
-                  loading={i === 0 ? "eager" : "lazy"}
-                  fetchPriority={i === 0 ? "high" : "auto"}
-                  decoding="async"
-                  draggable={false}
-                />
-              </picture>
+              <StorePicture
+                src={slide.image}
+                mobileSrc={slide.mobileImage}
+                media="(max-width: 749px)"
+                alt={slide.alt}
+                width={2400}
+                height={926}
+                sizes="100vw"
+                loading={i === 0 ? "eager" : "lazy"}
+                fetchPriority={i === 0 ? "high" : "auto"}
+                decoding="async"
+                draggable={false}
+              />
               {slide.video ? <HeroVideo src={slide.video} active={on} /> : null}
               {slide.overlay ? (
                 <span

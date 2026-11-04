@@ -41,6 +41,10 @@ const nextConfig: NextConfig = {
     qualities: [75],
     // The dashboard lets through uploads of up to 5 MB untouched.
     maximumResponseBody: 10_000_000,
+    // AVIF for the browsers that ask for it, only with STOREFRONT_IMAGE_AVIF_ENABLED: the optimizer then answers one
+    // address in two formats by the Accept header, so the CDN's rule must keep them apart first (docs/edge-cache,
+    // "AVIF") or a browser without AVIF can be given a kept copy it cannot draw. Off: WebP, as before.
+    ...(process.env.STOREFRONT_IMAGE_AVIF_ENABLED === "true" ? { formats: ["image/avif", "image/webp"] as ("image/avif" | "image/webp")[] } : {}),
   },
 };
 

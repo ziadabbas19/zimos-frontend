@@ -1,6 +1,5 @@
 import { ApiError, type StorefrontProduct } from "@store-builder/api-client";
 import { storeGetShoppableImage, type PublicShoppableImage } from "@store-builder/api-client";
-import { ShoppableImageView } from "@/components/ShoppableImageView";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { BoxIcon } from "@/components/Icons";
 import { ProductCard } from "@/components/ProductCard";
@@ -144,13 +143,12 @@ function FunnelProductTile({
     >
       <span className="relative block aspect-square overflow-hidden bg-paper">
         {image ? (
-          // Merchant media are arbitrary remote URLs (no next/image allowlist).
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <StoreImage
             src={image}
             alt=""
             width={600}
             height={600}
+            sizes="(max-width: 768px) 50vw, 25vw"
             loading="lazy"
             decoding="async"
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none"
@@ -232,8 +230,7 @@ export async function ProductCardElement({
       <div className="zt-card grid gap-6 rounded-2xl border border-line bg-paper-raised p-5 sm:grid-cols-2 sm:p-6">
         <div className="zt-img aspect-square overflow-hidden rounded-2xl bg-paper">
           {image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={image} alt="" width={600} height={600} loading="lazy" className="h-full w-full object-cover" />
+            <StoreImage src={image} alt="" width={600} height={600} sizes="(max-width: 640px) 100vw, 50vw" loading="lazy" className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-primary/40">
               <BoxIcon size={56} />

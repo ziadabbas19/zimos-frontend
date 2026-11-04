@@ -186,6 +186,46 @@ just removed (section 4).
 | `CLOUDFLARE_API_TOKEN` | a token with **Zone › Cache Purge › Purge** on zimos.co |
 | `CLOUDFLARE_ZONE_ID` | zimos.co's zone id |
 
+## 6. AVIF photos (off by default)
+
+`STOREFRONT_IMAGE_AVIF_ENABLED=true` on the storefront (read by `next.config.ts`,
+at build and at start) makes `/_next/image` answer AVIF to a browser that asks for
+it and WebP to the rest, under **one and the same URL**. Cloudflare keys a kept
+copy by URL, so before turning this on the rule that keeps `/_next/image` must
+keep the two apart, or a browser without AVIF can be given a copy it cannot draw.
+
+Do this first, on the Cache Rule that matches `/_next/image` (`store-image-optimizer`),
+through the Rulesets API or Terraform. Cloudflare's docs give this shape for Vary:
+
+```json
+"action_parameters": {
+  "cache": true,
+  "vary": {
+    "default": { "action": "bypass" },
+    "headers": {
+      "accept": { "action": "normalize", "media_types": ["image/avif", "image/webp"] }
+    }
+  }
+}
+```
+
+Keep whatever else the rule's `action_parameters` already has (`edge_ttl`,
+`browser_ttl`). Then check, in PowerShell, with a real photo's `/_next/image` address:
+
+```powershell
+curl.exe -s -o NUL -D - -H "Accept: image/avif,image/webp,*/*" "<address>" | Select-String "content-type|cf-cache-status"
+curl.exe -s -o NUL -D - -H "Accept: image/webp,*/*" "<address>" | Select-String "content-type|cf-cache-status"
+curl.exe -s -o NUL -D - -H "Accept: image/png,*/*" "<address>" | Select-String "content-type|cf-cache-status"
+```
+
+Each run twice: the second must say `HIT`, the first command `image/avif`, the
+second `image/webp`, and the third never `image/avif`. Only then set the variable
+and redeploy. AVIF costs the storefront's CPU more than WebP, and the copies Next
+keeps on disk start empty after each deploy, so watch the service's CPU for a day.
+
+Turning it off: unset the variable and redeploy. Copies kept as AVIF stay valid
+under the Vary rule until they expire.
+
 ## Turning it off
 
 Set `STOREFRONT_EDGE_CACHE_ENABLED` to anything but `true` and redeploy; pages

@@ -6,6 +6,7 @@ import { compareAtOf, defaultOfferOf, discountPercent, firstImage, needsProductP
 import { createServerStorefrontApiClient } from "@/lib/serverApiClient";
 import { type Props, bool, num, resolveHref, safeUrl, str } from "../props";
 import { CartButton } from "./CartButton";
+import { StoreImage } from "@/components/StoreImage";
 
 /**
  * What the showcase sections share: reading their props, fetching the
@@ -210,13 +211,12 @@ export function ProductTile({
           {showDiscount && percent ? <span className="zs-badge">-{percent}%</span> : null}
           {showSoldOut && soldOut ? <span className="zs-soldout">{t.common.outOfStock}</span> : null}
           {image ? (
-            // Merchant media are arbitrary remote URLs (no next/image allowlist).
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <StoreImage
               src={image}
               alt=""
               width={900}
               height={900}
+              sizes="(max-width: 768px) 50vw, 25vw"
               loading="lazy"
               decoding="async"
               draggable={false}

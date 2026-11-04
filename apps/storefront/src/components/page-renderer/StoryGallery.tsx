@@ -9,6 +9,7 @@ import { useStore } from "@/lib/StoreContext";
 import { swipeStep } from "@/lib/swipe";
 import { useDialog } from "@/lib/useDialog";
 import { num, safeUrl, str, type Props } from "./props";
+import { StoreImage } from "@/components/StoreImage";
 
 /**
  * `story_gallery`: the store's story in pictures, for the About page (backend
@@ -108,13 +109,12 @@ export function StoryGalleryElement({ props, editable = false }: { props: Props;
       <ul className={`grid grid-cols-1 gap-x-4 gap-y-6 min-[400px]:grid-cols-2 sm:gap-x-5 ${DESKTOP_COLUMNS[columns]}`}>
         {photos.map((photo, i) => {
           const img = (
-            // Merchant media are arbitrary remote URLs, drawn as the gallery and image elements draw them.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <StoreImage
               src={photo.src}
               alt={photo.title}
               width={800}
               height={600}
+              sizes="(max-width: 640px) 100vw, 33vw"
               loading="lazy"
               decoding="async"
               draggable={false}

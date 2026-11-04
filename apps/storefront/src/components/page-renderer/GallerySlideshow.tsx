@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ArrowIcon, PauseIcon, PlayIcon } from "@/components/Icons";
 import { skeleton } from "@/components/ui";
 import { useStore } from "@/lib/StoreContext";
+import { StoreImage } from "@/components/StoreImage";
 
 /** How long each slide holds before the next one takes over. */
 const AUTOPLAY_MS = 5000;
@@ -102,13 +103,12 @@ export function GallerySlideshow({ images, title }: { images: string[]; title: s
           }`}
         >
           {!loaded.has(i) && <span aria-hidden className={`absolute inset-0 ${skeleton}`} />}
-          {/* Merchant media are arbitrary remote URLs (no next/image allowlist). */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <StoreImage
             src={src}
             alt={title || ""}
             width={1600}
             height={900}
+            sizes="100vw"
             loading={i === 0 ? "eager" : "lazy"}
             decoding="async"
             onLoad={() => markLoaded(i)}

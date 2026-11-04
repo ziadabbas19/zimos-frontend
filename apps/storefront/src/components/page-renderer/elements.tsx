@@ -18,6 +18,7 @@ import {
   str,
   strList,
 } from "./props";
+import { StoreImage } from "@/components/StoreImage";
 
 /**
  * The non-commerce half of the page-tree vocabulary — everything that renders
@@ -97,14 +98,12 @@ export function ImageElement({ props, eager = false, rtl = false }: { props: Pro
   const focus = ratio ? pictureFocus(props, rtl) : null;
 
   const img = (
-    // Merchant images are arbitrary remote URLs (the media host is configurable
-    // per deployment), which next/image would need an allowlist for.
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
+    <StoreImage
       src={src}
       alt={alt}
       width={1200}
       height={800}
+      sizes="(max-width: 768px) 100vw, 1200px"
       loading={eager ? "eager" : "lazy"}
       fetchPriority={eager ? "high" : undefined}
       decoding="async"
@@ -155,13 +154,13 @@ export function GalleryElement({ props }: { props: Props }) {
       {title.trim() && <h3 className="mb-4 text-xl font-semibold text-ink">{title}</h3>}
       <div className={`grid gap-3 ${COLUMN_CLASS[columns]}`}>
         {images.map((src, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <StoreImage
             key={`${src}-${i}`}
             src={src}
             alt=""
             width={600}
             height={600}
+            sizes="(max-width: 768px) 50vw, 33vw"
             loading="lazy"
             decoding="async"
             className={`zt-img aspect-square w-full rounded-2xl border border-line ${

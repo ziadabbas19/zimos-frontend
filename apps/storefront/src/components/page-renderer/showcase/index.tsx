@@ -29,6 +29,7 @@ import {
   str,
   toneOf,
 } from "./shared";
+import { StoreImage, StorePicture } from "@/components/StoreImage";
 
 /**
  * The showcase sections — ten element types that each draw one full-width
@@ -174,13 +175,12 @@ function CategoryTilesElement({ props, locale, editable }: ElementProps) {
             const box = (
               <div className="zs-cats__box">
                 {tile.image ? (
-                  // Merchant media are arbitrary remote URLs (no next/image allowlist).
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <StoreImage
                     src={tile.image}
                     alt={tile.title}
                     width={1000}
                     height={1000}
+                    sizes="(max-width: 768px) 50vw, 33vw"
                     loading={i < 3 ? "eager" : "lazy"}
                     decoding="async"
                     className="zs-cats__img"
@@ -361,9 +361,7 @@ async function BundleCardsElement(ctx: ElementProps) {
                 <StoreLink className="zs-bundles__link" href={`/products/${product.slug}`}>
                   <div className="zs-bundles__media">
                     {image ? (
-                      // Merchant media are arbitrary remote URLs (no next/image allowlist).
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={image} alt={product.name} width={720} height={720} loading="lazy" decoding="async" />
+                      <StoreImage src={image} alt={product.name} width={720} height={720} sizes="(max-width: 768px) 50vw, 25vw" loading="lazy" decoding="async" />
                     ) : null}
                     {badge.trim() && was ? <span className="zs-bundles__badge">{badge}</span> : null}
                   </div>
@@ -432,9 +430,7 @@ async function NeedPickerElement({ props, workspaceId, currency, locale, editabl
       <Fragment key={i}>
         {image ? (
           <div className="zs-need__media">
-            {/* Merchant media are arbitrary remote URLs (no next/image allowlist). */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={image} alt={title} width={1000} height={1000} loading="lazy" decoding="async" />
+            <StoreImage src={image} alt={title} width={1000} height={1000} sizes="(max-width: 768px) 100vw, 50vw" loading="lazy" decoding="async" />
           </div>
         ) : null}
         <div className="zs-need__body">
@@ -625,9 +621,7 @@ async function VideoReelsElement({ props, workspaceId, currency, locale, editabl
                   <div className="zs-reels__product">
                     <StoreLink className="zs-reels__thumb" href={`/products/${product.slug}`} tabIndex={-1} aria-hidden>
                       {thumb ? (
-                        // Merchant media are arbitrary remote URLs (no next/image allowlist).
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={thumb} alt="" width={104} height={104} loading="lazy" decoding="async" />
+                        <StoreImage src={thumb} alt="" width={104} height={104} sizes="104px" loading="lazy" decoding="async" />
                       ) : null}
                     </StoreLink>
                     <div className="zs-reels__pcopy">
@@ -805,9 +799,7 @@ async function ProductCardsElement(ctx: ElementProps) {
                 <div className="zs-pgrid__box">
                   {showDiscount && percent ? <span className="zs-pgrid__badge">{copy.discount(percent)}</span> : null}
                   {image ? (
-                    // Merchant media are arbitrary remote URLs (no next/image allowlist).
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={image} alt="" width={900} height={900} loading="lazy" decoding="async" className="zs-pgrid__img" />
+                    <StoreImage src={image} alt="" width={900} height={900} sizes="(max-width: 768px) 50vw, 25vw" loading="lazy" decoding="async" className="zs-pgrid__img" />
                   ) : null}
                 </div>
               </StoreLink>
@@ -854,21 +846,19 @@ function ImageBannerElement({ props, locale, editable, eager = false }: ElementP
       })}
     >
       <div className="zs-banner__media">
-        <picture>
-          {mobileImage ? <source media="(max-width: 767px)" srcSet={mobileImage} /> : null}
-          {/* Merchant media are arbitrary remote URLs (no next/image allowlist). */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={image}
-            alt={str(props, "alt")}
-            width={2600}
-            height={1114}
-            loading={eager ? "eager" : "lazy"}
-            fetchPriority={eager ? "high" : undefined}
-            decoding="async"
-            style={focus ? { objectPosition: focus } : undefined}
-          />
-        </picture>
+        <StorePicture
+          src={image}
+          mobileSrc={mobileImage}
+          media="(max-width: 767px)"
+          alt={str(props, "alt")}
+          width={2600}
+          height={1114}
+          sizes="100vw"
+          loading={eager ? "eager" : "lazy"}
+          fetchPriority={eager ? "high" : undefined}
+          decoding="async"
+          style={focus ? { objectPosition: focus } : undefined}
+        />
         {hasCopy ? <span className="zs-banner__overlay" aria-hidden /> : null}
       </div>
       {hasCopy ? (
