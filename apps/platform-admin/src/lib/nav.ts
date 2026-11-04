@@ -32,15 +32,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { P } from "@/lib/permissions";
+import { ANY_CONSOLE_ACCOUNT, P, PAYMENT_METHODS_PAGE, type PermissionCheck } from "@/lib/permissions";
 import { STORE_TRAFFIC_ENABLED } from "@/lib/features";
 
 export interface NavItem {
   label: string;
   to: string;
   icon: LucideIcon;
-  /** The view permission the page's endpoints need; hidden without it. */
-  permission: string;
+  /** The view permission the page's endpoints need; hidden without it. Notifications is any console account's. */
+  permission: PermissionCheck;
 }
 
 export interface NavGroup {
@@ -56,7 +56,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: null,
     items: [
       { label: "Overview", to: "/", icon: LayoutDashboard, permission: P.OVERVIEW_VIEW },
-      { label: "Notifications", to: "/notifications", icon: Bell, permission: P.OVERVIEW_VIEW },
+      { label: "Notifications", to: "/notifications", icon: Bell, permission: ANY_CONSOLE_ACCOUNT },
       { label: "Site traffic", to: "/site-traffic", icon: Globe, permission: P.OVERVIEW_VIEW },
       // Every store's visitors are store data: workspaces.view (VITE_STORE_TRAFFIC_ENABLED).
       ...(STORE_TRAFFIC_ENABLED ? [{ label: "Store traffic", to: "/store-traffic", icon: Footprints, permission: P.WORKSPACES_VIEW }] : []),
@@ -72,7 +72,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "Plans", to: "/plans", icon: Layers, permission: P.PLANS_VIEW },
       { label: "Transfer proofs", to: "/payment-proofs", icon: Receipt, permission: P.PAYMENTS_RECORD },
       { label: "Balance refunds", to: "/wallet-refunds", icon: Undo2, permission: P.PAYMENTS_RECORD },
-      { label: "Payment methods", to: "/payment-methods", icon: Banknote, permission: P.PAYMENTS_RECORD },
+      { label: "Payment methods", to: "/payment-methods", icon: Banknote, permission: PAYMENT_METHODS_PAGE },
     ],
   },
   {
@@ -134,18 +134,33 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-/** The sidebar as this account sees it: sections it cannot open are left out. */
-export function useVisibleNav() {
-  const { can } = useAuth();
+/** The sidebar for a given check: pages it cannot open are left out, and a section left empty with them. */
+export function visibleNavGroups(can: (permission: PermissionCheck) => boolean): NavGroup[] {
   return NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((item) => can(item.permission)) })).filter(
     (g) => g.items.length > 0
   );
 }
 
-/** The first console page this account can open, in sidebar order. */
+/** The sidebar as this account sees it. */
+export function useVisibleNav() {
+  const { can } = useAuth();
+  return visibleNavGroups(can);
+}
+
+/**
+ * The first page this check opens, in sidebar order. Notifications is every
+ * account's, so it is nobody's first page: an agent still lands on My referrals,
+ * and an account with no keys is told it has no sections.
+ */
+export function landingPath(can: (permission: PermissionCheck) => boolean): string | null {
+  const items = visibleNavGroups(can).flatMap((g) => g.items);
+  return items.find((item) => item.permission !== ANY_CONSOLE_ACCOUNT)?.to ?? null;
+}
+
+/** The first console page this account can open. */
 export function useLandingPath(): string | null {
-  const groups = useVisibleNav();
-  return groups[0]?.items[0]?.to ?? null;
+  const { can } = useAuth();
+  return landingPath(can);
 }
 
 /**

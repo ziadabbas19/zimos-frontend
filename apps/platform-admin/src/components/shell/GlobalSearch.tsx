@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { CornerDownLeft, Search } from "lucide-react";
 import { cn, ZLoader } from "@store-builder/ui";
 import { Status } from "@/components/StatusBadge";
+import { useAuth } from "@/context/AuthContext";
 import { fmt, useT } from "@/i18n/LocaleContext";
 import * as adminApi from "@/lib/adminApi";
 import type { AdminWorkspaceRow } from "@/lib/adminApi";
@@ -20,6 +21,7 @@ import { SHELL_STRINGS } from "@/lib/shellStrings";
  */
 export function GlobalSearch() {
   const t = useT(SHELL_STRINGS);
+  const { can } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -40,7 +42,7 @@ export function GlobalSearch() {
     let cancelled = false;
     const timer = window.setTimeout(() => {
       adminApi
-        .searchWorkspaces(q)
+        .searchWorkspaces(q, can)
         .then((rows) => {
           if (!cancelled) {
             setResults(rows);
@@ -58,7 +60,7 @@ export function GlobalSearch() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [query]);
+  }, [query, can]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

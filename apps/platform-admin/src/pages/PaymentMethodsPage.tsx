@@ -223,13 +223,15 @@ export function PaymentMethodsPage() {
                           {t.editNumber}
                         </Button>
                       )}
-                      <Toggle
-                        checked={m.enabled}
-                        label={fmt(t.toggleOn, { name: m.labelEn })}
-                        hideLabel
-                        disabled={!canManage || busy !== null}
-                        onChange={(next) => void setEnabled(m.code, next)}
-                      />
+                      {canManage && (
+                        <Toggle
+                          checked={m.enabled}
+                          label={fmt(t.toggleOn, { name: m.labelEn })}
+                          hideLabel
+                          disabled={busy !== null}
+                          onChange={(next) => void setEnabled(m.code, next)}
+                        />
+                      )}
                     </div>
                   </li>
                 ))}

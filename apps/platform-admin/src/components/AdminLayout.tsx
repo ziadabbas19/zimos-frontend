@@ -125,7 +125,8 @@ export function AdminLayout() {
             <span className="hidden md:contents">
               <ThemeToggle />
             </span>
-            {can(P.OVERVIEW_VIEW) && <NotificationBell />}
+            {/* Any console account's: the API tells each only what its permissions open. */}
+            <NotificationBell />
             <AccountMenu />
           </div>
         </header>

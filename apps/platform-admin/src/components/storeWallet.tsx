@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
 import { Alert, Button, Table, TableBody, TableHeader, TableRow, cn } from "@store-builder/ui";
 import type { WalletLedgerEntry, WalletRefundBreakdown } from "@store-builder/api-client";
 import { Panel, Td, Th } from "@/components/Panel";
@@ -8,6 +7,7 @@ import { Status } from "@/components/StatusBadge";
 import { Modal } from "@/components/Modal";
 import { TextField } from "@/components/forms";
 import { useToast } from "@/components/Toast";
+import { CanLink } from "@/components/Can";
 import { useAuth } from "@/context/AuthContext";
 import { useAsync } from "@/lib/useAsync";
 import * as adminApi from "@/lib/adminApi";
@@ -158,9 +158,9 @@ export function StoreWalletPanel({ workspaceId }: { workspaceId: string }) {
                         {e.orderNumber ? (
                           <span className="font-mono">{e.orderNumber}</span>
                         ) : e.paymentProofId ? (
-                          <Link to={`/payment-proofs/${e.paymentProofId}`} className="hover:text-primary">
+                          <CanLink permission={P.PAYMENTS_RECORD} to={`/payment-proofs/${e.paymentProofId}`} className="hover:text-primary">
                             Transfer proof
-                          </Link>
+                          </CanLink>
                         ) : (
                           "—"
                         )}

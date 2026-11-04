@@ -91,7 +91,7 @@ function LocationRow({ location }: { location: AdminUserLocation | null }) {
  * A person's second step, and support's reset for someone locked out of it
  * (POST /admin/users/:id/two-factor/reset, support.manage). The reset is not
  * offered on your own account, on a deleted one, or when the step is known to
- * be off; the API applies the rest of the console's target rules.
+ * be off, or on an account the API says is out of the viewer's reach.
  */
 function TwoFactorRow({ user, onReset }: { user: AdminUserDetail; onReset: () => void }) {
   const t = useT(TWO_FACTOR_STRINGS);
@@ -100,7 +100,7 @@ function TwoFactorRow({ user, onReset }: { user: AdminUserDetail; onReset: () =>
   const [resetting, setResetting] = useState(false);
   const twoFactor = twoFactorRecoveryOfUser(user);
   const mode = twoFactor ? twoFactor.mode : null;
-  const canReset = can(P.SUPPORT_MANAGE) && me?.id !== user.id && !user.deletedAt && mode !== "off";
+  const canReset = can(P.SUPPORT_MANAGE) && user.canActOn && me?.id !== user.id && !user.deletedAt && mode !== "off";
 
   return (
     <DetailRow label={t.rowLabel}>

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { Ban, RefreshCw, Undo2 } from "lucide-react";
 import { Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import type {
@@ -7,12 +6,15 @@ import type {
   AdminRiskSignal as Signal,
   AdminRiskSignalReason,
 } from "@store-builder/api-client";
+import { CanLink } from "@/components/Can";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { FilterChips, NativeSelect } from "@/components/forms";
 import { Mono, Panel, Td, Th } from "@/components/Panel";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
+import { useAuth } from "@/context/AuthContext";
+import { P } from "@/lib/permissions";
 import { useAsync } from "@/lib/useAsync";
 import { getErrorMessage } from "@/lib/errors";
 import * as adminApi from "@/lib/adminApi";
@@ -42,6 +44,7 @@ function blockReason(s: Signal, windowDays: number): string {
 }
 
 export function FraudSignalsPage() {
+  const { can } = useAuth();
   const toast = useToast();
   const [type, setType] = useState<IdentifierType>("phone");
   const [windowDays, setWindowDays] = useState(90);
@@ -158,6 +161,7 @@ export function FraudSignalsPage() {
                     key={s.value}
                     signal={s}
                     busy={pending.has(s.value)}
+                    canManage={can(P.RISK_MANAGE)}
                     onBlock={() => void block(s)}
                     onUnblock={() => void unblock(s)}
                   />
@@ -202,11 +206,13 @@ function Threshold({
 function SignalRow({
   signal: s,
   busy,
+  canManage,
   onBlock,
   onUnblock,
 }: {
   signal: Signal;
   busy: boolean;
+  canManage: boolean;
   onBlock: () => void;
   onUnblock: () => void;
 }) {
@@ -226,9 +232,9 @@ function SignalRow({
           {shown.map((w, i) => (
             <span key={w.id}>
               {i > 0 && ", "}
-              <Link to={`/workspaces/${w.id}`} className="hover:text-primary">
+              <CanLink permission={P.WORKSPACES_VIEW} to={`/workspaces/${w.id}`} className="hover:text-primary">
                 {w.name ?? "Deleted workspace"}
-              </Link>
+              </CanLink>
             </span>
           ))}
           {more > 0 && ` +${more} more`}
@@ -259,14 +265,18 @@ function SignalRow({
             <StatusBadge tone="danger" dot>
               Blocked
             </StatusBadge>
-            <Button size="sm" variant="ghost" disabled={busy} onClick={onUnblock} aria-label={`Unblock ${s.label}`}>
-              <Undo2 /> Unblock
-            </Button>
+            {canManage && (
+              <Button size="sm" variant="ghost" disabled={busy} onClick={onUnblock} aria-label={`Unblock ${s.label}`}>
+                <Undo2 /> Unblock
+              </Button>
+            )}
           </div>
         ) : (
-          <Button size="sm" variant="outline" disabled={busy} onClick={onBlock}>
-            <Ban /> {busy ? "Blocking…" : "Block"}
-          </Button>
+          canManage && (
+            <Button size="sm" variant="outline" disabled={busy} onClick={onBlock}>
+              <Ban /> {busy ? "Blocking…" : "Block"}
+            </Button>
+          )
         )}
       </Td>
     </TableRow>

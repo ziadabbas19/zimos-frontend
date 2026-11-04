@@ -10,6 +10,8 @@ import { Toggle } from "@/components/Toggle";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
 import { fmt, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
+import { useAuth } from "@/context/AuthContext";
+import { P } from "@/lib/permissions";
 import { useAsync } from "@/lib/useAsync";
 import { getErrorMessage } from "@/lib/errors";
 import * as adminApi from "@/lib/adminApi";
@@ -303,6 +305,8 @@ export function PlansPage() {
   const t = useT(STRINGS);
   const { locale } = useLocale();
   const toast = useToast();
+  const { can } = useAuth();
+  const canManage = can(P.PLANS_MANAGE);
   // The plans come in the pricing page's order (display order, then price,
   // then name), with the backend's feature catalogue: names, and which
   // features exist today.
@@ -317,9 +321,11 @@ export function PlansPage() {
         title={t.title}
         description={t.description}
         actions={
-          <Button onClick={() => setEditing({ ...EMPTY })}>
-            <Plus /> {t.newPlan}
-          </Button>
+          canManage && (
+            <Button onClick={() => setEditing({ ...EMPTY })}>
+              <Plus /> {t.newPlan}
+            </Button>
+          )
         }
       />
       <DataState
@@ -403,14 +409,16 @@ export function PlansPage() {
               </div>
               <div className="flex items-center justify-between gap-2 border-t border-line px-4 py-3">
                 <span className="text-xs text-ink-soft">{fmt(t.updated, { when: formatRelative(p.updatedAt) })}</span>
-                <div className="flex gap-1.5">
-                  <Button size="sm" variant="outline" onClick={() => setEditing(toForm(p))}>
-                    <Pencil /> {t.edit}
-                  </Button>
-                  <Button size="icon-sm" variant="ghost" aria-label={fmt(t.deleteNamed, { name: p.name })} onClick={() => setDeleting(p)}>
-                    <Trash2 className="text-danger" />
-                  </Button>
-                </div>
+                {canManage && (
+                  <div className="flex gap-1.5">
+                    <Button size="sm" variant="outline" onClick={() => setEditing(toForm(p))}>
+                      <Pencil /> {t.edit}
+                    </Button>
+                    <Button size="icon-sm" variant="ghost" aria-label={fmt(t.deleteNamed, { name: p.name })} onClick={() => setDeleting(p)}>
+                      <Trash2 className="text-danger" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </article>
           ))}

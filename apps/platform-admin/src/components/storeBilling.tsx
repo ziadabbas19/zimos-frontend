@@ -9,7 +9,9 @@ import type {
   PlanFeatureCatalogEntry,
   PlanFeatureKey,
 } from "@store-builder/api-client";
+import { useAuth } from "@/context/AuthContext";
 import { apiClient } from "@/lib/apiClient";
+import { P } from "@/lib/permissions";
 import { getErrorMessage } from "@/lib/errors";
 import { formatDate, formatDateTime, formatMinorMoney } from "@/lib/format";
 import { catalogFromFeatureTable, featureLabelIn } from "@/lib/planFeatures";
@@ -138,7 +140,9 @@ type Dialog = null | "activate" | "extend" | "end";
 export function ManualSubscriptionPanel({ workspaceId, canManage, onChanged }: { workspaceId: string; canManage: boolean; onChanged?: () => void }) {
   const toast = useToast();
   const { data, loading, error, refresh } = useAsync(() => apiClient.adminGetManualSubscription(workspaceId), [workspaceId]);
-  const plans = useAsync(() => adminApi.listPlans(), []);
+  const { can } = useAuth();
+  const canReadPlans = can(P.PLANS_VIEW);
+  const plans = useAsync(() => (canReadPlans ? adminApi.listPlans() : Promise.resolve([])), []);
   const [dialog, setDialog] = useState<Dialog>(null);
 
   const done = async (message: string) => {
@@ -154,9 +158,12 @@ export function ManualSubscriptionPanel({ workspaceId, canManage, onChanged }: {
       actions={
         canManage && data ? (
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" onClick={() => setDialog("activate")}>
-              Activate / change plan
-            </Button>
+            {/* Choosing the plan reads the plan list, which is its own permission. */}
+            {canReadPlans && (
+              <Button size="sm" onClick={() => setDialog("activate")}>
+                Activate / change plan
+              </Button>
+            )}
             <Button size="sm" variant="outline" onClick={() => setDialog("extend")}>
               Extend
             </Button>

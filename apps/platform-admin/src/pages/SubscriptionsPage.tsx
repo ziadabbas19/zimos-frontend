@@ -1,13 +1,15 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { Button, Table, TableBody, TableFooter, TableHeader, TableRow, cn } from "@store-builder/ui";
 import type { SubscriptionStatus } from "@store-builder/api-client";
+import { CanLink } from "@/components/Can";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { FilterChips, SearchInput } from "@/components/forms";
 import { Panel, SortHead, Td, Th, compareValues, type SortState } from "@/components/Panel";
 import { PricingBadge, Status } from "@/components/StatusBadge";
+import { useAuth } from "@/context/AuthContext";
+import { P } from "@/lib/permissions";
 import { useAsync } from "@/lib/useAsync";
 import * as adminApi from "@/lib/adminApi";
 import type { AdminSubscriptionRow } from "@/lib/adminApi";
@@ -91,7 +93,8 @@ function nextDate(s: AdminSubscriptionRow): string {
 
 export function SubscriptionsPage() {
   const t = useT(STRINGS);
-  const { data, loading, error, refresh } = useAsync(() => adminApi.listSubscriptions(), []);
+  const { can } = useAuth();
+  const { data, loading, error, refresh } = useAsync(() => adminApi.listSubscriptions(can), []);
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortState<SortKey>>({ key: "mrr", dir: "desc" });
@@ -182,12 +185,13 @@ export function SubscriptionsPage() {
                   return (
                     <TableRow key={s.id}>
                       <Td>
-                        <Link
+                        <CanLink
+                          permission={P.WORKSPACES_VIEW}
                           to={`/workspaces/${s.workspaceId}`}
                           className="block font-medium text-ink hover:text-primary"
                         >
                           {s.workspaceName ?? t.unnamed}
-                        </Link>
+                        </CanLink>
                         {s.workspaceSlug && (
                           <span className="text-xs text-ink-soft">{s.workspaceSlug}</span>
                         )}

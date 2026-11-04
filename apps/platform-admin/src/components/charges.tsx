@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
-import { Ban, Banknote, Gift, Receipt, Undo2 } from "lucide-react";
+import { Ban, Banknote, Check, Gift, Receipt, Undo2 } from "lucide-react";
 import { Alert, Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import type { AdminCharge, AdminOnlinePayment, AdminWorkspaceCharges } from "@store-builder/api-client";
 import { DataState, EmptyBlock } from "@/components/DataState";
@@ -9,6 +8,7 @@ import { Mono, Panel, Td, Th } from "@/components/Panel";
 import { TextAreaField, TextField } from "@/components/forms";
 import { Status, StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
+import { CanLink } from "@/components/Can";
 import { useAuth } from "@/context/AuthContext";
 import { useAsync } from "@/lib/useAsync";
 import { getErrorMessage } from "@/lib/errors";
@@ -183,7 +183,6 @@ function BillingSummary({
   onSwitchCycle?: (cycle: "monthly" | "yearly") => void;
   switching: boolean;
 }) {
-  const { can } = useAuth();
   const code = data.subscription.referralCode;
   const prices = data.subscription.planPrices;
   const openCharge = data.charges.some((c) => c.status === "pending");
@@ -194,13 +193,18 @@ function BillingSummary({
           <div className="space-y-2 text-sm">
             {(["monthly", "yearly"] as const).map((cycle) => (
               <label key={cycle} className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="billing-cycle"
-                  checked={data.subscription.billingCycle === cycle}
-                  disabled={!onSwitchCycle || switching || openCharge}
-                  onChange={() => onSwitchCycle?.(cycle)}
-                />
+                {/* Without the permission to switch, the current cycle is marked and nothing is offered. */}
+                {onSwitchCycle ? (
+                  <input
+                    type="radio"
+                    name="billing-cycle"
+                    checked={data.subscription.billingCycle === cycle}
+                    disabled={switching || openCharge}
+                    onChange={() => onSwitchCycle(cycle)}
+                  />
+                ) : (
+                  data.subscription.billingCycle === cycle && <Check className="size-4 text-primary" aria-label="Current" />
+                )}
                 <span>
                   {cycle === "monthly" ? "Monthly" : "Annual"} —{" "}
                   <span className="font-medium tabular">
@@ -210,11 +214,13 @@ function BillingSummary({
                 </span>
               </label>
             ))}
-            <p className="text-xs text-ink-soft">
-              {openCharge
-                ? "A charge is open: settle it before switching."
-                : "Applies from the next charge; the current period is not changed."}
-            </p>
+            {onSwitchCycle && (
+              <p className="text-xs text-ink-soft">
+                {openCharge
+                  ? "A charge is open: settle it before switching."
+                  : "Applies from the next charge; the current period is not changed."}
+              </p>
+            )}
           </div>
         ) : (
           <p className="text-sm text-ink-soft">No plan.</p>
@@ -231,13 +237,9 @@ function BillingSummary({
             {code.agent && (
               <p className="text-ink-soft">
                 Agent:{" "}
-                {can(P.AGENTS_VIEW) ? (
-                  <Link to={`/agents/${code.agent.id}`} className="text-ink hover:text-primary hover:underline">
-                    {code.agent.fullName}
-                  </Link>
-                ) : (
-                  <span className="text-ink">{code.agent.fullName}</span>
-                )}
+                <CanLink permission={P.AGENTS_VIEW} to={`/agents/${code.agent.id}`} className="text-ink hover:text-primary hover:underline">
+                  {code.agent.fullName}
+                </CanLink>
               </p>
             )}
             <p className="text-xs text-ink-soft">Entered {formatDate(code.attachedAt)}</p>

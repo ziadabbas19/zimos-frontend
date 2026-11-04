@@ -24,6 +24,8 @@ import type { ChartPoint } from "@/components/charts";
 import { Mono, Panel, Td, Th } from "@/components/Panel";
 import { WorkspaceStatus } from "@/components/workspace";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
+import { useAuth } from "@/context/AuthContext";
+import { P } from "@/lib/permissions";
 import { useAsync } from "@/lib/useAsync";
 import * as adminApi from "@/lib/adminApi";
 import type { OverviewKpi, OverviewMoneyKpi, OverviewReport, OverviewSeries } from "@/lib/adminApi";
@@ -227,7 +229,8 @@ function ChartPanel({
 
 export function OverviewPage() {
   const t = useT(STRINGS);
-  const { data, loading, error, refresh } = useAsync(() => adminApi.loadOverview(), []);
+  const { can } = useAuth();
+  const { data, loading, error, refresh } = useAsync(() => adminApi.loadOverview(can), []);
   const [refreshing, setRefreshing] = useState(false);
   const busy = loading || refreshing;
 
@@ -264,6 +267,9 @@ export function OverviewPage() {
 
 function OverviewBody({ data }: { data: OverviewReport }) {
   const t = useT(STRINGS);
+  const { can } = useAuth();
+  const canReadStores = can(P.WORKSPACES_VIEW);
+  const canReadSubscriptions = can(P.SUBSCRIPTIONS_VIEW);
   const { kpis } = data;
   const signups = displayPoints(data.signupsPerDay);
   const signupsTotal = signups?.reduce((sum, p) => sum + p.value, 0) ?? 0;
@@ -287,21 +293,21 @@ function OverviewBody({ data }: { data: OverviewReport }) {
           label={t.activeWorkspaces}
           value={kpiValue(kpis.activeWorkspaces, formatNumber)}
           icon={<Building2 />}
-          to="/workspaces"
+          to={canReadStores ? "/workspaces" : undefined}
           hint={kpis.activeWorkspaces.unavailable ?? t.activeWorkspacesHint}
         />
         <KpiCard
           label={t.trialing}
           value={kpiValue(kpis.trialing, formatNumber)}
           icon={<Hourglass />}
-          to="/subscriptions"
+          to={canReadSubscriptions ? "/subscriptions" : undefined}
           hint={kpis.trialing.unavailable ?? t.trialingHint}
         />
         <KpiCard
           label={t.pastDue}
           value={kpiValue(kpis.pastDue, formatNumber)}
           icon={<TriangleAlert />}
-          to="/subscriptions"
+          to={canReadSubscriptions ? "/subscriptions" : undefined}
           hint={kpis.pastDue.unavailable ?? t.pastDueHint}
         />
         <KpiCard
@@ -417,7 +423,7 @@ function OverviewBody({ data }: { data: OverviewReport }) {
                 );
                 return (
                   <li key={item.id}>
-                    {item.to ? (
+                    {item.to && canReadStores ? (
                       <Link
                         to={item.to}
                         className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-primary-soft/60"
@@ -440,56 +446,58 @@ function OverviewBody({ data }: { data: OverviewReport }) {
           )}
         </Panel>
 
-        <Panel
-          className="xl:col-span-3"
-          title={t.recentSignups}
-          actions={
-            <Link to="/workspaces" className="text-sm font-medium text-primary hover:underline">
-              {t.viewAll}
-            </Link>
-          }
-          flush
-        >
-          {data.recentSignups.length === 0 ? (
-            <div className="p-4">
-              <EmptyBlock message={t.noWorkspaces} />
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <Th>{t.colWorkspace}</Th>
-                  <Th>{t.colAddress}</Th>
-                  <Th>{t.colPlan}</Th>
-                  <Th>{t.colStatus}</Th>
-                  <Th className="text-end">{t.colCreated}</Th>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.recentSignups.map((row) => (
-                  <TableRow key={row.workspace.id}>
-                    <Td>
-                      <Link
-                        to={`/workspaces/${row.workspace.id}`}
-                        className="font-medium text-ink hover:text-primary"
-                      >
-                        {row.workspace.name}
-                      </Link>
-                    </Td>
-                    <Td className="text-ink-soft">{row.workspace.slug}</Td>
-                    <Td>{row.workspace.plan}</Td>
-                    <Td>
-                      <WorkspaceStatus row={row} />
-                    </Td>
-                    <Td className="text-end text-ink-soft">
-                      {formatRelative(row.workspace.createdAt)}
-                    </Td>
+        {canReadStores && (
+          <Panel
+            className="xl:col-span-3"
+            title={t.recentSignups}
+            actions={
+              <Link to="/workspaces" className="text-sm font-medium text-primary hover:underline">
+                {t.viewAll}
+              </Link>
+            }
+            flush
+          >
+            {data.recentSignups.length === 0 ? (
+              <div className="p-4">
+                <EmptyBlock message={t.noWorkspaces} />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <Th>{t.colWorkspace}</Th>
+                    <Th>{t.colAddress}</Th>
+                    <Th>{t.colPlan}</Th>
+                    <Th>{t.colStatus}</Th>
+                    <Th className="text-end">{t.colCreated}</Th>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </Panel>
+                </TableHeader>
+                <TableBody>
+                  {data.recentSignups.map((row) => (
+                    <TableRow key={row.workspace.id}>
+                      <Td>
+                        <Link
+                          to={`/workspaces/${row.workspace.id}`}
+                          className="font-medium text-ink hover:text-primary"
+                        >
+                          {row.workspace.name}
+                        </Link>
+                      </Td>
+                      <Td className="text-ink-soft">{row.workspace.slug}</Td>
+                      <Td>{row.workspace.plan}</Td>
+                      <Td>
+                        <WorkspaceStatus row={row} />
+                      </Td>
+                      <Td className="text-end text-ink-soft">
+                        {formatRelative(row.workspace.createdAt)}
+                      </Td>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </Panel>
+        )}
       </div>
 
       <p className="text-xs text-ink-soft">{fmt(t.figuresAsOf, { time: formatDateTime(data.generatedAt) })}</p>

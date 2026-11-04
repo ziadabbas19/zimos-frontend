@@ -45,6 +45,8 @@ vi.mock("@/lib/siteTrafficApi", async (importOriginal) => {
   };
 });
 
+vi.mock("@/context/AuthContext", () => ({ useAuth: () => ({ can: () => true }) }));
+
 const mocked = vi.mocked(api);
 
 const LIVE: SiteLive = {

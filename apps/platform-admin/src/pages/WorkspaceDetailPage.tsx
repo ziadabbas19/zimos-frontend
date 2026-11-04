@@ -32,10 +32,14 @@ function isTab(v: string | null): v is TabKey {
 export function WorkspaceDetailPage() {
   const { id = "" } = useParams();
   const [params, setParams] = useSearchParams();
-  const tabParam = params.get("tab");
-  const tab: TabKey = isTab(tabParam) ? tabParam : "overview";
-  const { data, loading, error, refresh } = useAsync(() => adminApi.getWorkspaceRow(id), [id]);
   const { can } = useAuth();
+  const canReadSubscription = can(P.SUBSCRIPTIONS_VIEW);
+  // The second tab holds the subscription, the store's audit trail and its
+  // agent: gone for an account that can read none of them.
+  const tabs = TABS.filter((t) => t.key !== "subscription" || canReadSubscription || can(P.AUDIT_LOG_VIEW) || can(P.AGENTS_VIEW));
+  const tabParam = params.get("tab");
+  const tab: TabKey = isTab(tabParam) && tabs.some((t) => t.key === tabParam) ? tabParam : "overview";
+  const { data, loading, error, refresh } = useAsync(() => adminApi.getWorkspaceRow(id, can), [id]);
   // Bumped by a manual subscription or feature change, so the cards that read
   // the same records (charges, features, audit log) load them again.
   const [planVersion, setPlanVersion] = useState(0);
@@ -80,15 +84,17 @@ export function WorkspaceDetailPage() {
       />
 
       <Tabs value={tab} onValueChange={(v) => setParams({ tab: String(v) }, { replace: true })}>
-        <div className="scroll-thin overflow-x-auto border-b border-line">
-          <TabsList variant="line" className="h-10">
-            {TABS.map((t) => (
-              <TabsTrigger key={t.key} value={t.key}>
-                {t.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
+        {tabs.length > 1 && (
+          <div className="scroll-thin overflow-x-auto border-b border-line">
+            <TabsList variant="line" className="h-10">
+              {tabs.map((t) => (
+                <TabsTrigger key={t.key} value={t.key}>
+                  {t.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
+        )}
 
         <TabsContent value="overview" className="pt-5">
           <div className="mb-4">
@@ -140,7 +146,7 @@ export function WorkspaceDetailPage() {
         </TabsContent>
 
         <TabsContent value="subscription" className="pt-5">
-          {sub && can(P.SUBSCRIPTIONS_VIEW) && (
+          {sub && canReadSubscription && (
             <div className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
               <ManualSubscriptionPanel
                 workspaceId={ws.id}
@@ -158,7 +164,7 @@ export function WorkspaceDetailPage() {
               />
             </div>
           )}
-          {!sub ? (
+          {!canReadSubscription ? null : !sub ? (
             <EmptyBlock message="This workspace has never had a subscription." />
           ) : (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -221,9 +227,9 @@ export function WorkspaceDetailPage() {
             </div>
           )}
 
-          {sub && can(P.SUBSCRIPTIONS_VIEW) && <SubscriptionCharges key={planVersion} workspaceId={ws.id} />}
+          {sub && canReadSubscription && <SubscriptionCharges key={planVersion} workspaceId={ws.id} />}
 
-          {can(P.SUBSCRIPTIONS_VIEW) && <StoreWalletPanel workspaceId={ws.id} />}
+          {canReadSubscription && <StoreWalletPanel workspaceId={ws.id} />}
 
           {can(P.AUDIT_LOG_VIEW) && (
             <div className="mt-4">
@@ -231,12 +237,14 @@ export function WorkspaceDetailPage() {
             </div>
           )}
 
-          <p className="mt-4 text-xs text-ink-soft">
-            Charges are created here, or when the merchant pays online (Fawaterak, while online
-            payment is switched on); a payment that arrived another way is recorded here by hand.
-            Activating, changing the plan, extending or ending the subscription by hand never
-            creates a charge or an agent commission.
-          </p>
+          {canReadSubscription && (
+            <p className="mt-4 text-xs text-ink-soft">
+              Charges are created here, or when the merchant pays online (Fawaterak, while online
+              payment is switched on); a payment that arrived another way is recorded here by hand.
+              Activating, changing the plan, extending or ending the subscription by hand never
+              creates a charge or an agent commission.
+            </p>
+          )}
 
           {can(P.AGENTS_VIEW) && (
             <div className="mt-8">

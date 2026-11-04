@@ -46,10 +46,10 @@ import { ReferralCodesPage } from "@/pages/ReferralCodesPage";
 import { ReferralCodeDetailPage } from "@/pages/ReferralCodeDetailPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { PlatformSettingsPage } from "@/pages/PlatformSettingsPage";
-import { P } from "@/lib/permissions";
+import { ANY_CONSOLE_ACCOUNT, P, PAYMENT_METHODS_PAGE, type PermissionCheck } from "@/lib/permissions";
 
 /** A console page that needs `permission` (the view key its endpoints check). */
-function gated(permission: string, element: ReactNode) {
+function gated(permission: PermissionCheck, element: ReactNode) {
   return <RequirePermission permission={permission}>{element}</RequirePermission>;
 }
 
@@ -64,27 +64,20 @@ export default function App() {
 
               <Route element={<ProtectedRoute />}>
                 <Route element={<AdminLayout />}>
-                  <Route
-                    path="/"
-                    element={
-                      <RequirePermission permission={P.OVERVIEW_VIEW} redirect>
-                        <OverviewPage />
-                      </RequirePermission>
-                    }
-                  />
+                  <Route path="/" element={gated(P.OVERVIEW_VIEW, <OverviewPage />)} />
                   <Route path="/workspaces" element={gated(P.WORKSPACES_VIEW, <WorkspacesPage />)} />
                   <Route path="/workspaces/:id" element={gated(P.WORKSPACES_VIEW, <WorkspaceDetailPage />)} />
                   <Route path="/users" element={gated(P.WORKSPACES_VIEW, <UsersPage />)} />
                   <Route path="/users/:id" element={gated(P.WORKSPACES_VIEW, <UserDetailPage />)} />
                   <Route path="/subscriptions" element={gated(P.SUBSCRIPTIONS_VIEW, <SubscriptionsPage />)} />
-                  <Route path="/notifications" element={gated(P.OVERVIEW_VIEW, <NotificationsPage />)} />
+                  <Route path="/notifications" element={gated(ANY_CONSOLE_ACCOUNT, <NotificationsPage />)} />
           <Route path="/site-traffic" element={gated(P.OVERVIEW_VIEW, <SiteTrafficPage />)} />
                   {STORE_TRAFFIC_ENABLED && <Route path="/store-traffic" element={gated(P.WORKSPACES_VIEW, <StoreTrafficPage />)} />}
                   <Route path="/plans" element={gated(P.PLANS_VIEW, <PlansPage />)} />
                   <Route path="/payment-proofs" element={gated(P.PAYMENTS_RECORD, <PaymentProofsPage />)} />
                   <Route path="/wallet-refunds" element={gated(P.PAYMENTS_RECORD, <WalletRefundsPage />)} />
                   <Route path="/payment-proofs/:id" element={gated(P.PAYMENTS_RECORD, <PaymentProofPage />)} />
-                  <Route path="/payment-methods" element={gated(P.PAYMENTS_RECORD, <PaymentMethodsPage />)} />
+                  <Route path="/payment-methods" element={gated(PAYMENT_METHODS_PAGE, <PaymentMethodsPage />)} />
                   <Route path="/agents" element={gated(P.AGENTS_VIEW, <AgentsPage />)} />
                   <Route path="/agents/:id" element={gated(P.AGENTS_VIEW, <AgentDetailPage />)} />
                   <Route path="/referral-codes" element={gated(P.AGENTS_VIEW, <ReferralCodesPage />)} />

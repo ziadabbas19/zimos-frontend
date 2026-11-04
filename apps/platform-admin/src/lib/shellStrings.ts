@@ -31,6 +31,7 @@ export const SHELL_STRINGS = {
     searchHint: "Type a workspace's name or address.",
     toSelect: "to open",
     languageAndLook: "Language and look",
+    noSections: "Your account doesn't include any section of this console yet. Ask a creator if you need access.",
   },
   ar: {
     platformAdmin: "إدارة المنصة",
@@ -62,6 +63,7 @@ export const SHELL_STRINGS = {
     searchHint: "اكتب اسم المتجر أو عنوانه.",
     toSelect: "للفتح",
     languageAndLook: "اللغة والمظهر",
+    noSections: "لا يتضمن حسابك أي قسم من هذه اللوحة حتى الآن. تواصل مع أحد المنشئين إذا كنت تحتاج إلى الوصول.",
   },
 };
 

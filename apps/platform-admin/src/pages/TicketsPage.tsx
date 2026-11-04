@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import type { SupportTicketPriority, SupportTicketStatus } from "@store-builder/api-client";
+import { CanLink } from "@/components/Can";
 import { PageHeader } from "@/components/PageHeader";
+import { P } from "@/lib/permissions";
 import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { FilterChips, NativeSelect, SearchInput } from "@/components/forms";
 import { Panel, Td, Th } from "@/components/Panel";
@@ -123,9 +125,9 @@ export function TicketsPage() {
                       </span>
                     </Td>
                     <Td className="text-sm">
-                      <Link to={`/workspaces/${t.workspaceId}`} className="hover:text-primary">
+                      <CanLink permission={P.WORKSPACES_VIEW} to={`/workspaces/${t.workspaceId}`} className="hover:text-primary">
                         {t.workspaceName ?? "Deleted workspace"}
-                      </Link>
+                      </CanLink>
                     </Td>
                     <Td>
                       <Status value={t.status} label={STATUS_LABEL[t.status]} />

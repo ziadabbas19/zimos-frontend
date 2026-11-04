@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { Pencil } from "lucide-react";
 import { Alert, Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import type { AdminRedemption, AdminRedemptionParams, BillingCycle } from "@store-builder/api-client";
+import { CanLink } from "@/components/Can";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { DetailRow } from "@/components/Drawer";
@@ -43,7 +44,8 @@ export function ReferralCodeDetailPage() {
   const { data, loading, error, refresh } = useAsync(() => adminApi.getReferralCode(id), [id]);
   const [editing, setEditing] = useState(false);
   const agents = useAsync(() => adminApi.listAgents(), []);
-  const plans = useAsync(() => adminApi.listPlans(), []);
+  // Names the plans a code is limited to; without the permission that reads them the names stay out.
+  const plans = useAsync(() => (can(P.PLANS_VIEW) ? adminApi.listPlans() : Promise.resolve([])), []);
 
   if (!data) {
     return (
@@ -212,9 +214,9 @@ export function RedemptionTable({ rows, show }: { rows: AdminRedemption[]; show:
             <TableRow key={r.id}>
               <Td className="align-top">
                 {show !== "code" && (
-                  <Link to={`/workspaces/${r.workspace.id}`} className="block font-medium hover:text-primary hover:underline">
+                  <CanLink permission={P.WORKSPACES_VIEW} to={`/workspaces/${r.workspace.id}`} className="block font-medium hover:text-primary hover:underline">
                     {r.workspace.name ?? "Deleted store"}
-                  </Link>
+                  </CanLink>
                 )}
                 {show !== "store" && (
                   <Link to={`/referral-codes/${r.code.id}`} className="hover:text-primary hover:underline">

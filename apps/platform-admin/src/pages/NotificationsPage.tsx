@@ -24,6 +24,15 @@ export function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  // The filter offers what this account can be told about: the API's own list of it.
+  const [types, setTypes] = useState<NotificationType[]>([]);
+
+  useEffect(() => {
+    notificationsApi
+      .getPrefs()
+      .then((res) => setTypes(NOTIFICATION_TYPES.filter((k) => res.prefs.some((p) => p.type === k))))
+      .catch(() => undefined);
+  }, []);
 
   const load = useCallback(
     async (after: string | null) => {
@@ -85,7 +94,7 @@ export function NotificationsPage() {
         <div className="w-56">
           <NativeSelect value={type} onChange={(e) => setType(e.target.value as NotificationType | "")} aria-label={t.allTypes}>
             <option value="">{t.allTypes}</option>
-            {NOTIFICATION_TYPES.map((k) => (
+            {types.map((k) => (
               <option key={k} value={k}>
                 {typeLabel(t, k)}
               </option>

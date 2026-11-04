@@ -19,6 +19,8 @@ import { FilterChips, SelectField, TextAreaField, TextField } from "@/components
 import { StatusBadge } from "@/components/StatusBadge";
 import { Toggle } from "@/components/Toggle";
 import { useToast } from "@/components/Toast";
+import { useAuth } from "@/context/AuthContext";
+import { P } from "@/lib/permissions";
 import { useAsync } from "@/lib/useAsync";
 import { getErrorMessage } from "@/lib/errors";
 import { apiClient } from "@/lib/apiClient";
@@ -80,6 +82,8 @@ function toForm(l?: ServiceListing): ListingForm {
 /** Services marketplace (SPEC §20.5): the providers directory merchants see under "Services". */
 export function ServiceListingsPage() {
   const toast = useToast();
+  const { can } = useAuth();
+  const canManage = can(P.SERVICE_LISTINGS_MANAGE);
   const { data, loading, error, refresh, setData } = useAsync(() => adminServiceListingsList(apiClient), []);
   const [filter, setFilter] = useState<"all" | ServiceCategory>("all");
   const [editing, setEditing] = useState<ListingForm | null>(null);
@@ -102,9 +106,11 @@ export function ServiceListingsPage() {
         title="Service listings"
         description="The providers directory merchants see under Services. Payment between a merchant and a provider happens outside Zimos."
         actions={
-          <Button onClick={() => setEditing(toForm())} disabled={!data}>
-            <Plus /> New listing
-          </Button>
+          canManage && (
+            <Button onClick={() => setEditing(toForm())} disabled={!data}>
+              <Plus /> New listing
+            </Button>
+          )
         }
       />
       <DataState loading={loading} error={error} onRetry={() => void refresh()}>
@@ -119,14 +125,16 @@ export function ServiceListingsPage() {
                   <StatusBadge tone={l.isActive ? "success" : "neutral"}>{l.isActive ? "Shown" : "Hidden"}</StatusBadge>
                   <StatusBadge tone="info">{CATEGORY_LABEL[l.category]}</StatusBadge>
                   <span className="text-xs text-ink-soft">Position {l.position}</span>
-                  <div className="ms-auto flex gap-1">
-                    <Button size="icon-sm" variant="ghost" aria-label={`Edit ${l.title}`} onClick={() => setEditing(toForm(l))}>
-                      <Pencil />
-                    </Button>
-                    <Button size="icon-sm" variant="ghost" aria-label={`Delete ${l.title}`} onClick={() => setDeleting(l)}>
-                      <Trash2 className="text-danger" />
-                    </Button>
-                  </div>
+                  {canManage && (
+                    <div className="ms-auto flex gap-1">
+                      <Button size="icon-sm" variant="ghost" aria-label={`Edit ${l.title}`} onClick={() => setEditing(toForm(l))}>
+                        <Pencil />
+                      </Button>
+                      <Button size="icon-sm" variant="ghost" aria-label={`Delete ${l.title}`} onClick={() => setDeleting(l)}>
+                        <Trash2 className="text-danger" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <p className="mt-2 font-semibold text-ink">{l.title}</p>
                 <p className="text-sm text-ink-soft">

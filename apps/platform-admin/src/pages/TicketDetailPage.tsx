@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Send } from "lucide-react";
 import { Alert, Button, cn } from "@store-builder/ui";
 import type {
@@ -7,12 +7,15 @@ import type {
   SupportTicketPriority,
   SupportTicketStatus,
 } from "@store-builder/api-client";
+import { CanLink } from "@/components/Can";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState } from "@/components/DataState";
 import { SelectField, TextAreaField } from "@/components/forms";
 import { Panel } from "@/components/Panel";
 import { Status, StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
+import { useAuth } from "@/context/AuthContext";
+import { P } from "@/lib/permissions";
 import { useAsync } from "@/lib/useAsync";
 import { getErrorMessage } from "@/lib/errors";
 import * as adminApi from "@/lib/adminApi";
@@ -24,6 +27,8 @@ type ReplyStatus = Exclude<SupportTicketStatus, "closed">;
 export function TicketDetailPage() {
   const { id = "" } = useParams();
   const toast = useToast();
+  const { can } = useAuth();
+  const canManage = can(P.SUPPORT_MANAGE);
   const { data, loading, error, refresh, setData } = useAsync(() => adminApi.getTicket(id), [id]);
   const [reply, setReply] = useState("");
   const [after, setAfter] = useState<ReplyStatus>("pending");
@@ -112,7 +117,7 @@ export function TicketDetailPage() {
                 </ol>
               </Panel>
 
-              {ticket.status === "closed" ? (
+              {!canManage ? null : ticket.status === "closed" ? (
                 <Alert>This ticket is closed. Re-open it from the panel on the right to reply.</Alert>
               ) : (
                 <Panel title="Reply" description="The merchant sees replies signed “Zimos support”.">
@@ -148,37 +153,47 @@ export function TicketDetailPage() {
 
             <Panel title="Ticket" className="h-fit">
               <div className="space-y-4">
-                <SelectField
-                  label="Status"
-                  value={ticket.status}
-                  disabled={saving}
-                  onChange={(e) => void update({ status: e.target.value as SupportTicketStatus })}
-                >
-                  {(Object.keys(STATUS_LABEL) as SupportTicketStatus[]).map((s) => (
-                    <option key={s} value={s}>
-                      {STATUS_LABEL[s]}
-                    </option>
-                  ))}
-                </SelectField>
-                <SelectField
-                  label="Priority"
-                  value={ticket.priority}
-                  disabled={saving}
-                  onChange={(e) => void update({ priority: e.target.value as SupportTicketPriority })}
-                >
-                  {(Object.keys(PRIORITY_LABEL) as SupportTicketPriority[]).map((p) => (
-                    <option key={p} value={p}>
-                      {PRIORITY_LABEL[p]}
-                    </option>
-                  ))}
-                </SelectField>
-                <dl className="space-y-2 border-t border-line pt-3 text-sm">
+                {canManage && (
+                  <>
+                    <SelectField
+                      label="Status"
+                      value={ticket.status}
+                      disabled={saving}
+                      onChange={(e) => void update({ status: e.target.value as SupportTicketStatus })}
+                    >
+                      {(Object.keys(STATUS_LABEL) as SupportTicketStatus[]).map((s) => (
+                        <option key={s} value={s}>
+                          {STATUS_LABEL[s]}
+                        </option>
+                      ))}
+                    </SelectField>
+                    <SelectField
+                      label="Priority"
+                      value={ticket.priority}
+                      disabled={saving}
+                      onChange={(e) => void update({ priority: e.target.value as SupportTicketPriority })}
+                    >
+                      {(Object.keys(PRIORITY_LABEL) as SupportTicketPriority[]).map((p) => (
+                        <option key={p} value={p}>
+                          {PRIORITY_LABEL[p]}
+                        </option>
+                      ))}
+                    </SelectField>
+                  </>
+                )}
+                <dl className={cn("space-y-2 text-sm", canManage && "border-t border-line pt-3")}>
+                  {!canManage && (
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-ink-soft">Priority</dt>
+                      <dd>{PRIORITY_LABEL[ticket.priority]}</dd>
+                    </div>
+                  )}
                   <div className="flex justify-between gap-2">
                     <dt className="text-ink-soft">Workspace</dt>
                     <dd>
-                      <Link to={`/workspaces/${ticket.workspaceId}`} className="hover:text-primary">
+                      <CanLink permission={P.WORKSPACES_VIEW} to={`/workspaces/${ticket.workspaceId}`} className="hover:text-primary">
                         {ticket.workspaceName ?? "Deleted"}
-                      </Link>
+                      </CanLink>
                     </dd>
                   </div>
                   <div className="flex justify-between gap-2">

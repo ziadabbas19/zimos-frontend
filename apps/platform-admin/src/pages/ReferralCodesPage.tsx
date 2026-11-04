@@ -52,7 +52,7 @@ export function ReferralCodesPage() {
     [q, state, agentId, audience]
   );
   const agents = useAsync(() => adminApi.listAgents(), []);
-  const plans = useAsync(() => adminApi.listPlans(), []);
+  const plans = useAsync(() => (can(P.PLANS_VIEW) ? adminApi.listPlans() : Promise.resolve([])), []);
   const v2 = list.data?.v2Enabled ?? false;
   const codes = list.data?.codes ?? [];
 

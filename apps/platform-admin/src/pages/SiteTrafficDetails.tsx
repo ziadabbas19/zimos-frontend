@@ -1,5 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { P } from "@/lib/permissions";
 import { RefreshCw } from "lucide-react";
 import { Alert, Badge, Button, Segmented, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import { ApiError } from "@store-builder/api-client";
@@ -398,6 +400,7 @@ function VisitsTab({
 }
 
 function VisitDrawer({ t, locale, sessionId, onClose }: { t: Strings; locale: Locale; sessionId: string | null; onClose: () => void }) {
+  const { can } = useAuth();
   const { data, loading, error, refresh } = useAsync(() => (sessionId ? api.getVisit(sessionId) : Promise.resolve(null)), [sessionId]);
   const s = data?.session;
   const utm = s ? [s.utmSource, s.utmMedium, s.utmCampaign].filter(Boolean).join(" / ") : "";
@@ -408,7 +411,7 @@ function VisitDrawer({ t, locale, sessionId, onClose }: { t: Strings; locale: Lo
       title={t.visitTitle}
       description={s ? formatDateTime(s.startedAt) : undefined}
       footer={
-        s?.userId ? (
+        s?.userId && can(P.WORKSPACES_VIEW) ? (
           <Link to={`/users/${s.userId}`} className="text-sm font-medium text-primary hover:underline">
             {t.openUser}
           </Link>
@@ -446,7 +449,7 @@ function VisitDrawer({ t, locale, sessionId, onClose }: { t: Strings; locale: Lo
                         <Mono>{e.path}</Mono>
                       </div>
                     )}
-                    {e.type === "signup" && e.userId && (
+                    {e.type === "signup" && e.userId && can(P.WORKSPACES_VIEW) && (
                       <Link to={`/users/${e.userId}`} className="text-xs font-medium text-primary hover:underline">
                         {t.openUser}
                       </Link>

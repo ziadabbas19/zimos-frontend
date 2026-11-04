@@ -10,6 +10,7 @@ import { useToast } from "@/components/Toast";
 import { SelectField, TextAreaField, TextField } from "@/components/forms";
 import { useAuth } from "@/context/AuthContext";
 import { apiClient } from "@/lib/apiClient";
+import { P } from "@/lib/permissions";
 import { getErrorMessage } from "@/lib/errors";
 import { formatMinorMoney } from "@/lib/format";
 import { useAsync } from "@/lib/useAsync";
@@ -112,7 +113,7 @@ export function ThemesPage() {
   const { can } = useAuth();
   const { data, loading, error, refresh } = useAsync(() => adminThemesList(apiClient), []);
   const [editing, setEditing] = useState<CatalogTheme | null>(null);
-  const canManage = can("templates.manage");
+  const canManage = can(P.TEMPLATES_MANAGE);
 
   return (
     <div>
