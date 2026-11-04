@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Pencil, UserMinus, UserPlus } from "lucide-react";
-import { Alert, Button, Table, TableBody, TableHeader, TableRow, cn } from "@store-builder/ui";
+import { Alert, Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import type { AdminPlatformAdmin as Admin, AdminPlatformRole, AdminRolesResponse } from "@store-builder/api-client";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
@@ -8,6 +8,7 @@ import { Modal } from "@/components/Modal";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { SelectField, TextField } from "@/components/forms";
 import { Panel, Td, Th } from "@/components/Panel";
+import { PermissionPicker, RolesPanel } from "@/components/platformRoles";
 import { Status, StatusBadge, type Tone } from "@/components/StatusBadge";
 import { Toggle } from "@/components/Toggle";
 import { useToast } from "@/components/Toast";
@@ -16,17 +17,12 @@ import { useAsync } from "@/lib/useAsync";
 import { getErrorMessage } from "@/lib/errors";
 import * as adminApi from "@/lib/adminApi";
 import { formatDate, formatDateTime, formatRelative } from "@/lib/format";
-import { CREATOR_ROLE, P, permissionLabel } from "@/lib/permissions";
+import { CREATOR_ROLE, P, isCreator, permissionLabel, permissionSummary } from "@/lib/permissions";
 
 const ROLE_TONES: Record<string, Tone> = { creator: "primary", admin: "info", agent: "warning" };
 
 function RoleBadge({ admin }: { admin: Pick<Admin, "role" | "roleName"> }) {
   return <StatusBadge tone={ROLE_TONES[admin.role] ?? "neutral"}>{admin.roleName}</StatusBadge>;
-}
-
-function permissionSummary(permissions: string[]): string {
-  if (permissions.includes("*")) return "Everything";
-  return `${permissions.length} permission${permissions.length === 1 ? "" : "s"}`;
 }
 
 export function AdminUsersPage() {
@@ -43,15 +39,14 @@ export function AdminUsersPage() {
   const admins = data?.[0] ?? [];
   const roles = data?.[1];
   const canManage = can(P.ADMINS_MANAGE);
-  const viewerIsCreator = user?.platformRole === CREATOR_ROLE;
+  const viewerIsCreator = isCreator(user);
   const creatorCount = admins.filter((a) => a.role === CREATOR_ROLE).length;
 
-  /** Why this row's actions are off for the viewer, or null. Mirrors the API's rules. */
-  function blockedReason(a: Admin): string | null {
-    if (a.isYou) return "You cannot change your own access.";
-    if (a.role === CREATOR_ROLE && !viewerIsCreator) return "Only a creator can change a creator.";
-    if (a.role === CREATOR_ROLE && creatorCount <= 1) return "The last creator cannot be changed.";
-    return null;
+  /** Whether the viewer can act on this row at all. Mirrors the API's rules. */
+  function canActOn(a: Admin): boolean {
+    if (a.isYou) return false;
+    if (a.role !== CREATOR_ROLE) return true;
+    return viewerIsCreator && creatorCount > 1;
   }
 
   return (
@@ -89,61 +84,50 @@ export function AdminUsersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {admins.map((a) => {
-                  const blocked = blockedReason(a);
-                  return (
-                    <TableRow key={a.id}>
-                      <Td>
-                        <span className="font-medium">{a.fullName}</span>
-                        {a.isYou && (
-                          <StatusBadge tone="primary" className="ms-2">
-                            You
-                          </StatusBadge>
-                        )}
-                      </Td>
-                      <Td className="text-sm">{a.email}</Td>
-                      <Td>
-                        <RoleBadge admin={a} />
-                        <span className="mt-1 block text-xs text-ink-soft" title={a.permissions.map(permissionLabel).join("\n")}>
-                          {permissionSummary(a.permissions)}
-                        </span>
-                      </Td>
-                      <Td>
-                        <Status value={a.status} />
-                      </Td>
-                      <Td className="whitespace-nowrap text-sm">
-                        {a.lastLoginAt ? (
-                          <span title={formatDateTime(a.lastLoginAt)}>{formatRelative(a.lastLoginAt)}</span>
-                        ) : (
-                          <span className="text-ink-soft">Never</span>
-                        )}
-                      </Td>
-                      <Td className="whitespace-nowrap text-sm">{formatDate(a.createdAt)}</Td>
-                      {canManage && (
-                        <Td className="text-end whitespace-nowrap">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            disabled={!!blocked || !roles}
-                            title={blocked ?? undefined}
-                            onClick={() => setEditing(a)}
-                          >
-                            <Pencil /> Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            disabled={!!blocked}
-                            title={blocked ?? undefined}
-                            onClick={() => setRevoking(a)}
-                          >
-                            <UserMinus className="text-danger" /> Revoke
-                          </Button>
-                        </Td>
+                {admins.map((a) => (
+                  <TableRow key={a.id}>
+                    <Td>
+                      <span className="font-medium">{a.fullName}</span>
+                      {a.isYou && (
+                        <StatusBadge tone="primary" className="ms-2">
+                          You
+                        </StatusBadge>
                       )}
-                    </TableRow>
-                  );
-                })}
+                    </Td>
+                    <Td className="text-sm">{a.email}</Td>
+                    <Td>
+                      <RoleBadge admin={a} />
+                      <span className="mt-1 block text-xs text-ink-soft" title={a.permissions.map(permissionLabel).join("\n")}>
+                        {permissionSummary(a.permissions)}
+                      </span>
+                    </Td>
+                    <Td>
+                      <Status value={a.status} />
+                    </Td>
+                    <Td className="whitespace-nowrap text-sm">
+                      {a.lastLoginAt ? (
+                        <span title={formatDateTime(a.lastLoginAt)}>{formatRelative(a.lastLoginAt)}</span>
+                      ) : (
+                        <span className="text-ink-soft">Never</span>
+                      )}
+                    </Td>
+                    <Td className="whitespace-nowrap text-sm">{formatDate(a.createdAt)}</Td>
+                    {canManage && (
+                      <Td className="text-end whitespace-nowrap">
+                        {canActOn(a) && (
+                          <>
+                            <Button size="sm" variant="ghost" disabled={!roles} onClick={() => setEditing(a)}>
+                              <Pencil /> Edit
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setRevoking(a)}>
+                              <UserMinus className="text-danger" /> Revoke
+                            </Button>
+                          </>
+                        )}
+                      </Td>
+                    )}
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </Panel>
@@ -154,6 +138,7 @@ export function AdminUsersPage() {
           that person&rsquo;s next request.
           {!canManage && " Your role can view this list but not change it."}
         </p>
+        {roles && <RolesPanel roles={roles} onChanged={() => void refresh({ silent: true })} />}
       </DataState>
 
       {granting && roles && (
@@ -222,6 +207,7 @@ function AccessModal({
   onClose: () => void;
   onSubmit: (value: { email?: string; role: string; permissions?: string[] }) => Promise<void>;
 }) {
+  const { can } = useAuth();
   const editing = !!admin;
   const [email, setEmail] = useState("");
   const [roleKey, setRoleKey] = useState(admin?.role ?? "admin");
@@ -231,19 +217,27 @@ function AccessModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Only a creator may hand out the creator role (the API refuses otherwise).
-  const roleOptions = roles.roles.filter((r) => r.key !== CREATOR_ROLE || viewerIsCreator);
+  // Mirrors the API: only a creator hands out the creator role, and a custom
+  // role goes only from someone holding all of it (or to the account already on it).
+  const roleOptions = roles.roles.filter(
+    (r) =>
+      r.key === admin?.role ||
+      (r.key === CREATOR_ROLE ? viewerIsCreator : r.builtIn || r.defaultPermissions.every((key) => can(key)))
+  );
   const isWildcard = permissions.includes("*");
+
+  // What this person can tick for that role: what they hold themselves, a
+  // seeded role's own default set, and what the account already has under it.
+  const kept = admin && roleKey === admin.role ? admin.permissions : [];
+  const offered = roles.permissions.filter(
+    (key) => can(key) || kept.includes(key) || (role?.builtIn && role.defaultPermissions.includes(key))
+  );
 
   function chooseRole(key: string) {
     setRoleKey(key);
     const next = roles.roles.find((r) => r.key === key);
     // Changing the role starts from its default set again.
     setPermissions(next?.defaultPermissions ?? []);
-  }
-
-  function toggle(key: string, on: boolean) {
-    setPermissions((current) => (on ? [...current, key] : current.filter((k) => k !== key)));
   }
 
   async function submit(e: FormEvent) {
@@ -307,31 +301,20 @@ function AccessModal({
             </option>
           ))}
         </SelectField>
-        <Toggle
-          label="Customize permissions"
-          description="Off: the role's default set. On: choose exactly what this person can do."
-          checked={custom}
-          onChange={setCustom}
-        />
         {isWildcard ? (
           <p className="text-sm text-ink-soft">
             {permissionLabel("*")}: every section, including ones added later.
           </p>
         ) : (
-          <fieldset disabled={!custom} className={cn("grid gap-2 sm:grid-cols-2", !custom && "opacity-60")}>
-            <legend className="sr-only">Permissions</legend>
-            {roles.permissions.map((key) => (
-              <label key={key} className="flex cursor-pointer items-start gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  className="mt-0.5"
-                  checked={permissions.includes(key)}
-                  onChange={(e) => toggle(key, e.target.checked)}
-                />
-                <span>{permissionLabel(key)}</span>
-              </label>
-            ))}
-          </fieldset>
+          <>
+            <Toggle
+              label="Customize permissions"
+              description="Off: the role's default set. On: choose exactly what this person can do."
+              checked={custom}
+              onChange={setCustom}
+            />
+            <PermissionPicker keys={offered} value={permissions} disabled={!custom} onChange={setPermissions} />
+          </>
         )}
       </form>
     </Modal>
