@@ -17,7 +17,7 @@ import { useAsync } from "@/lib/useAsync";
 import { getErrorMessage } from "@/lib/errors";
 import * as adminApi from "@/lib/adminApi";
 import { formatDate, formatDateTime, formatRelative } from "@/lib/format";
-import { AGENT_ROLE, CREATOR_ROLE, P, isCreator, permissionLabel, permissionSummary } from "@/lib/permissions";
+import { AGENT_ROLE, CREATOR_ROLE, P, isCreator, permissionLabel, permissionSummary, withinReach } from "@/lib/permissions";
 
 const ROLE_TONES: Record<string, Tone> = { creator: "primary", admin: "info", agent: "warning" };
 
@@ -45,8 +45,8 @@ export function AdminUsersPage() {
   /** Whether the viewer can act on this row at all. Mirrors the API's rules. */
   function canActOn(a: Admin): boolean {
     if (a.isYou) return false;
-    if (a.role !== CREATOR_ROLE) return true;
-    return viewerIsCreator && creatorCount > 1;
+    if (a.role === CREATOR_ROLE) return viewerIsCreator && creatorCount > 1;
+    return withinReach(can, a);
   }
 
   return (
@@ -138,7 +138,7 @@ export function AdminUsersPage() {
           that person&rsquo;s next request.
           {!canManage && " Your role can view this list but not change it."}
         </p>
-        {roles && <RolesPanel roles={roles} onChanged={() => void refresh({ silent: true })} />}
+        {roles && <RolesPanel roles={roles} admins={admins} onChanged={() => void refresh({ silent: true })} />}
       </DataState>
 
       {granting && roles && (
@@ -227,12 +227,9 @@ function AccessModal({
   const roleOptions = roles.roles.filter((r) => r.key === admin?.role || canGive(r));
   const isWildcard = permissions.includes("*");
 
-  // What this person can tick for that role: what they hold themselves, the
-  // agent role's own default set, and what the account already has under it.
-  const kept = admin && roleKey === admin.role ? admin.permissions : [];
-  const offered = roles.permissions.filter(
-    (key) => can(key) || kept.includes(key) || (roleKey === AGENT_ROLE && role?.defaultPermissions.includes(key))
-  );
+  // What this person can tick for that role: what they hold themselves, and the
+  // agent role's own default set. An account they can edit holds nothing more.
+  const offered = roles.permissions.filter((key) => can(key) || (roleKey === AGENT_ROLE && role?.defaultPermissions.includes(key)));
 
   function chooseRole(key: string) {
     setRoleKey(key);

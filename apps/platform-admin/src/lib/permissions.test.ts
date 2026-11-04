@@ -3,7 +3,7 @@ import type { AuthUser } from "@store-builder/api-client";
 import appSource from "@/App.tsx?raw";
 import { STORE_TRAFFIC_ENABLED } from "./features";
 import { NAV_GROUPS, findNavItem, landingPath, visibleNavGroups } from "./nav";
-import { ANY_CONSOLE_ACCOUNT, P, PAYMENT_METHODS_PAGE, PERMISSION_LABELS, PERMISSION_NEEDS, hasPermission, isCreator, permissionLabel, withPermission, type PermissionCheck } from "./permissions";
+import { ANY_CONSOLE_ACCOUNT, P, PAYMENT_METHODS_PAGE, PERMISSION_LABELS, PERMISSION_NEEDS, hasPermission, isCreator, permissionLabel, withPermission, withinReach, type PermissionCheck } from "./permissions";
 
 /** The one check behind `can`, `<Can>` and `<CanLink>`, and what the menu and the routes make of it. */
 
@@ -49,6 +49,32 @@ describe("hasPermission", () => {
     expect(hasPermission(account("agent", ["referrals.view_own"]), ANY_CONSOLE_ACCOUNT)).toBe(true);
     expect(hasPermission(account(null, []), ANY_CONSOLE_ACCOUNT)).toBe(false);
     expect(hasPermission(null, ANY_CONSOLE_ACCOUNT)).toBe(false);
+  });
+});
+
+describe("withinReach", () => {
+  const can = (key: string) => hasPermission(account("admin", [P.ADMINS_MANAGE, P.SUPPORT_VIEW]), key);
+
+  it("holds an account whose keys the viewer holds, an empty one included", () => {
+    expect(withinReach(can, { role: "admin", permissions: [P.SUPPORT_VIEW] })).toBe(true);
+    expect(withinReach(can, { role: "admin", permissions: [P.ADMINS_MANAGE, P.SUPPORT_VIEW] })).toBe(true);
+    expect(withinReach(can, { role: "admin", permissions: [] })).toBe(true);
+  });
+
+  it("leaves out an account holding any key the viewer doesn't", () => {
+    expect(withinReach(can, { role: "admin", permissions: [P.SUPPORT_VIEW, P.PLANS_MANAGE] })).toBe(false);
+    expect(withinReach(can, { role: "admin", permissions: ["*"] })).toBe(false);
+    expect(withinReach(can, { role: "custom_role", permissions: [P.REFERRALS_VIEW_OWN] })).toBe(false);
+  });
+
+  it("doesn't count an agent's own key, and does count anything else on the agent", () => {
+    expect(withinReach(can, { role: "agent", permissions: [P.REFERRALS_VIEW_OWN] })).toBe(true);
+    expect(withinReach(can, { role: "agent", permissions: [P.REFERRALS_VIEW_OWN, P.PLANS_MANAGE] })).toBe(false);
+  });
+
+  it("holds every account for a creator", () => {
+    const creator = (key: string) => hasPermission(account("creator", []), key);
+    expect(withinReach(creator, { role: "admin", permissions: [P.PLANS_MANAGE, P.RISK_MANAGE] })).toBe(true);
   });
 });
 

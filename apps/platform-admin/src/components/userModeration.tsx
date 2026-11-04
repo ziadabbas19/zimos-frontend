@@ -42,7 +42,8 @@ export function UserStateBadge({ status, deleted }: { status: string; deleted?: 
  * Suspend, unsuspend and delete an account (POST /admin/users/:id/…).
  * Suspending ends every session and refuses sign-in; deleting anonymises the
  * account and keeps its row, and an owner of stores is deleted only with
- * those stores suspended. Hidden for your own account.
+ * those stores suspended. Hidden for your own account and for any account the
+ * API says is out of the viewer's reach (a creator's, or one above them).
  */
 export function UserModerationActions({ user, onChanged }: { user: AdminUserDetail; onChanged: () => void }) {
   const toast = useToast();
@@ -50,7 +51,7 @@ export function UserModerationActions({ user, onChanged }: { user: AdminUserDeta
   const [acting, setActing] = useState<Action | null>(null);
   const [reason, setReason] = useState("");
 
-  if (!can(P.WORKSPACES_MANAGE) || user.deletedAt || me?.id === user.id) return null;
+  if (!can(P.WORKSPACES_MANAGE) || !user.canActOn || user.deletedAt || me?.id === user.id) return null;
 
   const suspended = user.status === "suspended";
   const ownedStores = user.workspaces.filter((s) => s.role === "owner").length;

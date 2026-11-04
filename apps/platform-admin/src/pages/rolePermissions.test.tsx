@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthUser } from "@store-builder/api-client";
 import { CanLink } from "@/components/Can";
+import { UserModerationActions } from "@/components/userModeration";
 import { ToastProvider } from "@/components/Toast";
 import { LocaleProvider } from "@/i18n/LocaleContext";
 import * as adminApi from "@/lib/adminApi";
@@ -171,6 +172,8 @@ const ADMINS = [
   { id: "me", email: "me@example.com", fullName: "Me", status: "active", lastLoginAt: null, createdAt: "2026-01-01T00:00:00Z", role: "admin", roleName: "Admin", permissions: [P.ADMINS_VIEW, P.ADMINS_MANAGE], isYou: true },
   { id: "c1", email: "boss@example.com", fullName: "Boss", status: "active", lastLoginAt: null, createdAt: "2026-01-01T00:00:00Z", role: "creator", roleName: "Creator", permissions: ["*"], isYou: false },
   { id: "o1", email: "other@example.com", fullName: "Other", status: "active", lastLoginAt: null, createdAt: "2026-01-01T00:00:00Z", role: "support_desk_a1b2c3", roleName: "Support desk", permissions: [P.SUPPORT_VIEW], isYou: false },
+  { id: "h1", email: "higher@example.com", fullName: "Higher", status: "active", lastLoginAt: null, createdAt: "2026-01-01T00:00:00Z", role: "admin", roleName: "Admin", permissions: [P.PLANS_VIEW, P.PLANS_MANAGE], isYou: false },
+  { id: "a1", email: "agent@example.com", fullName: "An Agent", status: "active", lastLoginAt: null, createdAt: "2026-01-01T00:00:00Z", role: "agent", roleName: "Agent", permissions: [P.REFERRALS_VIEW_OWN], isYou: false },
 ];
 
 beforeEach(() => {
@@ -373,6 +376,47 @@ describe("the notifications", () => {
   });
 });
 
+describe("the actions on a person's page", () => {
+  const person = { id: "u1", status: "active", deletedAt: null, workspaces: [] };
+  const buttons = () => screen.queryAllByRole("button").map((b) => b.textContent?.trim());
+
+  const showActions = (user: object) =>
+    render(
+      <LocaleProvider>
+        <ToastProvider>
+          <UserModerationActions user={user as never} onChanged={() => undefined} />
+        </ToastProvider>
+      </LocaleProvider>
+    );
+
+  it("are there for an account the API says is within reach", () => {
+    viewer([P.WORKSPACES_MANAGE]);
+    showActions({ ...person, canActOn: true });
+    expect(buttons()).toEqual(["Suspend", "Delete"]);
+  });
+
+  it("are gone for an account the API says is out of reach, and when an older API doesn't say", () => {
+    viewer([P.WORKSPACES_MANAGE]);
+    const { unmount } = showActions({ ...person, canActOn: false });
+    expect(buttons()).toEqual([]);
+    unmount();
+    showActions(person);
+    expect(buttons()).toEqual([]);
+  });
+
+  it("are gone without workspaces.manage, whatever the API says", () => {
+    viewer([P.WORKSPACES_VIEW]);
+    showActions({ ...person, canActOn: true });
+    expect(buttons()).toEqual([]);
+  });
+
+  it("offers a suspended account within reach its way back", () => {
+    viewer([P.WORKSPACES_MANAGE]);
+    showActions({ ...person, status: "suspended", canActOn: true });
+    expect(buttons()).toEqual(["Unsuspend", "Delete"]);
+  });
+});
+
 describe("CanLink", () => {
   it("is a link for an account that can open the page, and plain words otherwise", () => {
     viewer([P.WORKSPACES_VIEW]);
@@ -397,7 +441,7 @@ describe("admin users and roles", () => {
   const rowOf = (name: string) => screen.getByText(name).closest("tr") as HTMLElement;
 
   it("offers no action on a row the viewer can't act on, rather than a greyed one", async () => {
-    viewer([P.ADMINS_VIEW, P.ADMINS_MANAGE], "admin");
+    viewer([P.ADMINS_VIEW, P.ADMINS_MANAGE, P.SUPPORT_VIEW], "admin");
     show(<AdminUsersPage />);
 
     await screen.findByText("Boss");
@@ -405,6 +449,39 @@ describe("admin users and roles", () => {
     expect(within(rowOf("Me")).queryByRole("button")).toBeNull();
     expect(within(rowOf("Other")).getByRole("button", { name: /Edit/ })).toBeTruthy();
     expect(within(rowOf("Other")).getByRole("button", { name: /Revoke/ })).toBeTruthy();
+  });
+
+  it("offers no action on an account above the viewer, and still offers them on an agent", async () => {
+    viewer([P.ADMINS_VIEW, P.ADMINS_MANAGE, P.SUPPORT_VIEW], "admin");
+    show(<AdminUsersPage />);
+
+    await screen.findByText("Boss");
+    expect(within(rowOf("Higher")).queryByRole("button")).toBeNull();
+    expect(within(rowOf("An Agent")).getByRole("button", { name: /Edit/ })).toBeTruthy();
+    expect(within(rowOf("An Agent")).getByRole("button", { name: /Revoke/ })).toBeTruthy();
+  });
+
+  it("offers a creator every row but their own, and the last creator's", async () => {
+    viewer([], "creator");
+    api.listAdmins.mockResolvedValue(ADMINS.map((a) => (a.id === "c1" ? { ...a, isYou: true } : { ...a, isYou: false })) as never);
+    show(<AdminUsersPage />);
+
+    await screen.findByText("Boss");
+    expect(within(rowOf("Boss")).queryByRole("button")).toBeNull();
+    expect(within(rowOf("Higher")).getByRole("button", { name: /Revoke/ })).toBeTruthy();
+    expect(within(rowOf("Me")).getByRole("button", { name: /Revoke/ })).toBeTruthy();
+  });
+
+  it("offers nothing on a custom role with an account above the viewer on it", async () => {
+    api.listAdmins.mockResolvedValue(
+      ADMINS.map((a) => (a.id === "o1" ? { ...a, permissions: [P.SUPPORT_VIEW, P.PLANS_MANAGE] } : a)) as never
+    );
+    viewer([P.ADMINS_VIEW, P.ADMINS_MANAGE, P.SUPPORT_VIEW], "admin");
+    show(<AdminUsersPage />);
+
+    await screen.findByRole("button", { name: /New role/ });
+    const desk = screen.getAllByText("Support desk").at(-1)?.closest("tr") as HTMLElement;
+    expect(within(desk).queryByRole("button")).toBeNull();
   });
 
   it("shows a viewer the users and roles with nothing to press", async () => {

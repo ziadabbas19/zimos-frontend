@@ -81,6 +81,16 @@ export function hasPermission(user: AuthUser | null, permission: PermissionCheck
 }
 
 /**
+ * Whether an account is within the viewer's reach: they hold every key on it.
+ * Mirrors the API (platformPermissions.outOfReach), for the admin list, which
+ * already shows the keys. An agent's own key doesn't count: it is given without
+ * being held, and taken back the same way.
+ */
+export function withinReach(can: Can, account: { role: string; permissions: readonly string[] }): boolean {
+  return account.permissions.every((key) => can(key) || (account.role === AGENT_ROLE && key === P.REFERRALS_VIEW_OWN));
+}
+
+/**
  * The key that opens the page a key edits: an edit key alone gives a person
  * nothing to press. The role and access editors tick and untick them together.
  */

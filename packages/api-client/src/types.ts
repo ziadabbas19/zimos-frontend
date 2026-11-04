@@ -3072,6 +3072,8 @@ export interface AdminUserDetail extends AdminUserRow {
   acquisition?: AdminUserAcquisition | null;
   /** Null when no visit they signed up from carries a country or governorate; missing from an older API. */
   location?: AdminUserLocation | null;
+  /** Whether the viewer may suspend, delete or reset this account. Missing from an older API: nothing is offered. */
+  canActOn?: boolean;
 }
 
 /** POST /admin/users/:id/{suspend,unsuspend,delete} */

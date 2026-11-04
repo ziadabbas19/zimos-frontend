@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Alert, Button, Table, TableBody, TableHeader, TableRow, cn } from "@store-builder/ui";
-import type { AdminPlatformRole, AdminRolesResponse } from "@store-builder/api-client";
+import type { AdminPlatformAdmin, AdminPlatformRole, AdminRolesResponse } from "@store-builder/api-client";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { TextAreaField, TextField } from "@/components/forms";
 import { Modal } from "@/components/Modal";
@@ -11,7 +11,7 @@ import { useToast } from "@/components/Toast";
 import { useAuth } from "@/context/AuthContext";
 import * as adminApi from "@/lib/adminApi";
 import { getErrorMessage } from "@/lib/errors";
-import { P, permissionLabel, permissionSummary, withPermission } from "@/lib/permissions";
+import { P, permissionLabel, permissionSummary, withPermission, withinReach } from "@/lib/permissions";
 
 /**
  * The tick list of permissions, for a role and for one account. Only `keys` are
@@ -51,13 +51,16 @@ export function PermissionPicker({
  * custom ones. Saving a custom role changes the accounts holding it (the API
  * adds and removes the keys that changed), so a person can't edit one they
  * hold themselves, and a role with accounts on it can't be deleted. Mirrors the
- * API: a role with a key the viewer doesn't hold offers them nothing.
+ * API: a role with a key the viewer doesn't hold, or with an account above them
+ * on it, offers them nothing.
  */
 export function RolesPanel({
   roles,
+  admins,
   onChanged,
 }: {
   roles: AdminRolesResponse;
+  admins: AdminPlatformAdmin[];
   onChanged: () => void;
 }) {
   const toast = useToast();
@@ -65,7 +68,10 @@ export function RolesPanel({
   const canManage = can(P.ADMINS_MANAGE);
   const [editing, setEditing] = useState<AdminPlatformRole | "new" | null>(null);
   const [deleting, setDeleting] = useState<AdminPlatformRole | null>(null);
-  const withinReach = (role: AdminPlatformRole) => !role.builtIn && role.defaultPermissions.every((key) => can(key));
+  const roleWithinReach = (role: AdminPlatformRole) =>
+    !role.builtIn &&
+    role.defaultPermissions.every((key) => can(key)) &&
+    admins.filter((a) => a.role === role.key).every((a) => withinReach(can, a));
 
   return (
     <Panel
@@ -112,12 +118,12 @@ export function RolesPanel({
               <Td className="tabular text-end">{role.holders}</Td>
               {canManage && (
                 <Td className="text-end whitespace-nowrap">
-                  {withinReach(role) && user?.platformRole !== role.key && (
+                  {roleWithinReach(role) && user?.platformRole !== role.key && (
                     <Button size="sm" variant="ghost" onClick={() => setEditing(role)}>
                       <Pencil /> Edit
                     </Button>
                   )}
-                  {withinReach(role) && role.holders === 0 && (
+                  {roleWithinReach(role) && role.holders === 0 && (
                     <Button size="icon-sm" variant="ghost" aria-label={`Delete ${role.name}`} onClick={() => setDeleting(role)}>
                       <Trash2 className="text-danger" />
                     </Button>
