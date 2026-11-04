@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import { usePathname, useSearchParams } from "next/navigation";
 import { track } from "@/lib/track";
-import { registerPixels, type PurchaseTiming, type StorePixel } from "@/lib/adPixels";
+import { registerPixels, releasePixelEvents, whenPixelsMayLoad, type PurchaseTiming, type StorePixel } from "@/lib/adPixels";
+import { PIXELS_DEFER_ENABLED } from "@/lib/features";
 import { AdPlatformTags } from "./AdPlatformTags";
 
 /**
@@ -20,6 +21,10 @@ import { AdPlatformTags } from "./AdPlatformTags";
  * Every pixel is initialised; only the store-wide ones get the first page
  * view here. A funnel's or product's pixels get theirs when the shopper
  * reaches that funnel or product (lib/adPixels.ts decides per event).
+ *
+ * With NEXT_PUBLIC_PIXELS_DEFER_ENABLED the scripts go on the page once it has
+ * loaded and settled, or at once for an event that cannot wait (lib/adPixels.ts
+ * "holding"). Off, they load during hydration, as they always did.
  */
 export function TrackingPixels({ pixels, purchaseTiming }: { pixels: StorePixel[]; purchaseTiming?: PurchaseTiming }) {
   // Before any effect below (or in a child page) sends an event.
@@ -38,6 +43,17 @@ export function TrackingPixels({ pixels, purchaseTiming }: { pixels: StorePixel[
   const pathname = usePathname();
   const search = useSearchParams();
   const first = useRef(true);
+  const [mayLoad, setMayLoad] = useState(!PIXELS_DEFER_ENABLED);
+
+  useEffect(() => {
+    if (!PIXELS_DEFER_ENABLED) return;
+    return whenPixelsMayLoad(() => setMayLoad(true));
+  }, []);
+
+  // After the scripts below have run (a child's effects come first), so what waited reaches them.
+  useEffect(() => {
+    if (PIXELS_DEFER_ENABLED && mayLoad) releasePixelEvents();
+  }, [mayLoad]);
 
   // The init snippets already send the first page view; later route changes are ours.
   useEffect(() => {
@@ -48,7 +64,7 @@ export function TrackingPixels({ pixels, purchaseTiming }: { pixels: StorePixel[
     track("PageView");
   }, [pathname, search]);
 
-  if (pixels.length === 0) return null;
+  if (pixels.length === 0 || !mayLoad) return null;
 
   return (
     <>

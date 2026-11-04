@@ -5,6 +5,12 @@
  * dashboard's VITE_ switch and the API switch of the same name.
  */
 
+/**
+ * The merchant's ad pixels load after the page has settled, not during hydration, and page and
+ * product views wait for them (lib/adPixels.ts "holding"). Off, they load as they always did.
+ */
+export const PIXELS_DEFER_ENABLED = process.env.NEXT_PUBLIC_PIXELS_DEFER_ENABLED === "true";
+
 /** Shopper accounts (sign-in, account pages, wishlist). Off, no shopper token is kept, read or sent. */
 export const SHOPPER_ACCOUNTS_ENABLED = process.env.NEXT_PUBLIC_SHOPPER_ACCOUNTS_ENABLED === "true";
 

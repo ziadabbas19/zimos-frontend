@@ -9,7 +9,7 @@ import {
   type AdTagEvents,
   type AdTagPlatform,
 } from "./adPlatformTags";
-import { AD_PIXELS_ENABLED } from "./features";
+import { AD_PIXELS_ENABLED, PIXELS_DEFER_ENABLED } from "./features";
 import type { TrackData, TrackEvent } from "./track";
 
 /**
@@ -192,7 +192,73 @@ function inScope(pixel: StorePixel): boolean {
   return pixel.scope.ids.some((id) => viewed.includes(id));
 }
 
-const active = (platform: PixelPlatform) => registry.filter((p) => p.platform === platform && inScope(p));
+// ---------------------------------------------------------------- holding --
+
+/*
+ * NEXT_PUBLIC_PIXELS_DEFER_ENABLED: the pixels' scripts are the heaviest thing
+ * on a shopper's phone, so components/TrackingPixels puts them on the page once
+ * the page has loaded and settled, not during hydration. Until then an event
+ * waits here, with the id it already has, so the server's copy (sent at once by
+ * lib/track.ts, with the same id) still dedups with it on the platform.
+ *
+ * Only a page view and a product view wait. Anything else (add to cart, checkout,
+ * payment info, purchase, lead) puts the scripts on the page right away.
+ *
+ * Off (the default), nothing waits, and the scripts load as they always did.
+ */
+const MAY_WAIT: ReadonlySet<TrackEvent> = new Set<TrackEvent>(["PageView", "ViewContent"]);
+const SETTLE_IDLE_TIMEOUT_MS = 2000;
+const SETTLE_MAX_WAIT_MS = 5000;
+
+let holding = PIXELS_DEFER_ENABLED;
+let held: Array<() => void> = [];
+let openNow: (() => void) | null = null;
+let openAsked = false;
+
+function askToOpen(): void {
+  openAsked = true;
+  openNow?.();
+}
+
+/**
+ * Calls `open` once the page has loaded and gone idle (at most
+ * SETTLE_MAX_WAIT_MS from now), or as soon as an event that cannot wait asks.
+ * Returns the way to stop waiting.
+ */
+export function whenPixelsMayLoad(open: () => void): () => void {
+  if (openAsked) {
+    open();
+    return () => undefined;
+  }
+  let idle: number | undefined;
+  const stop = () => {
+    openNow = null;
+    clearTimeout(timer);
+    if (idle !== undefined) window.cancelIdleCallback?.(idle);
+    window.removeEventListener("load", settle);
+  };
+  const go = () => {
+    stop();
+    open();
+  };
+  function settle() {
+    if (typeof window.requestIdleCallback === "function") idle = window.requestIdleCallback(go, { timeout: SETTLE_IDLE_TIMEOUT_MS });
+    else go();
+  }
+  openNow = go;
+  const timer = setTimeout(go, SETTLE_MAX_WAIT_MS);
+  if (document.readyState === "complete") settle();
+  else window.addEventListener("load", settle, { once: true });
+  return stop;
+}
+
+/** The scripts are on the page (components/TrackingPixels): what waited goes out, in order. */
+export function releasePixelEvents(): void {
+  holding = false;
+  const waiting = held;
+  held = [];
+  for (const send of waiting) send();
+}
 
 /**
  * A product page is on screen (components/PixelScope): its product-scoped
@@ -209,7 +275,9 @@ export function enterProductScope(productIds: string[]): void {
     return; // storage blocked: product-scoped pixels stay out rather than guess
   }
   const joined = registry.filter((p) => p.scope.type === "products" && p.scope.ids.some((id) => fresh.includes(id)));
-  if (joined.length) sendPageViewTo(joined);
+  if (joined.length === 0) return;
+  if (holding) held.push(() => sendPageViewTo(joined));
+  else sendPageViewTo(joined);
 }
 
 function sendPageViewTo(pixels: StorePixel[]): void {
@@ -251,6 +319,19 @@ function initSnap(w: PixelWindow, pixelId: string): void {
 export function sendToAdPixels(event: TrackEvent, data: TrackData = {}): void {
   if (typeof window === "undefined") return;
   if (event === "Purchase" && !browserPurchase) return;
+  // Who the event is for and which page it is about are decided now, even when it goes out a moment later.
+  const scoped = registry.filter(inScope);
+  const pagePath = window.location.pathname;
+  if (holding && registry.length > 0) {
+    held.push(() => sendNow(event, data, scoped, pagePath));
+    if (!MAY_WAIT.has(event)) askToOpen();
+    return;
+  }
+  sendNow(event, data, scoped, pagePath);
+}
+
+function sendNow(event: TrackEvent, data: TrackData, scoped: StorePixel[], pagePath: string): void {
+  const active = (platform: PixelPlatform) => scoped.filter((p) => p.platform === platform);
   const w = window as PixelWindow;
   const value = data.valueMinor !== undefined ? Math.round(data.valueMinor) / 100 : undefined;
   const common = { value, currency: data.currency };
@@ -336,7 +417,7 @@ export function sendToAdPixels(event: TrackEvent, data: TrackData = {}): void {
     if (w.gtag && google.length) {
       // send_to keeps the event off the Google tags whose scope does not cover this page.
       w.gtag("event", GOOGLE[event], {
-        ...(event === "PageView" ? { page_path: window.location.pathname } : common),
+        ...(event === "PageView" ? { page_path: pagePath } : common),
         transaction_id: data.orderId,
         items: data.contentIds?.map((id) => ({ item_id: id })),
         send_to: google.map((p) => p.pixelId),
@@ -359,7 +440,7 @@ export function sendToAdPixels(event: TrackEvent, data: TrackData = {}): void {
 
     // X, Taboola, Outbrain, Kwai, Reddit, Microsoft Ads: the in-scope pixels, under the platform's own
     // name for the event, with the same id.
-    sendToAdPlatformTags(registry.filter(inScope), AD_TAG_EVENT[event], { value, currency: data.currency, orderId: data.orderId, dedupeId });
+    sendToAdPlatformTags(scoped, AD_TAG_EVENT[event], { value, currency: data.currency, orderId: data.orderId, dedupeId });
   } catch {
     /* a broken third-party script must never break the store */
   }
