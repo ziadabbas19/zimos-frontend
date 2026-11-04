@@ -3,18 +3,14 @@ import {
   resolveCheckoutSettings,
   type StorefrontProductDetail,
 } from "@store-builder/api-client";
-import { ProductLanding } from "@/components/product/ProductLanding";
+import { CheckoutSummaryBlock, FunnelActionButton, FunnelCodForm, GallerySlideshow, OrderSummaryBlock, PickedPrice, ProductLanding, TabsBlock } from "./lazy";
 import { StoreLink } from "@/components/StoreRoute";
 import { orderBumpOf } from "@/lib/commerce";
 import { formatPrice, type Dictionary, type Locale } from "@/lib/i18n";
 import { compareAtOf, priceOf } from "@/lib/product";
 import { createServerStorefrontApiClient } from "@/lib/serverApiClient";
 import { getStoreMeta } from "@/lib/storeMeta";
-import { CheckoutSummaryBlock, FunnelActionButton, OrderSummaryBlock, TabsBlock } from "./builderClient";
-import { GallerySlideshow } from "./GallerySlideshow";
 import type { PageRendererFunnel } from "./PageRenderer";
-import { FunnelCodForm } from "../funnel/FunnelCodForm";
-import { PickedPrice } from "./builderMoreClient";
 import { variantPriceTags } from "./builderMore";
 import { type Props, bool, num, qaList, resolveHref, safeUrl, str, strList } from "./props";
 

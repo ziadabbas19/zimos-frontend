@@ -9,9 +9,10 @@ import { btnPrimary, btnSecondary } from "@/components/ui";
 import { formatPrice, getDictionary, type Locale } from "@/lib/i18n";
 import { compareAtOf, defaultOfferOf, firstImage, needsProductPage, offerAppliesTo, priceOf } from "@/lib/product";
 import { createServerStorefrontApiClient } from "@/lib/serverApiClient";
-import { CartSummary } from "./CartSummary";
+import { CartSummary, ShoppableImageView } from "./lazy";
 import type { PageRendererFunnel } from "./PageRenderer";
 import { COLUMN_CLASS, type Props, bool, num, resolveHref, str } from "./props";
+import { StoreImage } from "@/components/StoreImage";
 
 /** The funnel step's actions as a store link, or null outside a funnel. */
 function funnelHref(funnel: PageRendererFunnel | undefined): string | null {

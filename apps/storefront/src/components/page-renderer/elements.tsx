@@ -3,8 +3,7 @@ import { StoreLink } from "@/components/StoreRoute";
 import { btnPrimary, input } from "@/components/ui";
 import type { Dictionary } from "@/lib/i18n";
 import { Countdown } from "./Countdown";
-import { GallerySlideshow } from "./GallerySlideshow";
-import { PageForm } from "./PageForm";
+import { GallerySlideshow, PageForm } from "./lazy";
 import { pictureFocus, pictureRatio } from "./pictureFrame";
 import {
   COLUMN_CLASS,

@@ -65,7 +65,7 @@ import { pageStyleSheet, styleKey } from "./elementStyle";
 import { applyBindings, loadBindingData, pageProductId, type BindingData } from "./bindings";
 import { RepeaterElement } from "./repeater";
 import { MasonryGridElement, ProductActionElement, productAction } from "./builderMore";
-import { StoryGalleryElement } from "./StoryGallery";
+import { StoryGalleryElement } from "./lazy";
 
 /**
  * An element with a style of its own (the editor's Style and Layout tabs) is

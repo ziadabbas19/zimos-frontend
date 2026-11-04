@@ -1,11 +1,10 @@
 import type { StorefrontProductDetail } from "@store-builder/api-client";
-import { ProductReviews } from "@/components/product/ProductReviews";
 import { bundleTiers } from "@/lib/commerce";
 import { productImages } from "@/lib/product";
 import { createServerStorefrontApiClient } from "@/lib/serverApiClient";
 import { getStoreMeta } from "@/lib/storeMeta";
 import { storefrontProductReviews } from "@store-builder/api-client";
-import { BundleChoice, GalleryWithThumbs, PopupBlock, VariantChips } from "./builderExtrasClient";
+import { BundleChoice, GalleryWithThumbs, PopupBlock, ProductReviews, VariantChips } from "./lazy";
 import { type Props, bool, num, resolveHref, safeUrl, str } from "./props";
 
 /**

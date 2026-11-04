@@ -3,7 +3,8 @@ import { StoreLink } from "@/components/StoreRoute";
 import { formatPrice, type Locale } from "@/lib/i18n";
 import { needsProductPage, variantUnitPrice } from "@/lib/product";
 import { createServerStorefrontApiClient } from "@/lib/serverApiClient";
-import { CartActionButton, type PriceTag } from "./builderMoreClient";
+import type { PriceTag } from "./builderMoreClient";
+import { CartActionButton } from "./lazy";
 import { BUTTON_CLASS } from "./elements";
 import { type Props, num, resolveHref, safeUrl, str } from "./props";
 

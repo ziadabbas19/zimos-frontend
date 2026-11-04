@@ -19,7 +19,7 @@ vi.mock("@/lib/dictionaryChunks", async (original) => ({
  * So the tests get the parts themselves — the markup a shopper's page has.
  */
 vi.mock("@/components/page-renderer/lazy", async () => {
-  const [slider, grid, quotes, countdown, newsletter, contact, stack, journey, reels] = await Promise.all([
+  const [slider, grid, quotes, countdown, newsletter, contact, stack, journey, reels, ...others] = await Promise.all([
     import("@/components/page-renderer/xs/XsSlider"),
     import("@/components/page-renderer/xs/XsProductGrid"),
     import("@/components/page-renderer/xs/XsQuotes"),
@@ -29,8 +29,26 @@ vi.mock("@/components/page-renderer/lazy", async () => {
     import("@/components/page-renderer/xs/XsStack"),
     import("@/components/page-renderer/xs/XsJourney"),
     import("@/components/page-renderer/xs/XsReels"),
+    import("@/components/product/ProductLanding"),
+    import("@/components/product/ProductReviews"),
+    import("@/components/ShoppableImageView"),
+    import("@/components/funnel/FunnelCodForm"),
+    import("@/components/page-renderer/CartSummary"),
+    import("@/components/page-renderer/GallerySlideshow"),
+    import("@/components/page-renderer/StoryGallery"),
+    import("@/components/page-renderer/PageForm"),
+    import("@/components/page-renderer/builderClient"),
+    import("@/components/page-renderer/builderExtrasClient"),
+    import("@/components/page-renderer/builderMoreClient"),
+    import("@/components/page-renderer/showcase/HeroSlider"),
+    import("@/components/page-renderer/showcase/NeedTabs"),
+    import("@/components/page-renderer/showcase/ProductTabs"),
+    import("@/components/page-renderer/showcase/RailTrack"),
+    import("@/components/page-renderer/showcase/ReelsTrack"),
+    import("@/components/page-renderer/showcase/ShelfRail"),
   ]);
   return {
+    ...Object.assign({}, ...others),
     XsSlider: slider.XsSlider,
     XsProductGrid: grid.XsProductGrid,
     XsQuotes: quotes.XsQuotes,

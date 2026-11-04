@@ -7,13 +7,10 @@ import { firstImage } from "@/lib/product";
 import { EmptyBlock } from "../commerce";
 import { showcaseCopy } from "./copy";
 import { heroFocusMarkup, heroHasText, heroLookMarkup, heroPhoneHeight, resolveHeroFocus, resolveHeroLook } from "./heroLook";
-import { HeroSlider, type HeroSlide } from "./HeroSlider";
+import type { HeroSlide } from "./HeroSlider";
+import { HeroSlider, NeedTabs, ProductTabs, RailTrack, ReelsTrack, ShelfRail } from "../lazy";
 import { pictureFocus } from "../pictureFrame";
-import { NeedTabs, type NeedTab } from "./NeedTabs";
-import { ProductTabs } from "./ProductTabs";
-import { RailTrack } from "./RailTrack";
-import { ReelsTrack } from "./ReelsTrack";
-import { ShelfRail } from "./ShelfRail";
+import type { NeedTab } from "./NeedTabs";
 import {
   ProductAction,
   ProductTile,
