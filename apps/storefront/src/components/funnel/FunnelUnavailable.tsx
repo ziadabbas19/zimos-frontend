@@ -1,9 +1,10 @@
 "use client";
 
+import { Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { StoreLink } from "@/components/StoreRoute";
 import { btnPrimary, btnSecondary } from "@/components/ui";
-import { getDictionary } from "@/lib/i18n";
+import { DictionaryChunk, useArrivedDictionary } from "@/lib/dictionaryChunks";
 import { useStore } from "@/lib/StoreContext";
 
 /**
@@ -19,22 +20,19 @@ export function FunnelUnavailable({ kind, onRetry }: { kind: "unavailable" | "er
   const { t, locale } = useStore();
   const router = useRouter();
   const otherLang = locale === "ar" ? "en" : "ar";
-  const other = getDictionary(otherLang).funnel;
 
   const title = kind === "unavailable" ? t.funnel.unavailableTitle : t.funnel.errorTitle;
   const body = kind === "unavailable" ? t.funnel.unavailableBody : t.funnel.errorBody;
-  const secondary =
-    kind === "unavailable"
-      ? `${other.unavailableTitle} — ${other.unavailableBody}`
-      : `${other.errorTitle} — ${other.errorBody}`;
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center px-6 py-24 text-center">
       <h1 className="font-display text-2xl font-medium text-ink">{title}</h1>
       <p className="mt-2 max-w-md text-sm text-ink-soft">{body}</p>
-      <p lang={otherLang} dir={otherLang === "ar" ? "rtl" : "ltr"} className="mt-4 max-w-md text-xs text-ink-soft">
-        {secondary}
-      </p>
+      {/* The other language's words are a chunk of their own (lib/i18n.ts): the page does not wait for this line. */}
+      <Suspense fallback={null}>
+        <DictionaryChunk locale={otherLang} />
+        <OtherLanguageLine kind={kind} lang={otherLang} />
+      </Suspense>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         {kind === "error" && (
           <button type="button" onClick={() => (onRetry ? onRetry() : router.refresh())} className={btnPrimary}>
@@ -46,5 +44,14 @@ export function FunnelUnavailable({ kind, onRetry }: { kind: "unavailable" | "er
         </StoreLink>
       </div>
     </main>
+  );
+}
+
+function OtherLanguageLine({ kind, lang }: { kind: "unavailable" | "error"; lang: "ar" | "en" }) {
+  const other = useArrivedDictionary(lang).funnel;
+  return (
+    <p lang={lang} dir={lang === "ar" ? "rtl" : "ltr"} className="mt-4 max-w-md text-xs text-ink-soft">
+      {kind === "unavailable" ? `${other.unavailableTitle} — ${other.unavailableBody}` : `${other.errorTitle} — ${other.errorBody}`}
+    </p>
   );
 }

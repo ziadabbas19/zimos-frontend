@@ -1,4 +1,15 @@
 import { vi } from "vitest";
+import { registerDictionary, type Locale } from "@/lib/i18n";
+import { ALL_DICTIONARIES } from "@/lib/i18nAll";
+
+// Every language at hand, as on the server; a browser fetches its own as a chunk (lib/dictionaryChunks.tsx).
+for (const [locale, dictionary] of Object.entries(ALL_DICTIONARIES)) registerDictionary(locale as Locale, dictionary);
+
+// react-dom/server's renderToStaticMarkup cannot wait for a chunk either, and with every language here there is none to wait for.
+vi.mock("@/lib/dictionaryChunks", async (original) => ({
+  ...(await original<typeof import("@/lib/dictionaryChunks")>()),
+  DictionaryChunk: () => null,
+}));
 
 /**
  * The imported templates' interactive parts are split into chunks with

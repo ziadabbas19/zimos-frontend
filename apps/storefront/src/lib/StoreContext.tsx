@@ -16,11 +16,11 @@ import {
   DEFAULT_LOCALE,
   dirFor,
   formatPrice,
-  getDictionary,
   intlLocaleFor,
   type Dictionary,
   type Locale,
 } from "./i18n";
+import { DictionaryChunk, useArrivedDictionary, useDictionary } from "./dictionaryChunks";
 
 export interface StoreInfo {
   /** The route segment the store was reached by — its UUID or its slug. */
@@ -103,18 +103,19 @@ export interface StoreContextValue {
   money: (amountMinor: number | string | null | undefined, currency?: string) => string;
 }
 
-function build(locale: Locale, store: StoreInfo | null): StoreContextValue {
+function build(locale: Locale, store: StoreInfo | null, dictionary: Dictionary): StoreContextValue {
   return {
     locale,
     dir: dirFor(locale),
     intlLocale: intlLocaleFor(locale),
-    t: withStoreWords(getDictionary(locale), store?.words?.[locale]),
+    t: withStoreWords(dictionary, store?.words?.[locale]),
     store,
     money: (amount, currency) => formatPrice(amount, currency ?? store?.currency ?? "EGP", locale, store?.currencyFormat ?? null),
   };
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null);
+
 
 /**
  * Hands the resolved locale and a few store facts to client components. Only
@@ -130,14 +131,29 @@ export function StoreContextProvider({
   store: StoreInfo;
   children: ReactNode;
 }) {
-  const value = useMemo(() => build(locale, store), [locale, store]);
+  return (
+    <>
+      {/* First: in the browser it holds this render until the language's chunk is here (lib/dictionaryChunks). */}
+      <DictionaryChunk locale={locale} />
+      <StoreValue locale={locale} store={store}>
+        {children}
+      </StoreValue>
+    </>
+  );
+}
+
+function StoreValue({ locale, store, children }: { locale: Locale; store: StoreInfo; children: ReactNode }) {
+  const dictionary = useArrivedDictionary(locale);
+  const value = useMemo(() => build(locale, store, dictionary), [locale, store, dictionary]);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
 
 /** Outside a store (e.g. a 404 above the store layout) this falls back to Arabic. */
 export function useStore(): StoreContextValue {
   const ctx = useContext(StoreContext);
-  return useMemo(() => ctx ?? build(DEFAULT_LOCALE, null), [ctx]);
+  // Outside a store, Arabic's words. Asked for every time, whichever way this render goes (lib/dictionaryChunks).
+  const fallback = useDictionary(ctx ? ctx.locale : DEFAULT_LOCALE);
+  return useMemo(() => ctx ?? build(DEFAULT_LOCALE, null, fallback), [ctx, fallback]);
 }
 
 /**

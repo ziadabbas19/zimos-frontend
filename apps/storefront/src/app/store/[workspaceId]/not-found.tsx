@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { NotFoundContent } from "@/components/NotFoundContent";
-import { getDictionary } from "@/lib/i18n";
+import { DictionaryChunk, useArrivedDictionary } from "@/lib/dictionaryChunks";
 import { useStore } from "@/lib/StoreContext";
 import { useRedirectLookup } from "@/lib/useRedirectLookup";
 
@@ -28,10 +28,20 @@ export default function StoreNotFound() {
   // An address the merchant moved goes on to its new one (URL_REDIRECTS_ENABLED; nothing is asked while it is off).
   useRedirectLookup();
 
-  const { t, locale } = useStore();
+  const { locale } = useStore();
   const otherLang = locale === "ar" ? "en" : "ar";
-  const other = getDictionary(otherLang);
 
+  return (
+    <>
+      <DictionaryChunk locale={otherLang} />
+      <Bilingual home={home} otherLang={otherLang} />
+    </>
+  );
+}
+
+function Bilingual({ home, otherLang }: { home: string; otherLang: "ar" | "en" }) {
+  const { t } = useStore();
+  const other = useArrivedDictionary(otherLang);
   return (
     <NotFoundContent
       homeHref={home}

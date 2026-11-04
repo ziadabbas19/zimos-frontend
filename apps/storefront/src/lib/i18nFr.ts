@@ -1,4 +1,4 @@
-import type { Dictionary } from "./i18n";
+import type { Dictionary } from "./i18nEn";
 
 /**
  * The storefront in French (SPEC §8.10): every string of the English
