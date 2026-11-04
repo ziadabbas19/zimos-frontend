@@ -9,6 +9,7 @@ import { FilterChips, NativeSelect, SearchInput } from "@/components/forms";
 import { Panel, SortHead, Td, Th, compareValues, type SortState } from "@/components/Panel";
 import { WorkspaceStatus } from "@/components/workspace";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
+import { useAuth } from "@/context/AuthContext";
 import { useAsync } from "@/lib/useAsync";
 import * as adminApi from "@/lib/adminApi";
 import type { AdminWorkspaceRow } from "@/lib/adminApi";
@@ -86,7 +87,8 @@ function matchesStatus(row: AdminWorkspaceRow, f: StatusFilter) {
 export function WorkspacesPage() {
   const t = useT(STRINGS);
   const navigate = useNavigate();
-  const { data, loading, error, refresh } = useAsync(() => adminApi.listWorkspaceRows(), []);
+  const { can } = useAuth();
+  const { data, loading, error, refresh } = useAsync(() => adminApi.listWorkspaceRows(can), []);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [planId, setPlanId] = useState("all");

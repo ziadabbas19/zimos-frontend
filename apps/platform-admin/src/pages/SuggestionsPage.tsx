@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { Alert, Button } from "@store-builder/ui";
+import { CanLink } from "@/components/Can";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState, EmptyBlock } from "@/components/DataState";
 import { FilterChips, NativeSelect, SearchInput, TextAreaField } from "@/components/forms";
@@ -183,9 +183,9 @@ function SuggestionCard({ suggestion: s, canManage, onSaved }: { suggestion: Adm
           <p className="font-medium text-ink">{s.title}</p>
           <p className="text-xs text-ink-soft">
             {t[`category_${s.category}`]} · {t[`status_${s.status}`]} · {formatDateTime(s.createdAt)} · {t.from}{" "}
-            <Link to={`/workspaces/${s.workspace.id}`} className="hover:text-primary">
+            <CanLink permission={P.WORKSPACES_VIEW} to={`/workspaces/${s.workspace.id}`} className="hover:text-primary">
               {s.workspace.name ?? s.workspace.id}
-            </Link>{" "}
+            </CanLink>{" "}
             ({s.user ? s.user.fullName || s.user.email : t.deletedUser})
             {s.contact ? ` · ${t.contact}: ${s.contact}` : ""}
           </p>

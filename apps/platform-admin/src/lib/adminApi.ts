@@ -45,6 +45,8 @@ import type {
   AdminWorkspaceReferrals,
   AdminAgentLink,
   AdminAgentLinkInput,
+  AdminPlatformRole,
+  AdminRoleInput,
   AdminRolesResponse,
   AdminAnnouncement,
   AdminAnnouncementInput,
@@ -97,6 +99,7 @@ import type {
 import { apiClient } from "./apiClient";
 import { ApiError, getErrorMessage } from "./errors";
 import { PLATFORM_CURRENCY } from "./format";
+import { P, type Can } from "./permissions";
 
 /**
  * A workspace overview row joined to its full subscription record.
@@ -120,7 +123,9 @@ export interface AdminSubscriptionRow extends AdminSubscription {
   currency: string;
 }
 
-async function planCurrencies(): Promise<Map<string, string>> {
+/** Asked only of an account that can read the plans; anyone else gets the default currency. */
+async function planCurrencies(can: Can): Promise<Map<string, string>> {
+  if (!can(P.PLANS_VIEW)) return new Map();
   const plans = await apiClient.adminListPlans().catch(() => [] as AdminPlan[]);
   return new Map(plans.map((p) => [p.id, p.currency]));
 }
@@ -140,15 +145,16 @@ function withCurrency(
 /**
  * `GET /admin/workspaces` + `GET /admin/subscriptions`, joined on workspaceId.
  *
- * The subscriptions call is allowed to fail on its own: the workspace list is
- * still worth showing without billing columns, so a rejection here degrades to
- * `subscription: null` rather than failing the whole page.
+ * The subscriptions call is allowed to fail on its own, and is not made for an
+ * account that can't read them: the workspace list is still worth showing
+ * without billing columns, so either way this degrades to `subscription: null`
+ * rather than failing the whole page.
  */
-export async function listWorkspaceRows(): Promise<AdminWorkspaceRow[]> {
+export async function listWorkspaceRows(can: Can): Promise<AdminWorkspaceRow[]> {
   const [workspaces, subscriptions, currencies] = await Promise.all([
     apiClient.adminListWorkspaces(),
-    apiClient.adminListSubscriptions().catch(() => [] as AdminSubscription[]),
-    planCurrencies(),
+    can(P.SUBSCRIPTIONS_VIEW) ? apiClient.adminListSubscriptions().catch(() => [] as AdminSubscription[]) : ([] as AdminSubscription[]),
+    planCurrencies(can),
   ]);
 
   const byWorkspace = new Map<string, AdminSubscriptionRow>();
@@ -167,10 +173,10 @@ export async function listWorkspaceRows(): Promise<AdminWorkspaceRow[]> {
  * Name/address search over the workspace list. The endpoint takes no `search`
  * parameter, so the filtering happens here over the full list.
  */
-export async function searchWorkspaces(query: string, limit = 8): Promise<AdminWorkspaceRow[]> {
+export async function searchWorkspaces(query: string, can: Can, limit = 8): Promise<AdminWorkspaceRow[]> {
   const q = query.trim().toLowerCase();
   if (!q) return [];
-  const rows = await listWorkspaceRows();
+  const rows = await listWorkspaceRows(can);
   return rows
     .filter(
       ({ workspace }) =>
@@ -179,8 +185,8 @@ export async function searchWorkspaces(query: string, limit = 8): Promise<AdminW
     .slice(0, limit);
 }
 
-export async function getWorkspaceRow(workspaceId: string): Promise<AdminWorkspaceRow | null> {
-  const rows = await listWorkspaceRows();
+export async function getWorkspaceRow(workspaceId: string, can: Can): Promise<AdminWorkspaceRow | null> {
+  const rows = await listWorkspaceRows(can);
   return rows.find((r) => r.workspace.id === workspaceId) ?? null;
 }
 
@@ -229,11 +235,12 @@ export async function deletePlan(planId: string): Promise<void> {
 // --------------------------------------------------------------- subscriptions
 
 export async function listSubscriptions(
+  can: Can,
   params: { status?: string } = {}
 ): Promise<AdminSubscriptionRow[]> {
   const [subscriptions, currencies] = await Promise.all([
     apiClient.adminListSubscriptions(params),
-    planCurrencies(),
+    planCurrencies(can),
   ]);
   return withCurrency(subscriptions, currencies);
 }
@@ -409,6 +416,18 @@ export function updateTicket(
 
 export function listRoles(): Promise<AdminRolesResponse> {
   return apiClient.adminListRoles();
+}
+
+export function createRole(payload: AdminRoleInput): Promise<AdminPlatformRole> {
+  return apiClient.adminCreateRole(payload);
+}
+
+export function updateRole(roleKey: string, payload: Partial<AdminRoleInput>): Promise<AdminPlatformRole> {
+  return apiClient.adminUpdateRole(roleKey, payload);
+}
+
+export async function deleteRole(roleKey: string): Promise<void> {
+  await apiClient.adminDeleteRole(roleKey);
 }
 
 export function listAdmins(): Promise<AdminPlatformAdmin[]> {
@@ -1333,15 +1352,18 @@ export function endpointReport(
  * explicitly unavailable.
  *
  * The workspace list is fetched either way, because recent signups are derived
- * from it in both modes and the endpoint does not carry them.
+ * from it in both modes and the endpoint does not carry them — except for an
+ * account that can open the overview but not the stores, which gets the
+ * endpoint's figures alone.
  */
-export async function loadOverview(): Promise<OverviewReport> {
+export async function loadOverview(can: Can): Promise<OverviewReport> {
+  const canReadStores = can(P.WORKSPACES_VIEW);
   // Started before the overview call so the fallback does not pay for a second
   // round trip it could have overlapped. No stray handler is needed to keep
   // this from becoming an unhandled rejection on the rethrow path below, where
   // it is never awaited: `Promise.all` subscribes to every input the moment it
   // is called, so this promise is already observed whichever one rejects first.
-  const rowsPromise = listWorkspaceRows();
+  const rowsPromise = canReadStores ? listWorkspaceRows(can) : Promise.resolve([] as AdminWorkspaceRow[]);
 
   try {
     const [overview, rows] = await Promise.all([apiClient.adminGetOverview(), rowsPromise]);
@@ -1353,6 +1375,7 @@ export async function loadOverview(): Promise<OverviewReport> {
     // the same way a moment later. The /admin router guards before routing,
     // so a non-admin gets 403 even for endpoints that do not exist.
     if (err instanceof ApiError && (err.status === 401 || err.status === 403)) throw err;
+    if (!canReadStores) throw err;
     return deriveReport(await rowsPromise, getErrorMessage(err));
   }
 }

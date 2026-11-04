@@ -15,7 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 import { fmt, getIntlLocale, useLocale, useT } from "@/i18n/LocaleContext";
 import { useAsync } from "@/lib/useAsync";
 import { ApiError, getErrorMessage } from "@/lib/errors";
-import { P } from "@/lib/permissions";
+import { P, PAYMENT_METHODS_PAGE } from "@/lib/permissions";
 import * as api from "@/lib/platformSettingsApi";
 import {
   SETTINGS_GROUPS,
@@ -215,7 +215,8 @@ function GroupEditor<G extends SettingsGroup>({
             </>
           }
         >
-          <fieldset disabled={!canManage} className="space-y-4">
+          {/* Read-only for an account that can't save: the values show, the controls that change them don't. */}
+          <fieldset disabled={!canManage} className="space-y-4 [&:disabled_button]:hidden">
             <legend className="sr-only">{groupName}</legend>
             <GroupFields group={group} value={value} errors={errors} rules={rules} onChange={onChange} />
           </fieldset>
@@ -688,7 +689,7 @@ function PaymentAccountPanel() {
   return (
     <Panel title={t.paymentTitle}>
       <p className="text-sm text-ink-soft">{t.paymentBody}</p>
-      {can(P.PAYMENTS_RECORD) && (
+      {can(PAYMENT_METHODS_PAGE) && (
         <Link to="/payment-methods" className={`${buttonVariants({ variant: "outline", size: "sm" })} mt-4`}>
           {t.openPaymentMethods}
         </Link>

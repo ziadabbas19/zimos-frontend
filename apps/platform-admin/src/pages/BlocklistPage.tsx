@@ -15,6 +15,8 @@ import { FilterChips, SearchInput, SelectField, TextAreaField, TextField } from 
 import { Mono, Panel, Td, Th } from "@/components/Panel";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
+import { useAuth } from "@/context/AuthContext";
+import { P } from "@/lib/permissions";
 import { useAsync } from "@/lib/useAsync";
 import { getErrorMessage } from "@/lib/errors";
 import * as adminApi from "@/lib/adminApi";
@@ -55,6 +57,8 @@ function fromDateTimeInput(value: string): string | null {
 
 export function BlocklistPage() {
   const toast = useToast();
+  const { can } = useAuth();
+  const canManage = can(P.RISK_MANAGE);
   const [type, setType] = useState<TypeFilter>("all");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [query, setQuery] = useState("");
@@ -92,9 +96,11 @@ export function BlocklistPage() {
         title="Blocklist"
         description="Phones, emails and addresses blocked from ordering in every workspace."
         actions={
-          <Button onClick={() => setCreating(true)}>
-            <Plus /> Block identifier
-          </Button>
+          canManage && (
+            <Button onClick={() => setCreating(true)}>
+              <Plus /> Block identifier
+            </Button>
+          )
         }
       />
 
@@ -124,9 +130,11 @@ export function BlocklistPage() {
                   <Th>Expires</Th>
                   <Th>Added</Th>
                   <Th>Status</Th>
-                  <Th className="text-end">
-                    <span className="sr-only">Actions</span>
-                  </Th>
+                  {canManage && (
+                    <Th className="text-end">
+                      <span className="sr-only">Actions</span>
+                    </Th>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -158,14 +166,16 @@ export function BlocklistPage() {
                         {entry.status === "active" ? "Blocking" : "Expired"}
                       </StatusBadge>
                     </Td>
-                    <Td className="text-end whitespace-nowrap">
-                      <Button size="icon-sm" variant="ghost" aria-label={`Edit ${entry.label}`} onClick={() => setEditing(entry)}>
-                        <Pencil />
-                      </Button>
-                      <Button size="icon-sm" variant="ghost" aria-label={`Unblock ${entry.label}`} onClick={() => setDeleting(entry)}>
-                        <Trash2 className="text-danger" />
-                      </Button>
-                    </Td>
+                    {canManage && (
+                      <Td className="text-end whitespace-nowrap">
+                        <Button size="icon-sm" variant="ghost" aria-label={`Edit ${entry.label}`} onClick={() => setEditing(entry)}>
+                          <Pencil />
+                        </Button>
+                        <Button size="icon-sm" variant="ghost" aria-label={`Unblock ${entry.label}`} onClick={() => setDeleting(entry)}>
+                          <Trash2 className="text-danger" />
+                        </Button>
+                      </Td>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>

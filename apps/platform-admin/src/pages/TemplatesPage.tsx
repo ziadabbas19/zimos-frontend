@@ -18,6 +18,8 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Toggle } from "@/components/Toggle";
 import { useToast } from "@/components/Toast";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
+import { useAuth } from "@/context/AuthContext";
+import { P } from "@/lib/permissions";
 import { useAsync } from "@/lib/useAsync";
 import { getErrorMessage } from "@/lib/errors";
 import * as adminApi from "@/lib/adminApi";
@@ -195,6 +197,8 @@ export function TemplatesPage() {
   const tx = useT(STRINGS);
   const kindLabel: Record<Kind, string> = { store: tx.kindStore, funnel: tx.kindFunnel, landing: tx.kindLanding };
   const toast = useToast();
+  const { can } = useAuth();
+  const canManage = can(P.TEMPLATES_MANAGE);
   const [kind, setKind] = useState<KindFilter>("all");
   const { data, loading, error, refresh, setData } = useAsync(
     () => adminApi.listTemplates(kind === "all" ? {} : { kind }),
@@ -241,9 +245,11 @@ export function TemplatesPage() {
         title={tx.title}
         description={tx.description}
         actions={
-          <Button onClick={() => setEditing("new")}>
-            <Plus /> {tx.newTemplate}
-          </Button>
+          canManage && (
+            <Button onClick={() => setEditing("new")}>
+              <Plus /> {tx.newTemplate}
+            </Button>
+          )
         }
       />
       <FilterChips options={options} value={kind} onChange={setKind} className="mb-4" />
@@ -319,24 +325,30 @@ export function TemplatesPage() {
                       </span>
                     </Td>
                     <Td className="text-end whitespace-nowrap">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={publishing.has(t.id) || (!t.isPublished && t.activeVersion === null)}
-                        title={!t.isPublished && t.activeVersion === null ? tx.activateFirst : undefined}
-                        onClick={() => void togglePublished(t)}
-                      >
-                        {t.isPublished ? <EyeOff /> : <Eye />} {t.isPublished ? tx.unpublish : tx.publish}
-                      </Button>
+                      {canManage && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={publishing.has(t.id) || (!t.isPublished && t.activeVersion === null)}
+                          title={!t.isPublished && t.activeVersion === null ? tx.activateFirst : undefined}
+                          onClick={() => void togglePublished(t)}
+                        >
+                          {t.isPublished ? <EyeOff /> : <Eye />} {t.isPublished ? tx.unpublish : tx.publish}
+                        </Button>
+                      )}
                       <Button size="icon-sm" variant="ghost" aria-label={fmt(tx.versionsOf, { name: t.name })} onClick={() => setVersionsOf(t)}>
                         <History />
                       </Button>
-                      <Button size="icon-sm" variant="ghost" aria-label={fmt(tx.editNamed, { name: t.name })} onClick={() => setEditing(t)}>
-                        <Pencil />
-                      </Button>
-                      <Button size="icon-sm" variant="ghost" aria-label={fmt(tx.deleteNamed, { name: t.name })} onClick={() => setDeleting(t)}>
-                        <Trash2 className="text-danger" />
-                      </Button>
+                      {canManage && (
+                        <>
+                          <Button size="icon-sm" variant="ghost" aria-label={fmt(tx.editNamed, { name: t.name })} onClick={() => setEditing(t)}>
+                            <Pencil />
+                          </Button>
+                          <Button size="icon-sm" variant="ghost" aria-label={fmt(tx.deleteNamed, { name: t.name })} onClick={() => setDeleting(t)}>
+                            <Trash2 className="text-danger" />
+                          </Button>
+                        </>
+                      )}
                     </Td>
                   </TableRow>
                 ))}
@@ -360,6 +372,7 @@ export function TemplatesPage() {
       {versionsOf && (
         <VersionsDrawer
           template={versionsOf}
+          canManage={canManage}
           onClose={() => setVersionsOf(null)}
           onChanged={() => void refresh({ silent: true })}
         />
@@ -525,10 +538,12 @@ function TemplateModal({
 
 function VersionsDrawer({
   template,
+  canManage,
   onClose,
   onChanged,
 }: {
   template: Template;
+  canManage: boolean;
   onClose: () => void;
   onChanged: () => void;
 }) {
@@ -597,9 +612,11 @@ function VersionsDrawer({
               {tx.notInGallery}
             </StatusBadge>
           )}
-          <Button size="sm" onClick={() => void startAdding()} disabled={adding !== null}>
-            <Plus /> {tx.newVersion}
-          </Button>
+          {canManage && (
+            <Button size="sm" onClick={() => void startAdding()} disabled={adding !== null}>
+              <Plus /> {tx.newVersion}
+            </Button>
+          )}
         </div>
 
         {adding !== null && (
@@ -646,13 +663,15 @@ function VersionsDrawer({
                 <Button size="sm" variant="ghost" onClick={() => void view(v.id)}>
                   {tx.view}
                 </Button>
-                <Toggle
-                  label={fmt(tx.versionActive, { version: v.version })}
-                  hideLabel
-                  checked={v.isActive}
-                  disabled={busy === v.id}
-                  onChange={(on) => void toggle(v.id, on)}
-                />
+                {canManage && (
+                  <Toggle
+                    label={fmt(tx.versionActive, { version: v.version })}
+                    hideLabel
+                    checked={v.isActive}
+                    disabled={busy === v.id}
+                    onChange={(on) => void toggle(v.id, on)}
+                  />
+                )}
               </li>
             ))}
           </ul>

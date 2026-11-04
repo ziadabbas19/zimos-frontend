@@ -10,6 +10,8 @@ import { Mono, Panel } from "@/components/Panel";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Toggle } from "@/components/Toggle";
 import { useToast } from "@/components/Toast";
+import { useAuth } from "@/context/AuthContext";
+import { P } from "@/lib/permissions";
 import { useAsync } from "@/lib/useAsync";
 import { getErrorMessage } from "@/lib/errors";
 import * as adminApi from "@/lib/adminApi";
@@ -26,8 +28,12 @@ function toInput(flag: FeatureFlag): FeatureFlagInput {
 
 export function FeatureFlagsPage() {
   const toast = useToast();
+  const { can } = useAuth();
+  const canManage = can(P.FEATURE_FLAGS_MANAGE);
+  // Targeting picks from the store list, which is its own permission.
+  const canTarget = canManage && can(P.WORKSPACES_VIEW);
   const { data, loading, error, refresh, setData } = useAsync(
-    () => Promise.all([adminApi.listFlags(), adminApi.listWorkspaceRows()]),
+    () => Promise.all([adminApi.listFlags(), canTarget ? adminApi.listWorkspaceRows(can) : Promise.resolve([] as AdminWorkspaceRow[])]),
     []
   );
   const [query, setQuery] = useState("");
@@ -56,9 +62,11 @@ export function FeatureFlagsPage() {
         title="Feature flags"
         description="Gradual rollouts and per-workspace targeting."
         actions={
-          <Button onClick={() => setCreating(true)} disabled={!data}>
-            <Plus /> New flag
-          </Button>
+          canManage && (
+            <Button onClick={() => setCreating(true)} disabled={!data}>
+              <Plus /> New flag
+            </Button>
+          )
         }
       />
       <DataState loading={loading} error={error} onRetry={() => void refresh()}>
@@ -77,8 +85,9 @@ export function FeatureFlagsPage() {
                 <FlagRow
                   key={flag.id}
                   flag={flag}
+                  canManage={canManage}
                   onSaved={upsert}
-                  onTargets={() => setTargeting(flag)}
+                  onTargets={canTarget ? () => setTargeting(flag) : undefined}
                   onDelete={() => setDeleting(flag)}
                 />
               ))}
@@ -133,13 +142,15 @@ export function FeatureFlagsPage() {
 
 function FlagRow({
   flag,
+  canManage,
   onSaved,
   onTargets,
   onDelete,
 }: {
   flag: FeatureFlag;
+  canManage: boolean;
   onSaved: (f: FeatureFlag) => void;
-  onTargets: () => void;
+  onTargets?: () => void;
   onDelete: () => void;
 }) {
   const toast = useToast();
@@ -187,44 +198,56 @@ function FlagRow({
 
       <div>
         <div className="flex items-center justify-between text-xs">
-          <label htmlFor={`rollout-${flag.id}`} className="font-medium text-ink-soft">
-            Rollout
-          </label>
+          {canManage ? (
+            <label htmlFor={`rollout-${flag.id}`} className="font-medium text-ink-soft">
+              Rollout
+            </label>
+          ) : (
+            <span className="font-medium text-ink-soft">Rollout</span>
+          )}
           <span className="tabular font-semibold text-ink">{rollout}%</span>
         </div>
-        <input
-          id={`rollout-${flag.id}`}
-          type="range"
-          min={0}
-          max={100}
-          step={5}
-          value={rollout}
-          disabled={!flag.enabled || saving}
-          onChange={(e) => setRollout(Number(e.target.value))}
-          onPointerUp={commitRollout}
-          onKeyUp={(e) => {
-            if (e.key.startsWith("Arrow") || e.key === "Home" || e.key === "End" || e.key.startsWith("Page")) commitRollout();
-          }}
-          className="range-primary mt-1 w-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-        />
-        <p className="text-xs text-ink-soft">{flag.enabled ? "Targeted workspaces always receive the flag." : "Enable the flag to roll out."}</p>
+        {canManage && (
+          <>
+            <input
+              id={`rollout-${flag.id}`}
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={rollout}
+              disabled={!flag.enabled || saving}
+              onChange={(e) => setRollout(Number(e.target.value))}
+              onPointerUp={commitRollout}
+              onKeyUp={(e) => {
+                if (e.key.startsWith("Arrow") || e.key === "Home" || e.key === "End" || e.key.startsWith("Page")) commitRollout();
+              }}
+              className="range-primary mt-1 w-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+            />
+            <p className="text-xs text-ink-soft">{flag.enabled ? "Targeted workspaces always receive the flag." : "Enable the flag to roll out."}</p>
+          </>
+        )}
       </div>
 
-      <div className="flex items-center gap-2 lg:justify-end">
-        <Toggle
-          label={`${flag.key} enabled`}
-          hideLabel
-          checked={flag.enabled}
-          disabled={saving}
-          onChange={(v) => void persist({ enabled: v }, `${flag.key} turned ${v ? "on" : "off"}.`)}
-        />
-        <Button size="sm" variant="outline" onClick={onTargets}>
-          <Target /> Targets
-        </Button>
-        <Button size="icon-sm" variant="ghost" aria-label={`Delete ${flag.key}`} onClick={onDelete}>
-          <Trash2 className="text-danger" />
-        </Button>
-      </div>
+      {canManage && (
+        <div className="flex items-center gap-2 lg:justify-end">
+          <Toggle
+            label={`${flag.key} enabled`}
+            hideLabel
+            checked={flag.enabled}
+            disabled={saving}
+            onChange={(v) => void persist({ enabled: v }, `${flag.key} turned ${v ? "on" : "off"}.`)}
+          />
+          {onTargets && (
+            <Button size="sm" variant="outline" onClick={onTargets}>
+              <Target /> Targets
+            </Button>
+          )}
+          <Button size="icon-sm" variant="ghost" aria-label={`Delete ${flag.key}`} onClick={onDelete}>
+            <Trash2 className="text-danger" />
+          </Button>
+        </div>
+      )}
     </li>
   );
 }

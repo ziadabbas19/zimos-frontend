@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { Alert, Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import type { AdminWalletRefund, WalletRefundStatus } from "@store-builder/api-client";
+import { CanLink } from "@/components/Can";
 import { PageHeader } from "@/components/PageHeader";
+import { P } from "@/lib/permissions";
 import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { FilterChips, TextField } from "@/components/forms";
 import { Modal } from "@/components/Modal";
@@ -183,9 +184,9 @@ export function WalletRefundsPage() {
                     <TableRow key={r.id}>
                       <Td>
                         {r.workspace ? (
-                          <Link to={`/workspaces/${r.workspace.id}`} className="font-medium text-ink hover:text-primary">
+                          <CanLink permission={P.WORKSPACES_VIEW} to={`/workspaces/${r.workspace.id}`} className="font-medium text-ink hover:text-primary">
                             {r.workspace.name}
-                          </Link>
+                          </CanLink>
                         ) : (
                           t.deletedStore
                         )}

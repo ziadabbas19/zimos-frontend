@@ -17,7 +17,7 @@ import { PlatformSettingsPage } from "./PlatformSettingsPage";
 const auth = vi.hoisted(() => ({ held: ["platform_settings.view", "platform_settings.manage", "payments.record"] as string[] }));
 
 vi.mock("@/context/AuthContext", () => ({
-  useAuth: () => ({ can: (key: string) => auth.held.includes(key) }),
+  useAuth: () => ({ can: (key: string | readonly string[]) => (typeof key === "string" ? [key] : key).some((k) => auth.held.includes(k)) }),
 }));
 
 vi.mock("@/lib/platformSettingsApi", async (importOriginal) => {

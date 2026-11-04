@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Alert, Button, cn } from "@store-builder/ui";
 import type { AdminPaymentProofReview } from "@store-builder/api-client";
+import { CanLink } from "@/components/Can";
 import { PageHeader } from "@/components/PageHeader";
+import { P } from "@/lib/permissions";
 import { DataState } from "@/components/DataState";
 import { Panel, Mono } from "@/components/Panel";
 import { Status } from "@/components/StatusBadge";
@@ -59,9 +61,9 @@ function Review({
         <Panel title="What it pays">
           <dl className="grid gap-3 text-sm sm:grid-cols-2">
             <Item label="Store">
-              <Link to={`/workspaces/${proof.workspace.id}`} className="font-medium text-ink hover:text-primary">
+              <CanLink permission={P.WORKSPACES_VIEW} to={`/workspaces/${proof.workspace.id}`} className="font-medium text-ink hover:text-primary">
                 {proof.workspace.name ?? "Deleted store"}
-              </Link>
+              </CanLink>
             </Item>
             <Item label="For">{proof.purpose === "invoice" ? "Subscription invoice" : "Balance top-up"}</Item>
             {review.wallet && <Item label="Balance now">{formatMinorMoneyExact(review.wallet.balance, review.wallet.currency)}</Item>}
