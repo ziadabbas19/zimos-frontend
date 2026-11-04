@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
+import { renderHook } from "@testing-library/react";
 import {
+  dashboardGetHomeShortcuts,
   dashboardGetShortcuts,
   inboxListConversations,
   notificationsSummary,
@@ -10,6 +12,7 @@ import {
 } from "@store-builder/api-client";
 import { bootstrapPaths, resetBootstrap, startBootstrap } from "@/lib/bootstrap";
 import { CURRENT_WORKSPACE_KEY } from "@/lib/currentWorkspace";
+import { forgetHomeShortcuts, useHomeShortcuts } from "@/lib/homeShortcuts";
 import { resetRequestCache } from "@/lib/requestCache";
 import { INBOX_UNREAD_PARAMS } from "@/lib/workCounts";
 
@@ -78,6 +81,7 @@ function serve(bootstrap: () => Response) {
 beforeEach(() => {
   resetRequestCache();
   resetBootstrap();
+  forgetHomeShortcuts();
   localStorage.setItem("sb.accessToken", "access-1");
   localStorage.setItem("sb.refreshToken", "refresh-1");
   localStorage.setItem(CURRENT_WORKSPACE_KEY, WS);
@@ -109,8 +113,56 @@ describe("the dashboard bootstrap", () => {
   });
 
   it("names exactly the paths the screens read", () => {
-    expect(new Set(bootstrapPaths(WS)).size).toBe(9);
+    expect(new Set(bootstrapPaths(WS)).size).toBe(10);
     expect(bootstrapPaths(WS)).toContain(`/workspaces/${WS}/inbox/conversations?status=open&unread=true&limit=1`);
+    expect(bootstrapPaths(WS)).toContain(`/workspaces/${WS}/home-shortcuts`);
+  });
+
+  describe("the Home shortcuts row", () => {
+    const row = { customized: true, shortcuts: ["customers", "orders"], defaults: ["orders"], available: ["customers", "orders"], max: 12 };
+
+    it("answers its read with the one request", async () => {
+      serve(() => json(200, { bootstrap: boot({ homeShortcuts: row }) }));
+      await startBootstrap(client);
+      expect(await dashboardGetHomeShortcuts(client, WS)).toEqual(row);
+      expect(paths()).toEqual([`/workspaces/${WS}/bootstrap`]);
+    });
+
+    it("makes a read that comes first wait for it", async () => {
+      let answer!: (r: Response) => void;
+      fetchMock.mockImplementation(() => new Promise<Response>((resolve) => (answer = resolve)));
+      const started = startBootstrap(client);
+      const read = dashboardGetHomeShortcuts(client, WS);
+      await Promise.resolve();
+      answer(json(200, { bootstrap: boot({ homeShortcuts: row }) }));
+      await started;
+      expect(await read).toEqual(row);
+      expect(paths()).toEqual([`/workspaces/${WS}/bootstrap`]);
+    });
+
+    it("is kept for Home however late it opens, with nothing more asked", async () => {
+      serve(() => json(200, { bootstrap: boot({ homeShortcuts: row }) }));
+      await startBootstrap(client);
+      resetRequestCache();
+      const { result } = renderHook(() => useHomeShortcuts(WS, "user_1"));
+      expect(result.current.answer).toEqual(row);
+      expect(paths()).toEqual([`/workspaces/${WS}/bootstrap`]);
+    });
+
+    it("an API without the part hands nothing over, and its read goes to its own endpoint", async () => {
+      serve(() => json(200, { bootstrap: boot() }));
+      await startBootstrap(client);
+      expect(await dashboardGetHomeShortcuts(client, WS)).toBeUndefined();
+      expect(paths()).toEqual([`/workspaces/${WS}/bootstrap`, `/workspaces/${WS}/home-shortcuts`]);
+    });
+
+    it("a sign-out forgets it", async () => {
+      serve(() => json(200, { bootstrap: boot({ homeShortcuts: row }) }));
+      await startBootstrap(client);
+      client.clearSession();
+      const { result } = renderHook(() => useHomeShortcuts(WS, "user_1"));
+      expect(result.current.answer).toBeNull();
+    });
   });
 
   it("makes a read that comes first wait for it instead of asking twice", async () => {

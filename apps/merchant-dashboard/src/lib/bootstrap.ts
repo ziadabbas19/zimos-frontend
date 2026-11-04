@@ -1,6 +1,7 @@
 import { dashboardBootstrap, type ApiClient, type DashboardBootstrap } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { storedWorkspaceId } from "@/lib/currentWorkspace";
+import { seedHomeShortcuts } from "@/lib/homeShortcuts";
 import { coverWhile, prime } from "@/lib/requestCache";
 
 /**
@@ -37,6 +38,7 @@ export function bootstrapAnswers(workspaceId: string, boot: DashboardBootstrap):
     [`${ws}/notifications/summary`, boot.notifications],
     [`${ws}/shortcuts`, { shortcuts: boot.shortcuts }],
   ];
+  if (boot.homeShortcuts) answers.push([`${ws}/home-shortcuts`, { homeShortcuts: boot.homeShortcuts }]);
   if (boot.confirmationCounts) answers.push([`${ws}/confirmation-tasks/counts`, { counts: boot.confirmationCounts }]);
   if (boot.inboxUnread) answers.push([INBOX_UNREAD_PATH(workspaceId), boot.inboxUnread]);
   return answers.filter(([, body]) => body !== undefined && body !== null);
@@ -53,6 +55,7 @@ export function bootstrapPaths(workspaceId: string): string[] {
     `${ws}/plan-features`,
     `${ws}/notifications/summary`,
     `${ws}/shortcuts`,
+    `${ws}/home-shortcuts`,
     `${ws}/confirmation-tasks/counts`,
     INBOX_UNREAD_PATH(workspaceId),
   ];
@@ -80,6 +83,8 @@ export function startBootstrap(client: ApiClient = apiClient): Promise<void> | n
   const done = dashboardBootstrap(client, workspaceId).then(
     (boot) => {
       for (const [path, body] of bootstrapAnswers(workspaceId, boot)) prime(path, body);
+      // Home may open long after a primed answer is gone: its row is kept for the session.
+      if (boot.homeShortcuts) seedHomeShortcuts(workspaceId, boot.homeShortcuts);
     },
     () => {
       // Every screen asks its own endpoint, as it did before the bootstrap.

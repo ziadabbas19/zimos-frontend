@@ -1,7 +1,7 @@
 import { ApiClient } from "@store-builder/api-client";
 import { draftRefusal, holdForGoLive } from "@/lib/goLive";
 import { emailRefusal, holdForEmailConfirm } from "@/lib/emailConfirm";
-import { forgetAll, sharedGet } from "@/lib/requestCache";
+import { endSession, forgetAll, sharedGet } from "@/lib/requestCache";
 
 /** Base URL every API call is built on. Exported so non-ApiClient flows (e.g.
  * the Google OAuth redirect) can hit the same backend. */
@@ -41,7 +41,7 @@ async function sendWithHolds<T>(path: string, opts?: Parameters<typeof send>[1])
 // Anything else forgets what is kept, before it goes and once it is answered.
 const clearSession = apiClient.clearSession.bind(apiClient);
 apiClient.clearSession = () => {
-  forgetAll();
+  endSession();
   clearSession();
 };
 apiClient.request = async function request<T>(path: string, opts?: Parameters<typeof send>[1]): Promise<T> {

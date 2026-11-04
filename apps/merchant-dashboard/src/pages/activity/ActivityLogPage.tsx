@@ -440,6 +440,8 @@ const VERBS_AR: Record<string, string> = {
   invite_resend: "إعادة إرسال الدعوة",
   role_change: "تغيير الدور",
   shortcuts_set: "تعديل الاختصارات",
+  home_shortcuts_set: "تعديل اختصارات الصفحة الرئيسية",
+  home_shortcuts_reset: "استعادة اختصارات الصفحة الرئيسية",
   rotate_secret: "تغيير مفتاح التوقيع",
   auto_disable: "إيقاف تلقائي",
   resend_orders: "إعادة إرسال الطلبات",

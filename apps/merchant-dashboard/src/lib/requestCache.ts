@@ -163,6 +163,19 @@ export async function sharedGet<T>(path: string, send: () => Promise<T>): Promis
   }
 }
 
+const sessionListeners = new Set<() => void>();
+
+/** Runs `listener` when the session ends, for what a module keeps longer than the answers here (lib/homeShortcuts). */
+export function onSessionEnd(listener: () => void): void {
+  sessionListeners.add(listener);
+}
+
+/** The session ended (lib/apiClient's clearSession): nothing of this account stays in memory for the next one. */
+export function endSession(): void {
+  forgetAll();
+  sessionListeners.forEach((listener) => listener());
+}
+
 /** Test seam: forget everything, the cover too. */
 export function resetRequestCache(): void {
   forgetAll();
