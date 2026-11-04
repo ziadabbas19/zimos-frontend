@@ -54,7 +54,7 @@ export default async function PricingPage({ params }: Params) {
     <>
       <SiteHeader />
       <main id="main">
-        <section aria-labelledby="pricing-page-heading" className="bg-paper py-16 sm:py-24">
+        <section aria-labelledby="pricing-page-heading" className="bg-paper py-16 sm:py-24" data-section="pricing">
           <div className={container}>
             <div className="mx-auto max-w-2xl text-center">
               <p className="text-sm font-semibold text-primary">{dict.pricing.kicker}</p>

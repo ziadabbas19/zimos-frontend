@@ -35,7 +35,7 @@ export function Hero({ copy }: { copy: Dictionary["hero"] }) {
   preload(STORE_SHOTS[HERO_LOOKS[0]].desk, { as: "image", fetchPriority: "high", media: "(min-width: 601px)" });
 
   return (
-    <section className="lz-hero" aria-labelledby="lz-h1">
+    <section className="lz-hero" aria-labelledby="lz-h1" data-section="hero">
       <Backdrop id="lz-wave-hero" grid />
       <div className="lz-in lz-hero__grid">
         <div className="lz-hero__copy">

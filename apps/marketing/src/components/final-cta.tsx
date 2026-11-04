@@ -15,7 +15,7 @@ import { Arrow } from "./duo-icons";
  */
 export function FinalCta({ copy, phones = true }: { copy: Dictionary["finalCta"]; phones?: boolean }) {
   return (
-    <section className="lz-sec" aria-labelledby="final-cta-heading">
+    <section className="lz-sec" aria-labelledby="final-cta-heading" data-section="final-cta">
       <div className="lz-in">
         <div className={phones ? "lz-end lz-r" : "lz-end lz-end--plain lz-r"}>
           <Backdrop id="lz-wave-end" />
