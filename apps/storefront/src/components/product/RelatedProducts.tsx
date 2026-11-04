@@ -1,6 +1,7 @@
 import type { StorefrontProductDetail } from "@store-builder/api-client";
 import { ProductCard } from "@/components/ProductCard";
 import { createServerStorefrontApiClient } from "@/lib/serverApiClient";
+import { CARD_FIELDS } from "@/lib/cardFields";
 import { getDictionary, type Locale } from "@/lib/i18n";
 import { XsShopGrid } from "@/components/xs/XsShopGrid";
 
@@ -31,7 +32,8 @@ export async function RelatedProducts({
   const client = await createServerStorefrontApiClient();
   const collectionId = ((product as { collectionIds?: string[] }).collectionIds ?? [])[0];
   const others = async (params: { collectionId?: string }) =>
-    (await client.listStorefrontProducts(workspaceId, { ...params, limit: SHOWN + 1 }).catch(() => ({ products: [] }))).products.filter(
+    // A template's grid opens a quick view with the description.
+    (await client.listStorefrontProducts(workspaceId, { ...params, limit: SHOWN + 1, ...(look ? {} : CARD_FIELDS) }).catch(() => ({ products: [] }))).products.filter(
       (p) => p.id !== product.id
     );
   let products = collectionId ? await others({ collectionId }) : [];

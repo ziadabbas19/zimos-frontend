@@ -8,6 +8,7 @@ import { StoreLink } from "@/components/StoreRoute";
 import { btnPrimary, btnSecondary } from "@/components/ui";
 import { formatPrice, getDictionary, type Locale } from "@/lib/i18n";
 import { compareAtOf, defaultOfferOf, firstImage, needsProductPage, offerAppliesTo, priceOf } from "@/lib/product";
+import { CARD_FIELDS } from "@/lib/cardFields";
 import { createServerStorefrontApiClient } from "@/lib/serverApiClient";
 import { CartSummary } from "./CartSummary";
 import type { PageRendererFunnel } from "./PageRenderer";
@@ -32,10 +33,10 @@ function funnelHref(funnel: PageRendererFunnel | undefined): string | null {
  */
 
 /** The catalogue's first `limit` products; null when the call failed (not the same as "none"). */
-async function listProducts(workspaceId: string, limit: number): Promise<StorefrontProduct[] | null> {
+async function listProducts(workspaceId: string, limit: number, cards = false): Promise<StorefrontProduct[] | null> {
   try {
     const client = await createServerStorefrontApiClient();
-    const { products } = await client.listStorefrontProducts(workspaceId, { limit });
+    const { products } = await client.listStorefrontProducts(workspaceId, { limit, ...(cards ? CARD_FIELDS : {}) });
     return products;
   } catch {
     return null;
@@ -92,7 +93,7 @@ export async function ProductListElement({
 }) {
   const limit = num(props, "limit", 8, 1, 48);
   const columns = num(props, "columns", 4, 1, 6);
-  const products = await listProducts(workspaceId, limit);
+  const products = await listProducts(workspaceId, limit, true);
   if (!products) return null;
   if (products.length === 0) {
     return <EmptyBlock title={str(props, "title")} message={getDictionary(locale).renderer.emptyProducts} />;

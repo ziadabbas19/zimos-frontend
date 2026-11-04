@@ -5,6 +5,14 @@
  * dashboard's VITE_ switch and the API switch of the same name.
  */
 
+/**
+ * The lists a product card draws ask the API for cards only (`?fields=card`:
+ * no description, SEO or content blocks), so the page's HTML does not carry them
+ * for every card. Off, every list asks for the whole product, as before. Lists
+ * whose page reads a description (a template's quick view) always do.
+ */
+export const STORE_LIST_CARD_FIELDS_ENABLED = process.env.NEXT_PUBLIC_STORE_LIST_CARD_FIELDS_ENABLED === "true";
+
 /** Shopper accounts (sign-in, account pages, wishlist). Off, no shopper token is kept, read or sent. */
 export const SHOPPER_ACCOUNTS_ENABLED = process.env.NEXT_PUBLIC_SHOPPER_ACCOUNTS_ENABLED === "true";
 

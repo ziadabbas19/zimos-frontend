@@ -3588,7 +3588,7 @@ export class ApiClient {
 
   async listStorefrontProducts(
     workspaceId: string,
-    params: { collectionId?: string; tag?: string; search?: string; limit?: number; cursor?: string } = {}
+    params: { collectionId?: string; tag?: string; search?: string; limit?: number; cursor?: string; fields?: "card" } = {}
   ) {
     const query = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
@@ -3618,6 +3618,7 @@ export class ApiClient {
     query.set("page", String(params.page ?? 1));
     if (params.limit) query.set("limit", String(params.limit));
     if (params.facets) query.set("facets", "true");
+    if (params.fields) query.set("fields", params.fields);
     return this.request<StorefrontListing>(`/store/${workspaceId}/products?${query.toString()}`, { auth: false });
   }
 

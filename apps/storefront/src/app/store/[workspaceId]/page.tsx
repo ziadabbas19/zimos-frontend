@@ -10,6 +10,7 @@ import { StoreLink } from "@/components/StoreRoute";
 import { TrustStrip } from "@/components/TrustStrip";
 import { storeCards } from "@/lib/storePromises";
 import { btnPrimary, btnSecondary, container } from "@/components/ui";
+import { CARD_FIELDS } from "@/lib/cardFields";
 import { BLOG_ENABLED } from "@/lib/features";
 import { getDictionary } from "@/lib/i18n";
 import { createServerStorefrontApiClient } from "@/lib/serverApiClient";
@@ -84,7 +85,7 @@ export default async function StoreHomePage({
 
   const activeCollection = typeof query.collection === "string" ? query.collection : undefined;
   const [productList, collections] = await Promise.all([
-    client.listStorefrontProducts(workspaceId, { limit: 24, collectionId: activeCollection }),
+    client.listStorefrontProducts(workspaceId, { limit: 24, collectionId: activeCollection, ...CARD_FIELDS }),
     client.listStorefrontCollections(workspaceId).catch((): StorefrontCollection[] => []),
   ]);
 

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { StorefrontProduct } from "@store-builder/api-client";
 import { createStorefrontApiClient } from "./apiClient";
+import { CARD_FIELDS } from "./cardFields";
 import { LOCALE_COOKIE } from "./localeCookie";
 import { readStorePreviewCookie } from "./storePreview";
 
@@ -24,7 +25,7 @@ export function fetchCatalog(workspaceId: string, limit: number): Promise<Storef
   const hit = shared.get(key);
   if (hit && Date.now() - hit.at < CATALOG_REUSE_MS) return hit.products;
   const products = createStorefrontApiClient()
-    .listStorefrontProducts(workspaceId, { limit })
+    .listStorefrontProducts(workspaceId, { limit, ...CARD_FIELDS })
     .then((res) => res.products);
   shared.set(key, { at: Date.now(), products });
   products.catch(() => {

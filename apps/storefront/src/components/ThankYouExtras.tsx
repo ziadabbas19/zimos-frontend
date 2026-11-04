@@ -7,6 +7,7 @@ import {
   type ThankYouPageSettings,
 } from "@store-builder/api-client";
 import { createStorefrontApiClient } from "@/lib/apiClient";
+import { CARD_FIELDS } from "@/lib/cardFields";
 import { useStore } from "@/lib/StoreContext";
 import { ProductCard } from "./ProductCard";
 import { card } from "./ui";
@@ -47,7 +48,7 @@ export function ThankYouProducts({ workspaceId, collectionId }: { workspaceId: s
   useEffect(() => {
     let cancelled = false;
     createStorefrontApiClient()
-      .listStorefrontProducts(workspaceId, { collectionId, limit: 4 })
+      .listStorefrontProducts(workspaceId, { collectionId, limit: 4, ...CARD_FIELDS })
       .then((list) => {
         if (!cancelled) setProducts(list.products.slice(0, 4));
       })

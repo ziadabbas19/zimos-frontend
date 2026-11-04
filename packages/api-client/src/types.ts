@@ -749,6 +749,8 @@ export interface StorefrontListingParams {
   page?: number;
   limit?: number;
   facets?: boolean;
+  /** "card": only what a product card draws, no description, SEO or content blocks. */
+  fields?: "card";
 }
 
 export interface StorefrontFacets {

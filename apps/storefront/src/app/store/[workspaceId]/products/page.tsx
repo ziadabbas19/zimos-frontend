@@ -19,6 +19,7 @@ import { StoreImage } from "@/components/StoreImage";
 import { StoreLink } from "@/components/StoreRoute";
 import { btnSecondary, container, focusRing } from "@/components/ui";
 import { activeFilterCount, catalogHref, readCatalogState, toListingParams, type CatalogState } from "@/lib/catalogQuery";
+import { CARD_FIELDS } from "@/lib/cardFields";
 import { getDictionary, type Dictionary, type Locale } from "@/lib/i18n";
 import { createServerStorefrontApiClient } from "@/lib/serverApiClient";
 import { getStoreLocale } from "@/lib/storeLocale";
@@ -104,6 +105,8 @@ export default async function ProductsPage({ params, searchParams }: { params: P
       ...toListingParams(state, catalog.default_sort),
       limit: PAGE_SIZE,
       facets: catalog.sidebar_enabled,
+      // A template's shop grid opens a quick view with the description.
+      ...(readXsStorePages(store.themeSettings) ? {} : CARD_FIELDS),
     });
   } catch (err) {
     // A collection that no longer exists.
