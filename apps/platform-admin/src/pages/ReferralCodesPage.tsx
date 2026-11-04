@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { Alert, Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
-import type { AdminReferralCodeRow, ReferralAudience, ReferralCodeState } from "@store-builder/api-client";
+import type { AdminReferralCodeRow, ReferralAudience, ReferralCodeApproval, ReferralCodeState } from "@store-builder/api-client";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { FilterChips, SearchInput, SelectField } from "@/components/forms";
 import { Mono, Panel, Td, Th } from "@/components/Panel";
 import { StatusBadge, type Tone } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
+import { ApprovalBadge } from "@/components/referrals";
 import { ReferralCodeFormModal } from "@/components/referralCodeForm";
 import { useAuth } from "@/context/AuthContext";
 import { useAsync } from "@/lib/useAsync";
@@ -16,6 +17,7 @@ import * as adminApi from "@/lib/adminApi";
 import { formatDate } from "@/lib/format";
 import { AUDIENCE_LABELS, STATE_LABELS, describeCodeDiscount, describeGrant, usesLabel } from "@/lib/referralCodes";
 import { P } from "@/lib/permissions";
+import { neverApproved } from "@/lib/referrals";
 
 /**
  * Agents → Referral codes (migration 725): every code, with or without an
@@ -37,6 +39,8 @@ const STATE_OPTIONS: { value: StateFilter; label: string }[] = [
   ...(Object.keys(STATE_LABELS) as ReferralCodeState[]).map((s) => ({ value: s, label: STATE_LABELS[s] })),
 ];
 
+type ApprovalFilter = "all" | Exclude<ReferralCodeApproval, "approved">;
+
 export function ReferralCodesPage() {
   const toast = useToast();
   const navigate = useNavigate();
@@ -45,16 +49,30 @@ export function ReferralCodesPage() {
   const [state, setState] = useState<StateFilter>("all");
   const [agentId, setAgentId] = useState("");
   const [audience, setAudience] = useState<"" | ReferralAudience>("");
+  const [approval, setApproval] = useState<ApprovalFilter>("all");
   const [creating, setCreating] = useState(false);
 
   const list = useAsync(
-    () => adminApi.listReferralCodes({ q: q.trim() || undefined, state: state === "all" ? undefined : state, agentId: agentId || undefined, audience: audience || undefined }),
-    [q, state, agentId, audience]
+    () =>
+      adminApi.listReferralCodes({
+        q: q.trim() || undefined,
+        state: state === "all" ? undefined : state,
+        agentId: agentId || undefined,
+        audience: audience || undefined,
+        approval: approval === "all" ? undefined : approval,
+      }),
+    [q, state, agentId, audience, approval]
   );
   const agents = useAsync(() => adminApi.listAgents(), []);
   const plans = useAsync(() => (can(P.PLANS_VIEW) ? adminApi.listPlans() : Promise.resolve([])), []);
   const v2 = list.data?.v2Enabled ?? false;
   const codes = list.data?.codes ?? [];
+  const pendingReview = list.data?.pendingReview ?? 0;
+  const approvalOptions: { value: ApprovalFilter; label: string }[] = [
+    { value: "all", label: "Any review" },
+    { value: "pending", label: pendingReview > 0 ? `Pending review (${pendingReview})` : "Pending review" },
+    { value: "rejected", label: "Rejected" },
+  ];
 
   return (
     <div>
@@ -97,7 +115,8 @@ export function ReferralCodesPage() {
           ))}
         </SelectField>
       </div>
-      <FilterChips className="mb-4" options={STATE_OPTIONS} value={state} onChange={setState} />
+      <FilterChips className="mb-2" options={STATE_OPTIONS} value={state} onChange={setState} />
+      <FilterChips className="mb-4" options={approvalOptions} value={approval} onChange={setApproval} />
 
       <DataState skeleton={<ListSkeleton variant="table" />} loading={list.loading && !list.data} error={list.error} onRetry={() => void list.refresh()}>
         {codes.length === 0 ? (
@@ -172,7 +191,12 @@ function CodeRow({ code }: { code: AdminReferralCodeRow }) {
         {code.startsAt || code.endsAt ? `${code.startsAt ? formatDate(code.startsAt) : "—"} → ${code.endsAt ? formatDate(code.endsAt) : "—"}` : "Any time"}
       </Td>
       <Td className="align-top">
-        <StatusBadge tone={STATE_TONE[code.state ?? (code.active ? "active" : "inactive")]}>{STATE_LABELS[code.state ?? (code.active ? "active" : "inactive")]}</StatusBadge>
+        <span className="flex flex-wrap gap-1">
+          {!neverApproved(code) && (
+            <StatusBadge tone={STATE_TONE[code.state ?? (code.active ? "active" : "inactive")]}>{STATE_LABELS[code.state ?? (code.active ? "active" : "inactive")]}</StatusBadge>
+          )}
+          <ApprovalBadge code={code} />
+        </span>
       </Td>
     </TableRow>
   );

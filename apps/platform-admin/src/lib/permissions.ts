@@ -41,6 +41,8 @@ export const P = {
   ADMINS_MANAGE: "admins.manage",
   AGENTS_VIEW: "agents.view",
   AGENTS_MANAGE: "agents.manage",
+  AGENTS_CREATE: "agents.create",
+  REFERRAL_CODES_APPROVE: "referral_codes.approve",
   COMMISSIONS_MARK_PAID: "commissions.mark_paid",
   REFERRALS_VIEW_OWN: "referrals.view_own",
   // The platform's public details (pages/PlatformSettingsPage.tsx).
@@ -107,6 +109,7 @@ export const PERMISSION_NEEDS: Record<string, string> = {
   [P.SUPPORT_MANAGE]: P.SUPPORT_VIEW,
   [P.ADMINS_MANAGE]: P.ADMINS_VIEW,
   [P.AGENTS_MANAGE]: P.AGENTS_VIEW,
+  [P.REFERRAL_CODES_APPROVE]: P.AGENTS_VIEW,
   [P.COMMISSIONS_MARK_PAID]: P.AGENTS_VIEW,
   [P.PLATFORM_SETTINGS_MANAGE]: P.PLATFORM_SETTINGS_VIEW,
 };
@@ -154,7 +157,9 @@ export const PERMISSION_LABELS: Record<string, string> = {
   "admins.view": "Admin users — view",
   "admins.manage": "Admin users — grant, change and revoke roles",
   "agents.view": "Agents, codes and commissions — view",
-  "agents.manage": "Agents and referral codes — create and edit",
+  "agents.manage": "Referral codes — create and edit",
+  "agents.create": "Agents — add a new agent",
+  "referral_codes.approve": "Referral codes — approve or reject agents' codes",
   "commissions.mark_paid": "Commissions — mark paid",
   "referrals.view_own": "Own referral codes and commissions (agents)",
   "platform_settings.view": "Platform settings — view",

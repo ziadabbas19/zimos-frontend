@@ -15,12 +15,13 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
 import {
   CodeModal,
+  CodeStatus,
   CommissionTotals,
   LedgerTable,
   MarkPaidModal,
   MerchantsTable,
 } from "@/components/referrals";
-import { PAYOUT_OPTIONS, describeDiscount } from "@/lib/referrals";
+import { PAYOUT_OPTIONS, describeDiscount, neverApproved } from "@/lib/referrals";
 import { Pager } from "@/pages/BlocklistPage";
 import { useAuth } from "@/context/AuthContext";
 import { useAsync } from "@/lib/useAsync";
@@ -102,9 +103,7 @@ export function AgentDetailPage() {
                             <CommissionTotals totals={c.commission} empty="No payments yet" />
                           </Td>
                           <Td>
-                            <StatusBadge tone={c.active ? "success" : "neutral"} dot>
-                              {c.active ? "Active" : "Inactive"}
-                            </StatusBadge>
+                            <CodeStatus code={c} />
                             <span className="mt-1 block text-xs text-ink-soft">Since {formatDate(c.createdAt)}</span>
                           </Td>
                           {canManage && (
@@ -155,6 +154,7 @@ export function AgentDetailPage() {
       {editing && (
         <CodeModal
           code={editing}
+          hideActive={neverApproved(editing)}
           defaultRateBp={defaultRateBp}
           onClose={() => setEditing(null)}
           onSubmit={async (input) => {

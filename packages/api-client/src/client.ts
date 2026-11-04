@@ -2189,6 +2189,18 @@ export class ApiClient {
     return unwrapObject<AdminReferralCode>(body, "code");
   }
 
+  // A creator's review of a code its owner made or changed (migration 742).
+  /** `changes`: anything the reviewer changed on the way. */
+  async adminApproveReferralCode(codeId: string, changes: AdminReferralCodeInput = {}): Promise<AdminReferralCode> {
+    const body = await this.request<unknown>(`/admin/referral-codes/${codeId}/approve`, { method: "POST", body: changes });
+    return unwrapObject<AdminReferralCode>(body, "code");
+  }
+
+  async adminRejectReferralCode(codeId: string, reason: string): Promise<AdminReferralCode> {
+    const body = await this.request<unknown>(`/admin/referral-codes/${codeId}/reject`, { method: "POST", body: { reason } });
+    return unwrapObject<AdminReferralCode>(body, "code");
+  }
+
   // Agents -> Referral codes (migration 725).
   async adminListReferralCodes(params: AdminReferralCodeParams = {}): Promise<AdminReferralCodeList> {
     const body = await this.request<AdminReferralCodeList>(`/admin/referral-codes${buildQuery({ ...params })}`);
@@ -2487,6 +2499,17 @@ export class ApiClient {
   async adminGetMyReferrals(): Promise<AdminAgentDetail> {
     const body = await this.request<AdminAgentDetail>("/admin/my/referrals");
     return { ...body, agent: unwrapObject(body, "agent"), merchants: unwrapList(body, "merchants") };
+  }
+
+  /** The requester's own code; the server takes the owner from the session. */
+  async adminCreateOwnReferralCode(payload: AdminReferralCodeInput & { code: string }): Promise<AdminReferralCode> {
+    const body = await this.request<unknown>("/admin/my/referral-codes", { method: "POST", body: payload });
+    return unwrapObject<AdminReferralCode>(body, "code");
+  }
+
+  async adminUpdateOwnReferralCode(codeId: string, payload: AdminReferralCodeInput): Promise<AdminReferralCode> {
+    const body = await this.request<unknown>(`/admin/my/referral-codes/${codeId}`, { method: "PATCH", body: payload });
+    return unwrapObject<AdminReferralCode>(body, "code");
   }
 
   async adminListMyCommissions(

@@ -41,6 +41,15 @@ export interface CodeFormState {
   active: boolean;
 }
 
+/**
+ * Never approved yet (migration 742): it isn't on or off, it is waiting or
+ * turned down, and approving it is what switches it on. A change waiting on an
+ * approved code doesn't count, and an older API sends no status.
+ */
+export function neverApproved(code: Pick<AdminReferralCode, "approvalStatus" | "proposed">): boolean {
+  return (code.approvalStatus === "pending" || code.approvalStatus === "rejected") && !code.proposed;
+}
+
 export function initialCodeForm(code?: AdminReferralCode): CodeFormState {
   if (!code) {
     return {

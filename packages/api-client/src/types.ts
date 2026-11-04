@@ -4650,6 +4650,9 @@ export interface GoLiveResult {
   started: boolean;
 }
 
+/** Where a code stands with a creator's review (migration 742). */
+export type ReferralCodeApproval = "pending" | "approved" | "rejected";
+
 export interface AdminReferralCode {
   id: string;
   /** Null: a discount only, no agent and no commission (migration 725). */
@@ -4687,6 +4690,15 @@ export interface AdminReferralCode {
   commissionBasis?: ReferralCommissionBasis;
   linksAgent?: boolean;
   grant?: { type: ReferralGrantType; value: number } | null;
+  // A creator's review (migration 742); absent from an older API, which reads as approved.
+  approvalStatus?: ReferralCodeApproval;
+  /** Why it, or the last change to it, was rejected. */
+  approvalNote?: string | null;
+  /** The last change to this approved code was rejected; the code itself goes on. */
+  changesRejected?: boolean;
+  reviewedAt?: string | null;
+  /** How it would read with the change waiting for review. Nothing prices with it until then. */
+  proposed?: AdminReferralCode | null;
 }
 
 export interface AdminReferralCodeInput {
@@ -4725,6 +4737,8 @@ export interface AdminReferralCodeList {
   total: number;
   limit: number;
   offset: number;
+  /** Codes waiting for review, whatever the filters. */
+  pendingReview?: number;
   defaultCommissionRateBp: number;
   v2Enabled: boolean;
 }
@@ -4735,6 +4749,7 @@ export interface AdminReferralCodeParams {
   agentId?: string;
   state?: ReferralCodeState;
   audience?: ReferralAudience;
+  approval?: ReferralCodeApproval;
   limit?: number;
   offset?: number;
 }
@@ -4901,6 +4916,7 @@ export interface AdminAgentDetail {
   agent: AdminAgent;
   merchants: AdminReferredMerchant[];
   defaultCommissionRateBp: number;
+  v2Enabled?: boolean;
 }
 
 export interface AdminCreateAgentResult {

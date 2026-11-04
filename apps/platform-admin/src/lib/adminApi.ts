@@ -479,6 +479,14 @@ export function updateReferralCode(codeId: string, payload: AdminReferralCodeInp
   return apiClient.adminUpdateReferralCode(codeId, payload);
 }
 
+export function approveReferralCode(codeId: string, changes?: AdminReferralCodeInput): Promise<AdminReferralCode> {
+  return apiClient.adminApproveReferralCode(codeId, changes);
+}
+
+export function rejectReferralCode(codeId: string, reason: string): Promise<AdminReferralCode> {
+  return apiClient.adminRejectReferralCode(codeId, reason);
+}
+
 // Agents -> Referral codes (migration 725).
 export const REFERRAL_CODE_PAGE_SIZE = 50;
 
@@ -656,6 +664,14 @@ export function reactivateWorkspace(workspaceId: string, reason: string): Promis
 
 export function getMyReferrals(): Promise<AdminAgentDetail> {
   return apiClient.adminGetMyReferrals();
+}
+
+export function createOwnReferralCode(payload: AdminReferralCodeInput & { code: string }): Promise<AdminReferralCode> {
+  return apiClient.adminCreateOwnReferralCode(payload);
+}
+
+export function updateOwnReferralCode(codeId: string, payload: AdminReferralCodeInput): Promise<AdminReferralCode> {
+  return apiClient.adminUpdateOwnReferralCode(codeId, payload);
 }
 
 export function listMyCommissions(
