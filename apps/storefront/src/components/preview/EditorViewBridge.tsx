@@ -1,4 +1,4 @@
-import { PreviewBridge } from "./PreviewBridge";
+import { PreviewBridge } from "./LazyPreviewBridge";
 import { THEME_FONT_CSS } from "@/app/themeFonts";
 import { brandVars, previewBootScript, type PreviewTheme } from "@/lib/brandTheme";
 import type { EditorView } from "@/lib/editorView";
