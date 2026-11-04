@@ -75,6 +75,8 @@ import type {
   AdminAgentLinkInput,
   ReferralTerms,
   ReferralCommissionBasis,
+  AdminPlatformRole,
+  AdminRoleInput,
   AdminRolesResponse,
   WorkspaceBilling,
   OnlinePayment,
@@ -432,6 +434,8 @@ export interface ApiClientOptions {
   tokenStorage?: TokenStorage;
   /** Called whenever refresh fails / the session becomes invalid. */
   onSessionExpired?: () => void;
+  /** The server answered 403 to a signed-in request: what this account may do may have changed. */
+  onForbidden?: () => void;
   /** Sent with every request; a call's own headers win on a clash. */
   defaultHeaders?: Record<string, string>;
   /**
@@ -515,6 +519,7 @@ export class ApiClient {
   private baseUrl: string;
   private tokenStorage: TokenStorage;
   private onSessionExpired?: () => void;
+  private onForbidden?: () => void;
   private defaultHeaders: Record<string, string>;
   private fetchImpl: (input: string, init: RequestInit) => Promise<Response>;
   private refreshPromise: Promise<boolean> | null = null;
@@ -524,6 +529,7 @@ export class ApiClient {
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
     this.tokenStorage = options.tokenStorage ?? createLocalStorageTokenStorage();
     this.onSessionExpired = options.onSessionExpired;
+    this.onForbidden = options.onForbidden;
     this.defaultHeaders = options.defaultHeaders ?? {};
     // Always called as a plain function: a browser's fetch refuses any other
     // `this`. The global one is looked up on each call, as before.
@@ -607,6 +613,7 @@ export class ApiClient {
         this.clearSession();
         this.onSessionExpired?.();
       }
+      if (res.status === 403 && auth) this.onForbidden?.();
       const message =
         (isJson && payload && (payload.message || payload.error?.message)) ||
         `Request failed with status ${res.status}`;
@@ -2087,6 +2094,30 @@ export class ApiClient {
   async adminListRoles(): Promise<AdminRolesResponse> {
     const body = await this.request<AdminRolesResponse>("/admin/roles");
     return { roles: unwrapList(body, "roles"), permissions: unwrapList(body, "permissions") };
+  }
+
+  /**
+   * `POST /admin/roles` — a custom role. 403 PERMISSION_NOT_HELD,
+   * 409 ROLE_NAME_TAKEN.
+   */
+  async adminCreateRole(payload: AdminRoleInput): Promise<AdminPlatformRole> {
+    const body = await this.request<unknown>("/admin/roles", { method: "POST", body: payload });
+    return unwrapObject<AdminPlatformRole>(body, "role");
+  }
+
+  /**
+   * `PATCH /admin/roles/:roleKey` — a key added or removed reaches every
+   * account holding the role. 403 PERMISSION_NOT_HELD, 409 ROLE_BUILT_IN /
+   * ROLE_NAME_TAKEN / CANNOT_EDIT_SELF.
+   */
+  async adminUpdateRole(roleKey: string, payload: Partial<AdminRoleInput>): Promise<AdminPlatformRole> {
+    const body = await this.request<unknown>(`/admin/roles/${roleKey}`, { method: "PATCH", body: payload });
+    return unwrapObject<AdminPlatformRole>(body, "role");
+  }
+
+  /** `DELETE /admin/roles/:roleKey` — 409 ROLE_BUILT_IN / ROLE_IN_USE. */
+  async adminDeleteRole(roleKey: string) {
+    return this.request<SuccessResponse>(`/admin/roles/${roleKey}`, { method: "DELETE" });
   }
 
   /** `GET /admin/admins` → `{ admins }`, oldest first. */

@@ -3732,6 +3732,16 @@ export interface AdminPlatformRole {
   description: string | null;
   /** Copied onto an account when the role is assigned. */
   defaultPermissions: PlatformPermission[];
+  /** Creator, admin and agent: fixed. Any other role is a custom one. */
+  builtIn: boolean;
+  /** How many accounts hold it. */
+  holders: number;
+}
+
+export interface AdminRoleInput {
+  name: string;
+  description?: string | null;
+  permissions: PlatformPermission[];
 }
 
 export interface AdminRolesResponse {
