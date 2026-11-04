@@ -48,6 +48,13 @@ describe("edgeCacheValue", () => {
       expect(edgeCacheValue({ STOREFRONT_EDGE_CACHE_S_MAXAGE: bad })).toBe(PUBLIC);
     }
   });
+
+  it("adds no-transform only for exactly \"true\", leaving the rest as it was", () => {
+    expect(edgeCacheValue({ STOREFRONT_EDGE_CACHE_NO_TRANSFORM: "true" })).toBe(`${PUBLIC}, no-transform`);
+    for (const off of [undefined, "", "1", "TRUE", "false"]) {
+      expect(edgeCacheValue({ STOREFRONT_EDGE_CACHE_NO_TRANSFORM: off })).toBe(PUBLIC);
+    }
+  });
 });
 
 describe("isPublicStorePath", () => {

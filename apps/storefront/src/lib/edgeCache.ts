@@ -85,11 +85,18 @@ function seconds(value: string | undefined, fallback: number, min: number): numb
  * browser never keeps the page itself, only the CDN does. A value that is not
  * a whole number of seconds up to a day falls back to the default; a
  * stale-while-revalidate of 0 leaves that directive out.
+ *
+ * STOREFRONT_EDGE_CACHE_NO_TRANSFORM (off unless exactly "true") adds
+ * `no-transform`: the one way to keep Cloudflare's JavaScript Detections script
+ * off the public pages alone, the only pages this mark reaches, while the
+ * checkout and the API keep it. Cloudflare then leaves the page's compression
+ * as this server sent it too (docs/edge-cache, "JavaScript Detections").
  */
 export function edgeCacheValue(env: NodeJS.ProcessEnv = process.env): string {
   const sMaxage = seconds(env.STOREFRONT_EDGE_CACHE_S_MAXAGE, DEFAULT_S_MAXAGE, 1);
   const swr = seconds(env.STOREFRONT_EDGE_CACHE_SWR, DEFAULT_STALE_WHILE_REVALIDATE, 0);
-  return `public, max-age=0, s-maxage=${sMaxage}${swr > 0 ? `, stale-while-revalidate=${swr}` : ""}`;
+  const transform = env.STOREFRONT_EDGE_CACHE_NO_TRANSFORM === "true" ? ", no-transform" : "";
+  return `public, max-age=0, s-maxage=${sMaxage}${swr > 0 ? `, stale-while-revalidate=${swr}` : ""}${transform}`;
 }
 
 /** Our own cookies that only scripts in the browser read: they never change the HTML. */

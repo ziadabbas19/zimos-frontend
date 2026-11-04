@@ -226,6 +226,32 @@ keeps on disk start empty after each deploy, so watch the service's CPU for a da
 Turning it off: unset the variable and redeploy. Copies kept as AVIF stay valid
 under the Vary rule until they expire.
 
+## 7. JavaScript Detections
+
+Bot Fight Mode (the Free plan) adds Cloudflare's script
+(`/cdn-cgi/challenge-platform/…`) to HTML pages, and its docs say it can't be
+scoped or skipped: the actions of WAF rules and Page Rules have no effect on it.
+What does reach it, on any plan, is the response itself: Cloudflare doesn't inject
+into a response with `Cache-Control: no-transform`.
+
+`STOREFRONT_EDGE_CACHE_NO_TRANSFORM=true` on the storefront adds that directive to
+the public pages this document caches, and only those. The checkout, the cart, the
+account, the funnels and the API keep the script. Two things come with it, per
+Cloudflare's docs: Cloudflare stops recompressing those pages (the visitor gets the
+gzip `next start` sent, not Brotli), and `cf.bot_management.js_detection.passed`
+reads `missing` on them, so never write a WAF rule that blocks on that field for
+these paths.
+
+Check in PowerShell, on a public page, twice so the second answer is a kept copy:
+
+```powershell
+curl.exe -s -D - "https://<slug>.zimos.co/" -H "Accept-Encoding: identity" -o page.html | Select-String "cf-cache-status|cache-control"
+Select-String -Path page.html -Pattern "challenge-platform" | Measure-Object | Select-Object -ExpandProperty Count
+```
+
+`0` means no script. On a paid plan there is also Super Bot Fight Mode's own
+switch and a WAF custom rule with the Skip action; see the deploy report.
+
 ## Turning it off
 
 Set `STOREFRONT_EDGE_CACHE_ENABLED` to anything but `true` and redeploy; pages
