@@ -7,6 +7,15 @@ export const DASHBOARD_URL = "https://app.zimos.co";
 /** This site's own address, for absolute URLs (canonical links, the sitemap). */
 export const SITE_URL = "https://zimos.co";
 
+/**
+ * The page the dashboard opens in a hidden frame once an account is made, so
+ * the sign-up reaches this site's tag manager (components/signed-up.tsx). Not
+ * a visit: no page view, no visit counting, not in the sitemap.
+ */
+export function isSignedUpPage(pathname: string): boolean {
+  return /^\/(ar|en)\/signed-up\/?$/.test(pathname);
+}
+
 export const REGISTER_URL = `${DASHBOARD_URL}/register`;
 export const LOGIN_URL = `${DASHBOARD_URL}/login`;
 

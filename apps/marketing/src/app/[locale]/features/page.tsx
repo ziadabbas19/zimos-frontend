@@ -58,7 +58,7 @@ export default async function FeaturesPage({ params }: Params) {
     <>
       <SiteHeader />
       <main id="main" className="lz-page ft-page">
-        <section className="lz-hero ft-hero" aria-labelledby="ft-h1">
+        <section className="lz-hero ft-hero" aria-labelledby="ft-h1" data-section="hero">
           <Backdrop id="lz-wave-features" grid />
           <div className="lz-in ft-hero__in">
             <span className="lz-eye">{copy.hero.kicker}</span>

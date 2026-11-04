@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { PING_MS, SITE_ANALYTICS_ENABLED, dashboardCta, sendSiteEvent, siteIds, withSiteSession } from "@/lib/site-analytics";
+import { isSignedUpPage } from "@/lib/urls";
 
 /**
  * Counts views, time on the site and clicks on the sign-up / sign-in links
@@ -11,14 +12,14 @@ import { PING_MS, SITE_ANALYTICS_ENABLED, dashboardCta, sendSiteEvent, siteIds, 
 export function SiteAnalytics() {
   const pathname = usePathname();
 
-  // A view on load and on every route change.
+  // A view on load and on every route change. The dashboard's hidden sign-up page is not a visit.
   useEffect(() => {
-    if (!SITE_ANALYTICS_ENABLED || !pathname) return;
+    if (!SITE_ANALYTICS_ENABLED || !pathname || isSignedUpPage(pathname)) return;
     sendSiteEvent("view", pathname);
   }, [pathname]);
 
   useEffect(() => {
-    if (!SITE_ANALYTICS_ENABLED || !siteIds()) return;
+    if (!SITE_ANALYTICS_ENABLED || isSignedUpPage(window.location.pathname) || !siteIds()) return;
 
     // Time on the site: a ping every 15 s, only while this tab is visible.
     const timer = window.setInterval(() => {

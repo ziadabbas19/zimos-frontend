@@ -58,7 +58,7 @@ export function DashboardShow({ copy, locale }: { copy: Dictionary["dashboard"];
   };
 
   return (
-    <section ref={section} className="lz-show" id="panel" aria-labelledby="lz-show">
+    <section ref={section} className="lz-show" id="panel" aria-labelledby="lz-show" data-section="dashboard">
       <div ref={head} className="lz-show__head">
         <span className="lz-eye">{copy.kicker}</span>
         <h2 className="lz-h" id="lz-show">

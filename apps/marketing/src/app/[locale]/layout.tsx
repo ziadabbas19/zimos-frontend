@@ -9,6 +9,7 @@ import { I18nProvider } from "@/i18n/provider";
 import { ogImage } from "@/lib/og";
 import { SITE_URL } from "@/lib/urls";
 import { SiteAnalytics } from "@/components/site-analytics";
+import { Gtm } from "@/components/gtm";
 
 type LocaleParams = { locale: string };
 
@@ -94,6 +95,7 @@ export default async function LocaleLayout({
       <body className="min-h-dvh bg-paper text-ink">
         <I18nProvider value={{ locale, dir, dict: { nav: dict.nav } }}>{children}</I18nProvider>
         <SiteAnalytics />
+        <Gtm />
       </body>
     </html>
   );

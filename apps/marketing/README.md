@@ -52,3 +52,10 @@ npm run start -w apps/marketing
 ```
 
 From the repo root: `npm run dev:marketing` / `npm run build:marketing`.
+
+## Tracking
+
+- `NEXT_PUBLIC_SITE_ANALYTICS_ENABLED=true`: the site's own visit counting, shown in the platform console (`src/lib/site-analytics.ts`).
+- `NEXT_PUBLIC_GTM_ID=GTM-XXXXXXX`: loads Google Tag Manager and puts every page view, section seen and click on its dataLayer (`src/lib/gtm.ts`, `src/components/gtm.tsx`). Unset, nothing loads. Like the visit counting, it stays off for a visitor whose browser sends Do Not Track or Global Privacy Control.
+
+Both are read at build time: rebuild after changing them.
