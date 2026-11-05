@@ -1,3 +1,4 @@
+import { fmt, useT } from "@/i18n/LocaleContext";
 import { useEffect, useState, type FormEvent } from "react";
 import { Ban, Pencil, Plus, Trash2 } from "lucide-react";
 import { Alert, Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
@@ -226,6 +227,11 @@ export function BlocklistPage() {
 }
 
 /** Previous / next over a server-paged list, with "1–50 of 120". */
+const PAGER_STRINGS = {
+  en: { range: "{first}–{last} of {total}", previous: "Previous", next: "Next" },
+  ar: { range: "{first}–{last} من {total}", previous: "السابق", next: "التالي" },
+};
+
 export function Pager({
   total,
   limit,
@@ -237,20 +243,21 @@ export function Pager({
   offset: number;
   onOffset: (offset: number) => void;
 }) {
+  const t = useT(PAGER_STRINGS);
   if (total <= limit && offset === 0) return null;
   const first = total === 0 ? 0 : offset + 1;
   const last = Math.min(offset + limit, total);
   return (
     <div className="mt-3 flex items-center justify-between gap-3 text-sm text-ink-soft">
       <span className="tabular">
-        {first}–{last} of {total}
+        {fmt(t.range, { first, last, total })}
       </span>
       <div className="flex gap-2">
         <Button size="sm" variant="outline" disabled={offset === 0} onClick={() => onOffset(Math.max(0, offset - limit))}>
-          Previous
+          {t.previous}
         </Button>
         <Button size="sm" variant="outline" disabled={offset + limit >= total} onClick={() => onOffset(offset + limit)}>
-          Next
+          {t.next}
         </Button>
       </div>
     </div>

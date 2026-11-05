@@ -13,11 +13,13 @@ import { Toggle } from "@/components/Toggle";
 import { useToast } from "@/components/Toast";
 import { RateSteps } from "@/components/referralCodeForm";
 import { useAuth } from "@/context/AuthContext";
+import { fmt, useT } from "@/i18n/LocaleContext";
 import * as adminApi from "@/lib/adminApi";
 import { getErrorMessage } from "@/lib/errors";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { P, isCreator } from "@/lib/permissions";
-import { describeCommissionSteps, toLocalInput, type RateStepDraft } from "@/lib/referralCodes";
+import { cycleLabel, describeCommissionSteps, toLocalInput, type RateStepDraft } from "@/lib/referralCodes";
+import { REFERRAL_STRINGS, isolate, referralStrings } from "@/lib/referralStrings";
 import { useAsync } from "@/lib/useAsync";
 import { RedemptionTable } from "@/pages/ReferralCodeDetailPage";
 
@@ -30,18 +32,21 @@ import { RedemptionTable } from "@/pages/ReferralCodeDetailPage";
  * each of those waits for review (migration 743), one at a time per store.
  */
 
-const CYCLE_LABEL: Record<BillingCycle, string> = { monthly: "Monthly", yearly: "Yearly" };
-
 function linkTermsText(link: AdminAgentLink): string {
-  if (!link.terms) return `As its code: ${link.code?.code ?? "the code"}'s rate on every payment that carries it`;
+  const t = referralStrings();
+  if (!link.terms) return fmt(t.storeTermsAsCode, { code: isolate(link.code?.code ?? t.storeTheCode) });
   const m = describeCommissionSteps(link.terms.monthly);
   const y = describeCommissionSteps(link.terms.yearly);
-  return m === y ? m : `Monthly: ${m}. Yearly: ${y}`;
+  return m === y ? m : fmt(t.describeByCycle, { monthly: m, yearly: y });
 }
 
-const SOURCE_TEXT: Record<AdminAgentLink["source"], string> = { manual: "Set by hand", code: "From a code" };
+function sourceText(): Record<AdminAgentLink["source"], string> {
+  const t = referralStrings();
+  return { manual: t.linkSource_manual, code: t.linkSource_code };
+}
 
 export function WorkspaceReferralsPanel({ workspaceId }: { workspaceId: string }) {
+  const t = useT(REFERRAL_STRINGS);
   const { can, user } = useAuth();
   const creator = isCreator(user);
   const toast = useToast();
@@ -55,42 +60,42 @@ export function WorkspaceReferralsPanel({ workspaceId }: { workspaceId: string }
   const open = data?.openLink ?? null;
 
   return (
-    <section aria-label="Referral codes and agent" className="space-y-4">
+    <section aria-label={t.storeSection} className="space-y-4">
       <DataState skeleton={<ListSkeleton variant="table" />} loading={loading && !data} error={error} onRetry={() => void refresh()}>
         {data && (
           <>
             <Panel>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h3 className="font-medium text-ink">Agent</h3>
+                  <h3 className="font-medium text-ink">{t.agent}</h3>
                   {open ? (
                     <div className="mt-1 space-y-0.5 text-sm">
                       <p>
                         <Link to={`/agents/${open.agent.id}`} className="font-medium hover:text-primary hover:underline">
-                          {open.agent.fullName ?? "Agent"}
+                          {open.agent.fullName ?? t.agentUnnamed}
                         </Link>{" "}
                         <span className="text-ink-soft">
-                          · {SOURCE_TEXT[open.source]} · since {formatDate(open.startsAt)}
-                          {open.endsAt ? ` · until ${formatDate(open.endsAt)}` : ""}
+                          · {sourceText()[open.source]} · {fmt(t.storeSince, { date: formatDate(open.startsAt) })}
+                          {open.endsAt ? ` · ${fmt(t.storeUntil, { date: formatDate(open.endsAt) })}` : ""}
                         </span>
                       </p>
                       <p className="text-ink-soft">{linkTermsText(open)}</p>
-                      <p className="text-ink-soft">Commission on {open.commissionBasis === "list" ? "the list price" : "what the store paid"}</p>
+                      <p className="text-ink-soft">{fmt(t.storeCommissionOn, { basis: open.commissionBasis === "list" ? t.basisListPrice : t.basisStorePaid })}</p>
                     </div>
                   ) : (
-                    <p className="mt-1 text-sm text-ink-soft">No agent earns on this store&apos;s payments.</p>
+                    <p className="mt-1 text-sm text-ink-soft">{t.storeNoAgent}</p>
                   )}
                 </div>
                 {manage && (
                   <div className="flex gap-2">
                     {data.v2Enabled && (
                       <Button variant="outline" size="sm" onClick={() => setLinking(true)}>
-                        {open ? "Change agent" : "Link to an agent"}
+                        {open ? t.storeChangeAgent : t.storeLinkToAgent}
                       </Button>
                     )}
                     {open && (
                       <Button variant="outline" size="sm" onClick={() => setEnding(open)}>
-                        End link
+                        {t.storeEndLink}
                       </Button>
                     )}
                   </div>
@@ -101,47 +106,47 @@ export function WorkspaceReferralsPanel({ workspaceId }: { workspaceId: string }
             {requests.length > 0 && <AgentLinkRequests requests={requests} onChanged={() => void refresh({ silent: true })} />}
 
             <div>
-              <h3 className="mb-2 font-medium text-ink">Codes this store entered</h3>
-              {data.redemptions.length === 0 ? <EmptyBlock message="No code yet." /> : <RedemptionTable rows={data.redemptions} show="code" />}
+              <h3 className="mb-2 font-medium text-ink">{t.storeCodesEntered}</h3>
+              {data.redemptions.length === 0 ? <EmptyBlock message={t.storeNoCode} /> : <RedemptionTable rows={data.redemptions} show="code" />}
             </div>
 
             {data.links.length > 0 && (
               <div>
-                <h3 className="mb-2 font-medium text-ink">Agent history</h3>
+                <h3 className="mb-2 font-medium text-ink">{t.storeHistory}</h3>
                 <Panel flush>
                   <Table>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
-                        <Th>Agent</Th>
-                        <Th>How</Th>
-                        <Th>From</Th>
-                        <Th>Ended</Th>
-                        <Th>Commission</Th>
+                        <Th>{t.agent}</Th>
+                        <Th>{t.storeHow}</Th>
+                        <Th>{t.storeFrom}</Th>
+                        <Th>{t.storeEnded}</Th>
+                        <Th>{t.commission}</Th>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {data.links.map((l) => (
                         <TableRow key={l.id}>
-                          <Td className="align-top text-sm">{l.agent.fullName ?? "Agent"}</Td>
+                          <Td className="align-top text-sm">{l.agent.fullName ?? t.agentUnnamed}</Td>
                           <Td className="align-top text-sm">
-                            {SOURCE_TEXT[l.source]}
+                            {sourceText()[l.source]}
                             {l.code?.code && (
                               <span className="block">
                                 <Mono>{l.code.code}</Mono>
                               </span>
                             )}
-                            {l.createdBy && <span className="block text-xs text-ink-soft">by {l.createdBy.fullName}</span>}
+                            {l.createdBy && <span className="block text-xs text-ink-soft">{fmt(t.storeBy, { name: l.createdBy.fullName })}</span>}
                           </Td>
                           <Td className="align-top text-sm whitespace-nowrap">{formatDateTime(l.startsAt)}</Td>
                           <Td className="align-top text-sm">
                             {l.open ? (
-                              <StatusBadge tone="success">Open</StatusBadge>
+                              <StatusBadge tone="success">{t.storeOpen}</StatusBadge>
                             ) : (
                               <>
                                 {formatDateTime(l.endedAt ?? "")}
                                 <span className="block text-xs text-ink-soft">
-                                  {l.endReason === "replaced" ? "Moved to another agent" : "Ended"}
-                                  {l.endedBy ? ` by ${l.endedBy.fullName}` : ""}
+                                  {l.endReason === "replaced" ? t.storeMoved : t.storeEnded}
+                                  {l.endedBy ? ` ${fmt(t.storeBy, { name: l.endedBy.fullName })}` : ""}
                                 </span>
                               </>
                             )}
@@ -170,7 +175,7 @@ export function WorkspaceReferralsPanel({ workspaceId }: { workspaceId: string }
           onClose={() => setLinking(false)}
           onSaved={(waiting) => {
             setLinking(false);
-            toast.success(waiting ? "Sent for review. The store stays as it is until it's approved." : "Linked. The agent earns from the store's next payment.");
+            toast.success(waiting ? t.storeSentStays : t.storeLinked);
             void refresh({ silent: true });
           }}
         />
@@ -178,18 +183,16 @@ export function WorkspaceReferralsPanel({ workspaceId }: { workspaceId: string }
       {ending && (
         <ConfirmDialog
           open
-          title="End this link?"
-          description={
-            creator
-              ? "From now on no agent earns on this store's payments. Commissions already written stay."
-              : "This waits for a creator's review. Until it's approved, the agent goes on earning. After that, no agent earns on this store's payments, and commissions already written stay."
-          }
-          confirmLabel="End link"
+          title={t.storeEndTitle}
+          description={creator ? t.storeEndNow : t.storeEndReview}
+          confirmLabel={t.storeEndLink}
+          cancelLabel={t.cancel}
+          busyLabel={t.working}
           onCancel={() => setEnding(null)}
           onConfirm={async () => {
             // A refusal is shown in the dialog itself.
             const result = await adminApi.endAgentLink(ending.id);
-            toast.success(result.request ? "Sent for review." : "Link ended.");
+            toast.success(result.request ? t.detailSentForReview : t.storeLinkEnded);
             setEnding(null);
             void refresh({ silent: true });
           }}
@@ -201,12 +204,13 @@ export function WorkspaceReferralsPanel({ workspaceId }: { workspaceId: string }
 
 const draftSteps = (rows: RateStepDraft[]) =>
   rows.map((r, i) => {
+    const t = referralStrings();
     const last = i === rows.length - 1;
     const count = r.count.trim() ? Number(r.count) : null;
-    if (count == null && !last) throw new Error("Only the last step can run for every payment after.");
-    if (count != null && (!Number.isInteger(count) || count < 1)) throw new Error("A step's payments are a whole number, 1 or more.");
+    if (count == null && !last) throw new Error(t.errLinkOnlyLast);
+    if (count != null && (!Number.isInteger(count) || count < 1)) throw new Error(t.errLinkPayments);
     const percent = Number(r.percent);
-    if (!r.percent.trim() || !Number.isFinite(percent) || percent < 0 || percent > 100) throw new Error("A rate is a percentage from 0 to 100.");
+    if (!r.percent.trim() || !Number.isFinite(percent) || percent < 0 || percent > 100) throw new Error(t.errLinkRate);
     return { count, rateBp: Math.round(percent * 100) };
   });
 
@@ -226,6 +230,7 @@ export function AgentLinkModal({
   /** `waiting`: it went for review, and nothing has changed yet. */
   onSaved: (waiting: boolean) => void;
 }) {
+  const t = useT(REFERRAL_STRINGS);
   const { user } = useAuth();
   const [agentId, setAgentId] = useState("");
   const [startsAt, setStartsAt] = useState(() => toLocalInput(new Date().toISOString()));
@@ -270,30 +275,32 @@ export function AgentLinkModal({
     <Modal
       open
       onClose={() => !busy && onClose()}
-      title={replacing ? "Change the store's agent" : "Link the store to an agent"}
+      title={replacing ? t.linkChangeTitle : t.linkNewTitle}
       description={
         !isCreator(user)
-          ? `This waits for a creator's review. ${replacing ? `Until it's approved, ${replacing.agent.fullName ?? "the current agent"} goes on earning.` : "Until it's approved, no agent earns on this store."}`
+          ? replacing
+            ? fmt(t.linkReviewReplacing, { name: replacing.agent.fullName ?? t.linkTheCurrentAgent })
+            : t.linkReviewNew
           : replacing
-            ? `${replacing.agent.fullName ?? "The current agent"} stops earning now; the new agent earns from the start date.`
-            : "The agent earns a commission on every payment of this store from the start date."
+            ? fmt(t.linkReplacing, { name: replacing.agent.fullName ?? t.linkTheCurrentAgentStart })
+            : t.linkNew
       }
       className="max-w-2xl"
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={busy}>
-            Cancel
+            {t.cancel}
           </Button>
           <Button type="submit" form="agent-link-form" disabled={busy || !agentId}>
-            {busy ? "Saving…" : "Link"}
+            {busy ? t.saving : t.linkSubmit}
           </Button>
         </>
       }
     >
       <form id="agent-link-form" onSubmit={submit} className="space-y-4">
         {error && <Alert variant="danger">{error}</Alert>}
-        <SelectField label="Agent" required value={agentId} onChange={(e) => setAgentId(e.target.value)}>
-          <option value="">Choose an agent</option>
+        <SelectField label={t.agent} required value={agentId} onChange={(e) => setAgentId(e.target.value)}>
+          <option value="">{t.linkChooseAgent}</option>
           {agents
             .filter((a) => a.isAgent && a.id !== replacing?.agent.id)
             .map((a) => (
@@ -303,21 +310,21 @@ export function AgentLinkModal({
             ))}
         </SelectField>
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextField label="Starts" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
-          <TextField label="Ends" type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} hint="Optional." />
+          <TextField label={t.starts} type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+          <TextField label={t.ends} type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} hint={t.optional} />
         </div>
-        <Toggle label="Different for monthly and yearly" checked={separate} onChange={setSeparate} />
+        <Toggle label={t.linkDifferent} checked={separate} onChange={setSeparate} />
         {(separate ? (["monthly", "yearly"] as BillingCycle[]) : (["monthly"] as BillingCycle[])).map((cycle) => (
           <div key={cycle}>
-            {separate && <h4 className="mb-2 text-sm font-medium text-ink">{CYCLE_LABEL[cycle]}</h4>}
-            <RateSteps label="commission" steps={cycle === "monthly" ? monthly : yearly} onChange={cycle === "monthly" ? setMonthly : setYearly} />
+            {separate && <h4 className="mb-2 text-sm font-medium text-ink">{cycleLabel(cycle)}</h4>}
+            <RateSteps label={t.formCommissionWord} steps={cycle === "monthly" ? monthly : yearly} onChange={cycle === "monthly" ? setMonthly : setYearly} />
           </div>
         ))}
-        <SelectField label="Commission on" value={basis} onChange={(e) => setBasis(e.target.value as ReferralCommissionBasis)}>
-          <option value="paid">What the store paid</option>
-          <option value="list">The list price</option>
+        <SelectField label={t.commissionOn} value={basis} onChange={(e) => setBasis(e.target.value as ReferralCommissionBasis)}>
+          <option value="paid">{t.whatStorePaid}</option>
+          <option value="list">{t.listPriceThe}</option>
         </SelectField>
-        <TextAreaField label="Note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} rows={2} />
+        <TextAreaField label={t.note} value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} rows={2} />
       </form>
     </Modal>
   );
@@ -325,11 +332,12 @@ export function AgentLinkModal({
 
 /** Every code entered on any store this account owns, on the person's page. */
 export function UserReferralsPanel({ userId }: { userId: string }) {
+  const t = useT(REFERRAL_STRINGS);
   const { data, loading, error, refresh } = useAsync(() => adminApi.getUserReferrals(userId), [userId]);
   return (
-    <section aria-label="Referral codes">
+    <section aria-label={t.referralCodes}>
       <DataState skeleton={<ListSkeleton variant="table" />} loading={loading && !data} error={error} onRetry={() => void refresh()}>
-        {data && (data.redemptions.length === 0 ? <EmptyBlock message="No referral code entered on this account's stores." /> : <RedemptionTable rows={data.redemptions} show="both" />)}
+        {data && (data.redemptions.length === 0 ? <EmptyBlock message={t.accountNoCodes} /> : <RedemptionTable rows={data.redemptions} show="both" />)}
       </DataState>
     </section>
   );

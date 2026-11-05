@@ -1,3 +1,4 @@
+import { commonText } from "@/lib/commonStrings";
 import {
   forwardRef,
   useId,
@@ -141,7 +142,7 @@ export function SearchInput({ value, onChange, className, placeholder = "Searchâ
         <button
           type="button"
           onClick={() => onChange("")}
-          aria-label="Clear"
+          aria-label={commonText().clear}
           className="relative me-1 flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-soft transition-[scale,background-color,color] duration-[var(--dur-fade)] ease-[var(--ease-out)] before:absolute before:-inset-1 hover:bg-ink/8 hover:text-ink focus-visible:outline-2 focus-visible:outline-primary active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
         >
           <X className="size-4" aria-hidden />

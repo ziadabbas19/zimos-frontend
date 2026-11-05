@@ -21,9 +21,11 @@ import {
   MarkPaidModal,
   MerchantsTable,
 } from "@/components/referrals";
-import { CONSOLE_REVIEW_HINT, NEW_CODE_REVIEW_HINT, PAYOUT_OPTIONS, codeToEdit, describeDiscount, neverApproved } from "@/lib/referrals";
+import { codeToEdit, consoleReviewHint, describeDiscount, neverApproved, newCodeReviewHint, payoutOptions } from "@/lib/referrals";
+import { REFERRAL_STRINGS, isolate } from "@/lib/referralStrings";
 import { Pager } from "@/pages/BlocklistPage";
 import { useAuth } from "@/context/AuthContext";
+import { fmt, useT } from "@/i18n/LocaleContext";
 import { useAsync } from "@/lib/useAsync";
 import * as adminApi from "@/lib/adminApi";
 import { formatBp, formatDate } from "@/lib/format";
@@ -32,6 +34,7 @@ import { P, isCreator } from "@/lib/permissions";
 type StatusFilter = "all" | CommissionListStatus;
 
 export function AgentDetailPage() {
+  const t = useT(REFERRAL_STRINGS);
   const { id = "" } = useParams();
   const toast = useToast();
   const { can, user } = useAuth();
@@ -48,15 +51,15 @@ export function AgentDetailPage() {
   return (
     <div>
       <PageHeader
-        back={{ to: "/agents", label: "Agents" }}
-        title={agent?.fullName ?? "Agent"}
-        titleBadge={agent && !agent.isAgent ? <StatusBadge tone="neutral">No longer an agent</StatusBadge> : undefined}
+        back={{ to: "/agents", label: t.agents }}
+        title={agent?.fullName ?? t.agentUnnamed}
+        titleBadge={agent && !agent.isAgent ? <StatusBadge tone="neutral">{t.agentNoLonger}</StatusBadge> : undefined}
         description={agent?.email}
         actions={
           canManage &&
           agent?.isAgent && (
             <Button onClick={() => setAdding(true)}>
-              <Plus /> Add code
+              <Plus /> {t.agentAddCode}
             </Button>
           )
         }
@@ -66,23 +69,23 @@ export function AgentDetailPage() {
         {agent && (
           <div className="space-y-8">
             <section>
-              <h2 className="mb-3 text-lg font-semibold text-ink">Referral codes</h2>
+              <h2 className="mb-3 text-lg font-semibold text-ink">{t.referralCodes}</h2>
               {agent.codes.length === 0 ? (
-                <EmptyBlock message="This agent has no codes yet." />
+                <EmptyBlock message={t.agentNoCodes} />
               ) : (
                 <Panel flush>
                   <Table>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
-                        <Th>Code</Th>
-                        <Th>Discount</Th>
-                        <Th>Commission rate</Th>
-                        <Th className="text-end">Merchants</Th>
-                        <Th>Suggested commission</Th>
-                        <Th>Status</Th>
+                        <Th>{t.code}</Th>
+                        <Th>{t.discount}</Th>
+                        <Th>{t.agentCommissionRate}</Th>
+                        <Th className="text-end">{t.merchants}</Th>
+                        <Th>{t.suggestedCommission}</Th>
+                        <Th>{t.status}</Th>
                         {canManage && (
                           <Th className="text-end">
-                            <span className="sr-only">Actions</span>
+                            <span className="sr-only">{t.actions}</span>
                           </Th>
                         )}
                       </TableRow>
@@ -97,19 +100,19 @@ export function AgentDetailPage() {
                           <Td className="text-sm">{describeDiscount(c)}</Td>
                           <Td className="text-sm">
                             {formatBp(c.effectiveCommissionRateBp)}
-                            {c.commissionRateBp == null && <span className="block text-xs text-ink-soft">Default</span>}
+                            {c.commissionRateBp == null && <span className="block text-xs text-ink-soft">{t.agentDefault}</span>}
                           </Td>
                           <Td className="text-end text-sm">{c.merchantsReferred}</Td>
                           <Td>
-                            <CommissionTotals totals={c.commission} empty="No payments yet" />
+                            <CommissionTotals totals={c.commission} empty={t.noPaymentsYet} />
                           </Td>
                           <Td>
                             <CodeStatus code={c} />
-                            <span className="mt-1 block text-xs text-ink-soft">Since {formatDate(c.createdAt)}</span>
+                            <span className="mt-1 block text-xs text-ink-soft">{fmt(t.agentSince, { date: formatDate(c.createdAt) })}</span>
                           </Td>
                           {canManage && (
                             <Td className="text-end">
-                              <Button size="icon-sm" variant="ghost" aria-label={`Edit ${c.code}`} onClick={() => setEditing(c)}>
+                              <Button size="icon-sm" variant="ghost" aria-label={fmt(t.codeEdit, { code: isolate(c.code) })} onClick={() => setEditing(c)}>
                                 <Pencil />
                               </Button>
                             </Td>
@@ -123,9 +126,9 @@ export function AgentDetailPage() {
             </section>
 
             <section>
-              <h2 className="mb-3 text-lg font-semibold text-ink">Referred merchants</h2>
+              <h2 className="mb-3 text-lg font-semibold text-ink">{t.agentReferred}</h2>
               {detail.data!.merchants.length === 0 ? (
-                <EmptyBlock message="No merchant has entered one of these codes yet." />
+                <EmptyBlock message={t.agentNoMerchants} />
               ) : (
                 <MerchantsTable merchants={detail.data!.merchants} linkWorkspaces={can(P.WORKSPACES_VIEW)} />
               )}
@@ -143,11 +146,11 @@ export function AgentDetailPage() {
       {adding && agent && (
         <CodeModal
           defaultRateBp={defaultRateBp}
-          description={creator ? undefined : NEW_CODE_REVIEW_HINT}
+          description={creator ? undefined : newCodeReviewHint()}
           onClose={() => setAdding(false)}
           onSubmit={async (input) => {
             const code = await adminApi.createReferralCode(agent.id, { ...input, code: input.code ?? "" });
-            toast.success(code.approvalStatus === "pending" ? `Code ${code.code} was sent for review.` : `Code ${code.code} created.`);
+            toast.success(fmt(code.approvalStatus === "pending" ? t.agentCodeSent : t.agentCodeCreated, { code: isolate(code.code) }));
             setAdding(false);
             void detail.refresh({ silent: true });
           }}
@@ -158,11 +161,11 @@ export function AgentDetailPage() {
           code={codeToEdit(editing, creator)}
           hideActive={neverApproved(editing)}
           defaultRateBp={defaultRateBp}
-          description={creator ? undefined : CONSOLE_REVIEW_HINT}
+          description={creator ? undefined : consoleReviewHint()}
           onClose={() => setEditing(null)}
           onSubmit={async (input) => {
             const code = await adminApi.updateReferralCode(editing.id, input);
-            toast.success(code.approvalStatus === "pending" ? `Code ${code.code} was sent for review.` : `Code ${code.code} saved.`);
+            toast.success(fmt(code.approvalStatus === "pending" ? t.agentCodeSent : t.agentCodeSaved, { code: isolate(code.code) }));
             setEditing(null);
             void detail.refresh({ silent: true });
           }}
@@ -181,6 +184,7 @@ function CommissionLedger({
   canMarkPaid: boolean;
   onChanged: () => void;
 }) {
+  const t = useT(REFERRAL_STRINGS);
   const toast = useToast();
   const [status, setStatus] = useState<StatusFilter>("all");
   const [page, setPage] = useState({ key: status, offset: 0 });
@@ -194,8 +198,8 @@ function CommissionLedger({
   return (
     <section>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-ink">Commission ledger</h2>
-        <FilterChips options={PAYOUT_OPTIONS} value={status} onChange={setStatus} />
+        <h2 className="text-lg font-semibold text-ink">{t.agentLedger}</h2>
+        <FilterChips options={payoutOptions()} value={status} onChange={setStatus} />
       </div>
       <DataState loading={ledger.loading && !ledger.data} error={ledger.error} onRetry={() => void ledger.refresh()}>
         {ledger.data && ledger.data.totals.length > 0 && (
@@ -204,7 +208,7 @@ function CommissionLedger({
           </div>
         )}
         {(ledger.data?.commissions.length ?? 0) === 0 ? (
-          <EmptyBlock message={status === "all" ? "No payments with this agent's codes yet." : "No rows match this filter."} />
+          <EmptyBlock message={status === "all" ? t.agentNoLedger : t.noRowsMatch} />
         ) : (
           <LedgerTable rows={ledger.data!.commissions} onMarkPaid={canMarkPaid ? setMarking : undefined} />
         )}
@@ -224,7 +228,7 @@ function CommissionLedger({
           onClose={() => setMarking(null)}
           onConfirm={async (note) => {
             await adminApi.markCommissionPaid(marking.id, note || undefined);
-            toast.success("Commission marked paid.");
+            toast.success(t.agentMarkedPaid);
             setMarking(null);
             void ledger.refresh({ silent: true });
             onChanged();

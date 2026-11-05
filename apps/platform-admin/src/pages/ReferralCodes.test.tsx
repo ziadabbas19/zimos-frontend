@@ -3,8 +3,9 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AdminAgentLinkRequest, AdminPlan, AdminReferralCodeDetail, AdminReferralCodeRow, AdminReferralSimulation } from "@store-builder/api-client";
 import { ToastProvider } from "@/components/Toast";
-import { LocaleProvider } from "@/i18n/LocaleContext";
+import { LocaleProvider, useLocale } from "@/i18n/LocaleContext";
 import * as adminApi from "@/lib/adminApi";
+import { ApiError } from "@/lib/errors";
 import { ReferralCodesPage } from "./ReferralCodesPage";
 import { ReferralCodeDetailPage } from "./ReferralCodeDetailPage";
 
@@ -239,5 +240,86 @@ describe("the code page", () => {
     const dialog = await screen.findByRole("dialog");
     fireEvent.click(within(dialog).getByRole("switch", { name: "Active" }));
     expect(within(dialog).getByRole("alert").textContent).toContain("3 store(s) on a trial entered this code and haven't paid yet");
+  });
+});
+
+describe("in Arabic", () => {
+  const LOCALE_KEY = "zimos.console.locale";
+  beforeEach(() => localStorage.setItem(LOCALE_KEY, "ar"));
+  afterEach(() => {
+    localStorage.removeItem(LOCALE_KEY);
+    document.documentElement.dir = "ltr";
+    document.documentElement.lang = "en";
+  });
+
+  it("the list reads right to left: its helpers' words, the code kept left to right, the arrow turned", async () => {
+    const dated = { ...CODE, startsAt: "2026-10-01T00:00:00.000Z", endsAt: "2026-12-01T00:00:00.000Z" };
+    mocked.listReferralCodes.mockResolvedValue({ codes: [dated], total: 1, limit: 50, offset: 0, defaultCommissionRateBp: 3000, v2Enabled: true });
+    renderAt("/referral-codes");
+    const code = await screen.findByText("WELCOME");
+    expect(code.getAttribute("dir")).toBe("ltr");
+    const row = code.closest("tr")!;
+    expect(within(row).getByText("بلا وكيل")).toBeTruthy();
+    expect(within(row).getByText("خصم 100% على الدفعة الأولى")).toBeTruthy();
+    expect(within(row).getByText("التجار الجدد فقط")).toBeTruthy();
+    expect(within(row).getByText("نشط")).toBeTruthy();
+    expect(row.textContent).toContain("←");
+    expect(row.textContent).not.toContain("→");
+    expect(document.documentElement.dir).toBe("rtl");
+  });
+
+  it("a waiting change lists only what it alters, by its Arabic labels", async () => {
+    const proposed = { ...CODE, audience: "any" as const };
+    const detail: AdminReferralCodeDetail = {
+      code: { ...CODE, approvalStatus: "pending", proposed },
+      impact: { currentStores: 0, trialingUnpaid: 0 },
+      defaultCommissionRateBp: 3000,
+      v2Enabled: true,
+    };
+    mocked.getReferralCode.mockResolvedValue(detail);
+    renderAt("/referral-codes/c1");
+    const heading = await screen.findByRole("heading", { name: "يوجد تعديل بانتظار المراجعة" });
+    const rows = within(heading.parentElement!.querySelector("dl")!).getAllByRole("definition");
+    expect(rows).toHaveLength(1);
+    expect(rows[0].textContent).toBe("\u2068التجار الجدد فقط\u2069 ← \u2068التجار الجدد والحاليون\u2069");
+  });
+
+  it("a validation message and a refusal from the API arrive in Arabic", async () => {
+    mocked.createStandaloneReferralCode.mockRejectedValue(new ApiError("The code SPRING is already taken.", 409, "REFERRAL_CODE_TAKEN"));
+    renderAt("/referral-codes");
+    fireEvent.click(await screen.findByRole("button", { name: /كود جديد/ }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText(/^الكود/), { target: { value: "spring" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "إنشاء الكود" }));
+    expect(await within(dialog).findByText("الخصم (شهري)، المرحلة 1: أدخل خصمًا أكبر من صفر.")).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText("النسبة"), { target: { value: "25" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "إنشاء الكود" }));
+    expect(await within(dialog).findByText("هذا الكود مستخدم بالفعل.")).toBeTruthy();
+  });
+
+  it("switching language in place changes what the plain helpers say", async () => {
+    localStorage.removeItem(LOCALE_KEY);
+    function Switch() {
+      const { toggleLocale } = useLocale();
+      return <button onClick={toggleLocale}>switch</button>;
+    }
+    render(
+      <LocaleProvider>
+        <ToastProvider>
+          <Switch />
+          <MemoryRouter>
+            <ReferralCodesPage />
+          </MemoryRouter>
+        </ToastProvider>
+      </LocaleProvider>
+    );
+    const row = (await screen.findByText("WELCOME")).closest("tr")!;
+    expect(within(row).getByText("New merchants only")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "switch" }));
+    expect(await within(row).findByText("التجار الجدد فقط")).toBeTruthy();
+    expect(within(row).getByText("خصم 100% على الدفعة الأولى")).toBeTruthy();
+    expect(within(row).queryByText("New merchants only")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "switch" }));
+    expect(await within(row).findByText("New merchants only")).toBeTruthy();
   });
 });

@@ -1,3 +1,5 @@
+import { useT } from "@/i18n/LocaleContext";
+import { REFERRAL_STRINGS } from "@/lib/referralStrings";
 import { useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger, buttonVariants } from "@store-builder/ui";
@@ -33,6 +35,7 @@ export function WorkspaceDetailPage() {
   const { id = "" } = useParams();
   const [params, setParams] = useSearchParams();
   const { can } = useAuth();
+  const tReferrals = useT(REFERRAL_STRINGS);
   const canReadSubscription = can(P.SUBSCRIPTIONS_VIEW);
   // The second tab holds the subscription, the store's audit trail and its
   // agent: gone for an account that can read none of them.
@@ -248,7 +251,7 @@ export function WorkspaceDetailPage() {
 
           {can(P.AGENTS_VIEW) && (
             <div className="mt-8">
-              <h2 className="mb-3 font-display text-lg font-medium text-ink">Referral codes and agent</h2>
+              <h2 className="mb-3 font-display text-lg font-medium text-ink">{tReferrals.storeSection}</h2>
               <WorkspaceReferralsPanel workspaceId={id} />
             </div>
           )}

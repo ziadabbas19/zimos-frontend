@@ -13,12 +13,14 @@ import { AgentLinkRequests } from "@/components/agentLinkRequests";
 import { ApprovalBadge } from "@/components/referrals";
 import { ReferralCodeFormModal } from "@/components/referralCodeForm";
 import { useAuth } from "@/context/AuthContext";
+import { fmt, useT } from "@/i18n/LocaleContext";
 import { useAsync } from "@/lib/useAsync";
 import * as adminApi from "@/lib/adminApi";
 import { formatDate } from "@/lib/format";
-import { AUDIENCE_LABELS, STATE_LABELS, describeCodeDiscount, describeGrant, usesLabel } from "@/lib/referralCodes";
+import { audienceLabels, describeCodeDiscount, describeGrant, stateLabels, usesLabel } from "@/lib/referralCodes";
 import { P, isCreator } from "@/lib/permissions";
-import { NEW_CODE_REVIEW_HINT, neverApproved } from "@/lib/referrals";
+import { neverApproved, newCodeReviewHint } from "@/lib/referrals";
+import { REFERRAL_STRINGS, isolate, rangeArrow, referralStrings } from "@/lib/referralStrings";
 
 /**
  * Agents → Referral codes (migration 725): every code, with or without an
@@ -35,14 +37,19 @@ export const STATE_TONE: Record<ReferralCodeState, Tone> = {
 };
 
 type StateFilter = "all" | ReferralCodeState;
-const STATE_OPTIONS: { value: StateFilter; label: string }[] = [
-  { value: "all", label: "All" },
-  ...(Object.keys(STATE_LABELS) as ReferralCodeState[]).map((s) => ({ value: s, label: STATE_LABELS[s] })),
-];
+
+function stateOptions(): { value: StateFilter; label: string }[] {
+  const labels = stateLabels();
+  return [
+    { value: "all", label: referralStrings().all },
+    ...(Object.keys(labels) as ReferralCodeState[]).map((s) => ({ value: s, label: labels[s] })),
+  ];
+}
 
 type ApprovalFilter = "all" | Exclude<ReferralCodeApproval, "approved">;
 
 export function ReferralCodesPage() {
+  const t = useT(REFERRAL_STRINGS);
   const toast = useToast();
   const navigate = useNavigate();
   const { can, user } = useAuth();
@@ -71,30 +78,29 @@ export function ReferralCodesPage() {
   const codes = list.data?.codes ?? [];
   const pendingReview = list.data?.pendingReview ?? 0;
   const approvalOptions: { value: ApprovalFilter; label: string }[] = [
-    { value: "all", label: "Any review" },
-    { value: "pending", label: pendingReview > 0 ? `Pending review (${pendingReview})` : "Pending review" },
-    { value: "rejected", label: "Rejected" },
+    { value: "all", label: t.listAnyReview },
+    { value: "pending", label: pendingReview > 0 ? fmt(t.listPendingCount, { count: pendingReview }) : t.pendingReview },
+    { value: "rejected", label: t.rejected },
   ];
+  const audiences = audienceLabels();
 
   return (
     <div>
       <PageHeader
-        title="Referral codes"
-        description="Every code, with or without an agent: its discount, who can enter it, and how many stores used it."
-        back={{ to: "/agents", label: "Agents" }}
+        title={t.referralCodes}
+        description={t.listDescription}
+        back={{ to: "/agents", label: t.agents }}
         actions={
           can(P.AGENTS_MANAGE) &&
           v2 && (
             <Button onClick={() => setCreating(true)}>
-              <Plus /> New code
+              <Plus /> {t.listNewCode}
             </Button>
           )
         }
       />
       {list.data && !v2 && (
-        <Alert className="mb-4">
-          Codes with limits, schedules or no agent are switched off (REFERRAL_CODES_V2_ENABLED). Codes are created on each agent&apos;s page, as before.
-        </Alert>
+        <Alert className="mb-4">{t.listV2Off}</Alert>
       )}
 
       {(linkRequests.data?.requests.length ?? 0) > 0 && (
@@ -104,43 +110,43 @@ export function ReferralCodesPage() {
       )}
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
-        <SearchInput value={q} onChange={setQ} placeholder="Search code or label…" />
-        <SelectField label="Agent" value={agentId} onChange={(e) => setAgentId(e.target.value)}>
-          <option value="">Any agent</option>
-          <option value="none">No agent</option>
+        <SearchInput value={q} onChange={setQ} placeholder={t.listSearch} />
+        <SelectField label={t.agent} value={agentId} onChange={(e) => setAgentId(e.target.value)}>
+          <option value="">{t.listAnyAgent}</option>
+          <option value="none">{t.noAgent}</option>
           {(agents.data?.agents ?? []).map((a) => (
             <option key={a.id} value={a.id}>
               {a.fullName}
             </option>
           ))}
         </SelectField>
-        <SelectField label="Who can enter it" value={audience} onChange={(e) => setAudience(e.target.value as "" | ReferralAudience)}>
-          <option value="">Anyone</option>
-          {(Object.keys(AUDIENCE_LABELS) as ReferralAudience[]).map((a) => (
+        <SelectField label={t.whoCanEnter} value={audience} onChange={(e) => setAudience(e.target.value as "" | ReferralAudience)}>
+          <option value="">{t.listAnyone}</option>
+          {(Object.keys(audiences) as ReferralAudience[]).map((a) => (
             <option key={a} value={a}>
-              {AUDIENCE_LABELS[a]}
+              {audiences[a]}
             </option>
           ))}
         </SelectField>
       </div>
-      <FilterChips className="mb-2" options={STATE_OPTIONS} value={state} onChange={setState} />
+      <FilterChips className="mb-2" options={stateOptions()} value={state} onChange={setState} />
       <FilterChips className="mb-4" options={approvalOptions} value={approval} onChange={setApproval} />
 
       <DataState skeleton={<ListSkeleton variant="table" />} loading={list.loading && !list.data} error={list.error} onRetry={() => void list.refresh()}>
         {codes.length === 0 ? (
-          <EmptyBlock message="No codes match." />
+          <EmptyBlock message={t.listEmpty} />
         ) : (
           <Panel flush>
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <Th>Code</Th>
-                  <Th>Agent</Th>
-                  <Th>Discount</Th>
-                  <Th>Who</Th>
-                  <Th className="text-end">Used</Th>
-                  <Th>Dates</Th>
-                  <Th>State</Th>
+                  <Th>{t.code}</Th>
+                  <Th>{t.agent}</Th>
+                  <Th>{t.discount}</Th>
+                  <Th>{t.listWho}</Th>
+                  <Th className="text-end">{t.detailUsed}</Th>
+                  <Th>{t.detailDates}</Th>
+                  <Th>{t.state}</Th>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -158,11 +164,11 @@ export function ReferralCodesPage() {
           agents={agents.data?.agents ?? []}
           plans={plans.data ?? []}
           defaultRateBp={list.data?.defaultCommissionRateBp ?? 3000}
-          description={isCreator(user) ? undefined : NEW_CODE_REVIEW_HINT}
+          description={isCreator(user) ? undefined : newCodeReviewHint()}
           onClose={() => setCreating(false)}
           onSaved={(saved) => {
             setCreating(false);
-            toast.success(saved.approvalStatus === "pending" ? `${saved.code} was sent for review.` : `${saved.code} is ready.`);
+            toast.success(fmt(saved.approvalStatus === "pending" ? t.listSentForReview : t.listReady, { code: isolate(saved.code) }));
             navigate(`/referral-codes/${saved.id}`);
           }}
         />
@@ -172,6 +178,7 @@ export function ReferralCodesPage() {
 }
 
 function CodeRow({ code }: { code: AdminReferralCodeRow }) {
+  const t = useT(REFERRAL_STRINGS);
   const grant = describeGrant(code.grant);
   return (
     <TableRow>
@@ -187,22 +194,22 @@ function CodeRow({ code }: { code: AdminReferralCodeRow }) {
             {code.agent.fullName}
           </Link>
         ) : (
-          <span className="text-ink-soft">No agent</span>
+          <span className="text-ink-soft">{t.noAgent}</span>
         )}
       </Td>
       <Td className="align-top text-sm">
         {describeCodeDiscount(code)}
         {grant && <span className="block text-xs text-ink-soft">+ {grant}</span>}
       </Td>
-      <Td className="align-top text-sm">{AUDIENCE_LABELS[code.audience ?? "any"]}</Td>
+      <Td className="align-top text-sm">{audienceLabels()[code.audience ?? "any"]}</Td>
       <Td className="text-end align-top text-sm tabular-nums">{usesLabel(code)}</Td>
       <Td className="align-top text-xs whitespace-nowrap text-ink-soft">
-        {code.startsAt || code.endsAt ? `${code.startsAt ? formatDate(code.startsAt) : "—"} → ${code.endsAt ? formatDate(code.endsAt) : "—"}` : "Any time"}
+        {code.startsAt || code.endsAt ? `${isolate(code.startsAt ? formatDate(code.startsAt) : "—")} ${rangeArrow()} ${isolate(code.endsAt ? formatDate(code.endsAt) : "—")}` : t.anyTime}
       </Td>
       <Td className="align-top">
         <span className="flex flex-wrap gap-1">
           {!neverApproved(code) && (
-            <StatusBadge tone={STATE_TONE[code.state ?? (code.active ? "active" : "inactive")]}>{STATE_LABELS[code.state ?? (code.active ? "active" : "inactive")]}</StatusBadge>
+            <StatusBadge tone={STATE_TONE[code.state ?? (code.active ? "active" : "inactive")]}>{stateLabels()[code.state ?? (code.active ? "active" : "inactive")]}</StatusBadge>
           )}
           <ApprovalBadge code={code} />
         </span>

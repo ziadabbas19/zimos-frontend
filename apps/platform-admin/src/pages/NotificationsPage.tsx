@@ -9,7 +9,7 @@ import { useToast } from "@/components/Toast";
 import { fmt, useT } from "@/i18n/LocaleContext";
 import * as notificationsApi from "@/lib/notificationsApi";
 import { NOTIFICATION_TYPES, type ConsoleNotification, type NotificationPref, type NotificationType } from "@/lib/notificationsApi";
-import { NOTIFICATION_STRINGS, typeLabel } from "@/lib/notificationStrings";
+import { NOTIFICATION_STRINGS, reviewDetail, reviewTitle, typeLabel } from "@/lib/notificationStrings";
 import { getErrorMessage } from "@/lib/errors";
 import { formatDateTime, formatRelative } from "@/lib/format";
 
@@ -113,25 +113,35 @@ export function NotificationsPage() {
           <p className="p-6 text-sm text-ink-soft">{unreadOnly ? t.emptyUnread : t.empty}</p>
         ) : (
           <ul className="divide-y divide-line">
-            {items.map((n) => (
-              <li key={n.id}>
-                <button
-                  type="button"
-                  onClick={() => void open(n)}
-                  className={cn("flex w-full cursor-pointer gap-3 px-4 py-3 text-start hover:bg-primary-soft", !n.readAt && "bg-primary-soft/40")}
-                >
-                  <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", n.readAt ? "bg-transparent" : "bg-primary")} aria-hidden />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium text-ink">{typeLabel(t, n.type)}</span>
-                    {typeof n.data.name === "string" && <span className="block text-sm text-ink">{n.data.name}</span>}
-                    {n.body && <span className="block text-sm text-ink-soft">“{n.body}”</span>}
-                  </span>
-                  <span className="shrink-0 text-end text-xs text-ink-soft" title={formatDateTime(n.createdAt)}>
-                    {formatRelative(n.createdAt)}
-                  </span>
-                </button>
-              </li>
-            ))}
+            {items.map((n) => {
+              // A review's sentence names the code or store and who did it: it replaces the label and the name.
+              const review = reviewTitle(t, n);
+              return (
+                <li key={n.id}>
+                  <button
+                    type="button"
+                    onClick={() => void open(n)}
+                    className={cn("flex w-full cursor-pointer gap-3 px-4 py-3 text-start hover:bg-primary-soft", !n.readAt && "bg-primary-soft/40")}
+                  >
+                    <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", n.readAt ? "bg-transparent" : "bg-primary")} aria-hidden />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium text-ink">{review ?? typeLabel(t, n.type)}</span>
+                      {review ? (
+                        reviewDetail(t, n) && <span className="block text-sm text-ink-soft">{reviewDetail(t, n)}</span>
+                      ) : (
+                        <>
+                          {typeof n.data.name === "string" && <span className="block text-sm text-ink">{n.data.name}</span>}
+                          {n.body && <span className="block text-sm text-ink-soft">“{n.body}”</span>}
+                        </>
+                      )}
+                    </span>
+                    <span className="shrink-0 text-end text-xs text-ink-soft" title={formatDateTime(n.createdAt)}>
+                      {formatRelative(n.createdAt)}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </Panel>

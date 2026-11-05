@@ -30,8 +30,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { getActiveLocale, setActiveLocale, type Locale } from "./activeLocale.ts";
 
-export type Locale = "en" | "ar";
+export { fmt } from "./activeLocale.ts";
+export type { Locale };
 export type Dir = "ltr" | "rtl";
 
 const STORAGE_KEY = "zimos.console.locale";
@@ -65,16 +67,16 @@ export function intlLocaleOf(locale: Locale): string {
  * `formatDate` / `formatMoney` in lib/format.ts can format for the right
  * language. Kept in sync by <LocaleProvider> synchronously during render (so
  * the very render that switches language already formats correctly) and again
- * in an effect.
+ * in an effect. It lives in ./activeLocale.ts, where React-free helpers read it.
  */
-let activeLocale: Locale = readStored();
+setActiveLocale(readStored());
 
 export function getLocale(): Locale {
-  return activeLocale;
+  return getActiveLocale();
 }
 
 export function getIntlLocale(): string {
-  return intlLocaleOf(activeLocale);
+  return intlLocaleOf(getActiveLocale());
 }
 
 interface LocaleState {
@@ -91,15 +93,15 @@ const LocaleContext = createContext<LocaleState | null>(null);
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(() => {
     const initial = readStored();
-    activeLocale = initial;
+    setActiveLocale(initial);
     return initial;
   });
   // Sync during render so formatters called by children in this same render
   // pass already see the new locale.
-  activeLocale = locale;
+  setActiveLocale(locale);
 
   useEffect(() => {
-    activeLocale = locale;
+    setActiveLocale(locale);
     applyToDocument(locale);
   }, [locale]);
 
@@ -141,10 +143,5 @@ export type Messages<K extends string = string> = {
 export function useT<K extends string>(messages: { en: Record<K, string>; ar: Record<NoInfer<K>, string> }): Record<K, string> {
   const { locale } = useLocale();
   return messages[locale];
-}
-
-/** "Hello {name}" + { name: "Sara" } -> "Hello Sara" */
-export function fmt(template: string, values: Record<string, string | number>): string {
-  return template.replace(/\{(\w+)\}/g, (_, k: string) => (k in values ? String(values[k]) : `{${k}}`));
 }
 

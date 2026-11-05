@@ -5,8 +5,8 @@ import { useT, type Messages } from "@/i18n/LocaleContext";
 import { getErrorMessage, isPermissionError } from "@/lib/errors";
 
 const STRINGS = {
-  en: { loading: "Loading…" },
-  ar: { loading: "جارٍ التحميل…" },
+  en: { loading: "Loading…", noPermission: "Your admin role doesn't have permission to view this.", tryAgain: "Try again", nothingYet: "Nothing here yet." },
+  ar: { loading: "جارٍ التحميل…", noPermission: "ليست لدى دورك صلاحية لعرض هذا.", tryAgain: "إعادة المحاولة", nothingYet: "لا يوجد شيء هنا بعد." },
 } satisfies Messages;
 
 interface DataStateProps {
@@ -32,7 +32,7 @@ export function DataState({
   loading,
   error,
   empty,
-  emptyMessage = "Nothing here yet.",
+  emptyMessage,
   emptyAction,
   onRetry,
   skeleton,
@@ -55,13 +55,13 @@ export function DataState({
       <Alert variant="danger" className="flex flex-col gap-3">
         <span>
           {permission
-            ? "Your admin role doesn't have permission to view this."
+            ? t.noPermission
             : getErrorMessage(error)}
         </span>
         {onRetry && !permission && (
           <div>
             <Button size="sm" variant="outline" onClick={onRetry} className="min-h-11">
-              Try again
+              {t.tryAgain}
             </Button>
           </div>
         )}
@@ -70,7 +70,7 @@ export function DataState({
   }
 
   if (empty) {
-    return <EmptyBlock message={emptyMessage} action={emptyAction} />;
+    return <EmptyBlock message={emptyMessage ?? t.nothingYet} action={emptyAction} />;
   }
 
   return <>{children}</>;

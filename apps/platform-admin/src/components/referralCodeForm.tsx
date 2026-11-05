@@ -16,17 +16,19 @@ import { Panel, Td, Th } from "@/components/Panel";
 import { SelectField, TextField } from "@/components/forms";
 import { Toggle } from "@/components/Toggle";
 import { useAuth } from "@/context/AuthContext";
+import { fmt, useT } from "@/i18n/LocaleContext";
 import * as adminApi from "@/lib/adminApi";
 import { getErrorMessage } from "@/lib/errors";
 import { formatMinorMoneyExact } from "@/lib/format";
 import { P } from "@/lib/permissions";
 import { neverApproved } from "@/lib/referrals";
 import {
-  AUDIENCE_LABELS,
   CYCLES,
-  GRANT_LABELS,
   PRESETS,
+  audienceLabels,
+  cycleLabel,
   describeCodeDiscount,
+  grantLabels,
   initialCodeForm,
   percentText,
   termsOf,
@@ -36,6 +38,7 @@ import {
   type DiscountStepDraft,
   type RateStepDraft,
 } from "@/lib/referralCodes";
+import { REFERRAL_STRINGS, isolate } from "@/lib/referralStrings";
 
 /**
  * The second kind of referral code's form (Agents → Referral codes,
@@ -45,22 +48,22 @@ import {
  * Units are converted in lib/referralCodes; the server checks everything again.
  */
 
-const CYCLE_LABEL: Record<BillingCycle, string> = { monthly: "Monthly", yearly: "Yearly" };
-
 function StepCount({ value, onChange, last, label }: { value: string; onChange: (v: string) => void; last: boolean; label: string }) {
+  const t = useT(REFERRAL_STRINGS);
   return (
     <TextField
       label={label}
       inputMode="numeric"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      placeholder={last ? "Every payment after" : "1"}
-      hint={last ? "Empty: every payment after." : undefined}
+      placeholder={last ? t.formPlaceholderEveryAfter : "1"}
+      hint={last ? t.formEmptyEveryAfter : undefined}
     />
   );
 }
 
 function DiscountSteps({ steps, onChange, cycle }: { steps: DiscountStepDraft[]; onChange: (next: DiscountStepDraft[]) => void; cycle: BillingCycle }) {
+  const t = useT(REFERRAL_STRINGS);
   const set = (i: number, patch: Partial<DiscountStepDraft>) => onChange(steps.map((s, j) => (j === i ? { ...s, ...patch } : s)));
   const [preset, setPreset] = useState({ percent: "100", payments: "3", months: "1" });
   return (
@@ -68,86 +71,88 @@ function DiscountSteps({ steps, onChange, cycle }: { steps: DiscountStepDraft[];
       <div className="flex flex-wrap items-end gap-2">
         <TextField label="%" className="w-20" inputMode="decimal" value={preset.percent} onChange={(e) => setPreset({ ...preset, percent: e.target.value })} />
         <Button type="button" size="sm" variant="outline" onClick={() => onChange(PRESETS.firstPayment(preset.percent))}>
-          First payment only
+          {t.formFirstPaymentOnly}
         </Button>
-        <TextField label="Payments" className="w-24" inputMode="numeric" value={preset.payments} onChange={(e) => setPreset({ ...preset, payments: e.target.value })} />
+        <TextField label={t.formPayments} className="w-24" inputMode="numeric" value={preset.payments} onChange={(e) => setPreset({ ...preset, payments: e.target.value })} />
         <Button type="button" size="sm" variant="outline" onClick={() => onChange(PRESETS.forPayments(preset.percent, preset.payments))}>
-          For N payments
+          {t.formForNPayments}
         </Button>
         <Button type="button" size="sm" variant="outline" onClick={() => onChange(PRESETS.everyPayment(preset.percent))}>
-          Every payment
+          {t.formEveryPayment}
         </Button>
-        <TextField label="Months" className="w-20" inputMode="numeric" value={preset.months} onChange={(e) => setPreset({ ...preset, months: e.target.value })} />
+        <TextField label={t.months} className="w-20" inputMode="numeric" value={preset.months} onChange={(e) => setPreset({ ...preset, months: e.target.value })} />
         <Button type="button" size="sm" variant="outline" onClick={() => onChange(PRESETS.freeMonths(preset.months, cycle))}>
-          Free months
+          {t.formFreeMonths}
         </Button>
       </div>
-      {steps.length === 0 && <p className="text-sm text-ink-soft">No discount on this cycle.</p>}
+      {steps.length === 0 && <p className="text-sm text-ink-soft">{t.formNoDiscountOnCycle}</p>}
       {steps.map((step, i) => (
         <div key={i} className="grid items-end gap-2 sm:grid-cols-[7rem_10rem_8rem_6rem_auto]">
-          <StepCount label={`Step ${i + 1}: payments`} value={step.count} last={i === steps.length - 1} onChange={(count) => set(i, { count })} />
-          <SelectField label="Type" value={step.type} onChange={(e) => set(i, { type: e.target.value as DiscountStepDraft["type"] })}>
-            <option value="percentage">Percent off</option>
-            <option value="fixed">Amount off</option>
-            <option value="free_months">Free months</option>
+          <StepCount label={fmt(t.formStepPayments, { n: i + 1 })} value={step.count} last={i === steps.length - 1} onChange={(count) => set(i, { count })} />
+          <SelectField label={t.formType} value={step.type} onChange={(e) => set(i, { type: e.target.value as DiscountStepDraft["type"] })}>
+            <option value="percentage">{t.formPercentOff}</option>
+            <option value="fixed">{t.formAmountOff}</option>
+            <option value="free_months">{t.formFreeMonths}</option>
           </SelectField>
           <TextField
-            label={step.type === "percentage" ? "Percent" : step.type === "fixed" ? "Amount" : "Months"}
+            label={step.type === "percentage" ? t.percent : step.type === "fixed" ? t.amount : t.months}
             inputMode="decimal"
             value={step.amount}
             onChange={(e) => set(i, { amount: e.target.value })}
           />
           {step.type === "fixed" ? (
-            <TextField label="Currency" maxLength={3} value={step.currency} onChange={(e) => set(i, { currency: e.target.value.toUpperCase() })} />
+            <TextField label={t.currency} maxLength={3} dir="ltr" value={step.currency} onChange={(e) => set(i, { currency: e.target.value.toUpperCase() })} />
           ) : (
             <span />
           )}
-          <Button type="button" size="icon-sm" variant="ghost" aria-label={`Remove discount step ${i + 1}`} onClick={() => onChange(steps.filter((_, j) => j !== i))}>
+          <Button type="button" size="icon-sm" variant="ghost" aria-label={fmt(t.formRemoveDiscountStep, { n: i + 1 })} onClick={() => onChange(steps.filter((_, j) => j !== i))}>
             <Trash2 />
           </Button>
         </div>
       ))}
       <Button type="button" size="sm" variant="ghost" onClick={() => onChange([...steps, { count: "", type: "percentage", amount: "", currency: "EGP" }])}>
-        <Plus /> Add a discount step
+        <Plus /> {t.formAddDiscountStep}
       </Button>
     </div>
   );
 }
 
 export function RateSteps({ steps, onChange, label }: { steps: RateStepDraft[]; onChange: (next: RateStepDraft[]) => void; label: string }) {
+  const t = useT(REFERRAL_STRINGS);
   const set = (i: number, patch: Partial<RateStepDraft>) => onChange(steps.map((s, j) => (j === i ? { ...s, ...patch } : s)));
   return (
     <div className="space-y-3">
-      {steps.length === 0 && <p className="text-sm text-ink-soft">No commission on this cycle.</p>}
+      {steps.length === 0 && <p className="text-sm text-ink-soft">{t.formNoCommissionOnCycle}</p>}
       {steps.map((step, i) => (
         <div key={i} className="grid items-end gap-2 sm:grid-cols-[7rem_8rem_auto]">
-          <StepCount label={`Step ${i + 1}: payments`} value={step.count} last={i === steps.length - 1} onChange={(count) => set(i, { count })} />
-          <TextField label="Rate (%)" inputMode="decimal" value={step.percent} onChange={(e) => set(i, { percent: e.target.value })} />
-          <Button type="button" size="icon-sm" variant="ghost" aria-label={`Remove ${label} step ${i + 1}`} onClick={() => onChange(steps.filter((_, j) => j !== i))}>
+          <StepCount label={fmt(t.formStepPayments, { n: i + 1 })} value={step.count} last={i === steps.length - 1} onChange={(count) => set(i, { count })} />
+          <TextField label={t.formRate} inputMode="decimal" value={step.percent} onChange={(e) => set(i, { percent: e.target.value })} />
+          <Button type="button" size="icon-sm" variant="ghost" aria-label={fmt(t.formRemoveStep, { label, n: i + 1 })} onClick={() => onChange(steps.filter((_, j) => j !== i))}>
             <Trash2 />
           </Button>
         </div>
       ))}
       <Button type="button" size="sm" variant="ghost" onClick={() => onChange([...steps, { count: "", percent: "" }])}>
-        <Plus /> Add a {label} step
+        <Plus /> {fmt(t.formAddStep, { label })}
       </Button>
     </div>
   );
 }
 
 function CycleEditor({ cycle, draft, onChange, hasAgent }: { cycle: BillingCycle; draft: CycleDraft; onChange: (d: CycleDraft) => void; hasAgent: boolean }) {
+  const t = useT(REFERRAL_STRINGS);
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <div>
-        <h4 className="mb-2 text-sm font-medium text-ink">Discount</h4>
+        <h4 className="mb-2 text-sm font-medium text-ink">{t.discount}</h4>
         <DiscountSteps cycle={cycle} steps={draft.discount} onChange={(discount) => onChange({ ...draft, discount })} />
       </div>
       <div>
-        <h4 className="mb-2 text-sm font-medium text-ink">Agent commission</h4>
+        <h4 className="mb-2 text-sm font-medium text-ink">{t.formAgentCommission}</h4>
         {hasAgent ? (
-          <RateSteps label="commission" steps={draft.commission} onChange={(commission) => onChange({ ...draft, commission })} />
+          <RateSteps label={t.formCommissionWord} steps={draft.commission} onChange={(commission) => onChange({ ...draft, commission })} />
         ) : (
-          <p className="text-sm text-ink-soft">No agent: a discount only, nobody earns a commission.</p>
+          <p className="text-sm text-ink-soft">{t.formNoAgentNote}</p>
         )}
       </div>
     </div>
@@ -156,6 +161,7 @@ function CycleEditor({ cycle, draft, onChange, hasAgent }: { cycle: BillingCycle
 
 /** The first payments under the form's unsaved schedules, for one plan and cycle (POST /admin/referral-codes/simulate). */
 export function Simulator({ form, plans }: { form: CodeForm; plans: AdminPlan[] }) {
+  const t = useT(REFERRAL_STRINGS);
   const paid = plans.filter((p) => p.monthlyPrice > 0);
   const [planId, setPlanId] = useState(paid[0]?.id ?? "");
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
@@ -179,26 +185,26 @@ export function Simulator({ form, plans }: { form: CodeForm; plans: AdminPlan[] 
 
   const money = (n: number) => (result ? formatMinorMoneyExact(n, result.currency) : "");
   return (
-    <section aria-label="Simulator" className="space-y-3 rounded-[var(--radius-card)] border border-line p-4">
-      <h3 className="font-medium text-ink">Simulator</h3>
-      <p className="text-sm text-ink-soft">The first 12 payments under these settings, before saving.</p>
+    <section aria-label={t.simTitle} className="space-y-3 rounded-[var(--radius-card)] border border-line p-4">
+      <h3 className="font-medium text-ink">{t.simTitle}</h3>
+      <p className="text-sm text-ink-soft">{t.simHint}</p>
       <div className="flex flex-wrap items-end gap-2">
-        <SelectField label="Plan" value={planId} onChange={(e) => setPlanId(e.target.value)}>
+        <SelectField label={t.plan} value={planId} onChange={(e) => setPlanId(e.target.value)}>
           {paid.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
             </option>
           ))}
         </SelectField>
-        <SelectField label="Billing" value={cycle} onChange={(e) => setCycle(e.target.value as BillingCycle)}>
+        <SelectField label={t.billing} value={cycle} onChange={(e) => setCycle(e.target.value as BillingCycle)}>
           {CYCLES.map((c) => (
             <option key={c} value={c}>
-              {CYCLE_LABEL[c]}
+              {cycleLabel(c)}
             </option>
           ))}
         </SelectField>
         <Button type="button" variant="outline" disabled={busy || !planId} onClick={() => void run()}>
-          {busy ? "Working…" : "Show payments"}
+          {busy ? t.working : t.simShow}
         </Button>
       </div>
       {error && <Alert variant="danger">{error}</Alert>}
@@ -207,12 +213,12 @@ export function Simulator({ form, plans }: { form: CodeForm; plans: AdminPlan[] 
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <Th>Payment</Th>
-                <Th className="text-end">List price</Th>
-                <Th className="text-end">Discount</Th>
-                <Th className="text-end">Merchant pays</Th>
-                <Th className="text-end">Agent commission</Th>
-                <Th className="text-end">Platform keeps</Th>
+                <Th>{t.simPayment}</Th>
+                <Th className="text-end">{t.simListPrice}</Th>
+                <Th className="text-end">{t.discount}</Th>
+                <Th className="text-end">{t.simMerchantPays}</Th>
+                <Th className="text-end">{t.formAgentCommission}</Th>
+                <Th className="text-end">{t.simPlatformKeeps}</Th>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -230,7 +236,7 @@ export function Simulator({ form, plans }: { form: CodeForm; plans: AdminPlan[] 
                 </TableRow>
               ))}
               <TableRow className="font-medium">
-                <Td>Total</Td>
+                <Td>{t.simTotal}</Td>
                 <Td className="text-end tabular-nums">{money(result.totals.listPrice)}</Td>
                 <Td className="text-end tabular-nums">{money(result.totals.discount)}</Td>
                 <Td className="text-end tabular-nums">{money(result.totals.merchantPays)}</Td>
@@ -278,6 +284,7 @@ export function ReferralCodeFormModal({
   onClose: () => void;
   onSaved: (code: AdminReferralCode) => void;
 }) {
+  const t = useT(REFERRAL_STRINGS);
   const { can } = useAuth();
   const creating = !code;
   const fixedOwner = ownerId !== undefined;
@@ -291,6 +298,8 @@ export function ReferralCodeFormModal({
   const set = (patch: Partial<CodeForm>) => setForm((f) => ({ ...f, ...patch }));
   const hasAgent = Boolean(form.agentId);
   const switchingOff = !creating && code.active && !form.active;
+  const audiences = audienceLabels();
+  const grants = grantLabels();
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -329,16 +338,16 @@ export function ReferralCodeFormModal({
     <Modal
       open
       onClose={() => !busy && onClose()}
-      title={creating ? "New referral code" : `Edit ${code.code}`}
-      description={description ?? "Changes apply to stores that enter the code from now on, and to payments still to come. Past payments never change."}
+      title={creating ? t.codeNew : fmt(t.codeEdit, { code: isolate(code.code) })}
+      description={description ?? t.formDefaultDescription}
       className="max-w-4xl"
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={busy}>
-            Cancel
+            {t.cancel}
           </Button>
           <Button type="submit" form="referral-code-form" disabled={busy || (creating && form.code.trim().length < 3)}>
-            {busy ? "Saving…" : (submitLabel ?? (creating ? "Create code" : "Save"))}
+            {busy ? t.saving : (submitLabel ?? (creating ? t.codeCreate : t.save))}
           </Button>
         </>
       }
@@ -348,19 +357,20 @@ export function ReferralCodeFormModal({
 
         <section className="grid gap-4 sm:grid-cols-2">
           <TextField
-            label="Code"
+            label={t.code}
             required={creating}
             disabled={!creating}
+            dir="ltr"
             value={form.code}
             onChange={(e) => set({ code: e.target.value.toUpperCase() })}
             placeholder="WELCOME"
             maxLength={32}
-            hint={creating ? "3–32 letters, digits or dashes. It can't be changed later." : "Codes can't be renamed."}
+            hint={creating ? t.codeHintNew : t.codeHintFixed}
           />
-          <TextField label="Label" value={form.label} onChange={(e) => set({ label: e.target.value })} maxLength={120} hint="Internal only — merchants never see it." />
+          <TextField label={t.label} value={form.label} onChange={(e) => set({ label: e.target.value })} maxLength={120} hint={t.labelHint} />
           {!fixedOwner && (
-            <SelectField label="Agent" value={form.agentId} onChange={(e) => set({ agentId: e.target.value })} hint="Optional. No agent: a discount only, no commission. Stores already linked keep their agent.">
-              <option value="">No agent</option>
+            <SelectField label={t.agent} value={form.agentId} onChange={(e) => set({ agentId: e.target.value })} hint={t.formAgentHint}>
+              <option value="">{t.noAgent}</option>
               {agents
                 .filter((a) => a.isAgent || a.id === form.agentId)
                 .map((a) => (
@@ -370,17 +380,17 @@ export function ReferralCodeFormModal({
                 ))}
             </SelectField>
           )}
-          <SelectField label="Who can enter it" value={form.audience} onChange={(e) => set({ audience: e.target.value as ReferralAudience })} hint="New: an owner with no other store and no payment yet.">
-            {(Object.keys(AUDIENCE_LABELS) as ReferralAudience[]).map((a) => (
+          <SelectField label={t.whoCanEnter} value={form.audience} onChange={(e) => set({ audience: e.target.value as ReferralAudience })} hint={t.formWhoHint}>
+            {(Object.keys(audiences) as ReferralAudience[]).map((a) => (
               <option key={a} value={a}>
-                {AUDIENCE_LABELS[a]}
+                {audiences[a]}
               </option>
             ))}
           </SelectField>
           {!creating && !fixedOwner && !neverApproved(code) && (
             <Toggle
-              label="Active"
-              description="Off: it can't be entered, and gives no discount or commission on any payment from now on — including charges already priced with it."
+              label={t.active}
+              description={t.formActiveHint}
               checked={form.active}
               onChange={(active) => set({ active })}
             />
@@ -389,29 +399,29 @@ export function ReferralCodeFormModal({
         {switchingOff && impact && (
           <Alert variant="danger" role="alert">
             {impact.trialingUnpaid > 0
-              ? `${impact.trialingUnpaid} store(s) on a trial entered this code and haven't paid yet: switched off, they lose its discount on their first payment. ${impact.currentStores} store(s) use it now.`
-              : `${impact.currentStores} store(s) use it now; switched off, their payments from now on get no discount and earn no commission.`}
+              ? fmt(t.formOffWarnTrial, { trial: impact.trialingUnpaid, current: impact.currentStores })
+              : fmt(t.formOffWarn, { current: impact.currentStores })}
           </Alert>
         )}
 
         <section className="grid gap-4 sm:grid-cols-3">
-          <TextField label="Starts" type="datetime-local" value={form.startsAt} onChange={(e) => set({ startsAt: e.target.value })} hint="Optional." />
-          <TextField label="Ends" type="datetime-local" value={form.endsAt} onChange={(e) => set({ endsAt: e.target.value })} hint="Optional. Stores that entered it keep it." />
+          <TextField label={t.starts} type="datetime-local" value={form.startsAt} onChange={(e) => set({ startsAt: e.target.value })} hint={t.optional} />
+          <TextField label={t.ends} type="datetime-local" value={form.endsAt} onChange={(e) => set({ endsAt: e.target.value })} hint={t.formEndsHint} />
           <TextField
-            label="Use limit (stores)"
+            label={t.formUseLimit}
             inputMode="numeric"
             value={form.maxUses}
             onChange={(e) => set({ maxUses: e.target.value })}
-            placeholder="No limit"
-            hint={!creating ? `Used ${code.usesCount ?? 0} so far. Lowering it never takes it from a store.` : "Each store, account and email once."}
+            placeholder={t.noLimit}
+            hint={!creating ? fmt(t.formUsedSoFar, { n: code.usesCount ?? 0 }) : t.formUsesHint}
           />
         </section>
 
         <section className="space-y-3">
-          <h3 className="font-medium text-ink">Restrictions</h3>
+          <h3 className="font-medium text-ink">{t.formRestrictions}</h3>
           {plans.length > 0 && (
-            <div className="flex flex-wrap gap-x-4 gap-y-2" role="group" aria-label="Plans">
-              <span className="text-sm text-ink-soft">Plans (none ticked: any):</span>
+            <div className="flex flex-wrap gap-x-4 gap-y-2" role="group" aria-label={t.plans}>
+              <span className="text-sm text-ink-soft">{t.formPlansNoneTicked}</span>
               {plans.map((p) => (
                 <label key={p.id} className="flex items-center gap-1.5 text-sm">
                   <input type="checkbox" checked={form.allowedPlanIds.includes(p.id)} onChange={() => togglePlan(p.id)} />
@@ -420,27 +430,27 @@ export function ReferralCodeFormModal({
               ))}
             </div>
           )}
-          <div className="flex flex-wrap gap-x-4 gap-y-2" role="group" aria-label="Billing">
-            <span className="text-sm text-ink-soft">Billing (none ticked: both):</span>
+          <div className="flex flex-wrap gap-x-4 gap-y-2" role="group" aria-label={t.billing}>
+            <span className="text-sm text-ink-soft">{t.formBillingNoneTicked}</span>
             {CYCLES.map((c) => (
               <label key={c} className="flex items-center gap-1.5 text-sm">
                 <input type="checkbox" checked={form.allowedCycles.includes(c)} onChange={() => toggleCycle(c)} />
-                {CYCLE_LABEL[c]}
+                {cycleLabel(c)}
               </label>
             ))}
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
-            <TextField label="Minimum plan price" inputMode="decimal" value={form.minPriceAmount} onChange={(e) => set({ minPriceAmount: e.target.value })} placeholder="None" />
-            <TextField label="Its currency" maxLength={3} value={form.minPriceCurrency} onChange={(e) => set({ minPriceCurrency: e.target.value.toUpperCase() })} />
+            <TextField label={t.minPlanPrice} inputMode="decimal" value={form.minPriceAmount} onChange={(e) => set({ minPriceAmount: e.target.value })} placeholder={t.none} />
+            <TextField label={t.formItsCurrency} maxLength={3} dir="ltr" value={form.minPriceCurrency} onChange={(e) => set({ minPriceCurrency: e.target.value.toUpperCase() })} />
           </div>
         </section>
 
         <section className="space-y-3">
-          <h3 className="font-medium text-ink">Discount and commission, payment by payment</h3>
+          <h3 className="font-medium text-ink">{t.formScheduleTitle}</h3>
           {!creating && code.kind === "legacy" && (
             <Toggle
-              label="Give it a schedule"
-              description={`Today: ${describeCodeDiscount(code)}, and its commission on every payment. With a schedule, every store using it follows the schedule from its next payment, each at its own payment number.`}
+              label={t.formGiveSchedule}
+              description={fmt(t.formGiveScheduleHint, { discount: describeCodeDiscount(code) })}
               checked={form.useSchedule}
               onChange={(useSchedule) => set({ useSchedule })}
             />
@@ -448,7 +458,7 @@ export function ReferralCodeFormModal({
           {form.useSchedule && (
             <>
               <Toggle
-                label="Same for monthly and yearly"
+                label={t.formSameForBoth}
                 checked={form.sameForBoth}
                 onChange={(sameForBoth) => set({ sameForBoth, ...(sameForBoth ? {} : { yearly: form.monthly }) })}
               />
@@ -459,7 +469,7 @@ export function ReferralCodeFormModal({
                   <div role="tablist" className="flex gap-2">
                     {CYCLES.map((c) => (
                       <Button key={c} type="button" role="tab" aria-selected={tab === c} size="sm" variant={tab === c ? "default" : "outline"} onClick={() => setTab(c)}>
-                        {CYCLE_LABEL[c]}
+                        {cycleLabel(c)}
                       </Button>
                     ))}
                   </div>
@@ -473,21 +483,21 @@ export function ReferralCodeFormModal({
               )}
               {hasAgent && (
                 <SelectField
-                  label="Commission on"
+                  label={t.commissionOn}
                   value={form.commissionBasis}
                   onChange={(e) => set({ commissionBasis: e.target.value as ReferralCommissionBasis })}
-                  hint="What was paid: a free payment earns nothing. The list price: the agent earns on the price before the discount, even when the merchant paid nothing."
+                  hint={t.formCommissionOnHint}
                 >
-                  <option value="paid">What the merchant paid</option>
-                  <option value="list">The list price</option>
+                  <option value="paid">{t.whatMerchantPaid}</option>
+                  <option value="list">{t.listPriceThe}</option>
                 </SelectField>
               )}
             </>
           )}
           {hasAgent && (
             <Toggle
-              label="Entering it links the store to this agent"
-              description="Only a store with no agent yet; a store already linked keeps its agent. The commission starts with the payment the code applies to."
+              label={t.formLinksAgent}
+              description={t.formLinksAgentHint}
               checked={form.linksAgent}
               onChange={(linksAgent) => set({ linksAgent })}
             />
@@ -495,17 +505,17 @@ export function ReferralCodeFormModal({
         </section>
 
         <section className="grid gap-4 sm:grid-cols-2">
-          <SelectField label="One-time benefit" value={form.grantType} onChange={(e) => set({ grantType: e.target.value as CodeForm["grantType"] })} hint="Given once, when the code is entered.">
-            <option value="">None</option>
-            {(Object.keys(GRANT_LABELS) as (keyof typeof GRANT_LABELS)[]).map((g) => (
+          <SelectField label={t.oneTimeBenefit} value={form.grantType} onChange={(e) => set({ grantType: e.target.value as CodeForm["grantType"] })} hint={t.formBenefitHint}>
+            <option value="">{t.none}</option>
+            {(Object.keys(grants) as (keyof typeof grants)[]).map((g) => (
               <option key={g} value={g}>
-                {GRANT_LABELS[g]}
+                {grants[g]}
               </option>
             ))}
           </SelectField>
           {form.grantType && (
             <TextField
-              label={form.grantType === "trial_days" ? "Days" : form.grantType === "free_orders" ? "Orders" : "Amount (EGP)"}
+              label={form.grantType === "trial_days" ? t.formDays : form.grantType === "free_orders" ? t.formOrders : t.formAmountEgp}
               inputMode="decimal"
               value={form.grantValue}
               onChange={(e) => set({ grantValue: e.target.value })}

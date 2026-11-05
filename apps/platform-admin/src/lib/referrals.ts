@@ -4,7 +4,9 @@ import type {
   CommissionListStatus,
   ReferralDiscountType,
 } from "@store-builder/api-client";
+import { fmt } from "@/i18n/activeLocale";
 import { formatBp, formatMinorMoneyExact, minorUnitDigits } from "@/lib/format";
+import { referralStrings } from "@/lib/referralStrings";
 
 /**
  * Referral-code helpers shared by the Agents screens and an agent's own My
@@ -14,20 +16,24 @@ import { formatBp, formatMinorMoneyExact, minorUnitDigits } from "@/lib/format";
  */
 
 export function describeDiscount(code: Pick<AdminReferralCode, "discountType" | "discountValue" | "discountCurrency">) {
-  if (code.discountType === "percentage" && code.discountValue != null) return `${formatBp(code.discountValue)} off`;
+  const t = referralStrings();
+  if (code.discountType === "percentage" && code.discountValue != null) return fmt(t.describeOff, { amount: formatBp(code.discountValue) });
   if (code.discountType === "fixed" && code.discountValue != null && code.discountCurrency) {
-    return `${formatMinorMoneyExact(code.discountValue, code.discountCurrency)} off`;
+    return fmt(t.describeOff, { amount: formatMinorMoneyExact(code.discountValue, code.discountCurrency) });
   }
-  return "No discount";
+  return t.describeNoDiscount;
 }
 
-export const PAYOUT_OPTIONS: Array<{ value: "all" | CommissionListStatus; label: string }> = [
-  { value: "all", label: "All" },
-  { value: "pending", label: "Pending" },
-  { value: "marked_paid", label: "Paid" },
-  // Rows whose payment was reversed; they never count in totals.
-  { value: "voided", label: "Voided" },
-];
+export function payoutOptions(): Array<{ value: "all" | CommissionListStatus; label: string }> {
+  const t = referralStrings();
+  return [
+    { value: "all", label: t.payout_all },
+    { value: "pending", label: t.payout_pending },
+    { value: "marked_paid", label: t.payout_marked_paid },
+    // Rows whose payment was reversed; they never count in totals.
+    { value: "voided", label: t.payout_voided },
+  ];
+}
 
 export interface CodeFormState {
   code: string;
@@ -60,11 +66,14 @@ export function codeToEdit(code: AdminReferralCode, creator: boolean): AdminRefe
 }
 
 /** What saving means for someone whose changes wait for a creator's review, from the console. */
-export const CONSOLE_REVIEW_HINT =
-  "The label and the on/off switch change at once. Anything else, its agent included, waits for a creator's review: until it's approved, stores using this code keep what was approved, and new stores can't enter it.";
+export function consoleReviewHint(): string {
+  return referralStrings().consoleReviewHint;
+}
 
 /** The same, for a new code. */
-export const NEW_CODE_REVIEW_HINT = "It stays off until a creator has approved it.";
+export function newCodeReviewHint(): string {
+  return referralStrings().newCodeReviewHint;
+}
 
 export function initialCodeForm(code?: AdminReferralCode): CodeFormState {
   if (!code) {
@@ -97,6 +106,7 @@ export function initialCodeForm(code?: AdminReferralCode): CodeFormState {
 
 /** Form state → the API's units: basis points and minor units. Throws a message on bad input. */
 export function toCodeInput(form: CodeFormState, { includeCode }: { includeCode: boolean }): AdminReferralCodeInput {
+  const t = referralStrings();
   const input: AdminReferralCodeInput = {
     label: form.label.trim() || null,
     discountType: form.discountType,
@@ -107,20 +117,20 @@ export function toCodeInput(form: CodeFormState, { includeCode }: { includeCode:
   if (includeCode) input.code = form.code.trim().toUpperCase();
   if (form.discountType !== "none") {
     const n = Number(form.discountAmount);
-    if (!form.discountAmount.trim() || !Number.isFinite(n) || n <= 0) throw new Error("Enter a discount greater than zero.");
+    if (!form.discountAmount.trim() || !Number.isFinite(n) || n <= 0) throw new Error(t.errLegacyDiscount);
     if (form.discountType === "percentage") {
-      if (n > 100) throw new Error("A percentage discount can be at most 100%.");
+      if (n > 100) throw new Error(t.errLegacyPercent);
       input.discountValue = Math.round(n * 100);
     } else {
       const currency = form.discountCurrency.trim().toUpperCase();
-      if (!/^[A-Z]{3}$/.test(currency)) throw new Error("Enter a 3-letter currency code, such as USD or EGP.");
+      if (!/^[A-Z]{3}$/.test(currency)) throw new Error(t.errLegacyCurrency);
       input.discountCurrency = currency;
       input.discountValue = Math.round(n * 10 ** minorUnitDigits(currency));
     }
   }
   if (form.commissionPercent.trim()) {
     const rate = Number(form.commissionPercent);
-    if (!Number.isFinite(rate) || rate < 0 || rate > 100) throw new Error("The commission rate is a percentage from 0 to 100.");
+    if (!Number.isFinite(rate) || rate < 0 || rate > 100) throw new Error(t.errLegacyRate);
     input.commissionRateBp = Math.round(rate * 100);
   }
   return input;

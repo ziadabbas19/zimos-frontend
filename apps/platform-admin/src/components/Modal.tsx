@@ -1,3 +1,4 @@
+import { commonText } from "@/lib/commonStrings";
 import { useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
@@ -54,7 +55,7 @@ export function Modal({ open, onClose, title, description, children, footer, cla
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={commonText().close}
             className="-me-1.5 -mt-1 flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-primary"
           >
             <X className="size-4" aria-hidden />
