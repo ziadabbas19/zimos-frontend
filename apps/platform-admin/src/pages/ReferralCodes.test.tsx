@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { AdminPlan, AdminReferralCodeDetail, AdminReferralCodeRow, AdminReferralSimulation } from "@store-builder/api-client";
+import type { AdminAgentLinkRequest, AdminPlan, AdminReferralCodeDetail, AdminReferralCodeRow, AdminReferralSimulation } from "@store-builder/api-client";
 import { ToastProvider } from "@/components/Toast";
 import { LocaleProvider } from "@/i18n/LocaleContext";
 import * as adminApi from "@/lib/adminApi";
@@ -31,6 +31,7 @@ vi.mock("@/lib/adminApi", async (importOriginal) => {
     getReferralCode: vi.fn(),
     listCodeRedemptions: vi.fn(),
     updateReferralCode: vi.fn(),
+    listAgentLinkRequests: vi.fn(),
   };
 });
 
@@ -93,6 +94,7 @@ beforeEach(() => {
   mocked.listAgents.mockResolvedValue({ agents: [], defaultCommissionRateBp: 3000 });
   mocked.listPlans.mockResolvedValue([PLAN]);
   mocked.listCodeRedemptions.mockResolvedValue({ redemptions: [], total: 0, limit: 50, offset: 0 });
+  mocked.listAgentLinkRequests.mockResolvedValue({ requests: [], total: 0, limit: 50, offset: 0 });
 });
 
 afterEach(() => {
@@ -116,6 +118,66 @@ describe("the list", () => {
     renderAt("/referral-codes");
     expect(await screen.findByText(/REFERRAL_CODES_V2_ENABLED/)).toBeTruthy();
     expect(screen.queryByRole("button", { name: /New code/ })).toBeNull();
+  });
+});
+
+// The mocked viewer ("me") holds every key and is not a creator.
+describe("the review (migration 743)", () => {
+  const detail = (authorIds: string[]): AdminReferralCodeDetail => ({
+    code: { ...CODE, active: false, approvalStatus: "pending", authorIds },
+    impact: { currentStores: 0, trialingUnpaid: 0 },
+    defaultCommissionRateBp: 3000,
+    v2Enabled: true,
+  });
+  const linkRequest = (id: string, name: string, authorIds: string[]): AdminAgentLinkRequest => ({
+    id,
+    workspaceId: `w-${id}`,
+    workspace: { id: `w-${id}`, name },
+    linkId: null,
+    kind: "link",
+    changes: {},
+    agent: { id: "a1", fullName: "An Agent" },
+    status: "pending",
+    reason: null,
+    requestedBy: null,
+    reviewedBy: null,
+    reviewedAt: null,
+    authorIds,
+    createdAt: "2026-10-01T00:00:00.000Z",
+  });
+
+  it("offers Approve and Reject on someone else's code", async () => {
+    mocked.getReferralCode.mockResolvedValue(detail(["someone"]));
+    renderAt("/referral-codes/c1");
+    expect(await screen.findByRole("button", { name: /^Approve$/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Reject$/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Edit and approve/ })).toBeTruthy();
+  });
+
+  it("takes them away on a code the viewer made or changed, and says why", async () => {
+    mocked.getReferralCode.mockResolvedValue(detail(["someone", "me"]));
+    renderAt("/referral-codes/c1");
+    expect(await screen.findByText(/someone else has to review it/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^Approve$/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Reject$/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Edit and approve/ })).toBeNull();
+  });
+
+  it("offers review on a store's agent change only when the viewer didn't ask for it", async () => {
+    mocked.listAgentLinkRequests.mockResolvedValue({
+      requests: [linkRequest("r1", "Theirs", ["someone"]), linkRequest("r2", "Mine", ["me"])],
+      total: 2,
+      limit: 50,
+      offset: 0,
+    });
+    renderAt("/referral-codes");
+    const row = (name: string) => screen.getByText(name).closest("li")!;
+    await screen.findByText("Theirs");
+    expect(within(row("Theirs")).getByRole("button", { name: "Approve" })).toBeTruthy();
+    expect(within(row("Theirs")).getByRole("button", { name: "Reject" })).toBeTruthy();
+    expect(within(row("Mine")).queryByRole("button", { name: "Approve" })).toBeNull();
+    expect(within(row("Mine")).queryByRole("button", { name: "Reject" })).toBeNull();
+    expect(within(row("Mine")).getByText(/someone else has to review it/)).toBeTruthy();
   });
 });
 

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { Alert, Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
 import type { AdminAgent, AdminAgentLink, BillingCycle, ReferralCommissionBasis } from "@store-builder/api-client";
+import { AgentLinkRequests } from "@/components/agentLinkRequests";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { Modal } from "@/components/Modal";
@@ -15,7 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 import * as adminApi from "@/lib/adminApi";
 import { getErrorMessage } from "@/lib/errors";
 import { formatDate, formatDateTime } from "@/lib/format";
-import { P } from "@/lib/permissions";
+import { P, isCreator } from "@/lib/permissions";
 import { describeCommissionSteps, toLocalInput, type RateStepDraft } from "@/lib/referralCodes";
 import { useAsync } from "@/lib/useAsync";
 import { RedemptionTable } from "@/pages/ReferralCodeDetailPage";
@@ -25,7 +26,8 @@ import { RedemptionTable } from "@/pages/ReferralCodeDetailPage";
  * it entered (its first marked), the agent earning on its payments now, and
  * every link it had, who set or ended it and when. The console links a store
  * to an agent by hand, moves it to another or ends the link
- * (REFERRAL_CODES_V2_ENABLED; ending works either way).
+ * (REFERRAL_CODES_V2_ENABLED; ending works either way). From anyone but a creator
+ * each of those waits for review (migration 743), one at a time per store.
  */
 
 const CYCLE_LABEL: Record<BillingCycle, string> = { monthly: "Monthly", yearly: "Yearly" };
@@ -40,13 +42,16 @@ function linkTermsText(link: AdminAgentLink): string {
 const SOURCE_TEXT: Record<AdminAgentLink["source"], string> = { manual: "Set by hand", code: "From a code" };
 
 export function WorkspaceReferralsPanel({ workspaceId }: { workspaceId: string }) {
-  const { can } = useAuth();
+  const { can, user } = useAuth();
+  const creator = isCreator(user);
   const toast = useToast();
   const { data, loading, error, refresh } = useAsync(() => adminApi.getWorkspaceReferrals(workspaceId), [workspaceId]);
   const agents = useAsync(() => (can(P.AGENTS_MANAGE) ? adminApi.listAgents() : Promise.resolve(null)), []);
   const [linking, setLinking] = useState(false);
   const [ending, setEnding] = useState<AdminAgentLink | null>(null);
-  const manage = can(P.AGENTS_MANAGE);
+  const requests = data?.linkRequests ?? [];
+  // A second change can't be asked for while one waits; a creator's applies anyway.
+  const manage = can(P.AGENTS_MANAGE) && (creator || !requests.some((r) => r.status === "pending"));
   const open = data?.openLink ?? null;
 
   return (
@@ -92,6 +97,8 @@ export function WorkspaceReferralsPanel({ workspaceId }: { workspaceId: string }
                 )}
               </div>
             </Panel>
+
+            {requests.length > 0 && <AgentLinkRequests requests={requests} onChanged={() => void refresh({ silent: true })} />}
 
             <div>
               <h3 className="mb-2 font-medium text-ink">Codes this store entered</h3>
@@ -161,9 +168,9 @@ export function WorkspaceReferralsPanel({ workspaceId }: { workspaceId: string }
           replacing={open}
           defaultRateBp={agents.data?.defaultCommissionRateBp ?? 3000}
           onClose={() => setLinking(false)}
-          onSaved={() => {
+          onSaved={(waiting) => {
             setLinking(false);
-            toast.success("Linked. The agent earns from the store's next payment.");
+            toast.success(waiting ? "Sent for review. The store stays as it is until it's approved." : "Linked. The agent earns from the store's next payment.");
             void refresh({ silent: true });
           }}
         />
@@ -172,13 +179,17 @@ export function WorkspaceReferralsPanel({ workspaceId }: { workspaceId: string }
         <ConfirmDialog
           open
           title="End this link?"
-          description="From now on no agent earns on this store's payments. Commissions already written stay."
+          description={
+            creator
+              ? "From now on no agent earns on this store's payments. Commissions already written stay."
+              : "This waits for a creator's review. Until it's approved, the agent goes on earning. After that, no agent earns on this store's payments, and commissions already written stay."
+          }
           confirmLabel="End link"
           onCancel={() => setEnding(null)}
           onConfirm={async () => {
             // A refusal is shown in the dialog itself.
-            await adminApi.endAgentLink(ending.id);
-            toast.success("Link ended.");
+            const result = await adminApi.endAgentLink(ending.id);
+            toast.success(result.request ? "Sent for review." : "Link ended.");
             setEnding(null);
             void refresh({ silent: true });
           }}
@@ -212,8 +223,10 @@ export function AgentLinkModal({
   replacing: AdminAgentLink | null;
   defaultRateBp: number;
   onClose: () => void;
-  onSaved: () => void;
+  /** `waiting`: it went for review, and nothing has changed yet. */
+  onSaved: (waiting: boolean) => void;
 }) {
+  const { user } = useAuth();
   const [agentId, setAgentId] = useState("");
   const [startsAt, setStartsAt] = useState(() => toLocalInput(new Date().toISOString()));
   const [endsAt, setEndsAt] = useState("");
@@ -238,7 +251,7 @@ export function AgentLinkModal({
     }
     setBusy(true);
     try {
-      await adminApi.createAgentLink(workspaceId, {
+      const result = await adminApi.createAgentLink(workspaceId, {
         agentId,
         startsAt: startsAt ? new Date(startsAt).toISOString() : undefined,
         endsAt: endsAt ? new Date(endsAt).toISOString() : null,
@@ -246,7 +259,7 @@ export function AgentLinkModal({
         commissionBasis: basis,
         note: note.trim() || null,
       });
-      onSaved();
+      onSaved(Boolean(result.request));
     } catch (err) {
       setError(getErrorMessage(err));
       setBusy(false);
@@ -259,9 +272,11 @@ export function AgentLinkModal({
       onClose={() => !busy && onClose()}
       title={replacing ? "Change the store's agent" : "Link the store to an agent"}
       description={
-        replacing
-          ? `${replacing.agent.fullName ?? "The current agent"} stops earning now; the new agent earns from the start date.`
-          : "The agent earns a commission on every payment of this store from the start date."
+        !isCreator(user)
+          ? `This waits for a creator's review. ${replacing ? `Until it's approved, ${replacing.agent.fullName ?? "the current agent"} goes on earning.` : "Until it's approved, no agent earns on this store."}`
+          : replacing
+            ? `${replacing.agent.fullName ?? "The current agent"} stops earning now; the new agent earns from the start date.`
+            : "The agent earns a commission on every payment of this store from the start date."
       }
       className="max-w-2xl"
       footer={

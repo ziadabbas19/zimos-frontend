@@ -210,12 +210,15 @@ function AccessModal({
   const { can } = useAuth();
   const editing = !!admin;
   const [email, setEmail] = useState("");
-  // Mirrors the API: only a creator hands out the creator role, and any other
-  // role goes only from someone holding all of it. The agent role is the exception.
-  const canGive = (r: AdminPlatformRole) =>
-    r.key === CREATOR_ROLE ? viewerIsCreator : r.key === AGENT_ROLE || r.defaultPermissions.every((key) => can(key));
+  // Mirrors the API: only a creator hands out the creator role, the agent role
+  // takes agents.create, and any other role goes only from someone holding all of it.
+  const canGive = (r: AdminPlatformRole) => {
+    if (r.key === CREATOR_ROLE) return viewerIsCreator;
+    if (r.key === AGENT_ROLE) return can(P.AGENTS_CREATE);
+    return r.defaultPermissions.every((key) => can(key));
+  };
   const [roleKey, setRoleKey] = useState(
-    () => admin?.role ?? (roles.roles.some((r) => r.key === "admin" && canGive(r)) ? "admin" : AGENT_ROLE)
+    () => admin?.role ?? (roles.roles.some((r) => r.key === "admin" && canGive(r)) ? "admin" : (roles.roles.find(canGive)?.key ?? ""))
   );
   const role: AdminPlatformRole | undefined = roles.roles.find((r) => r.key === roleKey);
   const [custom, setCustom] = useState(false);
@@ -269,7 +272,7 @@ function AccessModal({
           <Button variant="outline" onClick={onClose} disabled={busy}>
             Cancel
           </Button>
-          <Button type="submit" form="access-form" disabled={busy || (!editing && !email.trim())}>
+          <Button type="submit" form="access-form" disabled={busy || !roleKey || (!editing && !email.trim())}>
             {busy ? "Saving…" : editing ? "Save" : "Grant access"}
           </Button>
         </>

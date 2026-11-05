@@ -71,8 +71,10 @@ import type {
   AdminRedemptionParams,
   AdminReferralSimulation,
   AdminWorkspaceReferrals,
-  AdminAgentLink,
   AdminAgentLinkInput,
+  AdminAgentLinkRequest,
+  AdminAgentLinkRequestPage,
+  AdminAgentLinkResult,
   ReferralTerms,
   ReferralCommissionBasis,
   AdminPlatformRole,
@@ -2189,6 +2191,18 @@ export class ApiClient {
     return unwrapObject<AdminReferralCode>(body, "code");
   }
 
+  // A creator's review of a code its owner made or changed (migration 742).
+  /** `changes`: anything the reviewer changed on the way. */
+  async adminApproveReferralCode(codeId: string, changes: AdminReferralCodeInput = {}): Promise<AdminReferralCode> {
+    const body = await this.request<unknown>(`/admin/referral-codes/${codeId}/approve`, { method: "POST", body: changes });
+    return unwrapObject<AdminReferralCode>(body, "code");
+  }
+
+  async adminRejectReferralCode(codeId: string, reason: string): Promise<AdminReferralCode> {
+    const body = await this.request<unknown>(`/admin/referral-codes/${codeId}/reject`, { method: "POST", body: { reason } });
+    return unwrapObject<AdminReferralCode>(body, "code");
+  }
+
   // Agents -> Referral codes (migration 725).
   async adminListReferralCodes(params: AdminReferralCodeParams = {}): Promise<AdminReferralCodeList> {
     const body = await this.request<AdminReferralCodeList>(`/admin/referral-codes${buildQuery({ ...params })}`);
@@ -2234,19 +2248,29 @@ export class ApiClient {
   }
 
   /** Links a store to an agent by hand; the open link, if any, ends as "replaced". */
-  async adminCreateAgentLink(workspaceId: string, payload: AdminAgentLinkInput): Promise<AdminAgentLink> {
-    const body = await this.request<unknown>(`/admin/workspaces/${workspaceId}/agent-links`, { method: "POST", body: payload });
-    return unwrapObject<AdminAgentLink>(body, "link");
+  async adminCreateAgentLink(workspaceId: string, payload: AdminAgentLinkInput): Promise<AdminAgentLinkResult> {
+    return this.request<AdminAgentLinkResult>(`/admin/workspaces/${workspaceId}/agent-links`, { method: "POST", body: payload });
   }
 
-  async adminUpdateAgentLink(linkId: string, payload: Partial<Omit<AdminAgentLinkInput, "agentId" | "startsAt">>): Promise<AdminAgentLink> {
-    const body = await this.request<unknown>(`/admin/agent-links/${linkId}`, { method: "PATCH", body: payload });
-    return unwrapObject<AdminAgentLink>(body, "link");
+  async adminUpdateAgentLink(linkId: string, payload: Partial<Omit<AdminAgentLinkInput, "agentId" | "startsAt">>): Promise<AdminAgentLinkResult> {
+    return this.request<AdminAgentLinkResult>(`/admin/agent-links/${linkId}`, { method: "PATCH", body: payload });
   }
 
-  async adminEndAgentLink(linkId: string, note?: string): Promise<AdminAgentLink> {
-    const body = await this.request<unknown>(`/admin/agent-links/${linkId}/end`, { method: "POST", body: note ? { note } : {} });
-    return unwrapObject<AdminAgentLink>(body, "link");
+  async adminEndAgentLink(linkId: string, note?: string): Promise<AdminAgentLinkResult> {
+    return this.request<AdminAgentLinkResult>(`/admin/agent-links/${linkId}/end`, { method: "POST", body: note ? { note } : {} });
+  }
+
+  async adminListAgentLinkRequests(params: { status?: AdminAgentLinkRequest["status"]; limit?: number; offset?: number } = {}): Promise<AdminAgentLinkRequestPage> {
+    const body = await this.request<AdminAgentLinkRequestPage>(`/admin/agent-link-requests${buildQuery({ ...params })}`);
+    return { ...body, requests: unwrapList(body, "requests") };
+  }
+
+  async adminApproveAgentLinkRequest(requestId: string): Promise<AdminAgentLinkResult> {
+    return this.request<AdminAgentLinkResult>(`/admin/agent-link-requests/${requestId}/approve`, { method: "POST", body: {} });
+  }
+
+  async adminRejectAgentLinkRequest(requestId: string, reason: string): Promise<AdminAgentLinkResult> {
+    return this.request<AdminAgentLinkResult>(`/admin/agent-link-requests/${requestId}/reject`, { method: "POST", body: { reason } });
   }
 
   async adminListCommissions(params: AdminCommissionParams = {}): Promise<AdminCommissionPage> {
@@ -2487,6 +2511,17 @@ export class ApiClient {
   async adminGetMyReferrals(): Promise<AdminAgentDetail> {
     const body = await this.request<AdminAgentDetail>("/admin/my/referrals");
     return { ...body, agent: unwrapObject(body, "agent"), merchants: unwrapList(body, "merchants") };
+  }
+
+  /** The requester's own code; the server takes the owner from the session. */
+  async adminCreateOwnReferralCode(payload: AdminReferralCodeInput & { code: string }): Promise<AdminReferralCode> {
+    const body = await this.request<unknown>("/admin/my/referral-codes", { method: "POST", body: payload });
+    return unwrapObject<AdminReferralCode>(body, "code");
+  }
+
+  async adminUpdateOwnReferralCode(codeId: string, payload: AdminReferralCodeInput): Promise<AdminReferralCode> {
+    const body = await this.request<unknown>(`/admin/my/referral-codes/${codeId}`, { method: "PATCH", body: payload });
+    return unwrapObject<AdminReferralCode>(body, "code");
   }
 
   async adminListMyCommissions(

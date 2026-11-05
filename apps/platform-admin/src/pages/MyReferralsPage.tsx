@@ -1,31 +1,53 @@
 import { useState } from "react";
-import { Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
-import type { CommissionListStatus } from "@store-builder/api-client";
+import { Pencil, Plus, UserPlus } from "lucide-react";
+import { Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
+import type { AdminReferralCode, AdminReferralCodeInput, CommissionListStatus } from "@store-builder/api-client";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState, EmptyBlock } from "@/components/DataState";
 import { FilterChips } from "@/components/forms";
 import { Mono, Panel, Td, Th } from "@/components/Panel";
-import { StatusBadge } from "@/components/StatusBadge";
+import { useToast } from "@/components/Toast";
 import {
+  CodeModal,
+  CodeStatus,
   CommissionTotals,
   LedgerTable,
   MerchantsTable,
 } from "@/components/referrals";
-import { PAYOUT_OPTIONS, describeDiscount } from "@/lib/referrals";
+import { ReferralCodeFormModal } from "@/components/referralCodeForm";
+import { useAuth } from "@/context/AuthContext";
+import { PAYOUT_OPTIONS, codeToEdit, neverApproved } from "@/lib/referrals";
+import { describeCodeCommission, describeCodeDiscount } from "@/lib/referralCodes";
+import { CreateAgentModal } from "@/pages/AgentsPage";
 import { Pager } from "@/pages/BlocklistPage";
 import { useAsync } from "@/lib/useAsync";
 import * as adminApi from "@/lib/adminApi";
-import { formatBp } from "@/lib/format";
+import { P, isCreator } from "@/lib/permissions";
 
 type StatusFilter = "all" | CommissionListStatus;
 
+/** What saving means for the code, for someone whose codes wait for review. */
+function reviewHint(code: AdminReferralCode | undefined): string {
+  if (!code) return "It stays off until it has been reviewed and approved.";
+  if (neverApproved(code)) return "It stays off until it has been approved. A change to anything but the label sends it for review again.";
+  return "The label changes at once. Anything else waits for review: until it's approved, stores using this code keep what was approved, and new stores can't enter it.";
+}
+
 /**
- * An agent's own view: their codes, the merchants who entered them, and the
- * commission each of those merchants' payments suggests. Read-only — codes
- * are set up by the Zimos team, and payouts are marked there too.
+ * An account's own view: their codes, the merchants who entered them, and the
+ * commission each of those merchants' payments suggests. They make and change
+ * their own codes here, and a creator reviews them (migration 742). Payouts
+ * are marked by the Zimos team.
  */
 export function MyReferralsPage() {
+  const toast = useToast();
+  const { can, user } = useAuth();
+  const creator = isCreator(user);
   const mine = useAsync(() => adminApi.getMyReferrals(), []);
+  const plans = useAsync(() => (can(P.PLANS_VIEW) ? adminApi.listPlans() : Promise.resolve([])), []);
+  // { code: undefined }: a new one.
+  const [form, setForm] = useState<{ code?: AdminReferralCode } | null>(null);
+  const [addingAgent, setAddingAgent] = useState(false);
   const [status, setStatus] = useState<StatusFilter>("all");
   const [page, setPage] = useState({ key: status, offset: 0 });
   const offset = page.key === status ? page.offset : 0;
@@ -35,12 +57,38 @@ export function MyReferralsPage() {
   );
 
   const agent = mine.data?.agent;
+  const v2 = mine.data?.v2Enabled ?? false;
+  const defaultRateBp = mine.data?.defaultCommissionRateBp ?? 3000;
+  const hint = creator ? undefined : reviewHint(form?.code);
+
+  const save = (input: AdminReferralCodeInput & { code?: string }) =>
+    form?.code
+      ? adminApi.updateOwnReferralCode(form.code.id, input)
+      : adminApi.createOwnReferralCode(input as AdminReferralCodeInput & { code: string });
+
+  function saved(code: AdminReferralCode) {
+    setForm(null);
+    toast.success(code.approvalStatus === "pending" ? `${code.code} was sent for review.` : `${code.code} saved.`);
+    void mine.refresh({ silent: true });
+  }
 
   return (
     <div>
       <PageHeader
         title="My referrals"
         description="Your referral codes, the merchants who used them, and the commission suggested for each of their payments."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            {can(P.AGENTS_CREATE) && (
+              <Button variant="outline" onClick={() => setAddingAgent(true)}>
+                <UserPlus /> Add agent
+              </Button>
+            )}
+            <Button onClick={() => setForm({})}>
+              <Plus /> New code
+            </Button>
+          </div>
+        }
       />
 
       <DataState loading={mine.loading && !mine.data} error={mine.error} onRetry={() => void mine.refresh()}>
@@ -49,7 +97,7 @@ export function MyReferralsPage() {
             <section>
               <h2 className="mb-3 text-lg font-semibold text-ink">My codes</h2>
               {agent.codes.length === 0 ? (
-                <EmptyBlock message="You don't have a referral code yet. The Zimos team sets them up." />
+                <EmptyBlock message="You don't have a referral code yet. Make one, and it works once it has been approved." />
               ) : (
                 <Panel flush>
                   <Table>
@@ -61,6 +109,9 @@ export function MyReferralsPage() {
                         <Th className="text-end">Merchants</Th>
                         <Th>Suggested commission</Th>
                         <Th>Status</Th>
+                        <Th className="text-end">
+                          <span className="sr-only">Actions</span>
+                        </Th>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -70,16 +121,22 @@ export function MyReferralsPage() {
                             <Mono>{c.code}</Mono>
                             {c.label && <span className="block text-xs text-ink-soft">{c.label}</span>}
                           </Td>
-                          <Td className="text-sm">{describeDiscount(c)}</Td>
-                          <Td className="text-sm">{formatBp(c.effectiveCommissionRateBp)} of each payment</Td>
+                          <Td className="text-sm">{describeCodeDiscount(c)}</Td>
+                          <Td className="text-sm">{describeCodeCommission(c)}</Td>
                           <Td className="text-end text-sm">{c.merchantsReferred}</Td>
                           <Td>
                             <CommissionTotals totals={c.commission} empty="No payments yet" />
                           </Td>
                           <Td>
-                            <StatusBadge tone={c.active ? "success" : "neutral"} dot>
-                              {c.active ? "Active" : "Inactive"}
-                            </StatusBadge>
+                            <CodeStatus code={c} />
+                          </Td>
+                          <Td className="text-end">
+                            {/* With the flag off, a code with a schedule has nothing here to edit it with. */}
+                            {(v2 || c.kind !== "schedule") && (
+                              <Button size="icon-sm" variant="ghost" aria-label={`Edit ${c.code}`} onClick={() => setForm({ code: c })}>
+                                <Pencil />
+                              </Button>
+                            )}
                           </Td>
                         </TableRow>
                       ))}
@@ -131,6 +188,40 @@ export function MyReferralsPage() {
           </div>
         )}
       </DataState>
+
+      {form && agent && v2 && (
+        <ReferralCodeFormModal
+          code={form.code ? codeToEdit(form.code, creator) : undefined}
+          ownerId={agent.id}
+          agents={[]}
+          plans={plans.data ?? []}
+          defaultRateBp={defaultRateBp}
+          description={hint}
+          submit={save}
+          onClose={() => setForm(null)}
+          onSaved={saved}
+        />
+      )}
+      {form && agent && !v2 && (
+        <CodeModal
+          code={form.code ? codeToEdit(form.code, creator) : undefined}
+          hideActive
+          defaultRateBp={defaultRateBp}
+          description={hint}
+          onClose={() => setForm(null)}
+          onSubmit={async (input) => saved(await save(input))}
+        />
+      )}
+      {addingAgent && (
+        <CreateAgentModal
+          defaultRateBp={defaultRateBp}
+          onClose={() => setAddingAgent(false)}
+          onCreated={(email) => {
+            setAddingAgent(false);
+            toast.success(`${email} is now an agent.`);
+          }}
+        />
+      )}
     </div>
   );
 }

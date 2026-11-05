@@ -11,8 +11,8 @@ import { Mono, Panel, Td, Th } from "@/components/Panel";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Toggle } from "@/components/Toggle";
 import { useToast } from "@/components/Toast";
-import { CodeFields, CommissionTotals } from "@/components/referrals";
-import { describeDiscount, initialCodeForm, toCodeInput, type CodeFormState } from "@/lib/referrals";
+import { ApprovalBadge, CodeFields, CommissionTotals } from "@/components/referrals";
+import { describeDiscount, initialCodeForm, neverApproved, toCodeInput, type CodeFormState } from "@/lib/referrals";
 import { useAuth } from "@/context/AuthContext";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { useAsync } from "@/lib/useAsync";
@@ -94,7 +94,7 @@ export function AgentsPage() {
         title={t.title}
         description={t.description}
         actions={
-          can(P.AGENTS_MANAGE) && (
+          can(P.AGENTS_CREATE) && (
             <Button onClick={() => setCreating(true)}>
               <UserPlus /> {t.newAgent}
             </Button>
@@ -171,7 +171,8 @@ function AgentRow({ agent }: { agent: AdminAgent }) {
                 <span className="text-xs text-ink-soft">
                   {fmt(c.merchantsReferred === 1 ? t.merchantOne : t.merchantMany, { count: c.merchantsReferred })}
                 </span>
-                {!c.active && <StatusBadge tone="neutral">{t.inactive}</StatusBadge>}
+                {!c.active && !neverApproved(c) && <StatusBadge tone="neutral">{t.inactive}</StatusBadge>}
+                <ApprovalBadge code={c} />
               </li>
             ))}
           </ul>
@@ -185,7 +186,7 @@ function AgentRow({ agent }: { agent: AdminAgent }) {
   );
 }
 
-function CreateAgentModal({
+export function CreateAgentModal({
   defaultRateBp,
   onClose,
   onCreated,
@@ -195,8 +196,11 @@ function CreateAgentModal({
   onCreated: (email: string) => void;
 }) {
   const t = useT(STRINGS);
+  const { can } = useAuth();
+  // A code made here takes what any console-made code does, and waits for review like one.
+  const canAddCode = can(P.AGENTS_MANAGE);
   const [email, setEmail] = useState("");
-  const [withCode, setWithCode] = useState(true);
+  const [withCode, setWithCode] = useState(canAddCode);
   const [code, setCode] = useState<CodeFormState>(() => initialCodeForm());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -253,12 +257,14 @@ function CreateAgentModal({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-        <Toggle
-          label={t.firstCode}
-          description={t.firstCodeHint}
-          checked={withCode}
-          onChange={setWithCode}
-        />
+        {canAddCode && (
+          <Toggle
+            label={t.firstCode}
+            description={t.firstCodeHint}
+            checked={withCode}
+            onChange={setWithCode}
+          />
+        )}
         {withCode && <CodeFields form={code} setForm={setCode} creating defaultRateBp={defaultRateBp} />}
       </form>
     </Modal>

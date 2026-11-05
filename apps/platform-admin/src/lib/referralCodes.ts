@@ -375,3 +375,12 @@ export function describeCodeDiscount(code: AdminReferralCode): string {
   const yearly = describeDiscountSteps(terms.yearly.discount);
   return monthly === yearly ? monthly : `Monthly: ${monthly}. Yearly: ${yearly}`;
 }
+
+/** What a code pays its agent, monthly (and yearly when it differs), for a list row. */
+export function describeCodeCommission(code: AdminReferralCode): string {
+  const terms = code.terms ?? code.effectiveTerms;
+  if (!terms) return `${percentText(code.effectiveCommissionRateBp)} of each payment`;
+  const monthly = describeCommissionSteps(terms.monthly.commission);
+  const yearly = describeCommissionSteps(terms.yearly.commission);
+  return monthly === yearly ? monthly : `Monthly: ${monthly}. Yearly: ${yearly}`;
+}

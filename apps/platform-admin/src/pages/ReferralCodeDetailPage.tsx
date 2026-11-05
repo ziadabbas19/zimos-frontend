@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Pencil } from "lucide-react";
+import { Check, Pencil, X } from "lucide-react";
 import { Alert, Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
-import type { AdminRedemption, AdminRedemptionParams, BillingCycle } from "@store-builder/api-client";
+import type { AdminAgent, AdminPlan, AdminRedemption, AdminRedemptionParams, AdminReferralCode, BillingCycle } from "@store-builder/api-client";
 import { CanLink } from "@/components/Can";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { PageHeader } from "@/components/PageHeader";
 import { DataState, EmptyBlock, ListSkeleton } from "@/components/DataState";
 import { DetailRow } from "@/components/Drawer";
-import { FilterChips, SearchInput, SelectField } from "@/components/forms";
+import { FilterChips, SearchInput, SelectField, TextAreaField } from "@/components/forms";
 import { Mono, Panel, Td, Th } from "@/components/Panel";
 import { Status, StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
-import { CommissionTotals } from "@/components/referrals";
+import { ApprovalBadge, CodeModal, CommissionTotals } from "@/components/referrals";
 import { ReferralCodeFormModal } from "@/components/referralCodeForm";
 import { useAuth } from "@/context/AuthContext";
 import { useAsync } from "@/lib/useAsync";
@@ -21,12 +22,15 @@ import {
   AUDIENCE_LABELS,
   SOURCE_LABELS,
   STATE_LABELS,
+  describeCodeCommission,
+  describeCodeDiscount,
   describeCommissionSteps,
   describeDiscountSteps,
   describeGrant,
   usesLabel,
 } from "@/lib/referralCodes";
-import { P } from "@/lib/permissions";
+import { P, isCreator } from "@/lib/permissions";
+import { CONSOLE_REVIEW_HINT, codeToEdit, neverApproved } from "@/lib/referrals";
 import { STATE_TONE } from "./ReferralCodesPage";
 
 /**
@@ -37,12 +41,36 @@ import { STATE_TONE } from "./ReferralCodesPage";
 
 const CYCLE_LABEL: Record<BillingCycle, string> = { monthly: "Monthly", yearly: "Yearly" };
 
+/** What a reviewer reads of a code, line by line, to set a waiting change against it. */
+function readingOf(code: AdminReferralCode, plans: AdminPlan[], agents: AdminAgent[]): [string, string][] {
+  const planNames = (code.allowedPlanIds ?? []).map((id) => plans.find((p) => p.id === id)?.name ?? "A plan").sort();
+  const agentName = code.agentId ? (agents.find((a) => a.id === code.agentId)?.fullName ?? "An agent") : "No agent";
+  return [
+    ["Agent", agentName],
+    ["Discount", describeCodeDiscount(code)],
+    ["Commission", describeCodeCommission(code)],
+    ["Commission on", code.commissionBasis === "list" ? "The list price" : "What the merchant paid"],
+    ["Who can enter it", AUDIENCE_LABELS[code.audience ?? "any"]],
+    ["Starts", code.startsAt ? formatDateTime(code.startsAt) : "Any time"],
+    ["Ends", code.endsAt ? formatDateTime(code.endsAt) : "Never"],
+    ["Use limit", code.maxUses == null ? "No limit" : String(code.maxUses)],
+    ["Plans", planNames.length ? planNames.join(", ") : "Any plan"],
+    ["Billing", code.allowedCycles?.length ? code.allowedCycles.map((c) => CYCLE_LABEL[c]).join(", ") : "Monthly and yearly"],
+    ["Minimum plan price", code.minPrice ? formatMinorMoneyExact(code.minPrice.amount, code.minPrice.currency) : "None"],
+    ["One-time benefit", describeGrant(code.grant) ?? "None"],
+    ["Links the store", code.linksAgent === false ? "No" : "Yes"],
+  ];
+}
+
 export function ReferralCodeDetailPage() {
   const { id = "" } = useParams();
   const toast = useToast();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
+  const creator = isCreator(user);
   const { data, loading, error, refresh } = useAsync(() => adminApi.getReferralCode(id), [id]);
   const [editing, setEditing] = useState(false);
+  const [review, setReview] = useState<"approve" | "edit" | "reject" | null>(null);
+  const [reason, setReason] = useState("");
   const agents = useAsync(() => adminApi.listAgents(), []);
   // Names the plans a code is limited to; without the permission that reads them the names stay out.
   const plans = useAsync(() => (can(P.PLANS_VIEW) ? adminApi.listPlans() : Promise.resolve([])), []);
@@ -65,6 +93,20 @@ export function ReferralCodeDetailPage() {
   const grant = describeGrant(code.grant);
   // Editing the second kind needs the flag; a first-kind code is edited on its agent's page as before.
   const editable = can(P.AGENTS_MANAGE) && data.v2Enabled;
+  const pending = code.approvalStatus === "pending";
+  // Only a creator reviews what they made or changed.
+  const ownWork = !creator && (code.authorIds ?? []).includes(user?.id ?? "");
+  const reviewable = pending && can(P.REFERRAL_CODES_APPROVE) && !ownWork;
+  const proposed = code.proposed;
+  const agentList = agents.data?.agents ?? [];
+  const reading = readingOf(code, plans.data ?? [], agentList);
+  const changes = proposed ? readingOf(proposed, plans.data ?? [], agentList).filter(([, value], i) => value !== reading[i][1]) : [];
+  const reviewed = (message: string) => {
+    setReview(null);
+    setReason("");
+    toast.success(message);
+    void refresh({ silent: true });
+  };
 
   return (
     <div>
@@ -73,19 +115,71 @@ export function ReferralCodeDetailPage() {
         description={code.label ?? undefined}
         back={{ to: "/referral-codes", label: "Referral codes" }}
         actions={
-          editable && (
-            <Button variant="outline" onClick={() => setEditing(true)}>
-              <Pencil /> Edit
-            </Button>
+          (editable || reviewable) && (
+            <div className="flex flex-wrap gap-2">
+              {reviewable && (
+                <>
+                  <Button onClick={() => setReview("approve")}>
+                    <Check /> Approve
+                  </Button>
+                  {/* With the flag off, a code with a schedule has nothing here to edit it with. */}
+                  {(data.v2Enabled || code.kind !== "schedule") && (
+                    <Button variant="outline" onClick={() => setReview("edit")}>
+                      <Pencil /> Edit and approve
+                    </Button>
+                  )}
+                  <Button variant="outline" onClick={() => setReview("reject")}>
+                    <X /> Reject
+                  </Button>
+                </>
+              )}
+              {editable && (
+                <Button variant="outline" onClick={() => setEditing(true)}>
+                  <Pencil /> Edit
+                </Button>
+              )}
+            </div>
           )
         }
       />
+
+      {pending && (
+        <Panel className="mb-4">
+          <h2 className="mb-2 font-medium text-ink">{proposed ? "A change is waiting for review" : "This new code is waiting for review"}</h2>
+          {proposed ? (
+            <>
+              <p className="mb-3 text-sm text-ink-soft">Until it&rsquo;s approved, stores using this code keep what was approved, and new stores can&rsquo;t enter it.</p>
+              <dl className="space-y-2">
+                {changes.map(([label, value]) => (
+                  <DetailRow key={label} label={label}>
+                    {reading.find(([key]) => key === label)?.[1]} → <strong>{value}</strong>
+                  </DetailRow>
+                ))}
+              </dl>
+            </>
+          ) : (
+            <p className="text-sm text-ink-soft">It stays off until it&rsquo;s approved. Its settings are below.</p>
+          )}
+          {can(P.REFERRAL_CODES_APPROVE) && ownWork && (
+            <p className="mt-3 text-sm text-ink-soft">You made this code or changed it, so someone else has to review it.</p>
+          )}
+        </Panel>
+      )}
+      {(code.approvalStatus === "rejected" || code.changesRejected) && (
+        <Alert variant="danger" className="mb-4">
+          {code.changesRejected ? "The last change to this code was rejected; it goes on as approved." : "This code was rejected."}
+          {code.approvalNote && ` Reason: ${code.approvalNote}`}
+        </Alert>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel>
           <dl className="space-y-2">
             <DetailRow label="State">
-              <StatusBadge tone={STATE_TONE[state]}>{STATE_LABELS[state]}</StatusBadge>
+              <span className="flex flex-wrap gap-1">
+                {!neverApproved(code) && <StatusBadge tone={STATE_TONE[state]}>{STATE_LABELS[state]}</StatusBadge>}
+                <ApprovalBadge code={code} />
+              </span>
             </DetailRow>
             <DetailRow label="Agent">
               {code.agent ? (
@@ -140,19 +234,82 @@ export function ReferralCodeDetailPage() {
 
       {editing && (
         <ReferralCodeFormModal
-          code={code}
+          code={codeToEdit(code, creator)}
           impact={impact}
           agents={agents.data?.agents ?? []}
           plans={plans.data ?? []}
           defaultRateBp={data.defaultCommissionRateBp}
+          description={creator ? undefined : CONSOLE_REVIEW_HINT}
           onClose={() => setEditing(false)}
-          onSaved={() => {
+          onSaved={(saved) => {
             setEditing(false);
-            toast.success("Saved. It applies from the next payment.");
+            toast.success(saved.approvalStatus === "pending" ? "Sent for review." : "Saved. It applies from the next payment.");
             void refresh({ silent: true });
           }}
         />
       )}
+      {review === "edit" && data.v2Enabled && (
+        <ReferralCodeFormModal
+          code={proposed ?? code}
+          ownerId={(proposed ?? code).agentId}
+          agents={[]}
+          plans={plans.data ?? []}
+          defaultRateBp={data.defaultCommissionRateBp}
+          description="Your changes go on the code with this approval."
+          submitLabel="Approve"
+          submit={(input) => adminApi.approveReferralCode(code.id, input)}
+          onClose={() => setReview(null)}
+          onSaved={(saved) => reviewed(`${saved.code} approved.`)}
+        />
+      )}
+      {review === "edit" && !data.v2Enabled && (
+        <CodeModal
+          code={proposed ?? code}
+          hideActive
+          defaultRateBp={data.defaultCommissionRateBp}
+          description="Your changes go on the code with this approval."
+          submitLabel="Approve"
+          onClose={() => setReview(null)}
+          onSubmit={async (input) => {
+            const saved = await adminApi.approveReferralCode(code.id, input);
+            reviewed(`${saved.code} approved.`);
+          }}
+        />
+      )}
+      <ConfirmDialog
+        open={review === "approve"}
+        title={`Approve ${code.code}?`}
+        description={proposed ? "The change applies to payments still to come, and new stores can enter the code again." : "It switches on, and merchants can enter it."}
+        confirmLabel="Approve"
+        busyLabel="Approving…"
+        onCancel={() => setReview(null)}
+        onConfirm={async () => {
+          const saved = await adminApi.approveReferralCode(code.id);
+          reviewed(`${saved.code} approved.`);
+        }}
+      />
+      <ConfirmDialog
+        open={review === "reject"}
+        title={`Reject ${code.code}?`}
+        description={proposed ? "The change is dropped, and the code goes on as approved." : "It stays off. Its owner can change it and send it again."}
+        confirmLabel="Reject"
+        busyLabel="Rejecting…"
+        destructive
+        onCancel={() => setReview(null)}
+        onConfirm={async () => {
+          const saved = await adminApi.rejectReferralCode(code.id, reason.trim());
+          reviewed(`${saved.code} rejected.`);
+        }}
+      >
+        <TextAreaField
+          label="Reason"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          maxLength={1000}
+          rows={3}
+          hint="Optional. The code's owner can see it."
+        />
+      </ConfirmDialog>
     </div>
   );
 }

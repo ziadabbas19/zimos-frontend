@@ -15,9 +15,12 @@ import { Modal } from "@/components/Modal";
 import { Panel, Td, Th } from "@/components/Panel";
 import { SelectField, TextField } from "@/components/forms";
 import { Toggle } from "@/components/Toggle";
+import { useAuth } from "@/context/AuthContext";
 import * as adminApi from "@/lib/adminApi";
 import { getErrorMessage } from "@/lib/errors";
 import { formatMinorMoneyExact } from "@/lib/format";
+import { P } from "@/lib/permissions";
+import { neverApproved } from "@/lib/referrals";
 import {
   AUDIENCE_LABELS,
   CYCLES,
@@ -248,6 +251,10 @@ export function ReferralCodeFormModal({
   agents,
   plans,
   defaultRateBp,
+  ownerId,
+  submit: submitInput,
+  description,
+  submitLabel,
   onClose,
   onSaved,
 }: {
@@ -258,11 +265,26 @@ export function ReferralCodeFormModal({
   agents: AdminAgent[];
   plans: AdminPlan[];
   defaultRateBp: number;
+  /**
+   * The account the code stays with, null for none (My referrals, and a
+   * creator's review, migration 742): its agent and its on/off switch aren't
+   * this form's to change, and aren't sent.
+   */
+  ownerId?: string | null;
+  /** Saves it somewhere other than the console's own routes. */
+  submit?: (input: AdminReferralCodeInput & { code?: string }) => Promise<AdminReferralCode>;
+  description?: string;
+  submitLabel?: string;
   onClose: () => void;
   onSaved: (code: AdminReferralCode) => void;
 }) {
+  const { can } = useAuth();
   const creating = !code;
-  const [form, setForm] = useState<CodeForm>(() => initialCodeForm(code, defaultRateBp));
+  const fixedOwner = ownerId !== undefined;
+  const [form, setForm] = useState<CodeForm>(() => {
+    const initial = initialCodeForm(code, defaultRateBp);
+    return fixedOwner ? { ...initial, agentId: ownerId ?? "" } : initial;
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<BillingCycle>("monthly");
@@ -278,15 +300,21 @@ export function ReferralCodeFormModal({
       input = toCodeInput(form, { creating });
       // The agent only when it changes: a code whose agent has since lost the role stays editable.
       if (!creating && (input.agentId ?? null) === (code.agentId ?? null)) delete input.agentId;
+      if (fixedOwner) {
+        delete input.agentId;
+        delete input.active;
+      }
     } catch (err) {
       setError(getErrorMessage(err));
       return;
     }
     setBusy(true);
     try {
-      const saved = creating
-        ? await adminApi.createStandaloneReferralCode(input as AdminReferralCodeInput & { code: string })
-        : await adminApi.updateReferralCode(code.id, input);
+      const saved = submitInput
+        ? await submitInput(input)
+        : creating
+          ? await adminApi.createStandaloneReferralCode(input as AdminReferralCodeInput & { code: string })
+          : await adminApi.updateReferralCode(code.id, input);
       onSaved(saved);
     } catch (err) {
       setError(getErrorMessage(err));
@@ -302,7 +330,7 @@ export function ReferralCodeFormModal({
       open
       onClose={() => !busy && onClose()}
       title={creating ? "New referral code" : `Edit ${code.code}`}
-      description="Changes apply to stores that enter the code from now on, and to payments still to come. Past payments never change."
+      description={description ?? "Changes apply to stores that enter the code from now on, and to payments still to come. Past payments never change."}
       className="max-w-4xl"
       footer={
         <>
@@ -310,7 +338,7 @@ export function ReferralCodeFormModal({
             Cancel
           </Button>
           <Button type="submit" form="referral-code-form" disabled={busy || (creating && form.code.trim().length < 3)}>
-            {busy ? "Saving…" : creating ? "Create code" : "Save"}
+            {busy ? "Saving…" : (submitLabel ?? (creating ? "Create code" : "Save"))}
           </Button>
         </>
       }
@@ -330,16 +358,18 @@ export function ReferralCodeFormModal({
             hint={creating ? "3–32 letters, digits or dashes. It can't be changed later." : "Codes can't be renamed."}
           />
           <TextField label="Label" value={form.label} onChange={(e) => set({ label: e.target.value })} maxLength={120} hint="Internal only — merchants never see it." />
-          <SelectField label="Agent" value={form.agentId} onChange={(e) => set({ agentId: e.target.value })} hint="Optional. No agent: a discount only, no commission. Stores already linked keep their agent.">
-            <option value="">No agent</option>
-            {agents
-              .filter((a) => a.isAgent || a.id === form.agentId)
-              .map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.fullName} ({a.email})
-                </option>
-              ))}
-          </SelectField>
+          {!fixedOwner && (
+            <SelectField label="Agent" value={form.agentId} onChange={(e) => set({ agentId: e.target.value })} hint="Optional. No agent: a discount only, no commission. Stores already linked keep their agent.">
+              <option value="">No agent</option>
+              {agents
+                .filter((a) => a.isAgent || a.id === form.agentId)
+                .map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.fullName} ({a.email})
+                  </option>
+                ))}
+            </SelectField>
+          )}
           <SelectField label="Who can enter it" value={form.audience} onChange={(e) => set({ audience: e.target.value as ReferralAudience })} hint="New: an owner with no other store and no payment yet.">
             {(Object.keys(AUDIENCE_LABELS) as ReferralAudience[]).map((a) => (
               <option key={a} value={a}>
@@ -347,7 +377,7 @@ export function ReferralCodeFormModal({
               </option>
             ))}
           </SelectField>
-          {!creating && (
+          {!creating && !fixedOwner && !neverApproved(code) && (
             <Toggle
               label="Active"
               description="Off: it can't be entered, and gives no discount or commission on any payment from now on — including charges already priced with it."
@@ -379,15 +409,17 @@ export function ReferralCodeFormModal({
 
         <section className="space-y-3">
           <h3 className="font-medium text-ink">Restrictions</h3>
-          <div className="flex flex-wrap gap-x-4 gap-y-2" role="group" aria-label="Plans">
-            <span className="text-sm text-ink-soft">Plans (none ticked: any):</span>
-            {plans.map((p) => (
-              <label key={p.id} className="flex items-center gap-1.5 text-sm">
-                <input type="checkbox" checked={form.allowedPlanIds.includes(p.id)} onChange={() => togglePlan(p.id)} />
-                {p.name}
-              </label>
-            ))}
-          </div>
+          {plans.length > 0 && (
+            <div className="flex flex-wrap gap-x-4 gap-y-2" role="group" aria-label="Plans">
+              <span className="text-sm text-ink-soft">Plans (none ticked: any):</span>
+              {plans.map((p) => (
+                <label key={p.id} className="flex items-center gap-1.5 text-sm">
+                  <input type="checkbox" checked={form.allowedPlanIds.includes(p.id)} onChange={() => togglePlan(p.id)} />
+                  {p.name}
+                </label>
+              ))}
+            </div>
+          )}
           <div className="flex flex-wrap gap-x-4 gap-y-2" role="group" aria-label="Billing">
             <span className="text-sm text-ink-soft">Billing (none ticked: both):</span>
             {CYCLES.map((c) => (
@@ -481,7 +513,7 @@ export function ReferralCodeFormModal({
           )}
         </section>
 
-        {form.useSchedule && <Simulator form={form} plans={plans} />}
+        {form.useSchedule && can(P.AGENTS_VIEW) && <Simulator form={form} plans={plans} />}
       </form>
     </Modal>
   );

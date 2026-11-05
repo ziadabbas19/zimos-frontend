@@ -17,7 +17,7 @@ import { Status, StatusBadge } from "@/components/StatusBadge";
 import { Toggle } from "@/components/Toggle";
 import { getErrorMessage } from "@/lib/errors";
 import { formatBp, formatDate, formatDateTime, formatMinorMoneyExact } from "@/lib/format";
-import { initialCodeForm, toCodeInput, type CodeFormState } from "@/lib/referrals";
+import { initialCodeForm, neverApproved, toCodeInput, type CodeFormState } from "@/lib/referrals";
 
 /**
  * Components shared by the Agents screens and an agent's own My referrals
@@ -43,6 +43,50 @@ export function CommissionTotals({ totals, empty = "—" }: { totals: AdminCommi
   );
 }
 
+// ---------------------------------------------------------------- review
+
+/** Where a code stands with a creator's review (migration 742); nothing once it is simply approved. */
+export function ApprovalBadge({ code }: { code: AdminReferralCode }) {
+  if (code.approvalStatus === "pending") {
+    return (
+      <StatusBadge tone="warning" dot>
+        Pending review
+      </StatusBadge>
+    );
+  }
+  if (code.approvalStatus === "rejected" || code.changesRejected) {
+    return (
+      <StatusBadge tone="danger" dot>
+        {code.changesRejected ? "Change rejected" : "Rejected"}
+      </StatusBadge>
+    );
+  }
+  return null;
+}
+
+/** A row's status: on or off, unless it was never approved, and its review with the reason given. */
+export function CodeStatus({ code }: { code: AdminReferralCode }) {
+  return (
+    <>
+      <span className="flex flex-wrap gap-1">
+        {!neverApproved(code) && (
+          <StatusBadge tone={code.active ? "success" : "neutral"} dot>
+            {code.active ? "Active" : "Inactive"}
+          </StatusBadge>
+        )}
+        <ApprovalBadge code={code} />
+      </span>
+      {code.proposed ? (
+        <span className="mt-1 block text-xs text-ink-soft">
+          A change is waiting for review. Until then, stores using it keep what was approved and new stores can&rsquo;t enter it.
+        </span>
+      ) : (
+        code.approvalNote && <span className="mt-1 block text-xs text-ink-soft">Reason: {code.approvalNote}</span>
+      )}
+    </>
+  );
+}
+
 // ------------------------------------------------------------- code form
 
 export function CodeFields({
@@ -50,11 +94,13 @@ export function CodeFields({
   setForm,
   creating,
   defaultRateBp,
+  hideActive = false,
 }: {
   form: CodeFormState;
   setForm: (next: CodeFormState) => void;
   creating: boolean;
   defaultRateBp: number;
+  hideActive?: boolean;
 }) {
   const set = (patch: Partial<CodeFormState>) => setForm({ ...form, ...patch });
   return (
@@ -118,7 +164,7 @@ export function CodeFields({
         placeholder={`Default ${formatBp(defaultRateBp)}`}
         hint="Leave empty for the platform default. Applies to payments recorded from now on."
       />
-      {!creating && (
+      {!creating && !hideActive && (
         <Toggle
           label="Active"
           description="An inactive code can't be entered by new merchants, and gives no discount or commission on any payment from now on — including charges already priced with it."
@@ -133,12 +179,19 @@ export function CodeFields({
 export function CodeModal({
   code,
   defaultRateBp,
+  hideActive = false,
+  description,
+  submitLabel,
   onClose,
   onSubmit,
 }: {
   /** Absent to create a new code. */
   code?: AdminReferralCode;
   defaultRateBp: number;
+  /** Its on/off switch isn't this form's to change, and isn't sent. */
+  hideActive?: boolean;
+  description?: string;
+  submitLabel?: string;
   onClose: () => void;
   onSubmit: (input: AdminReferralCodeInput) => Promise<void>;
 }) {
@@ -153,7 +206,7 @@ export function CodeModal({
     let input: AdminReferralCodeInput;
     try {
       input = toCodeInput(form, { includeCode: creating });
-      if (!creating) input.active = form.active;
+      if (!creating && !hideActive) input.active = form.active;
     } catch (err) {
       setError(getErrorMessage(err));
       return;
@@ -172,6 +225,7 @@ export function CodeModal({
       open
       onClose={() => !busy && onClose()}
       title={creating ? "New referral code" : `Edit ${code.code}`}
+      description={description}
       className="max-w-2xl"
       footer={
         <>
@@ -179,14 +233,14 @@ export function CodeModal({
             Cancel
           </Button>
           <Button type="submit" form="code-form" disabled={busy || (creating && form.code.trim().length < 3)}>
-            {busy ? "Saving…" : creating ? "Create code" : "Save"}
+            {busy ? "Saving…" : (submitLabel ?? (creating ? "Create code" : "Save"))}
           </Button>
         </>
       }
     >
       <form id="code-form" onSubmit={submit} className="space-y-4">
         {error && <Alert variant="danger">{error}</Alert>}
-        <CodeFields form={form} setForm={setForm} creating={creating} defaultRateBp={defaultRateBp} />
+        <CodeFields form={form} setForm={setForm} creating={creating} defaultRateBp={defaultRateBp} hideActive={hideActive} />
       </form>
     </Modal>
   );

@@ -15,25 +15,27 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
 import {
   CodeModal,
+  CodeStatus,
   CommissionTotals,
   LedgerTable,
   MarkPaidModal,
   MerchantsTable,
 } from "@/components/referrals";
-import { PAYOUT_OPTIONS, describeDiscount } from "@/lib/referrals";
+import { CONSOLE_REVIEW_HINT, NEW_CODE_REVIEW_HINT, PAYOUT_OPTIONS, codeToEdit, describeDiscount, neverApproved } from "@/lib/referrals";
 import { Pager } from "@/pages/BlocklistPage";
 import { useAuth } from "@/context/AuthContext";
 import { useAsync } from "@/lib/useAsync";
 import * as adminApi from "@/lib/adminApi";
 import { formatBp, formatDate } from "@/lib/format";
-import { P } from "@/lib/permissions";
+import { P, isCreator } from "@/lib/permissions";
 
 type StatusFilter = "all" | CommissionListStatus;
 
 export function AgentDetailPage() {
   const { id = "" } = useParams();
   const toast = useToast();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
+  const creator = isCreator(user);
   const detail = useAsync(() => adminApi.getAgent(id), [id]);
 
   const [editing, setEditing] = useState<AdminReferralCode | null>(null);
@@ -102,9 +104,7 @@ export function AgentDetailPage() {
                             <CommissionTotals totals={c.commission} empty="No payments yet" />
                           </Td>
                           <Td>
-                            <StatusBadge tone={c.active ? "success" : "neutral"} dot>
-                              {c.active ? "Active" : "Inactive"}
-                            </StatusBadge>
+                            <CodeStatus code={c} />
                             <span className="mt-1 block text-xs text-ink-soft">Since {formatDate(c.createdAt)}</span>
                           </Td>
                           {canManage && (
@@ -143,10 +143,11 @@ export function AgentDetailPage() {
       {adding && agent && (
         <CodeModal
           defaultRateBp={defaultRateBp}
+          description={creator ? undefined : NEW_CODE_REVIEW_HINT}
           onClose={() => setAdding(false)}
           onSubmit={async (input) => {
             const code = await adminApi.createReferralCode(agent.id, { ...input, code: input.code ?? "" });
-            toast.success(`Code ${code.code} created.`);
+            toast.success(code.approvalStatus === "pending" ? `Code ${code.code} was sent for review.` : `Code ${code.code} created.`);
             setAdding(false);
             void detail.refresh({ silent: true });
           }}
@@ -154,12 +155,14 @@ export function AgentDetailPage() {
       )}
       {editing && (
         <CodeModal
-          code={editing}
+          code={codeToEdit(editing, creator)}
+          hideActive={neverApproved(editing)}
           defaultRateBp={defaultRateBp}
+          description={creator ? undefined : CONSOLE_REVIEW_HINT}
           onClose={() => setEditing(null)}
           onSubmit={async (input) => {
             const code = await adminApi.updateReferralCode(editing.id, input);
-            toast.success(`Code ${code.code} saved.`);
+            toast.success(code.approvalStatus === "pending" ? `Code ${code.code} was sent for review.` : `Code ${code.code} saved.`);
             setEditing(null);
             void detail.refresh({ silent: true });
           }}

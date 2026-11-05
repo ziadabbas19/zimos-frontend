@@ -43,8 +43,9 @@ import type {
   AdminRedemptionParams,
   AdminReferralSimulation,
   AdminWorkspaceReferrals,
-  AdminAgentLink,
   AdminAgentLinkInput,
+  AdminAgentLinkRequestPage,
+  AdminAgentLinkResult,
   AdminPlatformRole,
   AdminRoleInput,
   AdminRolesResponse,
@@ -479,6 +480,14 @@ export function updateReferralCode(codeId: string, payload: AdminReferralCodeInp
   return apiClient.adminUpdateReferralCode(codeId, payload);
 }
 
+export function approveReferralCode(codeId: string, changes?: AdminReferralCodeInput): Promise<AdminReferralCode> {
+  return apiClient.adminApproveReferralCode(codeId, changes);
+}
+
+export function rejectReferralCode(codeId: string, reason: string): Promise<AdminReferralCode> {
+  return apiClient.adminRejectReferralCode(codeId, reason);
+}
+
 // Agents -> Referral codes (migration 725).
 export const REFERRAL_CODE_PAGE_SIZE = 50;
 
@@ -510,16 +519,28 @@ export function getUserReferrals(userId: string): Promise<{ redemptions: AdminRe
   return apiClient.adminGetUserReferrals(userId);
 }
 
-export function createAgentLink(workspaceId: string, payload: AdminAgentLinkInput): Promise<AdminAgentLink> {
+export function createAgentLink(workspaceId: string, payload: AdminAgentLinkInput): Promise<AdminAgentLinkResult> {
   return apiClient.adminCreateAgentLink(workspaceId, payload);
 }
 
-export function updateAgentLink(linkId: string, payload: Parameters<typeof apiClient.adminUpdateAgentLink>[1]): Promise<AdminAgentLink> {
+export function updateAgentLink(linkId: string, payload: Parameters<typeof apiClient.adminUpdateAgentLink>[1]): Promise<AdminAgentLinkResult> {
   return apiClient.adminUpdateAgentLink(linkId, payload);
 }
 
-export function endAgentLink(linkId: string, note?: string): Promise<AdminAgentLink> {
+export function endAgentLink(linkId: string, note?: string): Promise<AdminAgentLinkResult> {
   return apiClient.adminEndAgentLink(linkId, note);
+}
+
+export function listAgentLinkRequests(): Promise<AdminAgentLinkRequestPage> {
+  return apiClient.adminListAgentLinkRequests();
+}
+
+export function approveAgentLinkRequest(requestId: string): Promise<AdminAgentLinkResult> {
+  return apiClient.adminApproveAgentLinkRequest(requestId);
+}
+
+export function rejectAgentLinkRequest(requestId: string, reason: string): Promise<AdminAgentLinkResult> {
+  return apiClient.adminRejectAgentLinkRequest(requestId, reason);
 }
 
 export function listCommissions(params: AdminCommissionParams): Promise<AdminCommissionPage> {
@@ -656,6 +677,14 @@ export function reactivateWorkspace(workspaceId: string, reason: string): Promis
 
 export function getMyReferrals(): Promise<AdminAgentDetail> {
   return apiClient.adminGetMyReferrals();
+}
+
+export function createOwnReferralCode(payload: AdminReferralCodeInput & { code: string }): Promise<AdminReferralCode> {
+  return apiClient.adminCreateOwnReferralCode(payload);
+}
+
+export function updateOwnReferralCode(codeId: string, payload: AdminReferralCodeInput): Promise<AdminReferralCode> {
+  return apiClient.adminUpdateOwnReferralCode(codeId, payload);
 }
 
 export function listMyCommissions(

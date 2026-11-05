@@ -41,6 +41,31 @@ export interface CodeFormState {
   active: boolean;
 }
 
+/**
+ * Never approved yet (migration 742): it isn't on or off, it is waiting or
+ * turned down, and approving it is what switches it on. A change waiting on an
+ * approved code doesn't count, and an older API sends no status.
+ */
+export function neverApproved(code: Pick<AdminReferralCode, "approvalStatus" | "proposed">): boolean {
+  return (code.approvalStatus === "pending" || code.approvalStatus === "rejected") && !code.proposed;
+}
+
+/**
+ * The code a form edits. A creator's changes go on the code as it stands;
+ * anyone else's are read against what would apply once reviewed, so saving a
+ * form that shows the live values would throw away the change waiting.
+ */
+export function codeToEdit(code: AdminReferralCode, creator: boolean): AdminReferralCode {
+  return creator ? code : (code.proposed ?? code);
+}
+
+/** What saving means for someone whose changes wait for a creator's review, from the console. */
+export const CONSOLE_REVIEW_HINT =
+  "The label and the on/off switch change at once. Anything else, its agent included, waits for a creator's review: until it's approved, stores using this code keep what was approved, and new stores can't enter it.";
+
+/** The same, for a new code. */
+export const NEW_CODE_REVIEW_HINT = "It stays off until a creator has approved it.";
+
 export function initialCodeForm(code?: AdminReferralCode): CodeFormState {
   if (!code) {
     return {
