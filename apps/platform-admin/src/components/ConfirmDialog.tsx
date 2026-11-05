@@ -1,3 +1,4 @@
+import { commonText } from "@/lib/commonStrings";
 import { useState, type ReactNode } from "react";
 import { Button, Alert, ZLoaderHold } from "@store-builder/ui";
 import { Modal } from "./Modal";
@@ -24,9 +25,9 @@ export function ConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
-  busyLabel = "Working…",
+  confirmLabel = commonText().confirm,
+  cancelLabel = commonText().cancel,
+  busyLabel = commonText().working,
   destructive = false,
   confirmDisabled = false,
   onCancel,

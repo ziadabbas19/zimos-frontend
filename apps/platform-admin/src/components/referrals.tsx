@@ -15,9 +15,11 @@ import { Mono, Panel, Td, Th } from "@/components/Panel";
 import { SelectField, TextAreaField, TextField } from "@/components/forms";
 import { Status, StatusBadge } from "@/components/StatusBadge";
 import { Toggle } from "@/components/Toggle";
+import { fmt, useT } from "@/i18n/LocaleContext";
 import { getErrorMessage } from "@/lib/errors";
 import { formatBp, formatDate, formatDateTime, formatMinorMoneyExact } from "@/lib/format";
 import { initialCodeForm, neverApproved, toCodeInput, type CodeFormState } from "@/lib/referrals";
+import { REFERRAL_STRINGS, isolate, statusLabel } from "@/lib/referralStrings";
 
 /**
  * Components shared by the Agents screens and an agent's own My referrals
@@ -28,15 +30,16 @@ import { initialCodeForm, neverApproved, toCodeInput, type CodeFormState } from 
 
 /** "EGP 1,200.00 pending · EGP 300.00 paid" per currency, never summed across. */
 export function CommissionTotals({ totals, empty = "—" }: { totals: AdminCommissionTotals[]; empty?: string }) {
+  const t = useT(REFERRAL_STRINGS);
   if (totals.length === 0) return <span className="text-ink-soft">{empty}</span>;
   return (
     <div className="space-y-0.5">
-      {totals.map((t) => (
-        <div key={t.currency} className="text-sm whitespace-nowrap">
-          <span className="font-medium">{formatMinorMoneyExact(t.pending, t.currency)}</span>
-          <span className="text-ink-soft"> pending · </span>
-          <span className="font-medium">{formatMinorMoneyExact(t.markedPaid, t.currency)}</span>
-          <span className="text-ink-soft"> paid</span>
+      {totals.map((total) => (
+        <div key={total.currency} className="text-sm whitespace-nowrap">
+          <span className="font-medium">{formatMinorMoneyExact(total.pending, total.currency)}</span>
+          <span className="text-ink-soft">{t.totalsPending}</span>
+          <span className="font-medium">{formatMinorMoneyExact(total.markedPaid, total.currency)}</span>
+          <span className="text-ink-soft">{t.totalsPaid}</span>
         </div>
       ))}
     </div>
@@ -47,17 +50,18 @@ export function CommissionTotals({ totals, empty = "—" }: { totals: AdminCommi
 
 /** Where a code stands with a creator's review (migration 742); nothing once it is simply approved. */
 export function ApprovalBadge({ code }: { code: AdminReferralCode }) {
+  const t = useT(REFERRAL_STRINGS);
   if (code.approvalStatus === "pending") {
     return (
       <StatusBadge tone="warning" dot>
-        Pending review
+        {t.pendingReview}
       </StatusBadge>
     );
   }
   if (code.approvalStatus === "rejected" || code.changesRejected) {
     return (
       <StatusBadge tone="danger" dot>
-        {code.changesRejected ? "Change rejected" : "Rejected"}
+        {code.changesRejected ? t.changeRejected : t.rejected}
       </StatusBadge>
     );
   }
@@ -66,22 +70,21 @@ export function ApprovalBadge({ code }: { code: AdminReferralCode }) {
 
 /** A row's status: on or off, unless it was never approved, and its review with the reason given. */
 export function CodeStatus({ code }: { code: AdminReferralCode }) {
+  const t = useT(REFERRAL_STRINGS);
   return (
     <>
       <span className="flex flex-wrap gap-1">
         {!neverApproved(code) && (
           <StatusBadge tone={code.active ? "success" : "neutral"} dot>
-            {code.active ? "Active" : "Inactive"}
+            {code.active ? t.active : t.inactive}
           </StatusBadge>
         )}
         <ApprovalBadge code={code} />
       </span>
       {code.proposed ? (
-        <span className="mt-1 block text-xs text-ink-soft">
-          A change is waiting for review. Until then, stores using it keep what was approved and new stores can&rsquo;t enter it.
-        </span>
+        <span className="mt-1 block max-w-72 text-xs whitespace-normal text-ink-soft">{t.codeChangeWaiting}</span>
       ) : (
-        code.approvalNote && <span className="mt-1 block text-xs text-ink-soft">Reason: {code.approvalNote}</span>
+        code.approvalNote && <span className="mt-1 block max-w-72 text-xs whitespace-normal text-ink-soft">{fmt(t.reasonValue, { reason: code.approvalNote })}</span>
       )}
     </>
   );
@@ -102,42 +105,44 @@ export function CodeFields({
   defaultRateBp: number;
   hideActive?: boolean;
 }) {
+  const t = useT(REFERRAL_STRINGS);
   const set = (patch: Partial<CodeFormState>) => setForm({ ...form, ...patch });
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField
-          label="Code"
+          label={t.code}
           required={creating}
           disabled={!creating}
+          dir="ltr"
           value={form.code}
           onChange={(e) => set({ code: e.target.value.toUpperCase() })}
           placeholder="CAIRO10"
           maxLength={32}
-          hint={creating ? "3–32 letters, digits or dashes. It can't be changed later." : "Codes can't be renamed."}
+          hint={creating ? t.codeHintNew : t.codeHintFixed}
         />
         <TextField
-          label="Label"
+          label={t.label}
           value={form.label}
           onChange={(e) => set({ label: e.target.value })}
-          placeholder="e.g. Nasr City"
+          placeholder={t.fieldsLabelPlaceholder}
           maxLength={120}
-          hint="Internal only — merchants never see it."
+          hint={t.labelHint}
         />
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <SelectField
-          label="Discount"
+          label={t.discount}
           value={form.discountType}
           onChange={(e) => set({ discountType: e.target.value as ReferralDiscountType })}
         >
-          <option value="none">None (tracking only)</option>
-          <option value="percentage">Percentage off</option>
-          <option value="fixed">Fixed amount off</option>
+          <option value="none">{t.fieldsNone}</option>
+          <option value="percentage">{t.fieldsPercentage}</option>
+          <option value="fixed">{t.fieldsFixed}</option>
         </SelectField>
         {form.discountType !== "none" && (
           <TextField
-            label={form.discountType === "percentage" ? "Percent" : "Amount"}
+            label={form.discountType === "percentage" ? t.percent : t.amount}
             required
             inputMode="decimal"
             value={form.discountAmount}
@@ -147,27 +152,28 @@ export function CodeFields({
         )}
         {form.discountType === "fixed" && (
           <TextField
-            label="Currency"
+            label={t.currency}
             required
+            dir="ltr"
             value={form.discountCurrency}
             onChange={(e) => set({ discountCurrency: e.target.value.toUpperCase() })}
             maxLength={3}
-            hint="Charges in other currencies get no discount."
+            hint={t.fieldsCurrencyHint}
           />
         )}
       </div>
       <TextField
-        label="Commission rate override (%)"
+        label={t.fieldsRate}
         inputMode="decimal"
         value={form.commissionPercent}
         onChange={(e) => set({ commissionPercent: e.target.value })}
-        placeholder={`Default ${formatBp(defaultRateBp)}`}
-        hint="Leave empty for the platform default. Applies to payments recorded from now on."
+        placeholder={fmt(t.fieldsRateDefault, { rate: formatBp(defaultRateBp) })}
+        hint={t.fieldsRateHint}
       />
       {!creating && !hideActive && (
         <Toggle
-          label="Active"
-          description="An inactive code can't be entered by new merchants, and gives no discount or commission on any payment from now on — including charges already priced with it."
+          label={t.active}
+          description={t.fieldsActiveHint}
           checked={form.active}
           onChange={(active) => set({ active })}
         />
@@ -195,6 +201,7 @@ export function CodeModal({
   onClose: () => void;
   onSubmit: (input: AdminReferralCodeInput) => Promise<void>;
 }) {
+  const t = useT(REFERRAL_STRINGS);
   const creating = !code;
   const [form, setForm] = useState(() => initialCodeForm(code));
   const [busy, setBusy] = useState(false);
@@ -224,16 +231,16 @@ export function CodeModal({
     <Modal
       open
       onClose={() => !busy && onClose()}
-      title={creating ? "New referral code" : `Edit ${code.code}`}
+      title={creating ? t.codeNew : fmt(t.codeEdit, { code: isolate(code.code) })}
       description={description}
       className="max-w-2xl"
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={busy}>
-            Cancel
+            {t.cancel}
           </Button>
           <Button type="submit" form="code-form" disabled={busy || (creating && form.code.trim().length < 3)}>
-            {busy ? "Saving…" : (submitLabel ?? (creating ? "Create code" : "Save"))}
+            {busy ? t.saving : (submitLabel ?? (creating ? t.codeCreate : t.save))}
           </Button>
         </>
       }
@@ -249,13 +256,14 @@ export function CodeModal({
 // ---------------------------------------------------------------- ledger
 
 export function PayoutBadge({ status }: { status: AdminCommission["payoutStatus"] }) {
+  const t = useT(REFERRAL_STRINGS);
   return status === "marked_paid" ? (
     <StatusBadge tone="success" dot>
-      Paid
+      {t.payout_marked_paid}
     </StatusBadge>
   ) : (
     <StatusBadge tone="warning" dot>
-      Pending
+      {t.payout_pending}
     </StatusBadge>
   );
 }
@@ -270,21 +278,22 @@ export function LedgerTable({
   onMarkPaid?: (row: AdminCommission) => void;
   showAgent?: boolean;
 }) {
+  const t = useT(REFERRAL_STRINGS);
   return (
     <Panel flush>
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            {showAgent && <Th>Agent</Th>}
-            <Th>Merchant</Th>
-            <Th>Code</Th>
-            <Th>Paid on</Th>
-            <Th className="text-end">Amount paid</Th>
-            <Th className="text-end">Suggested commission</Th>
-            <Th>Status</Th>
+            {showAgent && <Th>{t.agent}</Th>}
+            <Th>{t.merchant}</Th>
+            <Th>{t.code}</Th>
+            <Th>{t.ledgerPaidOn}</Th>
+            <Th className="text-end">{t.ledgerAmountPaid}</Th>
+            <Th className="text-end">{t.suggestedCommission}</Th>
+            <Th>{t.status}</Th>
             {onMarkPaid && (
               <Th className="text-end">
-                <span className="sr-only">Actions</span>
+                <span className="sr-only">{t.actions}</span>
               </Th>
             )}
           </TableRow>
@@ -294,8 +303,8 @@ export function LedgerTable({
             <TableRow key={row.id} className={cn(row.voidedAt && "opacity-60")}>
               {showAgent && <Td className="text-sm">{row.agentName ?? "—"}</Td>}
               <Td>
-                <span className="font-medium">{row.workspace.name ?? "Deleted workspace"}</span>
-                <span className="block text-xs text-ink-soft">{row.isFirstPayment ? "First payment" : "Renewal"}</span>
+                <span className="font-medium">{row.workspace.name ?? t.ledgerDeletedWorkspace}</span>
+                <span className="block text-xs text-ink-soft">{row.isFirstPayment ? t.ledgerFirstPayment : t.ledgerRenewal}</span>
               </Td>
               <Td>
                 <Mono>{row.code.code ?? "—"}</Mono>
@@ -310,25 +319,25 @@ export function LedgerTable({
                 <span className={cn("font-medium", row.voidedAt && "line-through")}>
                   {formatMinorMoneyExact(row.suggestedCommission, row.currency)}
                 </span>
-                <span className="block text-xs text-ink-soft">at {formatBp(row.commissionRateBp)}</span>
+                <span className="block text-xs text-ink-soft">{fmt(t.ledgerAtRate, { rate: formatBp(row.commissionRateBp) })}</span>
               </Td>
               <Td>
                 {row.voidedAt ? (
                   <StatusBadge tone="neutral" dot>
-                    Voided
+                    {t.payout_voided}
                   </StatusBadge>
                 ) : (
                   <PayoutBadge status={row.payoutStatus} />
                 )}
                 {row.voidedAt && (
                   <span className="mt-1 block text-xs text-ink-soft" title={formatDateTime(row.voidedAt)}>
-                    Payment reversed {formatDate(row.voidedAt)}
+                    {fmt(t.ledgerReversed, { date: formatDate(row.voidedAt) })}
                     {row.voidedBy ? ` · ${row.voidedBy.fullName}` : ""}
                     {row.voidReason ? ` · ${row.voidReason}` : ""}
                   </span>
                 )}
                 {row.voidedAt && row.payoutStatus === "marked_paid" && (
-                  <span className="mt-1 block text-xs font-medium text-danger">Already paid out to the agent</span>
+                  <span className="mt-1 block text-xs font-medium text-danger">{t.ledgerPaidOut}</span>
                 )}
                 {row.payoutStatus === "marked_paid" && (
                   <span className="mt-1 block text-xs text-ink-soft" title={row.payoutNote ?? undefined}>
@@ -342,7 +351,7 @@ export function LedgerTable({
                 <Td className="text-end">
                   {row.payoutStatus === "pending" && !row.voidedAt && (
                     <Button size="sm" variant="outline" onClick={() => onMarkPaid(row)}>
-                      <CheckCircle2 /> Mark paid
+                      <CheckCircle2 /> {t.ledgerMarkPaid}
                     </Button>
                   )}
                 </Td>
@@ -364,6 +373,7 @@ export function MarkPaidModal({
   onClose: () => void;
   onConfirm: (note: string) => Promise<void>;
 }) {
+  const t = useT(REFERRAL_STRINGS);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -384,32 +394,34 @@ export function MarkPaidModal({
     <Modal
       open
       onClose={() => !busy && onClose()}
-      title="Mark commission paid"
-      description={`${formatMinorMoneyExact(row.suggestedCommission, row.currency)} for ${row.workspace.name ?? "this merchant"}'s payment on ${formatDate(row.paidAt)}.`}
+      title={t.markPaidTitle}
+      description={fmt(t.markPaidDescription, {
+        amount: formatMinorMoneyExact(row.suggestedCommission, row.currency),
+        name: row.workspace.name ?? t.markPaidThisMerchant,
+        date: formatDate(row.paidAt),
+      })}
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={busy}>
-            Cancel
+            {t.cancel}
           </Button>
           <Button type="submit" form="mark-paid-form" disabled={busy}>
-            {busy ? "Saving…" : "Mark paid"}
+            {busy ? t.saving : t.ledgerMarkPaid}
           </Button>
         </>
       }
     >
       <form id="mark-paid-form" onSubmit={submit} className="space-y-4">
         {error && <Alert variant="danger">{error}</Alert>}
-        <Alert>
-          This only records that you paid the agent — Zimos moves no money. It can&rsquo;t be undone.
-        </Alert>
+        <Alert>{t.markPaidNotice}</Alert>
         <TextAreaField
-          label="Note"
+          label={t.note}
           value={note}
           onChange={(e) => setNote(e.target.value)}
           maxLength={1000}
           rows={3}
-          placeholder="e.g. Bank transfer, ref 1234"
-          hint="Optional. The agent can see it."
+          placeholder={t.markPaidPlaceholder}
+          hint={t.markPaidHint}
         />
       </form>
     </Modal>
@@ -419,16 +431,17 @@ export function MarkPaidModal({
 // ------------------------------------------------------------- merchants
 
 export function MerchantsTable({ merchants, linkWorkspaces }: { merchants: AdminReferredMerchant[]; linkWorkspaces: boolean }) {
+  const t = useT(REFERRAL_STRINGS);
   return (
     <Panel flush>
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <Th>Merchant</Th>
-            <Th>Code</Th>
-            <Th>Code entered</Th>
-            <Th>Plan</Th>
-            <Th>Subscription</Th>
+            <Th>{t.merchant}</Th>
+            <Th>{t.code}</Th>
+            <Th>{t.merchantsCodeEntered}</Th>
+            <Th>{t.plan}</Th>
+            <Th>{t.subscription}</Th>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -437,23 +450,23 @@ export function MerchantsTable({ merchants, linkWorkspaces }: { merchants: Admin
               <Td className="font-medium">
                 {linkWorkspaces ? (
                   <Link to={`/workspaces/${m.workspace.id}`} className="hover:text-primary hover:underline">
-                    {m.workspace.name ?? "Deleted workspace"}
+                    {m.workspace.name ?? t.ledgerDeletedWorkspace}
                   </Link>
                 ) : (
-                  (m.workspace.name ?? "Deleted workspace")
+                  (m.workspace.name ?? t.ledgerDeletedWorkspace)
                 )}
               </Td>
               <Td>
                 {/* A store linked by hand has no code (migration 725). */}
-                {m.code.code ? <Mono>{m.code.code}</Mono> : <span className="text-sm text-ink-soft">Linked by hand</span>}
+                {m.code.code ? <Mono>{m.code.code}</Mono> : <span className="text-sm text-ink-soft">{t.merchantsLinkedByHand}</span>}
               </Td>
               <Td className="whitespace-nowrap text-sm">{formatDate(m.attachedAt)}</Td>
               <Td className="text-sm">
                 {m.planName ?? "—"}
-                <span className="block text-xs text-ink-soft">{m.billingCycle}</span>
+                <span className="block text-xs text-ink-soft">{t[`cycleWord_${m.billingCycle}` as const] ?? m.billingCycle}</span>
               </Td>
               <Td>
-                <Status value={m.subscriptionStatus} />
+                <Status value={m.subscriptionStatus} label={statusLabel(m.subscriptionStatus)} />
               </Td>
             </TableRow>
           ))}

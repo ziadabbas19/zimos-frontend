@@ -1,4 +1,5 @@
 import type { AuthUser } from "@store-builder/api-client";
+import { countForm, fmt, getActiveLocale } from "../i18n/activeLocale.ts";
 
 /**
  * Platform-console permission keys, mirroring the backend's
@@ -166,11 +167,57 @@ export const PERMISSION_LABELS: Record<string, string> = {
   "platform_settings.manage": "Platform settings — edit, reset and restore",
 };
 
+/** The same labels in Arabic, key for key. */
+export const PERMISSION_LABELS_AR: Record<string, string> = {
+  "overview.view": "نظرة عامة",
+  "workspaces.view": "المتاجر",
+  "workspaces.manage": "المتاجر — الإيقاف وإعادة التفعيل",
+  "subscriptions.view": "الاشتراكات",
+  "subscriptions.manage": "الاشتراكات — دورة الفوترة، والشروط الخاصة، وفحص انتهاء الفترة التجريبية",
+  "payments.record": "رسوم الاشتراك — التسعير وتسجيل المدفوعات يدويًا، ومراجعة إثباتات التحويل",
+  "payment_methods.manage": "طرق الدفع — التفعيل والإيقاف والترتيب",
+  "payment_methods.edit_numbers": "طرق الدفع — تغيير الرقم الذي يُحوَّل إليه",
+  "plans.view": "الخطط — عرض",
+  "plans.manage": "الخطط — تعديل",
+  "templates.view": "القوالب — عرض",
+  "templates.manage": "القوالب — تعديل ونشر",
+  "risk.view": "إشارات الاحتيال وقائمة الحظر — عرض",
+  "risk.manage": "قائمة الحظر — تعديل",
+  "providers.view": "شركات الشحن وبوابات الدفع",
+  "providers.manage": "خريطة مناطق شركات الشحن — تعديل لكل المتاجر",
+  "system.view": "حالة النظام",
+  "feature_flags.view": "مفاتيح الميزات — عرض",
+  "feature_flags.manage": "مفاتيح الميزات — تعديل",
+  "announcements.view": "الإعلانات — عرض",
+  "announcements.manage": "الإعلانات — تعديل",
+  "service_listings.view": "قوائم الخدمات — عرض",
+  "service_listings.manage": "قوائم الخدمات — تعديل",
+  "support.view": "تذاكر الدعم — عرض",
+  "support.manage": "تذاكر الدعم — الرد والتحديث",
+  "audit_log.view": "سجل التدقيق",
+  "admins.view": "المسؤولون — عرض",
+  "admins.manage": "المسؤولون — منح الأدوار وتغييرها وسحبها",
+  "agents.view": "الوكلاء والأكواد والعمولات — عرض",
+  "agents.manage": "أكواد الإحالة — إنشاء وتعديل",
+  "agents.create": "الوكلاء — إضافة وكيل جديد",
+  "referral_codes.approve": "أكواد الإحالة وروابط الوكلاء — الموافقة على التعديلات أو رفضها",
+  "commissions.mark_paid": "العمولات — تحديد كمدفوعة",
+  "referrals.view_own": "أكواد الإحالة والعمولات الخاصة بالحساب (الوكلاء)",
+  "platform_settings.view": "إعدادات المنصة — عرض",
+  "platform_settings.manage": "إعدادات المنصة — تعديل وإعادة ضبط واستعادة",
+};
+
+const PERMISSION_COUNT_AR = { one: "صلاحية واحدة", two: "صلاحيتان", few: "{n} صلاحيات", many: "{n} صلاحية" };
+
 export function permissionLabel(key: string): string {
-  return key === "*" ? "Everything (creator)" : (PERMISSION_LABELS[key] ?? key);
+  const arabic = getActiveLocale() === "ar";
+  if (key === "*") return arabic ? "كل شيء (منشئ)" : "Everything (creator)";
+  return (arabic ? PERMISSION_LABELS_AR[key] : PERMISSION_LABELS[key]) ?? key;
 }
 
 export function permissionSummary(permissions: string[]): string {
-  if (permissions.includes("*")) return "Everything";
+  const arabic = getActiveLocale() === "ar";
+  if (permissions.includes("*")) return arabic ? "كل شيء" : "Everything";
+  if (arabic) return fmt(PERMISSION_COUNT_AR[countForm(permissions.length)], { n: permissions.length });
   return `${permissions.length} permission${permissions.length === 1 ? "" : "s"}`;
 }

@@ -13,11 +13,96 @@ import { Status, StatusBadge, type Tone } from "@/components/StatusBadge";
 import { Toggle } from "@/components/Toggle";
 import { useToast } from "@/components/Toast";
 import { useAuth } from "@/context/AuthContext";
+import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { useAsync } from "@/lib/useAsync";
 import { getErrorMessage } from "@/lib/errors";
 import * as adminApi from "@/lib/adminApi";
 import { formatDate, formatDateTime, formatRelative } from "@/lib/format";
 import { AGENT_ROLE, CREATOR_ROLE, P, isCreator, permissionLabel, permissionSummary, withinReach } from "@/lib/permissions";
+import { statusLabel } from "@/lib/referralStrings";
+
+const STRINGS = {
+  en: {
+    title: "Admin users",
+    description: "Who can sign in to this console, and what each of them can do.",
+    grantAccess: "Grant access",
+    empty: "No platform users.",
+    colName: "Name",
+    colEmail: "Email",
+    colRole: "Role",
+    colAccount: "Account",
+    colLastSignIn: "Last sign-in",
+    colSignedUp: "Signed up",
+    colActions: "Actions",
+    you: "You",
+    never: "Never",
+    edit: "Edit",
+    revoke: "Revoke",
+    footnote:
+      "A role sets an account’s starting permissions; a creator can then adjust them one by one. Only a creator can make another creator or change one. Every change is recorded in the audit log and takes effect on that person’s next request.",
+    viewOnly: " Your role can view this list but not change it.",
+    grantedToast: "{email} now has the {role} role.",
+    alreadyToast: "{email} already had that role.",
+    updatedToast: "{email}'s access was updated.",
+    revokeTitle: "Revoke {name}'s access?",
+    revokeDescription: "{email} will lose access to this console on their next request. Their account and store access are not affected.",
+    revokeDescriptionAgent:
+      "{email} will lose access to this console on their next request. Their account and store access are not affected, and their referral codes and commission history stay as they are.",
+    revokeAccess: "Revoke access",
+    revokedToast: "Access revoked for {email}.",
+    editAccess: "Edit {name}'s access",
+    grantDescription: "The person needs an active Zimos account first — there are no invitations.",
+    cancel: "Cancel",
+    working: "Working…",
+    saving: "Saving…",
+    save: "Save",
+    accountEmail: "Account email",
+    role: "Role",
+    wildcard: "{label}: every section, including ones added later.",
+    customize: "Customize permissions",
+    customizeHint: "Off: the role's default set. On: choose exactly what this person can do.",
+  },
+  ar: {
+    title: "المسؤولون",
+    description: "من يمكنه تسجيل الدخول إلى لوحة التحكم هذه، وما يمكن لكل منهم فعله.",
+    grantAccess: "منح صلاحية الوصول",
+    empty: "لا يوجد مستخدمون للمنصة.",
+    colName: "الاسم",
+    colEmail: "البريد الإلكتروني",
+    colRole: "الدور",
+    colAccount: "الحساب",
+    colLastSignIn: "آخر تسجيل دخول",
+    colSignedUp: "تاريخ التسجيل",
+    colActions: "الإجراءات",
+    you: "أنت",
+    never: "أبدًا",
+    edit: "تعديل",
+    revoke: "سحب",
+    footnote:
+      "يحدد الدور الصلاحيات الأولية للحساب، ويمكن لأحد المنشئين بعد ذلك تعديلها واحدة تلو الأخرى. لا يمكن إلا لمنشئ أن يعيّن منشئًا آخر أو يغيّره. يُسجَّل كل تغيير في سجل التدقيق ويسري عند الطلب التالي لذلك الشخص.",
+    viewOnly: " يتيح لك دورك عرض هذه القائمة دون تغييرها.",
+    grantedToast: "أصبح لدى {email} دور {role}.",
+    alreadyToast: "لدى {email} هذا الدور بالفعل.",
+    updatedToast: "تم تحديث صلاحيات {email}.",
+    revokeTitle: "سحب صلاحية وصول {name}؟",
+    revokeDescription: "سيفقد {email} الوصول إلى لوحة التحكم هذه عند طلبه التالي. ولن يتأثر حسابه ولا وصوله إلى متاجره.",
+    revokeDescriptionAgent:
+      "سيفقد {email} الوصول إلى لوحة التحكم هذه عند طلبه التالي. ولن يتأثر حسابه ولا وصوله إلى متاجره، وتبقى أكواد الإحالة وسجل العمولات الخاصة به كما هي.",
+    revokeAccess: "سحب صلاحية الوصول",
+    revokedToast: "تم سحب صلاحية وصول {email}.",
+    editAccess: "تعديل صلاحيات {name}",
+    grantDescription: "يحتاج الشخص إلى حساب Zimos نشط أولًا — لا توجد دعوات.",
+    cancel: "إلغاء",
+    working: "جارٍ التنفيذ…",
+    saving: "جارٍ الحفظ…",
+    save: "حفظ",
+    accountEmail: "البريد الإلكتروني للحساب",
+    role: "الدور",
+    wildcard: "{label}: كل الأقسام، بما فيها ما يُضاف لاحقًا.",
+    customize: "تخصيص الصلاحيات",
+    customizeHint: "عند الإيقاف: المجموعة الافتراضية للدور. عند التشغيل: اختر بالضبط ما يمكن لهذا الشخص فعله.",
+  },
+} satisfies Messages;
 
 const ROLE_TONES: Record<string, Tone> = { creator: "primary", admin: "info", agent: "warning" };
 
@@ -26,6 +111,7 @@ function RoleBadge({ admin }: { admin: Pick<Admin, "role" | "roleName"> }) {
 }
 
 export function AdminUsersPage() {
+  const t = useT(STRINGS);
   const toast = useToast();
   const { user, can } = useAuth();
   const { data, loading, error, refresh } = useAsync(
@@ -52,33 +138,33 @@ export function AdminUsersPage() {
   return (
     <div>
       <PageHeader
-        title="Admin users"
-        description="Who can sign in to this console, and what each of them can do."
+        title={t.title}
+        description={t.description}
         actions={
           canManage && (
             <Button onClick={() => setGranting(true)} disabled={!roles}>
-              <UserPlus /> Grant access
+              <UserPlus /> {t.grantAccess}
             </Button>
           )
         }
       />
       <DataState skeleton={<ListSkeleton variant="table" />} loading={loading && !data} error={error} onRetry={() => void refresh()}>
         {admins.length === 0 ? (
-          <EmptyBlock message="No platform users." />
+          <EmptyBlock message={t.empty} />
         ) : (
           <Panel flush>
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <Th>Name</Th>
-                  <Th>Email</Th>
-                  <Th>Role</Th>
-                  <Th>Account</Th>
-                  <Th>Last sign-in</Th>
-                  <Th>Signed up</Th>
+                  <Th>{t.colName}</Th>
+                  <Th>{t.colEmail}</Th>
+                  <Th>{t.colRole}</Th>
+                  <Th>{t.colAccount}</Th>
+                  <Th>{t.colLastSignIn}</Th>
+                  <Th>{t.colSignedUp}</Th>
                   {canManage && (
                     <Th className="text-end">
-                      <span className="sr-only">Actions</span>
+                      <span className="sr-only">{t.colActions}</span>
                     </Th>
                   )}
                 </TableRow>
@@ -90,7 +176,7 @@ export function AdminUsersPage() {
                       <span className="font-medium">{a.fullName}</span>
                       {a.isYou && (
                         <StatusBadge tone="primary" className="ms-2">
-                          You
+                          {t.you}
                         </StatusBadge>
                       )}
                     </Td>
@@ -102,13 +188,13 @@ export function AdminUsersPage() {
                       </span>
                     </Td>
                     <Td>
-                      <Status value={a.status} />
+                      <Status value={a.status} label={statusLabel(a.status)} />
                     </Td>
                     <Td className="whitespace-nowrap text-sm">
                       {a.lastLoginAt ? (
                         <span title={formatDateTime(a.lastLoginAt)}>{formatRelative(a.lastLoginAt)}</span>
                       ) : (
-                        <span className="text-ink-soft">Never</span>
+                        <span className="text-ink-soft">{t.never}</span>
                       )}
                     </Td>
                     <Td className="whitespace-nowrap text-sm">{formatDate(a.createdAt)}</Td>
@@ -117,10 +203,10 @@ export function AdminUsersPage() {
                         {canActOn(a) && (
                           <>
                             <Button size="sm" variant="ghost" disabled={!roles} onClick={() => setEditing(a)}>
-                              <Pencil /> Edit
+                              <Pencil /> {t.edit}
                             </Button>
                             <Button size="sm" variant="ghost" onClick={() => setRevoking(a)}>
-                              <UserMinus className="text-danger" /> Revoke
+                              <UserMinus className="text-danger" /> {t.revoke}
                             </Button>
                           </>
                         )}
@@ -133,10 +219,8 @@ export function AdminUsersPage() {
           </Panel>
         )}
         <p className="mt-3 text-xs text-ink-soft">
-          A role sets an account&rsquo;s starting permissions; a creator can then adjust them one by one. Only a
-          creator can make another creator or change one. Every change is recorded in the audit log and takes effect on
-          that person&rsquo;s next request.
-          {!canManage && " Your role can view this list but not change it."}
+          {t.footnote}
+          {!canManage && t.viewOnly}
         </p>
         {roles && <RolesPanel roles={roles} admins={admins} onChanged={() => void refresh({ silent: true })} />}
       </DataState>
@@ -148,7 +232,7 @@ export function AdminUsersPage() {
           onClose={() => setGranting(false)}
           onSubmit={async ({ email, role, permissions }) => {
             const { admin, granted } = await adminApi.grantAdmin({ email: email ?? "", role, permissions });
-            toast.success(granted ? `${admin.email} now has the ${admin.roleName} role.` : `${admin.email} already had that role.`);
+            toast.success(granted ? fmt(t.grantedToast, { email: admin.email, role: admin.roleName }) : fmt(t.alreadyToast, { email: admin.email }));
             setGranting(false);
             void refresh({ silent: true });
           }}
@@ -162,7 +246,7 @@ export function AdminUsersPage() {
           onClose={() => setEditing(null)}
           onSubmit={async ({ role, permissions }) => {
             const admin = await adminApi.updateAdmin(editing.id, { role, permissions });
-            toast.success(`${admin.email}'s access was updated.`);
+            toast.success(fmt(t.updatedToast, { email: admin.email }));
             setEditing(null);
             void refresh({ silent: true });
           }}
@@ -170,17 +254,17 @@ export function AdminUsersPage() {
       )}
       <ConfirmDialog
         open={!!revoking}
-        title={`Revoke ${revoking?.fullName ?? ""}'s access?`}
-        description={`${revoking?.email ?? ""} will lose access to this console on their next request. Their account and store access are not affected${
-          revoking?.role === "agent" ? ", and their referral codes and commission history stay as they are" : ""
-        }.`}
-        confirmLabel="Revoke access"
+        title={fmt(t.revokeTitle, { name: revoking?.fullName ?? "" })}
+        description={fmt(revoking?.role === "agent" ? t.revokeDescriptionAgent : t.revokeDescription, { email: revoking?.email ?? "" })}
+        confirmLabel={t.revokeAccess}
+        cancelLabel={t.cancel}
+        busyLabel={t.working}
         destructive
         onCancel={() => setRevoking(null)}
         onConfirm={async () => {
           if (!revoking) return;
           await adminApi.revokeAdmin(revoking.id);
-          toast.success(`Access revoked for ${revoking.email}.`);
+          toast.success(fmt(t.revokedToast, { email: revoking.email }));
           setRevoking(null);
           void refresh({ silent: true });
         }}
@@ -207,6 +291,7 @@ function AccessModal({
   onClose: () => void;
   onSubmit: (value: { email?: string; role: string; permissions?: string[] }) => Promise<void>;
 }) {
+  const t = useT(STRINGS);
   const { can } = useAuth();
   const editing = !!admin;
   const [email, setEmail] = useState("");
@@ -264,16 +349,16 @@ function AccessModal({
     <Modal
       open
       onClose={() => !busy && onClose()}
-      title={editing ? `Edit ${admin.fullName}'s access` : "Grant access"}
-      description={editing ? admin.email : "The person needs an active Zimos account first — there are no invitations."}
+      title={editing ? fmt(t.editAccess, { name: admin.fullName }) : t.grantAccess}
+      description={editing ? admin.email : t.grantDescription}
       className="max-w-2xl"
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={busy}>
-            Cancel
+            {t.cancel}
           </Button>
           <Button type="submit" form="access-form" disabled={busy || !roleKey || (!editing && !email.trim())}>
-            {busy ? "Saving…" : editing ? "Save" : "Grant access"}
+            {busy ? t.saving : editing ? t.save : t.grantAccess}
           </Button>
         </>
       }
@@ -282,7 +367,7 @@ function AccessModal({
         {error && <Alert variant="danger">{error}</Alert>}
         {!editing && (
           <TextField
-            label="Account email"
+            label={t.accountEmail}
             type="email"
             required
             autoFocus
@@ -291,7 +376,7 @@ function AccessModal({
           />
         )}
         <SelectField
-          label="Role"
+          label={t.role}
           value={roleKey}
           onChange={(e) => chooseRole(e.target.value)}
           hint={role?.description ?? undefined}
@@ -303,14 +388,12 @@ function AccessModal({
           ))}
         </SelectField>
         {isWildcard ? (
-          <p className="text-sm text-ink-soft">
-            {permissionLabel("*")}: every section, including ones added later.
-          </p>
+          <p className="text-sm text-ink-soft">{fmt(t.wildcard, { label: permissionLabel("*") })}</p>
         ) : (
           <>
             <Toggle
-              label="Customize permissions"
-              description="Off: the role's default set. On: choose exactly what this person can do."
+              label={t.customize}
+              description={t.customizeHint}
               checked={custom}
               onChange={setCustom}
             />

@@ -16,8 +16,10 @@ import {
 } from "@/components/referrals";
 import { ReferralCodeFormModal } from "@/components/referralCodeForm";
 import { useAuth } from "@/context/AuthContext";
-import { PAYOUT_OPTIONS, codeToEdit, neverApproved } from "@/lib/referrals";
+import { fmt, useT } from "@/i18n/LocaleContext";
+import { codeToEdit, neverApproved, payoutOptions } from "@/lib/referrals";
 import { describeCodeCommission, describeCodeDiscount } from "@/lib/referralCodes";
+import { REFERRAL_STRINGS, isolate, referralStrings } from "@/lib/referralStrings";
 import { CreateAgentModal } from "@/pages/AgentsPage";
 import { Pager } from "@/pages/BlocklistPage";
 import { useAsync } from "@/lib/useAsync";
@@ -28,9 +30,10 @@ type StatusFilter = "all" | CommissionListStatus;
 
 /** What saving means for the code, for someone whose codes wait for review. */
 function reviewHint(code: AdminReferralCode | undefined): string {
-  if (!code) return "It stays off until it has been reviewed and approved.";
-  if (neverApproved(code)) return "It stays off until it has been approved. A change to anything but the label sends it for review again.";
-  return "The label changes at once. Anything else waits for review: until it's approved, stores using this code keep what was approved, and new stores can't enter it.";
+  const t = referralStrings();
+  if (!code) return t.myHintNew;
+  if (neverApproved(code)) return t.myHintNeverApproved;
+  return t.myHintApproved;
 }
 
 /**
@@ -40,6 +43,7 @@ function reviewHint(code: AdminReferralCode | undefined): string {
  * are marked by the Zimos team.
  */
 export function MyReferralsPage() {
+  const t = useT(REFERRAL_STRINGS);
   const toast = useToast();
   const { can, user } = useAuth();
   const creator = isCreator(user);
@@ -68,24 +72,24 @@ export function MyReferralsPage() {
 
   function saved(code: AdminReferralCode) {
     setForm(null);
-    toast.success(code.approvalStatus === "pending" ? `${code.code} was sent for review.` : `${code.code} saved.`);
+    toast.success(fmt(code.approvalStatus === "pending" ? t.listSentForReview : t.mySaved, { code: isolate(code.code) }));
     void mine.refresh({ silent: true });
   }
 
   return (
     <div>
       <PageHeader
-        title="My referrals"
-        description="Your referral codes, the merchants who used them, and the commission suggested for each of their payments."
+        title={t.myTitle}
+        description={t.myDescription}
         actions={
           <div className="flex flex-wrap gap-2">
             {can(P.AGENTS_CREATE) && (
               <Button variant="outline" onClick={() => setAddingAgent(true)}>
-                <UserPlus /> Add agent
+                <UserPlus /> {t.myAddAgent}
               </Button>
             )}
             <Button onClick={() => setForm({})}>
-              <Plus /> New code
+              <Plus /> {t.listNewCode}
             </Button>
           </div>
         }
@@ -95,22 +99,22 @@ export function MyReferralsPage() {
         {agent && (
           <div className="space-y-8">
             <section>
-              <h2 className="mb-3 text-lg font-semibold text-ink">My codes</h2>
+              <h2 className="mb-3 text-lg font-semibold text-ink">{t.myCodes}</h2>
               {agent.codes.length === 0 ? (
-                <EmptyBlock message="You don't have a referral code yet. Make one, and it works once it has been approved." />
+                <EmptyBlock message={t.myEmpty} />
               ) : (
                 <Panel flush>
                   <Table>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
-                        <Th>Code</Th>
-                        <Th>Merchant discount</Th>
-                        <Th>Your commission</Th>
-                        <Th className="text-end">Merchants</Th>
-                        <Th>Suggested commission</Th>
-                        <Th>Status</Th>
+                        <Th>{t.code}</Th>
+                        <Th>{t.myMerchantDiscount}</Th>
+                        <Th>{t.myYourCommission}</Th>
+                        <Th className="text-end">{t.merchants}</Th>
+                        <Th>{t.suggestedCommission}</Th>
+                        <Th>{t.status}</Th>
                         <Th className="text-end">
-                          <span className="sr-only">Actions</span>
+                          <span className="sr-only">{t.actions}</span>
                         </Th>
                       </TableRow>
                     </TableHeader>
@@ -125,7 +129,7 @@ export function MyReferralsPage() {
                           <Td className="text-sm">{describeCodeCommission(c)}</Td>
                           <Td className="text-end text-sm">{c.merchantsReferred}</Td>
                           <Td>
-                            <CommissionTotals totals={c.commission} empty="No payments yet" />
+                            <CommissionTotals totals={c.commission} empty={t.noPaymentsYet} />
                           </Td>
                           <Td>
                             <CodeStatus code={c} />
@@ -133,7 +137,7 @@ export function MyReferralsPage() {
                           <Td className="text-end">
                             {/* With the flag off, a code with a schedule has nothing here to edit it with. */}
                             {(v2 || c.kind !== "schedule") && (
-                              <Button size="icon-sm" variant="ghost" aria-label={`Edit ${c.code}`} onClick={() => setForm({ code: c })}>
+                              <Button size="icon-sm" variant="ghost" aria-label={fmt(t.codeEdit, { code: isolate(c.code) })} onClick={() => setForm({ code: c })}>
                                 <Pencil />
                               </Button>
                             )}
@@ -147,9 +151,9 @@ export function MyReferralsPage() {
             </section>
 
             <section>
-              <h2 className="mb-3 text-lg font-semibold text-ink">Merchants who used my codes</h2>
+              <h2 className="mb-3 text-lg font-semibold text-ink">{t.myMerchantsTitle}</h2>
               {mine.data!.merchants.length === 0 ? (
-                <EmptyBlock message="No merchant has entered one of your codes yet." />
+                <EmptyBlock message={t.myNoMerchants} />
               ) : (
                 <MerchantsTable merchants={mine.data!.merchants} linkWorkspaces={false} />
               )}
@@ -157,13 +161,10 @@ export function MyReferralsPage() {
 
             <section>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-lg font-semibold text-ink">Payments and commission</h2>
-                <FilterChips options={PAYOUT_OPTIONS} value={status} onChange={setStatus} />
+                <h2 className="text-lg font-semibold text-ink">{t.myPaymentsTitle}</h2>
+                <FilterChips options={payoutOptions()} value={status} onChange={setStatus} />
               </div>
-              <p className="mb-3 text-sm text-ink-soft">
-                A suggested commission is recorded for every payment a referred merchant makes, renewals included.
-                Payouts are arranged with the Zimos team, who mark each one paid here.
-              </p>
+              <p className="mb-3 text-sm text-ink-soft">{t.myPaymentsNote}</p>
               <DataState loading={ledger.loading && !ledger.data} error={ledger.error} onRetry={() => void ledger.refresh()}>
                 {ledger.data && ledger.data.totals.length > 0 && (
                   <div className="mb-3">
@@ -171,7 +172,7 @@ export function MyReferralsPage() {
                   </div>
                 )}
                 {(ledger.data?.commissions.length ?? 0) === 0 ? (
-                  <EmptyBlock message={status === "all" ? "No payments yet." : "No rows match this filter."} />
+                  <EmptyBlock message={status === "all" ? t.myNoPayments : t.noRowsMatch} />
                 ) : (
                   <LedgerTable rows={ledger.data!.commissions} />
                 )}
@@ -218,7 +219,7 @@ export function MyReferralsPage() {
           onClose={() => setAddingAgent(false)}
           onCreated={(email) => {
             setAddingAgent(false);
-            toast.success(`${email} is now an agent.`);
+            toast.success(fmt(t.myAgentAdded, { email }));
           }}
         />
       )}

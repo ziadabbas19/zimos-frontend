@@ -1,3 +1,4 @@
+import { dateLocale, getActiveLocale } from "../i18n/activeLocale.ts";
 /**
  * Formatting helpers. Plan prices carry their own currency (`plans.currency`),
  * so money formatters take one rather than assuming a single platform
@@ -62,12 +63,12 @@ export function formatBp(bp: number): string {
 
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en", { year: "numeric", month: "short", day: "numeric" });
+  return new Date(iso).toLocaleDateString(dateLocale(), { year: "numeric", month: "short", day: "numeric" });
 }
 
 export function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("en", {
+  return new Date(iso).toLocaleString(dateLocale(), {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -80,11 +81,11 @@ export function formatRelative(iso: string | null | undefined): string {
   if (!iso) return "—";
   const diffMs = new Date(iso).getTime() - Date.now();
   const abs = Math.abs(diffMs);
-  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+  const rtf = new Intl.RelativeTimeFormat(dateLocale(), { numeric: "auto" });
   const minute = 60_000;
   const hour = 60 * minute;
   const day = 24 * hour;
-  if (abs < minute) return "just now";
+  if (abs < minute) return getActiveLocale() === "ar" ? "الآن" : "just now";
   if (abs < hour) return rtf.format(Math.round(diffMs / minute), "minute");
   if (abs < day) return rtf.format(Math.round(diffMs / hour), "hour");
   if (abs < 30 * day) return rtf.format(Math.round(diffMs / day), "day");

@@ -121,5 +121,6 @@ export function JsonBlock({ value, className }: { value: unknown; className?: st
 }
 
 export function Mono({ children, className }: { children: ReactNode; className?: string }) {
-  return <code className={cn("rounded-[0.375rem] bg-primary-soft px-1.5 py-0.5 font-mono text-xs text-ink", className)}>{children}</code>;
+  // A code keeps its own reading order inside Arabic text ("CAIRO-10").
+  return <code dir="ltr" className={cn("rounded-[0.375rem] bg-primary-soft px-1.5 py-0.5 font-mono text-xs text-ink", className)}>{children}</code>;
 }
