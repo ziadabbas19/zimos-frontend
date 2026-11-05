@@ -5,7 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, cn, ZLoader } f
 import { fmt, useT } from "@/i18n/LocaleContext";
 import * as notificationsApi from "@/lib/notificationsApi";
 import type { ConsoleNotification } from "@/lib/notificationsApi";
-import { NOTIFICATION_STRINGS, typeLabel } from "@/lib/notificationStrings";
+import { NOTIFICATION_STRINGS, reviewDetail, reviewTitle, typeLabel } from "@/lib/notificationStrings";
 import { formatRelative } from "@/lib/format";
 import { useConsoleLive } from "@/lib/liveUpdates";
 
@@ -124,24 +124,27 @@ export function NotificationBell() {
           ) : items.length === 0 ? (
             <li className="px-4 py-4 text-sm text-ink-soft">{t.empty}</li>
           ) : (
-            items.map((n) => (
-              <li key={n.id}>
-                <button
-                  type="button"
-                  onClick={() => void openItem(n)}
-                  className={cn("flex w-full cursor-pointer items-start gap-3 px-4 py-3 text-start hover:bg-paper", !n.readAt && "bg-primary-soft/40")}
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className={cn("block truncate text-sm text-ink", !n.readAt && "font-semibold")}>{typeLabel(t, n.type)}</span>
-                    {(typeof n.data.name === "string" || n.body) && (
-                      <span className="mt-0.5 block truncate text-sm text-ink-soft">{typeof n.data.name === "string" ? n.data.name : n.body}</span>
-                    )}
-                    <span className="mt-1 block text-xs text-ink-soft">{formatRelative(n.createdAt)}</span>
-                  </span>
-                  {!n.readAt && <span className="mt-2 size-2 shrink-0 rounded-full bg-primary" aria-hidden />}
-                </button>
-              </li>
-            ))
+            items.map((n) => {
+              // A review's sentence names the code or store and who did it, so it wraps; it replaces the label and the name.
+              const review = reviewTitle(t, n);
+              const detail = review ? reviewDetail(t, n) : typeof n.data.name === "string" ? n.data.name : n.body;
+              return (
+                <li key={n.id}>
+                  <button
+                    type="button"
+                    onClick={() => void openItem(n)}
+                    className={cn("flex w-full cursor-pointer items-start gap-3 px-4 py-3 text-start hover:bg-paper", !n.readAt && "bg-primary-soft/40")}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className={cn("block text-sm text-ink", review ? "line-clamp-2" : "truncate", !n.readAt && "font-semibold")}>{review ?? typeLabel(t, n.type)}</span>
+                      {detail && <span className="mt-0.5 block truncate text-sm text-ink-soft">{detail}</span>}
+                      <span className="mt-1 block text-xs text-ink-soft">{formatRelative(n.createdAt)}</span>
+                    </span>
+                    {!n.readAt && <span className="mt-2 size-2 shrink-0 rounded-full bg-primary" aria-hidden />}
+                  </button>
+                </li>
+              );
+            })
           )}
         </ul>
         <div className="border-t border-line px-4 py-3">
