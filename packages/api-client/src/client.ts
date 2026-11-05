@@ -71,8 +71,10 @@ import type {
   AdminRedemptionParams,
   AdminReferralSimulation,
   AdminWorkspaceReferrals,
-  AdminAgentLink,
   AdminAgentLinkInput,
+  AdminAgentLinkRequest,
+  AdminAgentLinkRequestPage,
+  AdminAgentLinkResult,
   ReferralTerms,
   ReferralCommissionBasis,
   AdminPlatformRole,
@@ -2246,19 +2248,29 @@ export class ApiClient {
   }
 
   /** Links a store to an agent by hand; the open link, if any, ends as "replaced". */
-  async adminCreateAgentLink(workspaceId: string, payload: AdminAgentLinkInput): Promise<AdminAgentLink> {
-    const body = await this.request<unknown>(`/admin/workspaces/${workspaceId}/agent-links`, { method: "POST", body: payload });
-    return unwrapObject<AdminAgentLink>(body, "link");
+  async adminCreateAgentLink(workspaceId: string, payload: AdminAgentLinkInput): Promise<AdminAgentLinkResult> {
+    return this.request<AdminAgentLinkResult>(`/admin/workspaces/${workspaceId}/agent-links`, { method: "POST", body: payload });
   }
 
-  async adminUpdateAgentLink(linkId: string, payload: Partial<Omit<AdminAgentLinkInput, "agentId" | "startsAt">>): Promise<AdminAgentLink> {
-    const body = await this.request<unknown>(`/admin/agent-links/${linkId}`, { method: "PATCH", body: payload });
-    return unwrapObject<AdminAgentLink>(body, "link");
+  async adminUpdateAgentLink(linkId: string, payload: Partial<Omit<AdminAgentLinkInput, "agentId" | "startsAt">>): Promise<AdminAgentLinkResult> {
+    return this.request<AdminAgentLinkResult>(`/admin/agent-links/${linkId}`, { method: "PATCH", body: payload });
   }
 
-  async adminEndAgentLink(linkId: string, note?: string): Promise<AdminAgentLink> {
-    const body = await this.request<unknown>(`/admin/agent-links/${linkId}/end`, { method: "POST", body: note ? { note } : {} });
-    return unwrapObject<AdminAgentLink>(body, "link");
+  async adminEndAgentLink(linkId: string, note?: string): Promise<AdminAgentLinkResult> {
+    return this.request<AdminAgentLinkResult>(`/admin/agent-links/${linkId}/end`, { method: "POST", body: note ? { note } : {} });
+  }
+
+  async adminListAgentLinkRequests(params: { status?: AdminAgentLinkRequest["status"]; limit?: number; offset?: number } = {}): Promise<AdminAgentLinkRequestPage> {
+    const body = await this.request<AdminAgentLinkRequestPage>(`/admin/agent-link-requests${buildQuery({ ...params })}`);
+    return { ...body, requests: unwrapList(body, "requests") };
+  }
+
+  async adminApproveAgentLinkRequest(requestId: string): Promise<AdminAgentLinkResult> {
+    return this.request<AdminAgentLinkResult>(`/admin/agent-link-requests/${requestId}/approve`, { method: "POST", body: {} });
+  }
+
+  async adminRejectAgentLinkRequest(requestId: string, reason: string): Promise<AdminAgentLinkResult> {
+    return this.request<AdminAgentLinkResult>(`/admin/agent-link-requests/${requestId}/reject`, { method: "POST", body: { reason } });
   }
 
   async adminListCommissions(params: AdminCommissionParams = {}): Promise<AdminCommissionPage> {

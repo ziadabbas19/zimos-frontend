@@ -9,6 +9,7 @@ import { FilterChips, SearchInput, SelectField } from "@/components/forms";
 import { Mono, Panel, Td, Th } from "@/components/Panel";
 import { StatusBadge, type Tone } from "@/components/StatusBadge";
 import { useToast } from "@/components/Toast";
+import { AgentLinkRequests } from "@/components/agentLinkRequests";
 import { ApprovalBadge } from "@/components/referrals";
 import { ReferralCodeFormModal } from "@/components/referralCodeForm";
 import { useAuth } from "@/context/AuthContext";
@@ -16,8 +17,8 @@ import { useAsync } from "@/lib/useAsync";
 import * as adminApi from "@/lib/adminApi";
 import { formatDate } from "@/lib/format";
 import { AUDIENCE_LABELS, STATE_LABELS, describeCodeDiscount, describeGrant, usesLabel } from "@/lib/referralCodes";
-import { P } from "@/lib/permissions";
-import { neverApproved } from "@/lib/referrals";
+import { P, isCreator } from "@/lib/permissions";
+import { NEW_CODE_REVIEW_HINT, neverApproved } from "@/lib/referrals";
 
 /**
  * Agents → Referral codes (migration 725): every code, with or without an
@@ -44,7 +45,7 @@ type ApprovalFilter = "all" | Exclude<ReferralCodeApproval, "approved">;
 export function ReferralCodesPage() {
   const toast = useToast();
   const navigate = useNavigate();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const [q, setQ] = useState("");
   const [state, setState] = useState<StateFilter>("all");
   const [agentId, setAgentId] = useState("");
@@ -65,6 +66,7 @@ export function ReferralCodesPage() {
   );
   const agents = useAsync(() => adminApi.listAgents(), []);
   const plans = useAsync(() => (can(P.PLANS_VIEW) ? adminApi.listPlans() : Promise.resolve([])), []);
+  const linkRequests = useAsync(() => adminApi.listAgentLinkRequests(), []);
   const v2 = list.data?.v2Enabled ?? false;
   const codes = list.data?.codes ?? [];
   const pendingReview = list.data?.pendingReview ?? 0;
@@ -93,6 +95,12 @@ export function ReferralCodesPage() {
         <Alert className="mb-4">
           Codes with limits, schedules or no agent are switched off (REFERRAL_CODES_V2_ENABLED). Codes are created on each agent&apos;s page, as before.
         </Alert>
+      )}
+
+      {(linkRequests.data?.requests.length ?? 0) > 0 && (
+        <div className="mb-4">
+          <AgentLinkRequests showStore requests={linkRequests.data?.requests ?? []} onChanged={() => void linkRequests.refresh({ silent: true })} />
+        </div>
       )}
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
@@ -150,10 +158,11 @@ export function ReferralCodesPage() {
           agents={agents.data?.agents ?? []}
           plans={plans.data ?? []}
           defaultRateBp={list.data?.defaultCommissionRateBp ?? 3000}
+          description={isCreator(user) ? undefined : NEW_CODE_REVIEW_HINT}
           onClose={() => setCreating(false)}
           onSaved={(saved) => {
             setCreating(false);
-            toast.success(`${saved.code} is ready.`);
+            toast.success(saved.approvalStatus === "pending" ? `${saved.code} was sent for review.` : `${saved.code} is ready.`);
             navigate(`/referral-codes/${saved.id}`);
           }}
         />

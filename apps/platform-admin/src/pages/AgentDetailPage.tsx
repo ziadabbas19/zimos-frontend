@@ -21,7 +21,7 @@ import {
   MarkPaidModal,
   MerchantsTable,
 } from "@/components/referrals";
-import { CONSOLE_REVIEW_HINT, PAYOUT_OPTIONS, codeToEdit, describeDiscount, neverApproved } from "@/lib/referrals";
+import { CONSOLE_REVIEW_HINT, NEW_CODE_REVIEW_HINT, PAYOUT_OPTIONS, codeToEdit, describeDiscount, neverApproved } from "@/lib/referrals";
 import { Pager } from "@/pages/BlocklistPage";
 import { useAuth } from "@/context/AuthContext";
 import { useAsync } from "@/lib/useAsync";
@@ -143,10 +143,11 @@ export function AgentDetailPage() {
       {adding && agent && (
         <CodeModal
           defaultRateBp={defaultRateBp}
+          description={creator ? undefined : NEW_CODE_REVIEW_HINT}
           onClose={() => setAdding(false)}
           onSubmit={async (input) => {
             const code = await adminApi.createReferralCode(agent.id, { ...input, code: input.code ?? "" });
-            toast.success(`Code ${code.code} created.`);
+            toast.success(code.approvalStatus === "pending" ? `Code ${code.code} was sent for review.` : `Code ${code.code} created.`);
             setAdding(false);
             void detail.refresh({ silent: true });
           }}

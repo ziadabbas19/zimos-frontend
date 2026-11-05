@@ -61,7 +61,10 @@ export function codeToEdit(code: AdminReferralCode, creator: boolean): AdminRefe
 
 /** What saving means for someone whose changes wait for a creator's review, from the console. */
 export const CONSOLE_REVIEW_HINT =
-  "The label, the agent and the on/off switch change at once. Anything else waits for a creator's review: until it's approved, stores using this code keep what was approved, and new stores can't enter it.";
+  "The label and the on/off switch change at once. Anything else, its agent included, waits for a creator's review: until it's approved, stores using this code keep what was approved, and new stores can't enter it.";
+
+/** The same, for a new code. */
+export const NEW_CODE_REVIEW_HINT = "It stays off until a creator has approved it.";
 
 export function initialCodeForm(code?: AdminReferralCode): CodeFormState {
   if (!code) {

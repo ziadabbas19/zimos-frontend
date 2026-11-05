@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Check, Pencil, X } from "lucide-react";
 import { Alert, Button, Table, TableBody, TableHeader, TableRow } from "@store-builder/ui";
-import type { AdminPlan, AdminRedemption, AdminRedemptionParams, AdminReferralCode, BillingCycle } from "@store-builder/api-client";
+import type { AdminAgent, AdminPlan, AdminRedemption, AdminRedemptionParams, AdminReferralCode, BillingCycle } from "@store-builder/api-client";
 import { CanLink } from "@/components/Can";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { PageHeader } from "@/components/PageHeader";
@@ -42,9 +42,11 @@ import { STATE_TONE } from "./ReferralCodesPage";
 const CYCLE_LABEL: Record<BillingCycle, string> = { monthly: "Monthly", yearly: "Yearly" };
 
 /** What a reviewer reads of a code, line by line, to set a waiting change against it. */
-function readingOf(code: AdminReferralCode, plans: AdminPlan[]): [string, string][] {
+function readingOf(code: AdminReferralCode, plans: AdminPlan[], agents: AdminAgent[]): [string, string][] {
   const planNames = (code.allowedPlanIds ?? []).map((id) => plans.find((p) => p.id === id)?.name ?? "A plan").sort();
+  const agentName = code.agentId ? (agents.find((a) => a.id === code.agentId)?.fullName ?? "An agent") : "No agent";
   return [
+    ["Agent", agentName],
     ["Discount", describeCodeDiscount(code)],
     ["Commission", describeCodeCommission(code)],
     ["Commission on", code.commissionBasis === "list" ? "The list price" : "What the merchant paid"],
@@ -92,10 +94,13 @@ export function ReferralCodeDetailPage() {
   // Editing the second kind needs the flag; a first-kind code is edited on its agent's page as before.
   const editable = can(P.AGENTS_MANAGE) && data.v2Enabled;
   const pending = code.approvalStatus === "pending";
-  const reviewable = pending && can(P.REFERRAL_CODES_APPROVE);
+  // Only a creator reviews what they made or changed.
+  const ownWork = !creator && (code.authorIds ?? []).includes(user?.id ?? "");
+  const reviewable = pending && can(P.REFERRAL_CODES_APPROVE) && !ownWork;
   const proposed = code.proposed;
-  const reading = readingOf(code, plans.data ?? []);
-  const changes = proposed ? readingOf(proposed, plans.data ?? []).filter(([, value], i) => value !== reading[i][1]) : [];
+  const agentList = agents.data?.agents ?? [];
+  const reading = readingOf(code, plans.data ?? [], agentList);
+  const changes = proposed ? readingOf(proposed, plans.data ?? [], agentList).filter(([, value], i) => value !== reading[i][1]) : [];
   const reviewed = (message: string) => {
     setReview(null);
     setReason("");
@@ -154,6 +159,9 @@ export function ReferralCodeDetailPage() {
             </>
           ) : (
             <p className="text-sm text-ink-soft">It stays off until it&rsquo;s approved. Its settings are below.</p>
+          )}
+          {can(P.REFERRAL_CODES_APPROVE) && ownWork && (
+            <p className="mt-3 text-sm text-ink-soft">You made this code or changed it, so someone else has to review it.</p>
           )}
         </Panel>
       )}
@@ -243,7 +251,7 @@ export function ReferralCodeDetailPage() {
       {review === "edit" && data.v2Enabled && (
         <ReferralCodeFormModal
           code={proposed ?? code}
-          ownerId={code.agentId}
+          ownerId={(proposed ?? code).agentId}
           agents={[]}
           plans={plans.data ?? []}
           defaultRateBp={data.defaultCommissionRateBp}

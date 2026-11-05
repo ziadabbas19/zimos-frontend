@@ -159,7 +159,7 @@ export const PERMISSION_LABELS: Record<string, string> = {
   "agents.view": "Agents, codes and commissions — view",
   "agents.manage": "Referral codes — create and edit",
   "agents.create": "Agents — add a new agent",
-  "referral_codes.approve": "Referral codes — approve or reject agents' codes",
+  "referral_codes.approve": "Referral codes and agent links — approve or reject changes",
   "commissions.mark_paid": "Commissions — mark paid",
   "referrals.view_own": "Own referral codes and commissions (agents)",
   "platform_settings.view": "Platform settings — view",

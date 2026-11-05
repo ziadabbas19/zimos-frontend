@@ -4696,6 +4696,8 @@ export interface AdminReferralCode {
   approvalNote?: string | null;
   /** The last change to this approved code was rejected; the code itself goes on. */
   changesRejected?: boolean;
+  /** Whoever made it or changed what is waiting: only a creator among them can review it. */
+  authorIds?: string[];
   reviewedAt?: string | null;
   /** How it would read with the change waiting for review. Nothing prices with it until then. */
   proposed?: AdminReferralCode | null;
@@ -4838,10 +4840,43 @@ export interface AdminAgentLinkInput {
   note?: string | null;
 }
 
+/** A change to a store's agent from anyone but a creator (migration 743): nothing changes until it is approved. */
+export interface AdminAgentLinkRequest {
+  id: string;
+  workspaceId: string;
+  workspace?: { id: string; name?: string };
+  linkId: string | null;
+  kind: "link" | "update" | "end";
+  changes: Partial<Omit<AdminAgentLinkInput, "agentId">> & { agentId?: string };
+  agent: { id: string; fullName?: string; email?: string } | null;
+  status: "pending" | "approved" | "rejected";
+  reason: string | null;
+  requestedBy: { id: string; fullName: string } | null;
+  reviewedBy: { id: string; fullName: string } | null;
+  reviewedAt: string | null;
+  /** Whoever asked for it or made the link: only a creator among them can review it. */
+  authorIds: string[];
+  createdAt: string;
+}
+
+/** A creator's change comes back as `link`; anyone else's as a `request`, waiting. */
+export interface AdminAgentLinkResult {
+  link?: AdminAgentLink;
+  request?: AdminAgentLinkRequest;
+}
+
+export interface AdminAgentLinkRequestPage {
+  requests: AdminAgentLinkRequest[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface AdminWorkspaceReferrals {
   redemptions: AdminRedemption[];
   links: AdminAgentLink[];
   openLink: AdminAgentLink | null;
+  linkRequests?: AdminAgentLinkRequest[];
   v2Enabled: boolean;
 }
 

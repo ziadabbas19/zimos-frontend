@@ -197,7 +197,7 @@ export function CreateAgentModal({
 }) {
   const t = useT(STRINGS);
   const { can } = useAuth();
-  // A code made here is live at once, so it takes what any console-made code does.
+  // A code made here takes what any console-made code does, and waits for review like one.
   const canAddCode = can(P.AGENTS_MANAGE);
   const [email, setEmail] = useState("");
   const [withCode, setWithCode] = useState(canAddCode);
