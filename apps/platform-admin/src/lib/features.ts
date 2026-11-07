@@ -46,3 +46,14 @@ export const CONSOLE_REALTIME_ENABLED = import.meta.env.VITE_CONSOLE_REALTIME_EN
  * the details keep).
  */
 export const SITE_LIVE_ENABLED = import.meta.env.VITE_SITE_LIVE_ENABLED === "true";
+
+/**
+ * Device notifications on phones and computers: what the bell says, also sent
+ * to the browsers where each account turned them on (an offer on its first
+ * page, "Notifications on this device" on the Notifications page, and a
+ * "Devices" choice per type in its settings). Pairs with the API's
+ * PUSH_ENABLED and VAPID keys (the console's notifications go out on the same
+ * service as the dashboard's): a 404 from /me/push/config hides all of it. Off:
+ * none of it, and a notifications worker kept from an earlier build is removed.
+ */
+export const CONSOLE_PUSH_ENABLED = import.meta.env.VITE_CONSOLE_PUSH_ENABLED === "true";
