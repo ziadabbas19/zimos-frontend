@@ -8,13 +8,17 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { OverlayRoot } from "@/components/overlayRoot";
 import { AccountMenu } from "@/components/shell/AccountMenu";
 import { Breadcrumbs } from "@/components/shell/Breadcrumbs";
-import { Dock } from "@/components/shell/Dock";
+import { Dock, type DockEditorState } from "@/components/shell/Dock";
+import { HomeShortcuts } from "@/components/HomeShortcuts";
+import { PushBridge } from "@/components/push/PushBridge";
+import { PushPrompt } from "@/components/push/PushPrompt";
 import { GlobalSearch } from "@/components/shell/GlobalSearch";
 import { PhoneMenu } from "@/components/shell/PhoneMenu";
 import { SidebarNav } from "@/components/shell/SidebarNav";
 import { useT } from "@/i18n/LocaleContext";
 import { SHELL_STRINGS } from "@/lib/shellStrings";
 import { P } from "@/lib/permissions";
+import { useLandingPath } from "@/lib/nav";
 
 const SIDE_MENU_ID = "zimos-side-menu";
 /** Whether the side menu is hidden, kept on this device (the merchant dashboard's key). */
@@ -58,6 +62,17 @@ export function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const openMobile = useCallback(() => setMobileOpen(true), []);
   const closeMobile = useCallback(() => setMobileOpen(false), []);
+  // The bottom bar's editor, opened from the phone menu, which steps aside for it.
+  const [dockEditor, setDockEditor] = useState<DockEditorState>({ open: false, opened: 0 });
+  const customizeDock = useCallback(() => {
+    setMobileOpen(false);
+    setDockEditor((current) => ({ open: true, opened: current.opened + 1 }));
+  }, []);
+  const closeDockEditor = useCallback(() => setDockEditor((current) => ({ ...current, open: false })), []);
+  // The account's first page (Overview, or the first section it opens): where the
+  // offer of device notifications and its shortcuts row sit, as on the dashboard's Home.
+  const landing = useLandingPath();
+  const onLanding = landing !== null && location.pathname === landing;
 
   // A menu left open across navigation would cover the page it just opened.
   useEffect(() => {
@@ -81,7 +96,9 @@ export function AdminLayout() {
 
       {/* Below `md` the side menu is hidden: the dock is the navigation, and its
           last slot opens the whole menu as a sheet. */}
-      <PhoneMenu open={mobileOpen} onClose={closeMobile} />
+      <PhoneMenu open={mobileOpen} onClose={closeMobile} onCustomizeDock={customizeDock} />
+      {/* Device notifications: this browser's subscription kept in step, and a clicked one opening its page. */}
+      <PushBridge />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header
@@ -135,13 +152,19 @@ export function AdminLayout() {
           {/* Settles in when moving between sections; the theme centres the page column. */}
           <div key={location.pathname.split("/")[1] ?? ""} className="page-in">
             <div className="mx-auto w-full max-w-7xl">
+              {onLanding && (
+                <>
+                  <PushPrompt className="mb-4" />
+                  <HomeShortcuts className="mb-6" />
+                </>
+              )}
               <Outlet />
             </div>
           </div>
           <OverlayRoot />
         </main>
       </div>
-      <Dock onMore={openMobile} moreOpen={mobileOpen} />
+      <Dock onMore={openMobile} moreOpen={mobileOpen} editor={dockEditor} onEditorClose={closeDockEditor} />
     </div>
   );
 }
