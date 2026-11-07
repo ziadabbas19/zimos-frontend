@@ -61,7 +61,9 @@ export type ShortcutId =
   | "activity"
   | "services"
   | "support"
-  | "suggestions";
+  | "suggestions"
+  // The phone bar's Home slot (lib/mobileNav); never offered on the Home row.
+  | "home";
 
 /** A count of waiting work on the shortcut: `awaiting` is the one Home reads itself, the others the side menu's. */
 export type ShortcutBadge = "awaiting" | "reviews" | "unread";
@@ -173,7 +175,7 @@ function categoryOf(to: string): ShortcutCategory {
   return group?.labelKey ?? "more";
 }
 
-function withSearch(entry: Omit<ShortcutEntry, "search">): ShortcutEntry {
+export function withSearch(entry: Omit<ShortcutEntry, "search">): ShortcutEntry {
   return { ...entry, search: { titles: [entry.title.en, entry.title.ar], trail: [SHORTCUT_CATEGORY_LABELS.en[entry.category], SHORTCUT_CATEGORY_LABELS.ar[entry.category]] } };
 }
 
@@ -247,10 +249,11 @@ export function shortcutAllowed(entry: ShortcutEntry, { permissions, available, 
   return !(entry.plan && gated?.(entry.plan));
 }
 
-/** The entries of `ids` this member may open, in that order, each once. An id this build does not know is left out. */
-export function shortcutsOf(ids: readonly string[], access: ShortcutAccess): ShortcutEntry[] {
+/** The entries of `ids` this member may open, in that order, each once. An id `catalog` does not know is left out. */
+export function shortcutsOf(ids: readonly string[], access: ShortcutAccess, catalog: readonly ShortcutEntry[] = SHORTCUT_CATALOG): ShortcutEntry[] {
+  const byId = catalog === SHORTCUT_CATALOG ? BY_ID : new Map<string, ShortcutEntry>(catalog.map((entry) => [entry.id, entry]));
   return [...new Set(ids)].flatMap((id) => {
-    const entry = BY_ID.get(id);
+    const entry = byId.get(id);
     return entry && shortcutAllowed(entry, access) ? [entry] : [];
   });
 }

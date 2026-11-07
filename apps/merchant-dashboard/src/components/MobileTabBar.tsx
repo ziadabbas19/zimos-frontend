@@ -1,70 +1,66 @@
-import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { cn } from "@store-builder/ui";
 import { IconMore, type IconComponent } from "@/components/icons";
 import { ViewLink } from "@/components/ViewLink";
+import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { fmt, getIntlLocale, useT, type Messages } from "@/i18n/LocaleContext";
-import { NAV_ITEMS, isNavItemVisible, type NavKey } from "@/lib/navigation";
+import { fmt, getIntlLocale, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
+import { DEFAULT_DOCK_IDS, dockEntriesOf, dockLabel, useMobileNav } from "@/lib/mobileNav";
+import { usePlanFeatures } from "@/lib/usePlanFeatures";
 import { useWorkCounts } from "@/lib/workCounts";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
+
+// Its own chunk, with the drag library: nothing of it loads until someone customizes the bar.
+const CustomizeDockDialog = lazy(() =>
+  import("@/components/shell/CustomizeDockDialog").then((module) => ({ default: module.CustomizeDockDialog }))
+);
 
 const STRINGS = {
   en: {
     nav: "Quick navigation",
-    home: "Today",
-    orders: "Orders",
-    confirm: "Confirm",
-    products: "Products",
     more: "More",
     waiting: "{n} waiting for a call",
     overflow: "{n}+",
   },
   ar: {
     nav: "التنقل السريع",
-    home: "اليوم",
-    orders: "الطلبات",
-    confirm: "التأكيد",
-    products: "المنتجات",
     more: "المزيد",
     waiting: "{n} في انتظار مكالمة",
     overflow: "{n}+",
   },
 } satisfies Messages;
 
-type TabKey = "home" | "orders" | "confirm" | "products";
-
 interface Tab {
-  key: TabKey;
+  id: string;
   to: string;
   end?: boolean;
   icon: IconComponent;
+  label: string;
 }
 
 /**
- * The dock's slots: four entries of the side menu. lib/navigation.ts gives
- * each its address, its icon and the permissions its page asks for, so a slot
- * shows only to a role that can open it (an editor has no orders slot, an
- * accountant no confirmation or products slot).
+ * The dock's slots, as this member arranged them in this store (lib/mobileNav):
+ * Home and the pages of the Home shortcuts' catalogue, each with its side menu
+ * entry's address and icon. A slot shows only to a role that can open its page
+ * (an editor has no orders slot), and one the plan or this deploy leaves out
+ * goes too. A member who never arranged it gets the bar it always was: Today,
+ * Orders, Confirm, Products.
  */
-const SLOTS: { key: TabKey; nav: NavKey; end?: boolean }[] = [
-  { key: "home", nav: "overview", end: true },
-  { key: "orders", nav: "orders" },
-  { key: "confirm", nav: "confirmationQueue" },
-  { key: "products", nav: "catalog" },
-];
-
-function tabsFor(permissions: readonly string[] | null | undefined): Tab[] {
-  return SLOTS.flatMap((slot) => {
-    const item = NAV_ITEMS.find((entry) => entry.key === slot.nav);
-    if (!item || !isNavItemVisible(item, permissions)) return [];
-    return [{ key: slot.key, to: item.to, end: slot.end, icon: item.icon }];
-  });
-}
-
-/** The routes the dock shows for this member; the phone menu leaves them out so nothing is listed twice. */
-export function tabRoutesFor(permissions: readonly string[] | null | undefined): string[] {
-  return tabsFor(permissions).map((tab) => tab.to);
+export function useDockTabs(): Tab[] {
+  const { locale } = useLocale();
+  const { user } = useAuth();
+  const { currentWorkspace } = useWorkspace();
+  const { gated } = usePlanFeatures();
+  const { answer, hint } = useMobileNav(currentWorkspace?.id, user?.id);
+  const ids = answer?.shortcuts ?? hint ?? DEFAULT_DOCK_IDS;
+  return dockEntriesOf(ids, { permissions: currentWorkspace?.permissions, available: answer?.available, gated }).map((entry) => ({
+    id: entry.id,
+    to: entry.to,
+    end: entry.to === "/",
+    icon: entry.icon,
+    label: dockLabel(entry, locale),
+  }));
 }
 
 function onTab(pathname: string, tab: { to: string; end?: boolean }): boolean {
@@ -113,7 +109,7 @@ const SLOT =
 const PILL =
   "zimos-dock-pill relative flex h-[30px] w-[52px] items-center justify-center rounded-full transition-transform duration-[var(--dur-pop)] ease-[var(--ease-pop)] motion-reduce:transition-none motion-safe:group-active/slot:scale-[1.16] motion-safe:group-data-[pressed]/slot:scale-[1.16] group-active/slot:duration-[var(--dur-fade)] group-active/slot:ease-[var(--ease-out)] group-data-[pressed]/slot:duration-[var(--dur-fade)] group-data-[pressed]/slot:ease-[var(--ease-out)]";
 
-const LABEL = "zimos-dock-label px-0.5 text-[11px] leading-[14px] font-medium whitespace-nowrap";
+const LABEL = "zimos-dock-label block max-w-full min-w-0 truncate px-0.5 text-[11px] leading-[14px] font-medium whitespace-nowrap";
 
 /**
  * The phone's Dock: the four places a merchant visits every day, under
@@ -122,21 +118,39 @@ const LABEL = "zimos-dock-label px-0.5 text-[11px] leading-[14px] font-medium wh
  * gets fewer, equal ones. Hidden from `md` up, where the side menu is always
  * on screen.
  */
-export function MobileTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpen: boolean }) {
+/** The bar's editor: opened from "Customize the bar" in the phone menu (the layout keeps whether it is open). */
+export interface DockEditorState {
+  open: boolean;
+  /** How many times it was opened: each opening starts from the bar as it is then. */
+  opened: number;
+}
+
+export function MobileTabBar({
+  onMore,
+  moreOpen,
+  editor,
+  onEditorOpenChange,
+}: {
+  onMore: () => void;
+  moreOpen: boolean;
+  editor?: DockEditorState;
+  onEditorOpenChange?: (open: boolean) => void;
+}) {
   const t = useT(STRINGS);
-  const workspaceId = useWorkspaceId();
+  const { user } = useAuth();
   const { currentWorkspace } = useWorkspace();
+  const { answer } = useMobileNav(currentWorkspace?.id, user?.id);
+  const workspaceId = useWorkspaceId();
   const { pathname } = useLocation();
   const morePress = usePressSwell<HTMLButtonElement>();
-  const tabs = tabsFor(currentWorkspace?.permissions);
-  const showsConfirm = tabs.some((tab) => tab.key === "confirm");
+  const tabs = useDockTabs();
+  const showsConfirm = tabs.some((tab) => tab.id === "confirmation_queue");
   // Calls that are due now (not ones booked for later), from the shell's one shared poll.
   // A role with no confirm slot asks for nothing; one that can't read the queue gets null: no badge.
   const { toConfirm } = useWorkCounts(showsConfirm ? workspaceId : null);
   const waiting = toConfirm !== null && toConfirm > 0 ? toConfirm : 0;
   // On a page with no slot of its own, "More" is where you are.
   const moreCurrent = moreOpen || !tabs.some((tab) => onTab(pathname, tab));
-  const label: Record<TabKey, string> = { home: t.home, orders: t.orders, confirm: t.confirm, products: t.products };
 
   return (
     <nav
@@ -145,21 +159,21 @@ export function MobileTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpe
       className="zimos-dock fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto h-16 max-w-md rounded-[1.75rem] border border-transparent bg-paper-raised shadow-[var(--shadow-raised)] ring-1 ring-line md:hidden"
     >
       <DockLens />
-      {/* Equal columns for however many slots the role has. */}
-      <div className="relative grid h-full auto-cols-fr grid-flow-col px-1">
+      {/* Equal columns for however many slots the member has; a long label is cut short, never pushed into its neighbour. */}
+      <div className="relative grid h-full auto-cols-[minmax(0,1fr)] grid-flow-col px-1">
         {tabs.map((tab) => {
           const current = onTab(pathname, tab);
           return (
             <DockLink
-              key={tab.key}
+              key={tab.id}
               to={tab.to}
               icon={tab.icon}
-              label={label[tab.key]}
+              label={tab.label}
               current={current}
               // One filled pill at a time: while the menu is open it sits on "More".
               lit={current && !moreOpen}
               badge={
-                tab.key === "confirm" && waiting > 0
+                tab.id === "confirmation_queue" && waiting > 0
                   ? {
                       count: waiting,
                       text:
@@ -184,6 +198,19 @@ export function MobileTabBar({ onMore, moreOpen }: { onMore: () => void; moreOpe
           <SlotFace icon={IconMore} label={t.more} lit={moreCurrent} />
         </button>
       </div>
+      {answer && currentWorkspace && editor && editor.opened > 0 && onEditorOpenChange && (
+        <Suspense fallback={null}>
+          {/* A new key per opening: it starts from the bar as it is now. */}
+          <CustomizeDockDialog
+            key={editor.opened}
+            open={editor.open}
+            onOpenChange={onEditorOpenChange}
+            workspaceId={currentWorkspace.id}
+            answer={answer}
+            permissions={currentWorkspace.permissions}
+          />
+        </Suspense>
+      )}
     </nav>
   );
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, cn } from "@store-builder/ui";
 import { PageHeader } from "@/components/PageHeader";
+import { PushDeviceSection } from "@/components/push/PushDeviceSection";
 import { Panel } from "@/components/Panel";
 import { Toggle } from "@/components/Toggle";
 import { NativeSelect } from "@/components/forms";
@@ -12,6 +13,7 @@ import { NOTIFICATION_TYPES, type ConsoleNotification, type NotificationPref, ty
 import { NOTIFICATION_STRINGS, reviewDetail, reviewTitle, typeLabel } from "@/lib/notificationStrings";
 import { getErrorMessage } from "@/lib/errors";
 import { formatDateTime, formatRelative } from "@/lib/format";
+import { CONSOLE_PUSH_ENABLED } from "@/lib/features";
 
 export function NotificationsPage() {
   const t = useT(NOTIFICATION_STRINGS);
@@ -89,6 +91,8 @@ export function NotificationsPage() {
           </div>
         }
       />
+      {/* This browser's device notifications and "My devices" (VITE_CONSOLE_PUSH_ENABLED and the API's /me/push). */}
+      <PushDeviceSection className="mb-6" />
       {showSettings && <SettingsPanel onSaved={() => void load(null)} />}
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div className="w-56">
@@ -160,13 +164,18 @@ function SettingsPanel({ onSaved }: { onSaved: () => void }) {
   const t = useT(NOTIFICATION_STRINGS);
   const toast = useToast();
   const [prefs, setPrefs] = useState<NotificationPref[] | null>(null);
+  // The "Devices" column: only while device notifications are on here and at the API.
+  const [pushDelivery, setPushDelivery] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     notificationsApi
       .getPrefs()
-      .then((res) => setPrefs(res.prefs))
+      .then((res) => {
+        setPrefs(res.prefs);
+        setPushDelivery(CONSOLE_PUSH_ENABLED && res.pushDelivery === true);
+      })
       .catch((err) => setError(getErrorMessage(err)));
   }, []);
 
@@ -201,6 +210,7 @@ function SettingsPanel({ onSaved }: { onSaved: () => void }) {
               <span className="flex items-center gap-4">
                 <Toggle checked={p.enabled} onChange={(v) => set(p.type, { enabled: v })} label={t.inApp} />
                 <Toggle checked={p.email} onChange={(v) => set(p.type, { email: v })} label={t.email} />
+                {pushDelivery && <Toggle checked={p.push !== false} onChange={(v) => set(p.type, { push: v })} label={t.devices} />}
               </span>
             </li>
           ))}

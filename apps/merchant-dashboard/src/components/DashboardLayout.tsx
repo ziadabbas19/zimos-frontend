@@ -17,7 +17,7 @@ import { PushBridge } from "@/components/push/PushBridge";
 import { PushInstallBanner } from "@/components/push/PushInstallBanner";
 import { CommandPalette } from "@/components/CommandPalette";
 import { SidebarShortcuts } from "@/components/SidebarShortcuts";
-import { MobileTabBar } from "@/components/MobileTabBar";
+import { MobileTabBar, type DockEditorState } from "@/components/MobileTabBar";
 import { OverlayRoot } from "@/components/overlayRoot";
 import { AccountMenu } from "@/components/shell/AccountMenu";
 import { Breadcrumbs } from "@/components/shell/Breadcrumbs";
@@ -83,6 +83,13 @@ export function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const openMobile = useCallback(() => setMobileOpen(true), []);
   const closeMobile = useCallback(() => setMobileOpen(false), []);
+  // The bottom bar's editor, opened from the phone menu, which steps aside for it.
+  const [dockEditor, setDockEditor] = useState<DockEditorState>({ open: false, opened: 0 });
+  const customizeDock = useCallback(() => {
+    setMobileOpen(false);
+    setDockEditor((current) => ({ open: true, opened: current.opened + 1 }));
+  }, []);
+  const setDockEditorOpen = useCallback((open: boolean) => setDockEditor((current) => ({ ...current, open })), []);
 
   // The tab names the store being worked on, not the product — a merchant with
   // several stores open in several tabs can tell them apart. Falls back to the
@@ -110,7 +117,7 @@ export function DashboardLayout() {
 
       {/* Below `md` the side menu is hidden: the dock is the navigation, and its
           last slot opens the whole menu as a sheet. */}
-      <PhoneMenu open={mobileOpen} onClose={closeMobile} />
+      <PhoneMenu open={mobileOpen} onClose={closeMobile} onCustomizeDock={customizeDock} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header
@@ -176,7 +183,7 @@ export function DashboardLayout() {
           <OverlayRoot />
         </main>
       </div>
-      <MobileTabBar onMore={openMobile} moreOpen={mobileOpen} />
+      <MobileTabBar onMore={openMobile} moreOpen={mobileOpen} editor={dockEditor} onEditorOpenChange={setDockEditorOpen} />
     </div>
   );
 }

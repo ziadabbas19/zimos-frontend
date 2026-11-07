@@ -32,6 +32,11 @@ export const SHELL_STRINGS = {
     toSelect: "to open",
     languageAndLook: "Language and look",
     noSections: "Your account doesn't include any section of this console yet. Ask a creator if you need access.",
+    customizeDock: "Customize the bar",
+    shortcuts: "Shortcuts",
+    customize: "Customize",
+    customizeShortcuts: "Customize shortcuts",
+    noShortcuts: "No shortcuts here. Customize to add the pages you use most.",
   },
   ar: {
     platformAdmin: "إدارة المنصة",
@@ -64,6 +69,11 @@ export const SHELL_STRINGS = {
     toSelect: "للفتح",
     languageAndLook: "اللغة والمظهر",
     noSections: "لا يتضمن حسابك أي قسم من هذه اللوحة حتى الآن. تواصل مع أحد المنشئين إذا كنت تحتاج إلى الوصول.",
+    customizeDock: "تخصيص الشريط",
+    shortcuts: "اختصارات",
+    customize: "تخصيص",
+    customizeShortcuts: "تخصيص الاختصارات",
+    noShortcuts: "لا توجد اختصارات هنا. خصّص الصف لإضافة الصفحات التي تستخدمها أكثر.",
   },
 };
 

@@ -9,6 +9,7 @@ import {
 } from "@store-builder/api-client";
 import { FORBIDDEN_EVENT, apiClient } from "@/lib/apiClient";
 import { hasPermission, type PermissionCheck } from "@/lib/permissions";
+import { leavePushOnSignOut } from "@/lib/push/pushClient";
 
 /** How often an open console reads the signed-in account again. */
 const ACCOUNT_REFRESH_MS = 60_000;
@@ -159,6 +160,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setStatus("authenticated");
       },
       async logout() {
+        // This browser stops receiving the account's device notifications first
+        // (a moment at most; nothing while VITE_CONSOLE_PUSH_ENABLED is off).
+        await leavePushOnSignOut();
         // Signed out here even when the server can't be told: the client has
         // already dropped the tokens (ApiClient.logout).
         try {

@@ -69,6 +69,15 @@ export interface NotificationPref {
   type: NotificationType;
   enabled: boolean;
   email: boolean;
+  /** Sent to this account's devices (default on). Absent from an API from before device notifications. */
+  push?: boolean;
+}
+
+export interface NotificationPrefs {
+  prefs: NotificationPref[];
+  emailDelivery: boolean;
+  /** Device notifications are sent (the API's PUSH_ENABLED and VAPID keys). */
+  pushDelivery?: boolean;
 }
 
 function query(params: Record<string, string | number | boolean | undefined>) {
@@ -92,9 +101,9 @@ export function markRead(body: { ids: string[] } | { all: true }) {
 }
 
 export function getPrefs() {
-  return apiClient.request<{ prefs: NotificationPref[]; emailDelivery: boolean }>("/admin/notification-prefs");
+  return apiClient.request<NotificationPrefs>("/admin/notification-prefs");
 }
 
 export function savePrefs(prefs: NotificationPref[]) {
-  return apiClient.request<{ prefs: NotificationPref[]; emailDelivery: boolean }>("/admin/notification-prefs", { method: "PUT", body: { prefs } });
+  return apiClient.request<NotificationPrefs>("/admin/notification-prefs", { method: "PUT", body: { prefs } });
 }

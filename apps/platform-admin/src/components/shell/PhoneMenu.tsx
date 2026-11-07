@@ -8,6 +8,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useT } from "@/i18n/LocaleContext";
 import { findNavItem, useVisibleNav } from "@/lib/nav";
 import { SHELL_STRINGS } from "@/lib/shellStrings";
+import { SlidersHorizontal } from "lucide-react";
+import { useConsoleRow } from "@/lib/consoleShortcuts";
 import { useDockItems } from "./Dock";
 import { ConsoleBadge, NavRow, useNavLabel } from "./SidebarNav";
 
@@ -63,6 +65,8 @@ function useDragToDismiss(sheet: RefObject<HTMLDivElement | null>, onDismiss: ()
 interface PhoneMenuProps {
   open: boolean;
   onClose: () => void;
+  /** "Customize the bar": the layout closes the sheet and opens the bar's editor. */
+  onCustomizeDock?: () => void;
 }
 
 /**
@@ -75,7 +79,7 @@ interface PhoneMenuProps {
  * The dock's own pages are not listed a second time, and the groups are
  * always open here: a sheet is opened to see everything at once.
  */
-export function PhoneMenu({ open, onClose }: PhoneMenuProps) {
+export function PhoneMenu({ open, onClose, onCustomizeDock }: PhoneMenuProps) {
   // Rotated or resized onto the desktop layout while open: step aside for the side menu.
   useEffect(() => {
     if (!open) return;
@@ -88,16 +92,18 @@ export function PhoneMenu({ open, onClose }: PhoneMenuProps) {
     return () => desktop.removeEventListener("change", check);
   }, [open, onClose]);
 
-  return open ? createPortal(<PhoneMenuSheet onClose={onClose} />, document.body) : null;
+  return open ? createPortal(<PhoneMenuSheet onClose={onClose} onCustomizeDock={onCustomizeDock} />, document.body) : null;
 }
 
 /** Mounted only while the sheet is open, so nothing here runs on a desktop. */
-function PhoneMenuSheet({ onClose }: { onClose: () => void }) {
+function PhoneMenuSheet({ onClose, onCustomizeDock }: { onClose: () => void; onCustomizeDock?: () => void }) {
   const location = useLocation();
   const t = useT(SHELL_STRINGS);
   const label = useNavLabel();
   const visible = useVisibleNav();
   const dock = useDockItems();
+  // The bar can be arranged once the server's answer for it is in (lib/consoleShortcuts).
+  const dockArranged = useConsoleRow("mobileNav").answer !== null;
   const sheet = useRef<HTMLDivElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
   const titleId = useId();
@@ -173,6 +179,16 @@ function PhoneMenuSheet({ onClose }: { onClose: () => void }) {
           <ConsoleBadge size="lg" />
           {/* On a phone the toolbar has no room for these two: here, and in the account menu. */}
           <div className="mt-2 flex items-center justify-end gap-2">
+            {dockArranged && onCustomizeDock && (
+              <button
+                type="button"
+                onClick={onCustomizeDock}
+                className="me-auto flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full px-2 text-xs font-medium text-ink-soft transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-primary"
+              >
+                <SlidersHorizontal className="size-3.5" aria-hidden />
+                {t.customizeDock}
+              </button>
+            )}
             <LanguageToggle />
             <ThemeToggle />
           </div>
