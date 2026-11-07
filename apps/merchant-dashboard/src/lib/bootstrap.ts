@@ -2,6 +2,7 @@ import { dashboardBootstrap, type ApiClient, type DashboardBootstrap } from "@st
 import { apiClient } from "@/lib/apiClient";
 import { storedWorkspaceId } from "@/lib/currentWorkspace";
 import { seedHomeShortcuts } from "@/lib/homeShortcuts";
+import { seedMobileNav } from "@/lib/mobileNav";
 import { coverWhile, prime } from "@/lib/requestCache";
 
 /**
@@ -39,6 +40,7 @@ export function bootstrapAnswers(workspaceId: string, boot: DashboardBootstrap):
     [`${ws}/shortcuts`, { shortcuts: boot.shortcuts }],
   ];
   if (boot.homeShortcuts) answers.push([`${ws}/home-shortcuts`, { homeShortcuts: boot.homeShortcuts }]);
+  if (boot.mobileNav) answers.push([`${ws}/mobile-nav`, { mobileNav: boot.mobileNav }]);
   if (boot.confirmationCounts) answers.push([`${ws}/confirmation-tasks/counts`, { counts: boot.confirmationCounts }]);
   if (boot.inboxUnread) answers.push([INBOX_UNREAD_PATH(workspaceId), boot.inboxUnread]);
   return answers.filter(([, body]) => body !== undefined && body !== null);
@@ -56,6 +58,7 @@ export function bootstrapPaths(workspaceId: string): string[] {
     `${ws}/notifications/summary`,
     `${ws}/shortcuts`,
     `${ws}/home-shortcuts`,
+    `${ws}/mobile-nav`,
     `${ws}/confirmation-tasks/counts`,
     INBOX_UNREAD_PATH(workspaceId),
   ];
@@ -85,6 +88,8 @@ export function startBootstrap(client: ApiClient = apiClient): Promise<void> | n
       for (const [path, body] of bootstrapAnswers(workspaceId, boot)) prime(path, body);
       // Home may open long after a primed answer is gone: its row is kept for the session.
       if (boot.homeShortcuts) seedHomeShortcuts(workspaceId, boot.homeShortcuts);
+      // The phone's bottom bar is on every page: kept the same way.
+      if (boot.mobileNav) seedMobileNav(workspaceId, boot.mobileNav);
     },
     () => {
       // Every screen asks its own endpoint, as it did before the bootstrap.

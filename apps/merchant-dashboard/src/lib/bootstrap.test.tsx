@@ -113,7 +113,7 @@ describe("the dashboard bootstrap", () => {
   });
 
   it("names exactly the paths the screens read", () => {
-    expect(new Set(bootstrapPaths(WS)).size).toBe(10);
+    expect(new Set(bootstrapPaths(WS)).size).toBe(11);
     expect(bootstrapPaths(WS)).toContain(`/workspaces/${WS}/inbox/conversations?status=open&unread=true&limit=1`);
     expect(bootstrapPaths(WS)).toContain(`/workspaces/${WS}/home-shortcuts`);
   });

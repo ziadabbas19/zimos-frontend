@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -22,7 +22,7 @@ import { useErrorMessage } from "@/lib/errorMessages";
 import { readHomeShortcuts, seedHomeShortcuts } from "@/lib/homeShortcuts";
 import { matchScore } from "@/lib/search/match";
 import { usePlanFeatures } from "@/lib/usePlanFeatures";
-import { fmt, useCommon, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
+import { fmt, useCommon, useLocale, useT, type Locale, type Messages } from "@/i18n/LocaleContext";
 import {
   SHORTCUT_CATALOG,
   SHORTCUT_CATEGORY_LABELS,
@@ -107,10 +107,10 @@ interface RowProps {
   total: number;
   onMove: (id: string, delta: -1 | 1) => void;
   onHide: (id: string) => void;
+  t: EditorStrings;
 }
 
-function ShortcutRow({ entry, index, total, onMove, onHide }: RowProps) {
-  const t = useT(STRINGS);
+function ShortcutRow({ entry, index, total, onMove, onHide, t }: RowProps) {
   const { locale } = useLocale();
   const title = entry.title[locale];
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: entry.id });
@@ -202,14 +202,17 @@ function AddSection({
   full,
   max,
   onToggle,
+  idPrefix,
+  t,
 }: {
   entries: readonly ShortcutEntry[];
   chosen: ReadonlySet<string>;
   full: boolean;
   max: number;
   onToggle: (id: string) => void;
+  idPrefix: string;
+  t: EditorStrings;
 }) {
-  const t = useT(STRINGS);
   const labels = useT(SHORTCUT_CATEGORY_LABELS);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<ShortcutCategory | null>(null);
@@ -219,8 +222,8 @@ function AddSection({
   const shown = entries.filter((entry) => (!category || entry.category === category) && (!searching || matchScore(query, entry.search) > 0));
 
   return (
-    <section aria-labelledby="home-shortcuts-add" className="min-w-0">
-      <h3 id="home-shortcuts-add" tabIndex={-1} className="text-sm font-semibold text-ink outline-none">
+    <section aria-labelledby={`${idPrefix}-add`} className="min-w-0">
+      <h3 id={`${idPrefix}-add`} tabIndex={-1} className="text-sm font-semibold text-ink outline-none">
         {t.add}
       </h3>
       <div className="relative mt-2">
@@ -289,16 +292,54 @@ export interface CustomizeShortcutsDialogProps {
   permissions?: readonly string[] | null;
 }
 
+/** The Home page's row: the editor below with the Home row's catalogue and endpoints. */
+export function CustomizeShortcutsDialog({ workspaceId, ...props }: CustomizeShortcutsDialogProps) {
+  const refresh = useCallback(() => void readHomeShortcuts(workspaceId), [workspaceId]);
+  return (
+    <ShortcutRowEditor
+      {...props}
+      catalog={SHORTCUT_CATALOG}
+      idPrefix="home-shortcuts"
+      refresh={refresh}
+      save={(ids) => dashboardSetHomeShortcuts(apiClient, workspaceId, ids)}
+      reset={() => dashboardResetHomeShortcuts(apiClient, workspaceId)}
+      onSaved={(saved) => seedHomeShortcuts(workspaceId, saved)}
+    />
+  );
+}
+
+export type EditorStrings = (typeof STRINGS)["en"];
+
+export interface ShortcutRowEditorProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  answer: HomeShortcuts;
+  permissions?: readonly string[] | null;
+  /** Every entry the row can hold in this build (the server's `available` narrows it). */
+  catalog: readonly ShortcutEntry[];
+  /** The ids of the two lists' headings start with it. */
+  idPrefix: string;
+  /** Reads the row again: when the editor opens, and after a refused save. */
+  refresh: () => void;
+  save: (ids: string[]) => Promise<HomeShortcuts>;
+  reset: () => Promise<HomeShortcuts>;
+  onSaved: (answer: HomeShortcuts) => void;
+  /** The words that differ from the Home row's. */
+  words?: Partial<Record<Locale, Partial<EditorStrings>>>;
+}
+
 /**
- * The row's editor: the shortcuts this member has, in order, to reorder (drag
- * by the grip, or the up and down buttons on a phone or with a keyboard) and
- * hide, and the catalogue to add from. Nothing is saved until Done, as one
- * replacement of the whole row; closing any other way leaves the row as it was.
+ * A row's editor (the Home shortcuts, the phone's bottom bar): the entries
+ * this member has, in order, to reorder (drag by the grip, or the up and down
+ * buttons on a phone or with a keyboard) and hide, and the catalogue to add
+ * from. Nothing is saved until Done, as one replacement of the whole row;
+ * closing any other way leaves the row as it was.
  */
-export function CustomizeShortcutsDialog({ open, onOpenChange, workspaceId, answer, permissions }: CustomizeShortcutsDialogProps) {
-  const t = useT(STRINGS);
+export function ShortcutRowEditor({ open, onOpenChange, answer, permissions, catalog, idPrefix, refresh, save, reset, onSaved, words }: ShortcutRowEditorProps) {
+  const base = useT(STRINGS);
   const common = useCommon();
   const { locale } = useLocale();
+  const t: EditorStrings = { ...base, ...(words?.[locale] ?? {}) };
   const toast = useToast();
   const errorMessage = useErrorMessage();
   const { gated } = usePlanFeatures();
@@ -318,16 +359,16 @@ export function CustomizeShortcutsDialog({ open, onOpenChange, workspaceId, answ
 
   // The newest row: another device may have changed it since this page loaded.
   useEffect(() => {
-    void readHomeShortcuts(workspaceId);
-  }, [workspaceId]);
+    refresh();
+  }, [refresh]);
   if (answer !== seen) {
     setSeen(answer);
     if (!touched) setDraft(answer.shortcuts);
   }
 
   const access = { permissions, available: answer.available, gated };
-  const entries = SHORTCUT_CATALOG.filter((entry) => shortcutAllowed(entry, access));
-  const rows = shortcutsOf(draft, access);
+  const entries = catalog.filter((entry) => shortcutAllowed(entry, access));
+  const rows = shortcutsOf(draft, access, catalog);
   const ids = rows.map((entry) => entry.id as string);
   const chosen = new Set(ids);
   const full = rows.length >= answer.max;
@@ -353,7 +394,7 @@ export function CustomizeShortcutsDialog({ open, onOpenChange, workspaceId, answ
     const next = ids.filter((other) => other !== id);
     change(next, fmt(t.hidden, { title: titleOf(id) }));
     const neighbour = next[from] ?? next[from - 1];
-    focusAfter(neighbour ? `[data-shortcut-hide="${neighbour}"]` : "#home-shortcuts-current");
+    focusAfter(neighbour ? `[data-shortcut-hide="${neighbour}"]` : `#${idPrefix}-current`);
   }
 
   function toggle(id: string) {
@@ -379,7 +420,7 @@ export function CustomizeShortcutsDialog({ open, onOpenChange, workspaceId, answ
 
   // On a phone the row fills the sheet: this is the way to know the list to add from is under it.
   function goToAdd() {
-    const heading = document.getElementById("home-shortcuts-add");
+    const heading = document.getElementById(`${idPrefix}-add`);
     heading?.scrollIntoView({ block: "start", behavior: "smooth" });
     heading?.focus({ preventScroll: true });
   }
@@ -400,17 +441,14 @@ export function CustomizeShortcutsDialog({ open, onOpenChange, workspaceId, answ
     setSaving(true);
     setError(null);
     try {
-      const saved =
-        restoring && sameList(ids, answer.defaults)
-          ? await dashboardResetHomeShortcuts(apiClient, workspaceId)
-          : await dashboardSetHomeShortcuts(apiClient, workspaceId, ids);
-      seedHomeShortcuts(workspaceId, saved);
+      const saved = restoring && sameList(ids, answer.defaults) ? await reset() : await save(ids);
+      onSaved(saved);
       toast.success(t.saved);
       onOpenChange(false);
     } catch (err) {
       setError(errorMessage(err, { HOME_SHORTCUT_NOT_ALLOWED: t.notAllowed }));
       // What this member may have changed under them: the lists above narrow to it.
-      void readHomeShortcuts(workspaceId);
+      refresh();
     } finally {
       setSaving(false);
     }
@@ -444,9 +482,9 @@ export function CustomizeShortcutsDialog({ open, onOpenChange, workspaceId, answ
       <SheetHeader title={t.title} description={t.description} />
       <SheetBody>
         <div ref={bodyRef} className="grid gap-6 sm:grid-cols-2">
-          <section aria-labelledby="home-shortcuts-current" className="min-w-0 sm:sticky sm:top-0 sm:self-start">
+          <section aria-labelledby={`${idPrefix}-current`} className="min-w-0 sm:sticky sm:top-0 sm:self-start">
             <div className="flex items-center gap-2">
-              <h3 id="home-shortcuts-current" tabIndex={-1} className="text-sm font-semibold text-ink outline-none">
+              <h3 id={`${idPrefix}-current`} tabIndex={-1} className="text-sm font-semibold text-ink outline-none">
                 {t.current}
               </h3>
               <span className="me-auto text-xs tabular-nums text-ink-soft">{fmt(t.count, { n: rows.length, max: answer.max })}</span>
@@ -476,14 +514,14 @@ export function CustomizeShortcutsDialog({ open, onOpenChange, workspaceId, answ
                 <SortableContext items={ids} strategy={verticalListSortingStrategy}>
                   <ol className="mt-2 space-y-1">
                     {rows.map((entry, index) => (
-                      <ShortcutRow key={entry.id} entry={entry} index={index} total={rows.length} onMove={move} onHide={hide} />
+                      <ShortcutRow key={entry.id} entry={entry} index={index} total={rows.length} onMove={move} onHide={hide} t={t} />
                     ))}
                   </ol>
                 </SortableContext>
               </DndContext>
             )}
           </section>
-          <AddSection entries={entries} chosen={chosen} full={full} max={answer.max} onToggle={toggle} />
+          <AddSection entries={entries} chosen={chosen} full={full} max={answer.max} onToggle={toggle} idPrefix={idPrefix} t={t} />
         </div>
         <p role="status" className="sr-only">
           {status}
