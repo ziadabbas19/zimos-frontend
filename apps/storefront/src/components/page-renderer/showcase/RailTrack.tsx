@@ -61,12 +61,16 @@ export function RailTrack({
       segment = next;
       rail.scrollLeft = segment + segment * phase;
     };
+    // Whether the three copies scroll far enough to jump a whole copy either way. A rail of a few cards
+    // on a wide screen does not: the browser clamps scrollLeft, and a jump would never land.
+    const wraps = () => segment > 0 && rail.scrollWidth - rail.clientWidth >= segment * 1.5;
     const normalize = () => {
-      if (!segment) return;
-      while (rail.scrollLeft < segment * 0.5) rail.scrollLeft += segment;
-      while (rail.scrollLeft >= segment * 1.5) rail.scrollLeft -= segment;
+      if (!wraps()) return;
+      // Bounded: each step moves a whole copy, so two are always enough once the rail wraps.
+      for (let i = 0; i < 4 && rail.scrollLeft < segment * 0.5; i++) rail.scrollLeft += segment;
+      for (let i = 0; i < 4 && rail.scrollLeft >= segment * 1.5; i++) rail.scrollLeft -= segment;
     };
-    const canRun = () => autoplay && inView && !paused && !reduced && !document.hidden && segment > 0;
+    const canRun = () => autoplay && inView && !paused && !reduced && !document.hidden && wraps();
     const stop = () => {
       if (raf) cancelAnimationFrame(raf);
       raf = 0;
