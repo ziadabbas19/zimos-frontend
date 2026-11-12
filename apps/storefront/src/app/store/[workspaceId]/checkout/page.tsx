@@ -24,6 +24,7 @@ import { HolidayNote } from "@/components/holiday/HolidayNote";
 import { LimitLineNote, useLimitNotes } from "@/components/checkout/LimitLineNote";
 import { purchaseLimitMessage } from "@/lib/buyInfo";
 import {
+  CART_REWARDS_ENABLED,
   CUSTOMER_REFERRALS_ENABLED,
   GIFT_CARDS_ENABLED,
   LOYALTY_ENABLED,
@@ -77,6 +78,9 @@ import { XsPageStrip } from "@/components/xs/XsPageStrip";
 import { storePageAttrs, stripHoldsTitle } from "@/lib/xsStorePages";
 import { ComboLineFullTotal, ComboLineInfo } from "@/components/combos/ComboLine";
 import { comboText } from "@/components/combos/comboText";
+import { CartRewardsBar } from "@store-builder/ui/cart-rewards";
+import { cartTotal, rewardsLocale } from "@/lib/cartRewards";
+import { RewardDiscountRow, SavedBanner } from "@/components/cart/RewardRows";
 import { cartProductIds, cartQuoteLines, isComboLine, isUnavailableLine } from "@/lib/combos";
 
 const FORM_PREFIX = "checkout";
@@ -205,7 +209,29 @@ export default function CheckoutPage() {
   // The gift wrap is a product the server adds: its weight counts toward the parcel too.
   if (gift.quoteLine) quoteLines.push(gift.quoteLine);
   // The shopper's shipping option, when the store offers more than one (shippingChoice.ts).
-  const shippingChoice = useShippingChoice(useShippingQuote({ client, workspaceId, governorate: values.governorate, country: values.country, lines: quoteLines }));
+  // With cart rewards on, the quote also hears the code and the delivery chosen here, so the reward is
+  // weighed against them as the order will be (lib/useShippingQuote; ignored while CART_REWARDS_ENABLED is off).
+  const [quotedOption, setQuotedOption] = useState<string | null>(null);
+  const shippingChoice = useShippingChoice(
+    useShippingQuote({
+      client,
+      workspaceId,
+      governorate: values.governorate,
+      country: values.country,
+      lines: quoteLines,
+      choices: {
+        discountCode: appliedCode || null,
+        deliveryMethod: values.deliveryMethod === "pickup" ? "pickup" : null,
+        deliveryZoneId: values.deliveryZoneId || null,
+        shippingOption: quotedOption,
+      },
+    })
+  );
+  const chosenOption = shippingChoice.value === "standard" ? null : shippingChoice.value;
+  // The option just picked goes with the next quote (adjusted while rendering, not in an effect).
+  if (CART_REWARDS_ENABLED && quotedOption !== chosenOption) setQuotedOption(chosenOption);
+  // A reward that ships the order free makes a delivery zone's fee free too, as the server charges it.
+  const rewardShipsFree = CART_REWARDS_ENABLED && Boolean(shippingChoice.state.rewards?.applied?.freeShipping);
   // Pickup from the store (when offered): no delivery fee; the server charges none either.
   const storePickup = store?.delivery?.pickup ?? null;
   const pickingUp = Boolean(storePickup) && values.deliveryMethod === "pickup";
@@ -213,7 +239,7 @@ export default function CheckoutPage() {
   // threshold is reached. Display only — the server prices the order from the zone itself.
   const storeZones = store?.delivery?.zones ?? null;
   const zoneChosen = !pickingUp && storeZones ? (storeZones.find((z) => z.id === values.deliveryZoneId) ?? null) : null;
-  const zoneFee = zoneChosen ? (shippingChoice.state.freeShipping?.qualified ? 0 : zoneChosen.feeAmount) : 0;
+  const zoneFee = zoneChosen ? (shippingChoice.state.freeShipping?.qualified || rewardShipsFree ? 0 : zoneChosen.feeAmount) : 0;
   const shipping = pickingUp
     ? { ...shippingChoice.state, amount: 0, line: { kind: "free" as const } }
     : zoneChosen
@@ -221,7 +247,9 @@ export default function CheckoutPage() {
       : shippingChoice.state;
   // With no code typed, the store's automatic discount comes off (the code's own amount is settled by the server).
   const automaticOff = appliedCode ? 0 : (shipping.extras.automaticDiscount?.amount ?? 0);
-  const total = subtotal + bumpInTotals + gift.wrapAmount + shipping.amount - automaticOff;
+  // The same sum the cart drawer and the cart page make (lib/cartRewards); the reward's part only while it is on.
+  const rewards = CART_REWARDS_ENABLED ? shipping.rewards : null;
+  const total = cartTotal({ subtotal, extras: bumpInTotals + gift.wrapAmount, shipping: shipping.amount, automaticOff, rewards });
   // A gift card pays part of a cash-on-delivery order (lib/features; inert while off: no method, so no card).
   const giftCard = useGiftCard({ client, workspaceId, method: GIFT_CARDS_ENABLED && !manualChosen ? method : undefined, total, currency });
   // A signed-in shopper's points and store credit pay part of a cash-on-delivery order (inert while off: no method, nothing read).
@@ -610,6 +638,19 @@ export default function CheckoutPage() {
             </div>
             )}
 
+            {/* Cart rewards: where this order stands, and why it got the reward it did (the server's answer). */}
+            {rewards && (
+              <CartRewardsBar
+                className="mt-5"
+                tiers={rewards.tiers}
+                // What the thresholds look at: the lines with the ticked add-ons and the gift wrap, as quoted.
+                subtotal={Number(subtotal) + bumpInTotals + gift.wrapAmount}
+                applied={rewards.applied}
+                notes={rewards.notes}
+                locale={rewardsLocale(locale)}
+                formatMoney={(n) => money(n, currency)}
+              />
+            )}
             <dl className="mt-5 space-y-2 border-t border-line pt-4 text-sm">
               <div className="flex justify-between gap-3">
                 <dt className="text-ink-soft">{t.checkout.subtotal}</dt>
@@ -628,6 +669,7 @@ export default function CheckoutPage() {
                 </div>
               ))}
               <GiftWrapRow state={gift} currency={currency} />
+              {rewards && <RewardDiscountRow rewards={rewards} currency={currency} />}
               {!appliedCode && <DiscountRows extras={shipping.extras} coupon={null} currency={currency} />}
               <div className="flex justify-between gap-3">
                 <dt className="text-ink-soft">{t.checkout.shippingFee}</dt>
@@ -646,6 +688,7 @@ export default function CheckoutPage() {
             {TENDERS_ON && <CheckoutTenders state={tenders} />}
             {/* The VIP level's perks and a friend's invite, as they will come off the order. */}
             {PERKS_ON && <CheckoutPerks state={perks} />}
+            {rewards && <SavedBanner rewards={rewards} currency={currency} className="mt-3" />}
             <MinimumOrderNotice extras={shipping.extras} currency={currency} className="mt-3" />
             <FreeShippingHint
               progress={shipping.freeShipping}

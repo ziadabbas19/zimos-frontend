@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BackToTop } from "@/components/BackToTop";
 import { StoreAppInstall } from "@/components/StoreAppInstall";
-import { CartDrawer } from "@/components/CartDrawer";
+import { CartDrawerSwitch } from "@/components/cart/CartSheet";
 import { ExitDownsell } from "@/components/offers/StoreOffers";
 import { CouponFromLink } from "@/components/offers/CouponBits";
 import { NewsletterSignup, SocialProofPopup } from "@/components/offers/Engagement";
@@ -323,7 +323,7 @@ export default async function StoreLayout({
                   {/* The slide-over cart: opened by "add to cart" and the header's
                       cart icon. Funnel pages have no cart, so it steps aside with
                       the rest of the store's chrome. */}
-                  <CartDrawer />
+                  <CartDrawerSwitch />
                   {/* The merchant's exit popup, once per visitor (Offers → Exit popup). */}
                   <ExitDownsell workspaceId={store.id} />
                   {/* Sales notifications from real orders (Offers → Sales notifications). */}

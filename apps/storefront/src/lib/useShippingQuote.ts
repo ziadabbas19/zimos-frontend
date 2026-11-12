@@ -1,8 +1,9 @@
 "use client";
 
-import { storefrontQuoteExtras, storefrontShippingQuoteFor, type StorefrontQuoteExtras } from "@store-builder/api-client";
+import { storefrontQuoteExtras, storefrontQuoteRewards, storefrontShippingQuoteFor, type StorefrontQuoteExtras } from "@store-builder/api-client";
 import { useEffect, useState } from "react";
-import type { ApiClient, ComboSelection, FreeShippingProgress, ShippingQuote } from "@store-builder/api-client";
+import type { ApiClient, CartRewardsQuote, ComboSelection, FreeShippingProgress, ShippingQuote } from "@store-builder/api-client";
+import { CART_REWARDS_ENABLED } from "./features";
 import { provinceFor } from "./orderForm";
 import { getVisitorId } from "./visitorId";
 import { quotePricesShipping, shippingLineFor, type ShippingLine } from "./shippingLine";
@@ -35,6 +36,26 @@ export interface ShippingQuoteState {
   extras: StorefrontQuoteExtras;
   /** The store's shipping options for this cart (standard first); absent or [] = no choice (shippingChoice.ts). */
   options?: ShippingOptionChoice[];
+  /**
+   * Cart rewards (lib/cartRewards): what the server applied to these lines and
+   * what the shopper saves; null while off for the store (or CART_REWARDS_ENABLED
+   * is), and while there is no answer for these lines yet.
+   */
+  rewards: CartRewardsQuote | null;
+  /** The last answer is for older lines or choices: the numbers on screen are about to change. */
+  stale: boolean;
+}
+
+/**
+ * The checkout's choices, sent with the quote only while CART_REWARDS_ENABLED
+ * is on: the code the reward is weighed against and what the delivery costs.
+ * Off, the request is exactly as before.
+ */
+export interface QuoteChoices {
+  discountCode?: string | null;
+  deliveryMethod?: "delivery" | "pickup" | null;
+  deliveryZoneId?: string | null;
+  shippingOption?: string | null;
 }
 
 /**
@@ -54,6 +75,7 @@ export function useShippingQuote({
   country = "EG",
   lines,
   enabled = true,
+  choices,
 }: {
   client: ApiClient;
   workspaceId: string;
@@ -63,6 +85,7 @@ export function useShippingQuote({
   country?: string;
   lines: QuoteLine[];
   enabled?: boolean;
+  choices?: QuoteChoices;
 }): ShippingQuoteState {
   const province = provinceFor(governorate);
   const items = lines
@@ -72,8 +95,9 @@ export function useShippingQuote({
         ? { comboId: l.comboId, comboSelection: l.comboSelection ?? [], quantity: l.quantity }
         : { variantId: l.variantId, ...(l.offerId ? { offerId: l.offerId } : {}), quantity: l.quantity }
     );
+  const extra = CART_REWARDS_ENABLED && choices ? pickChoices(choices) : {};
   // The effect keys on content, not on the fresh array each render.
-  const requestKey = JSON.stringify([workspaceId, country, province, items]);
+  const requestKey = JSON.stringify([workspaceId, country, province, items, extra]);
   const active = enabled && items.length > 0;
 
   const [state, setState] = useState<{ key: string; quote: ShippingQuote | null; failed: boolean } | null>(null);
@@ -83,7 +107,7 @@ export function useShippingQuote({
     let cancelled = false;
     const timer = setTimeout(() => {
       // For this visitor: a product A/B test's price counts, as the order will charge it.
-      storefrontShippingQuoteFor(client, workspaceId, { country, governorate: province ?? null, items }, { visitorId: getVisitorId(workspaceId) })
+      storefrontShippingQuoteFor(client, workspaceId, { country, governorate: province ?? null, items, ...extra }, { visitorId: getVisitorId(workspaceId) })
         .then((quote) => {
           if (!cancelled) setState({ key: requestKey, quote, failed: false });
         })
@@ -99,15 +123,28 @@ export function useShippingQuote({
   }, [requestKey, active]);
 
   const extras = storefrontQuoteExtras(active ? state?.quote : null);
-  if (!active) return { line: { kind: "on_confirmation" }, amount: 0, freeShipping: null, extras };
-  if (!state) return { line: province ? { kind: "calculating" } : { kind: "pick_governorate" }, amount: 0, freeShipping: null, extras };
+  // The last rewards answer stays on screen while a newer one is on its way, so the bar never blinks out.
+  const rewards = active ? storefrontQuoteRewards(state?.quote) : null;
+  const stale = Boolean(state && state.key !== requestKey);
+  if (!active) return { line: { kind: "on_confirmation" }, amount: 0, freeShipping: null, extras, rewards: null, stale: false };
+  if (!state) return { line: province ? { kind: "calculating" } : { kind: "pick_governorate" }, amount: 0, freeShipping: null, extras, rewards: null, stale: true };
   if (state.failed || !state.quote) {
     // A failure for an older request says nothing about this one yet.
-    return { line: state.key === requestKey ? { kind: "on_confirmation" } : { kind: "calculating" }, amount: 0, freeShipping: null, extras };
+    return { line: state.key === requestKey ? { kind: "on_confirmation" } : { kind: "calculating" }, amount: 0, freeShipping: null, extras, rewards: null, stale };
   }
 
   const line = shippingLineFor(state.quote, { hasGovernorate: Boolean(province), fresh: state.key === requestKey });
   const freeShipping = quotePricesShipping(state.quote) ? (state.quote.freeShipping ?? null) : null;
   const options = line.kind === "amount" || line.kind === "free" ? quoteOptionsOf(state.quote) : [];
-  return { line, amount: line.kind === "amount" ? line.amount : 0, freeShipping, extras, options };
+  return { line, amount: line.kind === "amount" ? line.amount : 0, freeShipping, extras, options, rewards, stale };
+}
+
+/** Only the choices that say something, so an empty one does not change the request. */
+function pickChoices(choices: QuoteChoices): QuoteChoices {
+  const out: QuoteChoices = {};
+  if (choices.discountCode) out.discountCode = choices.discountCode;
+  if (choices.deliveryMethod === "pickup") out.deliveryMethod = "pickup";
+  if (choices.deliveryZoneId) out.deliveryZoneId = choices.deliveryZoneId;
+  if (choices.shippingOption) out.shippingOption = choices.shippingOption;
+  return out;
 }

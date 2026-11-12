@@ -9,6 +9,9 @@
 @import "./store-sections.css";
 /* The imported templates ("xs" looks): their bands, shell and one file per look — all through xs.css. */
 @import "./xs.css";
+/* The cart's rewards bar lives in the shared package (@store-builder/ui/cart-rewards):
+   Tailwind only reads this app's own tree, so its classes are named here. */
+@source "../../../../packages/ui/src/cart-rewards";
 
 /* Dark mode is driven by a `.dark` class on <html>, set before first paint by
    an inline script in the root layout and toggled by the theme switch. */
