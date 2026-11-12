@@ -7,6 +7,8 @@ import { Segmented } from "@/components/Segmented";
 import { useEditorLocale } from "./editorLocale";
 import { ColourControl, Group, NumberField, SwitchRow } from "./inspector/controls";
 import { inspectorUi, type InspectorUi } from "./inspector/strings";
+import { FontPairField } from "@/components/fonts/FontPairField";
+import { withFont } from "./canvasEdits";
 
 /**
  * The look of one element.
@@ -65,6 +67,8 @@ const STRINGS = {
     marginTop: "Outside: above",
     marginBottom: "Outside: below",
     unset: "Default",
+    fontGroup: "Font",
+    fontHint: "This element's own Arabic and English fonts. Store default follows its section, then the store's fonts.",
     start: "Start",
     center: "Centre",
     end: "End",
@@ -110,6 +114,8 @@ const STRINGS = {
     marginTop: "الخارجية: أعلى",
     marginBottom: "الخارجية: أسفل",
     unset: "الافتراضي",
+    fontGroup: "الخط",
+    fontHint: "الخط العربي والإنجليزي لهذا العنصر. الافتراضي يتبع القسم ثم خطوط المتجر.",
     start: "البداية",
     center: "الوسط",
     end: "النهاية",
@@ -289,6 +295,12 @@ function withStyles(element: PageElement, styles: DeviceStyles, styleRef: string
   if (compacted) next.style = compacted;
   if (styleRef) next.styleRef = styleRef;
   return Object.keys(next).length > 0 ? next : undefined;
+}
+
+/** Whether the element has a font of its own (element.settings.font, see components/fonts). */
+function hasOwnFont(element: PageElement): boolean {
+  const font = isObject(element.settings) ? element.settings.font : null;
+  return isObject(font) && Boolean(font.ar || font.en);
 }
 
 /**
@@ -477,6 +489,17 @@ export function ElementStylePanel({
           <p className="text-xs leading-5 text-ink-soft">{ti.ownChanges(changed.map((d) => screenName[d]).join(ti.joiner))}</p>
         )}
       </div>
+
+      {shows("style") && (
+        <Group id="style:font" title={t.fontGroup} mark={hasOwnFont(element) ? 1 : 0} collapsible defaultOpen={hasOwnFont(element)}>
+          <FontPairField
+            value={isObject(element.settings) ? element.settings.font : null}
+            onChange={(pair) => onSettingsChange(withFont(element, pair))}
+            locale={locale}
+            hint={t.fontHint}
+          />
+        </Group>
+      )}
 
       {groups}
 

@@ -28,6 +28,8 @@ import { ProductLanding } from "@/components/product/ProductLanding";
 import { ProductVideos } from "@/components/product/ProductVideos";
 import { ProductTabs, type ProductTab } from "@/components/product/ProductTabs";
 import { StoreLink } from "@/components/StoreRoute";
+import { StoreFontFaces } from "@/components/fonts/StoreFontFaces";
+import { fontStyle, productFontPair } from "@/lib/storeFonts";
 import { faqFromCards, shippingRows, storeCards } from "@/lib/storePromises";
 import { container } from "@/components/ui";
 import { getDictionary } from "@/lib/i18n";
@@ -203,9 +205,18 @@ export default async function ProductPage({ params }: { params: Params }) {
       : []),
   ];
 
+  // This product's own font (its page settings) over the store's product font (Store settings → Fonts).
+  const productFont = ps.font ? productFontPair(store.themeSettings, ps.font) : null;
+
   return (
     // Room at the end for the sticky order bar on a phone, home indicator included.
-    <main className="flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0" {...storePageAttrs("product", xsPages)}>
+    <main
+      className="flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0"
+      {...storePageAttrs("product", xsPages)}
+      data-zf-part="product"
+      style={productFont ? fontStyle(productFont) : undefined}
+    >
+      {productFont && <StoreFontFaces pairs={[productFont]} />}
       {/* Lets a pixel scoped to this product receive this visit (Marketing → Tracking tools). */}
       <PixelScope productIds={[product.id]} />
       {/* schema.org Product for search engines and Google Merchant. */}

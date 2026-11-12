@@ -63,5 +63,6 @@ export function withEditorLook(themeSettings: Record<string, unknown> | null | u
   put("xsTokens", shell.tokens);
   put("storePages", shell.storePages);
   put("storeWords", shell.storeWords);
+  put("fonts", shell.fonts);
   return next;
 }

@@ -47,6 +47,16 @@ export interface StoreShell {
 }
 
 /** The Template look this store shows right now (lib/xsTokens.ts): the editor's unsaved one in its preview, else the saved one. */
+/**
+ * The editor's unsaved store fonts (`themeSettings.fonts`, lib/storeFonts.ts):
+ * undefined while nothing overrides them — every page a shopper sees — and
+ * null for "none picked".
+ */
+export function useStoreFontsOverride(): Record<string, unknown> | null | undefined {
+  const override = useContext(ShellOverrideContext)?.override ?? null;
+  return override && override.fonts !== undefined ? override.fonts : undefined;
+}
+
 export function useXsTokensSource(store: StorefrontMeta): unknown {
   const override = useContext(ShellOverrideContext)?.override ?? null;
   return override && override.tokens !== undefined ? override.tokens : store.themeSettings?.xsTokens;

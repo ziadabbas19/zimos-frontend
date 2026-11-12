@@ -51,6 +51,9 @@ import { lightenToRead } from "@/lib/xsDarkPalette.mjs";
 import { XsTokenStyles } from "@/components/xs/XsTokenStyles";
 import { StoreUnavailable } from "@/components/StoreUnavailable";
 import { THEME_FONT_CSS } from "@/app/themeFonts";
+import { StoreFontFaces } from "@/components/fonts/StoreFontFaces";
+import { LiveStoreFonts } from "@/components/fonts/LiveStoreFonts";
+import { storeFontRules } from "@/lib/storeFonts";
 import { ThemeChrome } from "@/components/shell/ThemeChrome";
 import { StoreNavFrame } from "@/components/shell/StoreNavFrame";
 
@@ -221,6 +224,8 @@ export default async function StoreLayout({
   // The merchant's ad pixels (dashboard → Marketing), loaded only when one is set.
   const pixels = storePixelsOf(store);
   const { floatingWhatsapp } = storefrontGeneralMeta(store);
+  // The fonts the merchant picked for the store, its header and its products (lib/storeFonts); none: nothing is added.
+  const storeFonts = storeFontRules(store.themeSettings);
 
   return (
     <StoreRouteProvider basePath={basePath}>
@@ -257,7 +262,15 @@ export default async function StoreLayout({
               suppressHydrationWarning
             >
               {theme && <style dangerouslySetInnerHTML={{ __html: THEME_FONT_CSS }} />}
+              {storeFonts.css && (
+                <>
+                  <StoreFontFaces pairs={storeFonts.pairs} />
+                  <style dangerouslySetInnerHTML={{ __html: storeFonts.css }} />
+                </>
+              )}
               <DocumentLocale locale={locale} />
+              {/* The editor's unsaved store fonts, live in its preview frame; nothing on a shopper's page. */}
+              <LiveStoreFonts />
               {editorView && <EditorViewBridge view={editorView} />}
               {/* The worn template's own stylesheet and its phone header — every page of the store is drawn in it (components/xs/XsLookStyles). */}
               {xsShell && (
@@ -284,7 +297,11 @@ export default async function StoreLayout({
                   {xsShell ? (
                     <XsHeader store={store} locale={locale} look={xsShell} colorMode={colorMode} colorModeButton={colorOptions.button} />
                   ) : (
-                    <StoreHeader store={store} locale={locale} />
+                    // The store's header font (Store settings → Fonts) reaches the name, the menu and the
+                    // announcement bar through this box; `contents`, so the sticky header behaves as before.
+                    <div data-zf-part="header" className="contents">
+                      <StoreHeader store={store} locale={locale} />
+                    </div>
                   )}
                   {/* The store's own row of collections on a phone; an imported template has none, and its menu is its own. */}
                   {!xsShell && <MobileCategoryStrip collections={collections} t={t} />}

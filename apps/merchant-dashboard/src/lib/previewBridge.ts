@@ -122,6 +122,8 @@ export interface ShellPreview {
   /** The shop pages' settings and words (themeSettings.storePages / storeWords), for the store's own pages in the preview. */
   storePages?: Record<string, unknown> | null;
   storeWords?: Record<string, unknown> | null;
+  /** The store's fonts (themeSettings.fonts — the header's among them); null is "none picked". */
+  fonts?: Record<string, unknown> | null;
 }
 
 /** One section's box, as the frame measures it (its own viewport, `getBoundingClientRect()`). */

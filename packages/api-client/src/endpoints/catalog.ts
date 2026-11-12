@@ -15,6 +15,7 @@
  */
 import type { ApiClient } from "../client";
 import type { Product, ProductStatus, StorefrontProduct } from "../types";
+import type { FontPair } from "./fonts";
 
 // ------------------------------------------------------------------ types --
 
@@ -51,6 +52,8 @@ export interface ProductPageSettings {
   landing_page_id: string | null;
   /** A real deadline: after it the server sells at the compare-at price. */
   countdown: { ends_at: string } | null;
+  /** This product's own font on its page — font catalog ids (endpoints/fonts.ts); null: the store's. */
+  font: FontPair | null;
 }
 
 export const PRODUCT_PAGE_SETTINGS_DEFAULTS: ProductPageSettings = {
@@ -67,6 +70,7 @@ export const PRODUCT_PAGE_SETTINGS_DEFAULTS: ProductPageSettings = {
   hide_related_products: false,
   landing_page_id: null,
   countdown: null,
+  font: null,
 };
 
 export interface ProductCmsFeature {

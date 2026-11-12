@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { FontPairField } from "@/components/fonts/FontPairField";
 import {
   DndContext,
   KeyboardSensor,
@@ -228,8 +229,24 @@ function ControlLabel({ children }: { children: ReactNode }) {
   return <p className="text-xs font-medium text-ink-soft">{children}</p>;
 }
 
+/** The header panel's Font block (components/fonts). */
+const HEADER_FONT = {
+  en: { title: "Header font", hint: "The store name, the menu and the announcement bar. Store default uses the store's fonts (Settings → Store fonts)." },
+  ar: { title: "خط رأس الصفحة", hint: "اسم المتجر والقائمة وشريط الإعلان. الافتراضي يستخدم خطوط المتجر (الإعدادات ← خطوط المتجر)." },
+} as const;
+
+/** The look with the header's own font (`themeSettings.fonts.header`) set, or dropped for null. */
+function withHeaderFont(look: StoreLook, pair: { ar: string | null; en: string | null } | null): StoreLook {
+  const { fonts: current, ...rest } = look;
+  const fonts: Record<string, unknown> = { ...(current ?? {}) };
+  if (pair && (pair.ar || pair.en)) fonts.header = { ...(pair.ar ? { ar: pair.ar } : {}), ...(pair.en ? { en: pair.en } : {}) };
+  else delete fonts.header;
+  return Object.keys(fonts).length > 0 ? { ...rest, fonts } : rest;
+}
+
 function HeaderFields({ look, onChange, pages }: { look: StoreLook; onChange: OnLookChange; pages: WebsitePage[] }) {
-  const ui = lookUi(useEditorLocale());
+  const locale = useEditorLocale();
+  const ui = lookUi(locale);
   const header = look.header;
   const set = (patch: Partial<StoreLook["header"]>, key?: string) =>
     onChange({ ...look, header: { ...header, ...patch } }, key);
@@ -300,6 +317,14 @@ function HeaderFields({ look, onChange, pages }: { look: StoreLook; onChange: On
 
       <LookBlock>
         <SwitchRow label={ui.stickyHeader} checked={header.sticky} onChange={(sticky) => set({ sticky })} />
+      </LookBlock>
+
+      <LookBlock title={HEADER_FONT[locale].title} hint={HEADER_FONT[locale].hint}>
+        <FontPairField
+          value={(look.fonts as { header?: unknown } | undefined)?.header}
+          onChange={(pair) => onChange(withHeaderFont(look, pair), "shell:header:font")}
+          locale={locale}
+        />
       </LookBlock>
 
       <ShellColours

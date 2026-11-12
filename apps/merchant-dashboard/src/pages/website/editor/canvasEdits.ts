@@ -26,6 +26,26 @@ export function sectionMinHeight(section: PageSection): number | null {
 }
 
 /** Sets or clears a section's minimum height, dropping `settings` when it empties. */
+/** The element's settings with its own font (`settings.font`, see components/fonts) set, or dropped for null; everything else stays. */
+export function withFont(element: PageElement, pair: { ar: string | null; en: string | null } | null): Record<string, unknown> | undefined {
+  const current = element.settings && typeof element.settings === "object" && !Array.isArray(element.settings) ? element.settings : {};
+  const next: Record<string, unknown> = { ...current };
+  if (pair && (pair.ar || pair.en)) next.font = { ...(pair.ar ? { ar: pair.ar } : {}), ...(pair.en ? { en: pair.en } : {}) };
+  else delete next.font;
+  return Object.keys(next).length > 0 ? next : undefined;
+}
+
+/** The section with its own font (`settings.font`, see components/fonts) set, or dropped for null; its other settings stay. */
+export function setSectionFont(section: PageSection, pair: { ar: string | null; en: string | null } | null): PageSection {
+  const settings: Record<string, unknown> = { ...(section.settings ?? {}) };
+  if (pair && (pair.ar || pair.en)) settings.font = { ...(pair.ar ? { ar: pair.ar } : {}), ...(pair.en ? { en: pair.en } : {}) };
+  else delete settings.font;
+  const next: PageSection = { ...section };
+  if (Object.keys(settings).length === 0) delete next.settings;
+  else next.settings = settings;
+  return next;
+}
+
 export function setSectionMinHeight(section: PageSection, px: number | null): PageSection {
   if (sectionMinHeight(section) === px) return section;
   const settings: Record<string, unknown> = { ...(section.settings ?? {}) };

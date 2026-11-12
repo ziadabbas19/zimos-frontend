@@ -332,6 +332,8 @@ export interface ShellOverride {
   /** The unsaved shop pages' settings and words (`storePages`, `storeWords`), the same way. */
   storePages?: Record<string, unknown> | null;
   storeWords?: Record<string, unknown> | null;
+  /** The unsaved store fonts (`themeSettings.fonts`, lib/storeFonts.ts), the same way. */
+  fonts?: Record<string, unknown> | null;
 }
 
 /**
@@ -348,5 +350,6 @@ export function readShellOverride(raw: unknown): ShellOverride | null {
     ...("tokens" in input ? { tokens: objectOf(input.tokens) } : {}),
     ...("storePages" in input ? { storePages: objectOf(input.storePages) } : {}),
     ...("storeWords" in input ? { storeWords: objectOf(input.storeWords) } : {}),
+    ...("fonts" in input ? { fonts: objectOf(input.fonts) } : {}),
   };
 }

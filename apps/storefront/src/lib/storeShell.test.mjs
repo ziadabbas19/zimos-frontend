@@ -26,3 +26,14 @@ describe("the header's navigation layout", () => {
     assert.deepEqual(after, before);
   });
 });
+
+describe("an editor override's store fonts", () => {
+  it("are kept as an object, null for none picked, and absent when the editor sent none", async () => {
+    const { readShellOverride } = await import("./storeShell.ts");
+    const fonts = { primaryAr: "cairo", header: { en: "lora" } };
+    assert.deepEqual(readShellOverride({ header: {}, footer: null, fonts })?.fonts, fonts);
+    assert.equal(readShellOverride({ header: {}, footer: null, fonts: null })?.fonts, null);
+    assert.equal(readShellOverride({ header: {}, footer: null, fonts: "cairo" })?.fonts, null);
+    assert.equal("fonts" in (readShellOverride({ header: {}, footer: null }) ?? {}), false);
+  });
+});

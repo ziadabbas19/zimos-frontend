@@ -46,6 +46,7 @@ import { SUBSCRIPTION_STRINGS } from "@/pages/subscription/subscriptionStrings";
 import { useT, type Messages } from "@/i18n/LocaleContext";
 import { WhatsAppMessageSection } from "./WhatsAppMessageSection";
 import { CatalogSettingsSection } from "./CatalogSettingsSection";
+import { FontsSection } from "./FontsSection";
 import { OrderBumpSettingsSection } from "./OrderBumpSettingsSection";
 import { AccountSection } from "./AccountSection";
 import { SecuritySection } from "./SecuritySection";
@@ -286,6 +287,9 @@ function SectionBody({ id }: { id: Exclude<SectionId, "security"> }): ReactNode 
   switch (id) {
     case "identity":
       return <WorkspaceProfileSection />;
+    // The store's Arabic and English fonts, its header's and its products' (Store fonts).
+    case "fonts":
+      return <FontsSection />;
     case "account-settings":
       return <AccountSettingsSection />;
     case "catalog":

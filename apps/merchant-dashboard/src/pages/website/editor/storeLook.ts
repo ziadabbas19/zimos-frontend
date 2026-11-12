@@ -88,6 +88,11 @@ export interface StoreLook {
   xsTokens?: Record<string, unknown>;
   /** The words on the shop pages, per language (StoreWordsBlock.tsx); absent: the store's own. */
   storeWords?: Record<string, unknown>;
+  /**
+   * The store's fonts (`themeSettings.fonts`, @store-builder/ui/fonts): Store settings → Fonts
+   * writes them, the header panel edits `header` here. Absent: none picked.
+   */
+  fonts?: Record<string, unknown>;
 }
 
 /** Font pairings, each drawn in its own face in the panel. Only fonts the storefront already loads. */
@@ -159,6 +164,7 @@ export function readStoreLook(workspace: Pick<Workspace, "themeSettings" | "logo
     ...(ts.storePages && typeof ts.storePages === "object" && !Array.isArray(ts.storePages) ? { storePages: ts.storePages as Record<string, unknown> } : {}),
     ...(ts.xsTokens && typeof ts.xsTokens === "object" && !Array.isArray(ts.xsTokens) ? { xsTokens: ts.xsTokens as Record<string, unknown> } : {}),
     ...(ts.storeWords && typeof ts.storeWords === "object" && !Array.isArray(ts.storeWords) ? { storeWords: ts.storeWords as Record<string, unknown> } : {}),
+    ...(ts.fonts && typeof ts.fonts === "object" && !Array.isArray(ts.fonts) ? { fonts: ts.fonts as Record<string, unknown> } : {}),
   };
 }
 
@@ -250,6 +256,8 @@ export function lookToWorkspacePatch(
   else delete themeSettings.xsTokens;
   if (look.storeWords) themeSettings.storeWords = look.storeWords;
   else delete themeSettings.storeWords;
+  if (look.fonts && Object.keys(look.fonts).length > 0) themeSettings.fonts = look.fonts;
+  else delete themeSettings.fonts;
 
   return { logoUrl: look.logoUrl, themeSettings };
 }
@@ -264,7 +272,15 @@ export function lookToShellPreview(existing: Record<string, unknown> | undefined
   const header = themeSettings.header as Record<string, unknown>;
   const footer = (themeSettings.footer as Record<string, unknown> | undefined) ?? null;
   // The Template look travels with them: the frame lays it over the template's at once (storefront XsTokenStyles).
-  return { header, footer, tokens: look.xsTokens ?? null, storePages: look.storePages ?? null, storeWords: look.storeWords ?? null };
+  return {
+    header,
+    footer,
+    tokens: look.xsTokens ?? null,
+    storePages: look.storePages ?? null,
+    storeWords: look.storeWords ?? null,
+    // The header's font travels with the header; the frame draws it at once (storefront LiveStoreFonts).
+    fonts: look.fonts ?? null,
+  };
 }
 
 /** How long the saved `themeSettings` JSON would be — the API refuses more than THEME_SETTINGS_MAX_CHARS. */
@@ -329,7 +345,7 @@ export function sameLook(a: StoreLook, b: StoreLook): boolean {
 }
 
 function sameTokens(a: StoreLook, b: StoreLook): boolean {
-  return JSON.stringify(a.xsTokens ?? null) === JSON.stringify(b.xsTokens ?? null);
+  return JSON.stringify(a.xsTokens ?? null) === JSON.stringify(b.xsTokens ?? null) && JSON.stringify(a.fonts ?? null) === JSON.stringify(b.fonts ?? null);
 }
 
 /** Only the theme, colours, font, corners and logo — what the Store look tab itself edits. */

@@ -295,7 +295,24 @@ describe("store look", () => {
       const look = baseLook({ footer: { ...DEFAULT_FOOTER_LOOK, text: "Cairo · since 2020", showHelp: false } });
       const preview = lookToShellPreview({ header: { keep: true } }, look);
       const saved = lookToWorkspacePatch({ header: { keep: true } }, look).themeSettings;
-      expect(preview).toEqual({ header: saved.header, footer: saved.footer, tokens: saved.xsTokens ?? null, storePages: saved.storePages ?? null, storeWords: saved.storeWords ?? null });
+      expect(preview).toEqual({
+        header: saved.header,
+        footer: saved.footer,
+        tokens: saved.xsTokens ?? null,
+        storePages: saved.storePages ?? null,
+        storeWords: saved.storeWords ?? null,
+        fonts: saved.fonts ?? null,
+      });
+    });
+
+    it("carries the store's fonts — the header's among them — to the preview and the save alike", () => {
+      const fonts = { primaryAr: "cairo", header: { en: "lora" } };
+      const look = { ...baseLook(), fonts };
+      expect(lookToShellPreview({}, look).fonts).toEqual(fonts);
+      expect(lookToWorkspacePatch({ fonts: { primaryAr: "amiri" } }, look).themeSettings.fonts).toEqual(fonts);
+      // No fonts in the look: the key goes, as every other key this panel owns.
+      expect(lookToWorkspacePatch({ fonts: { primaryAr: "amiri" } }, baseLook()).themeSettings).not.toHaveProperty("fonts");
+      expect(sameLook(look, { ...look, fonts: { ...fonts, header: { en: "inter" } } })).toBe(false);
     });
   });
 });

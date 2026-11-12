@@ -13,6 +13,7 @@ import {
   IconShield,
   IconStore,
   IconTeam,
+  IconText,
   IconTheme,
   IconWhatsApp,
   type IconComponent,
@@ -39,6 +40,8 @@ export const SETTINGS_SECTION_STRINGS = {
     // Each section: its name in the list, and one line of what it is for.
     s_identity: "Store identity",
     d_identity: "Name, logo, tagline and colours",
+    s_fonts: "Store fonts",
+    d_fonts: "The Arabic and English fonts of your store, its header and its products",
     s_account_settings: "Time zone and invoices",
     d_account_settings: "The store's clock, the contact email and the business on invoices",
     s_catalog: "Product listing",
@@ -80,6 +83,8 @@ export const SETTINGS_SECTION_STRINGS = {
     g_developers: "للمطوّرين",
     s_identity: "هوية المتجر",
     d_identity: "الاسم والشعار وجملة التعريف والألوان",
+    s_fonts: "خطوط المتجر",
+    d_fonts: "الخط العربي والإنجليزي لمتجرك ورأس الصفحة والمنتجات",
     s_account_settings: "التوقيت والفواتير",
     d_account_settings: "توقيت المتجر وبريد التواصل وبيانات النشاط على الفواتير",
     s_catalog: "عرض المنتجات",
@@ -122,6 +127,7 @@ export const SETTINGS_SECTION_STRINGS = {
  */
 export const SETTINGS_SECTIONS = [
   { id: "identity", key: "identity", group: "store", icon: IconStore, tone: "blue", words: ["store identity", "store profile", "name", "logo", "tagline", "colours", "colors", "brand", "هوية", "الاسم", "الشعار", "اللوجو", "ألوان"] },
+  { id: "fonts", key: "fonts", group: "store", icon: IconText, tone: "purple", words: ["fonts", "font", "typeface", "typography", "arabic font", "english font", "خط", "خطوط", "الخط العربي", "الخط الإنجليزي", "الطباعة"] },
   { id: "account-settings", key: "account_settings", group: "store", icon: IconClock, tone: "gray", words: ["account settings", "time zone", "timezone", "invoice", "legal", "contact email", "country", "التوقيت", "فاتورة", "الفواتير", "البلد", "العملة"] },
   { id: "catalog", key: "catalog", group: "store", icon: IconFilter, tone: "purple", words: ["catalog", "listing", "filters", "sort", "products", "الكتالوج", "فلاتر", "ترتيب", "المنتجات"] },
   { id: "order-bump", key: "order_bump", group: "store", icon: IconGift, tone: "pink", words: ["order bump", "add-on", "upsell", "offer", "checkout", "عرض", "إضافي", "الدفع"] },

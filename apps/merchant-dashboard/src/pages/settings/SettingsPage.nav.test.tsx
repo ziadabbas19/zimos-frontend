@@ -53,6 +53,7 @@ describe("the settings menu", () => {
     ]);
     expect(rowNames()).toEqual([
       "Store identity",
+      "Store fonts",
       "Time zone and invoices",
       "Product listing",
       "Offer with the order",
