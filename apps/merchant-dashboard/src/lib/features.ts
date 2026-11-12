@@ -99,6 +99,16 @@ export const ORDER_PAYLOAD_OPTIONS_ENABLED = import.meta.env.VITE_ORDER_PAYLOAD_
  */
 export const PRODUCT_COMBOS_ENABLED = import.meta.env.VITE_PRODUCT_COMBOS_ENABLED === "true";
 
+/**
+ * Cart rewards (Offers → Cart rewards): spend thresholds that unlock a
+ * discount or free shipping, shown to shoppers as a progress bar in the cart —
+ * the settings, their live preview and the tool card on the offers hub. Off:
+ * no card, no route (/offers/cart-rewards goes back to the offers hub). An
+ * order given a reward shows it either way, since that comes from the order
+ * itself. Turn on once the API runs with CART_REWARDS_ENABLED.
+ */
+export const CART_REWARDS_ENABLED = import.meta.env.VITE_CART_REWARDS_ENABLED === "true";
+
 /** The block designer for order emails. */
 export const ORDER_EMAIL_DESIGN_ENABLED = import.meta.env.VITE_ORDER_EMAIL_DESIGN_ENABLED === "true";
 

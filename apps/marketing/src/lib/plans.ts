@@ -22,6 +22,7 @@ export type PlanFeatureKey =
   | "reviews"
   | "about_gallery"
   | "combos"
+  | "cart_rewards"
   | "advanced_coupons";
 
 export interface PublicPlan {

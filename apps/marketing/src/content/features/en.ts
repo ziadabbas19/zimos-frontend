@@ -237,6 +237,10 @@ export const en: FeaturesCopy = {
         },
         { title: "Automatic discounts", body: "A discount that applies without a code." },
         {
+          title: "Cart rewards",
+          body: "A progress bar in the cart that tells shoppers how much more unlocks the next reward: free shipping, a percentage or an amount off, at the thresholds and names you choose, priced by the server when the order is placed.",
+        },
+        {
           title: "Bigger orders",
           body: "Bundles, order bumps, post-purchase upsells, suggested products and an exit pop-up.",
         },

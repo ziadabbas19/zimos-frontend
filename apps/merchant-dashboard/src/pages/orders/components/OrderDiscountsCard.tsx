@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent } from "@store-builder/ui";
 import type { Order } from "@store-builder/api-client";
 import { formatMoney } from "@/lib/format";
-import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
+import { fmt, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
 import { CopyButton } from "@/components/CopyButton";
 import { StatusBadge } from "@/components/StatusBadge";
 
@@ -15,6 +15,8 @@ const STRINGS = {
     bundleHint: "Already taken off the item prices above.",
     combo: "Combo saving",
     comboNamed: "Combo saving: {name}",
+    cartReward: "Cart reward: {name}",
+    cartRewardHint: "Unlocked by the cart's total.",
     freeShipping: "Free shipping",
     type_percentage: "Percentage",
     type_fixed: "Fixed amount",
@@ -31,6 +33,8 @@ const STRINGS = {
     bundleHint: "مخصوم بالفعل من أسعار المنتجات بالأعلى.",
     combo: "توفير الباقة",
     comboNamed: "توفير الباقة: {name}",
+    cartReward: "مكافأة السلة: {name}",
+    cartRewardHint: "حصل عليها العميل بإجمالي سلته.",
     freeShipping: "شحن مجاني",
     type_percentage: "نسبة مئوية",
     type_fixed: "مبلغ ثابت",
@@ -49,6 +53,8 @@ interface Entry {
   name?: string;
   amount?: number | string;
   freeShipping?: boolean;
+  /** A cart reward's name as the shopper saw it (kind "cart_reward"). */
+  label?: { ar?: string; en?: string } | null;
 }
 
 /**
@@ -59,6 +65,7 @@ interface Entry {
  */
 export function OrderDiscountsCard({ order }: { order: Order }) {
   const t = useT(STRINGS);
+  const { locale } = useLocale();
   const entries = (Array.isArray(order.discountsSnapshot) ? order.discountsSnapshot : []) as Entry[];
   if (entries.length === 0) return null;
   const c = order.currency;
@@ -80,7 +87,12 @@ export function OrderDiscountsCard({ order }: { order: Order }) {
             // A combo's saving is in its lines' prices too, like a bundle's (combos/comboPricing).
             const combo = e.kind === "combo";
             const bundle = e.kind === "bundle" || combo;
-            const label = combo
+            // A cart reward (cartRewards): its name; a free-shipping one saved the fee, the others are in the summary's discount.
+            const reward = e.kind === "cart_reward";
+            const rewardName = reward ? (e.label?.[locale] ?? e.label?.en ?? e.label?.ar ?? "—") : "";
+            const label = reward
+              ? fmt(t.cartReward, { name: rewardName })
+              : combo
               ? e.name
                 ? fmt(t.comboNamed, { name: e.name })
                 : t.combo
@@ -96,7 +108,8 @@ export function OrderDiscountsCard({ order }: { order: Order }) {
                     {e.code ? <bdi dir="ltr">{label}</bdi> : label}
                   </p>
                   <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-soft">
-                    {!bundle && typeLabel(e.type) && <span>{typeLabel(e.type)}</span>}
+                    {!bundle && !reward && typeLabel(e.type) && <span>{typeLabel(e.type)}</span>}
+                    {reward && <span>{t.cartRewardHint}</span>}
                     {bundle && <span>{t.bundleHint}</span>}
                     {e.freeShipping && <StatusBadge value="free_shipping" tone="success" text={t.freeShipping} />}
                   </div>

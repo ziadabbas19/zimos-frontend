@@ -259,6 +259,7 @@ export const en: Dictionary = {
       reviews: "Product and store reviews",
       about_gallery: "About page photo gallery",
       combos: "Product combos",
+      cart_rewards: "Cart rewards",
       advanced_coupons: "Advanced coupons",
     },
     payPerOrder: {

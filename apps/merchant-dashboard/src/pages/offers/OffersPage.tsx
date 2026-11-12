@@ -11,6 +11,7 @@ import {
   IconShuffle,
   IconSparkle,
   IconTicket,
+  IconTrophy,
 } from "@/components/icons";
 import { offersSummaryGet } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
@@ -18,7 +19,7 @@ import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useCachedAsync } from "@/lib/useCachedAsync";
 import { formatMoney } from "@/lib/format";
 import { pluralOf } from "@/lib/plural";
-import { PRODUCT_COMBOS_ENABLED } from "@/lib/features";
+import { CART_REWARDS_ENABLED, PRODUCT_COMBOS_ENABLED } from "@/lib/features";
 import { usePlanFeatures } from "@/lib/usePlanFeatures";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { OffersHub } from "./hub/OffersHub";
@@ -45,6 +46,8 @@ const STRINGS = {
     bundlesHint: "Buy more, pay less per piece — one bundle for many products.",
     combos: "Combos",
     combosHint: "Different products sold together at one price.",
+    cartRewards: "Cart rewards",
+    cartRewardsHint: "A progress bar in the cart: spend more to unlock a discount or free shipping.",
     bumps: "Order bumps",
     bumpsHint: "A tick box on the order form: add this to your order.",
     crossSell: "Cross-sell",
@@ -83,6 +86,8 @@ const STRINGS = {
     bundlesHint: "اشترِ أكثر وادفع أقل للقطعة — باقة واحدة لمنتجات كثيرة.",
     combos: "باقات المنتجات",
     combosHint: "منتجات مختلفة تُباع معًا بسعر واحد.",
+    cartRewards: "مكافآت السلة",
+    cartRewardsHint: "شريط تقدّم في السلة: كلما زادت المشتريات فُتح خصم أو شحن مجاني.",
     bumps: "إضافات الطلب",
     bumpsHint: "مربع اختيار في نموذج الطلب: أضف هذا إلى طلبك.",
     crossSell: "منتجات مقترحة",
@@ -142,6 +147,8 @@ export function OffersPage() {
         },
         // Product combos (lib/features): no card while the switch is off, nor while the plan lacks them.
         ...(PRODUCT_COMBOS_ENABLED && !plan.gated("combos") ? [{ to: "/offers/combos", icon: <IconPackage />, title: t.combos, hint: t.combosHint }] : []),
+        // Cart rewards (lib/features): no card while the switch is off, nor while the plan lacks them.
+        ...(CART_REWARDS_ENABLED && !plan.gated("cart_rewards") ? [{ to: "/offers/cart-rewards", icon: <IconTrophy />, title: t.cartRewards, hint: t.cartRewardsHint }] : []),
         {
           to: "/offers/order-bumps",
           icon: <IconProductAdd />,
