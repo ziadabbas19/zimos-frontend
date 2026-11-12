@@ -14,6 +14,8 @@
     "./appearance": "./src/appearance/index.ts",
     "./theme-reveal": "./src/theme-reveal/index.ts",
     "./push": "./src/push/index.ts",
+    "./fonts": "./src/fonts/index.ts",
+    "./font-picker": "./src/font-picker/index.ts",
     "./styles.css": "./src/styles.css",
     "./theme/*": "./src/theme/*"
   },

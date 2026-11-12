@@ -11,10 +11,11 @@ import {
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useErrorMessage } from "@/lib/errorMessages";
-import { useT, type Messages } from "@/i18n/LocaleContext";
+import { useLocale, useT, type Messages } from "@/i18n/LocaleContext";
 import { useToast } from "@/components/Toast";
 import { TextField } from "@/components/Field";
 import { LandingPagePicker } from "./LandingPagePicker";
+import { FontPairField } from "@/components/fonts/FontPairField";
 
 /**
  * How the product's storefront page behaves (SPEC §7.3) plus the three small
@@ -70,6 +71,8 @@ const STRINGS = {
     saving: "Saving…",
     saved: "Page settings saved.",
     discard: "Discard changes",
+    font: "Font on this product's page",
+    fontHint: "Its own Arabic and English fonts. Store default uses the product fonts from Store settings → Fonts.",
   },
   ar: {
     title: "صفحة المنتج",
@@ -118,6 +121,8 @@ const STRINGS = {
     saving: "جارٍ الحفظ…",
     saved: "تم حفظ إعدادات الصفحة.",
     discard: "تجاهل التغييرات",
+    font: "خط صفحة هذا المنتج",
+    fontHint: "خط عربي وإنجليزي خاص بالمنتج. الافتراضي يستخدم خطوط المنتجات من الإعدادات ← خطوط المتجر.",
   },
 } satisfies Messages;
 
@@ -173,6 +178,7 @@ function draftOf(product: CatalogProduct): Draft {
 
 export function ProductPageSettingsSection({ product, onChanged }: { product: CatalogProduct; onChanged: () => void }) {
   const t = useT(STRINGS);
+  const { locale } = useLocale();
   const workspaceId = useWorkspaceId();
   const toast = useToast();
   const errorMessage = useErrorMessage();
@@ -310,6 +316,16 @@ export function ProductPageSettingsSection({ product, onChanged }: { product: Ca
         </div>
 
         <LandingPagePicker value={draft.settings.landing_page_id} disabled={busy} onChange={(pageId) => setSetting("landing_page_id", pageId)} />
+
+        <div className="space-y-2 border-t border-line pt-4" data-slot="product-font">
+          <div>
+            <h3 className="text-sm font-semibold text-ink">{t.font}</h3>
+            <p className="text-xs text-ink-soft">{t.fontHint}</p>
+          </div>
+          <div className="max-w-xl">
+            <FontPairField value={draft.settings.font} onChange={(pair) => setSetting("font", pair)} locale={locale} disabled={busy} />
+          </div>
+        </div>
 
         <div className="space-y-2 border-t border-line pt-4">
           <div>

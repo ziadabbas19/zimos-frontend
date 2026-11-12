@@ -143,6 +143,13 @@
      mode — exactly when paper-raised is the readable choice. */
   --color-on-primary: var(--brand-primary-foreground, var(--color-paper-raised));
   --color-on-accent: var(--brand-secondary-foreground, var(--color-ink));
+
+  /* The store's own type — its theme's or the original look's stacks — kept
+     under names nothing else sets, so a font the merchant picks for one part
+     (lib/storeFonts.ts) can end its stack in it: a script left on "store
+     default", and any letter the pick has no glyph for, look as they did. */
+  --zf-base-sans: var(--font-sans);
+  --zf-base-display: var(--font-display);
 }
 
 /* On dark backgrounds the "soft" tints have to sink toward the paper colour

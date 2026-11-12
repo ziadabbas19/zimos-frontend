@@ -66,6 +66,9 @@ import { applyBindings, loadBindingData, pageProductId, type BindingData } from 
 import { RepeaterElement } from "./repeater";
 import { MasonryGridElement, ProductActionElement, productAction } from "./builderMore";
 import { StoryGalleryElement } from "./StoryGallery";
+import { StoreFontFaces } from "@/components/fonts/StoreFontFaces";
+import { fontStyle } from "@/lib/storeFonts";
+import { pageFontPairs, ownFont, type FontLevels } from "./fonts";
 
 /**
  * An element with a style of its own (the editor's Style and Layout tabs) is
@@ -74,10 +77,20 @@ import { StoryGalleryElement } from "./StoryGallery";
  */
 function StyledElement({ element, ctx }: { element: PageElement; ctx: Ctx }) {
   const key = styleKey(element);
-  if (!key) return <ElementNode element={element} ctx={ctx} />;
+  // The element's own font (the inspector's Font group), over its section's, the page's and the store's (./fonts).
+  const font = ownFont(element.settings, ctx.fontLevels);
+  if (!key) {
+    if (!font) return <ElementNode element={element} ctx={ctx} />;
+    return (
+      // `contents`: the font reaches the element's text without a box of its own around it.
+      <div className="contents" data-zf-node="" style={fontStyle(font)}>
+        <ElementNode element={element} ctx={ctx} />
+      </div>
+    );
+  }
   return (
     // `data-zs-band`: the box of a full-width band, which keeps the width of its section whatever width the style names (store-sections.css).
-    <div data-zs={key} data-zs-band={isBand(element) ? "" : undefined}>
+    <div data-zs={key} data-zs-band={isBand(element) ? "" : undefined} data-zf-node={font ? "" : undefined} style={font ? fontStyle(font) : undefined}>
       <ElementNode element={element} ctx={ctx} />
     </div>
   );
@@ -154,6 +167,8 @@ interface Ctx {
    * sees first, so they load at once and ahead of the rest instead of lazily.
    */
   opening?: boolean;
+  /** The fonts the node sits in, nearest first: its section's, the page's, the store's (./fonts). */
+  fontLevels: FontLevels;
 }
 
 /** Elements whose empty `productId` means "the page's product". */
@@ -446,6 +461,9 @@ function SectionNode({ section, ctx, hero = false }: { section: PageSection; ctx
   // section that holds a band, which is then exactly as tall as what is in it.
   const minHeight = band ? null : sectionMinHeight(section.settings);
   const { outer, inner } = sectionClasses(section.settings, minHeight);
+  // The section's own font (the inspector's Font group), over the page's and the store's (./fonts).
+  const font = ownFont(section.settings, ctx.fontLevels);
+  const inside: Ctx = font ? { ...ctx, fontLevels: [font, ...ctx.fontLevels] } : ctx;
 
   // The hooks a store theme lays the section out by — its spacing, width and,
   // for the page's opening section, its own hero layout. Attributes only: a
@@ -455,14 +473,15 @@ function SectionNode({ section, ctx, hero = false }: { section: PageSection; ctx
   return (
     <section
       className={outer}
-      style={minHeight === null ? undefined : { minHeight }}
+      style={minHeight === null && !font ? undefined : { ...(font ? fontStyle(font) : {}), ...(minHeight === null ? {} : { minHeight }) }}
       {...sectionHooks(section.settings)}
       data-zimos-hero={hero && !band ? "" : undefined}
+      data-zf-node={font ? "" : undefined}
     >
       {/* `data-zt-band`: a wrapper that its section centres as a flex item (the preview does that while a section's height is being dragged) would be only as wide as its content (store-sections.css). */}
       <div className={inner} data-zt-band={band ? "" : undefined}>
         {rows.map((row) => (
-          <RowNode key={row.id} row={row} ctx={ctx} />
+          <RowNode key={row.id} row={row} ctx={inside} />
         ))}
       </div>
     </section>
@@ -533,8 +552,11 @@ export async function PageRenderer({
 }) {
   const sections = Array.isArray(tree?.sections) ? tree.sections : [];
   if (sections.length === 0) return null;
+  const storeMeta = await getStoreMeta(workspaceId).catch(() => null);
   // The store's currency format, for the prices the elements below write on the server (lib/moneyFormat).
-  setRequestMoneyFormat(((await getStoreMeta(workspaceId).catch(() => null)) as { currencyFormat?: MoneyFormat } | null)?.currencyFormat ?? null);
+  setRequestMoneyFormat((storeMeta as { currencyFormat?: MoneyFormat } | null)?.currencyFormat ?? null);
+  // The fonts picked for the page, its sections and elements, over the store's (./fonts).
+  const fonts = pageFontPairs(tree, storeMeta?.themeSettings);
   const ctx: Ctx = {
     workspaceId,
     currency,
@@ -545,6 +567,7 @@ export async function PageRenderer({
     // One load for the whole page; null (and no call at all) when nothing is bound.
     data: await loadBindingData(tree, workspaceId, currency, locale),
     pageProductId: pageProductId(tree),
+    fontLevels: fonts.levels,
   };
   const hero = heroSectionIndex(sections);
   const opening = openingSectionIndex(sections);
@@ -553,7 +576,13 @@ export async function PageRenderer({
 
   // `zt-sections` lets a store theme restyle the rules between sections.
   return (
-    <div className="zt-sections divide-y divide-line">
+    <div
+      className="zt-sections divide-y divide-line"
+      data-zf-node={fonts.page ? "" : undefined}
+      style={fonts.page ? fontStyle(fonts.page) : undefined}
+    >
+      {/* The faces of every font the page picked; nothing for a page that picked none. */}
+      {fonts.pairs.length > 0 && <StoreFontFaces pairs={fonts.pairs} />}
       {/* Built only from clamped numbers, keywords and hex colours — see elementStyle.ts. */}
       {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
       {/* Each imported template's look its bands use, one small stylesheet each (./xs). */}

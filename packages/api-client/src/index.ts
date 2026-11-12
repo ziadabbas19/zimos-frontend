@@ -221,6 +221,8 @@ export * from "./endpoints/productSpecs";
 export * from "./endpoints/stockAlerts";
 export * from "./endpoints/preorders";
 export * from "./endpoints/holidayMode";
+// Store fonts: the catalog and where a picked font is saved.
+export * from "./endpoints/fonts";
 export * from "./endpoints/urlRedirects";
 export * from "./endpoints/purchaseLimits";
 export * from "./endpoints/giftOptions";

@@ -91,7 +91,8 @@ export function ProductCard({
   }
 
   return (
-    <article className="zt-card zt-product group relative flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-paper-raised transition-[border-color,box-shadow] hover:border-primary hover:shadow-lg">
+    // data-zf-part: the store's product font (Store settings → Fonts, lib/storeFonts) reaches the card here.
+    <article data-zf-part="product" className="zt-card zt-product group relative flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-paper-raised transition-[border-color,box-shadow] hover:border-primary hover:shadow-lg">
       {/* `z-10` lifts this above the title's stretched link (below) so the
           swipe and the nav arrows receive their own pointer events; a plain
           tap still reaches the same product through the link inside it. */}
