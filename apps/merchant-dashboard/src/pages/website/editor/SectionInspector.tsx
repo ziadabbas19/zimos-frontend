@@ -58,17 +58,8 @@ import {
 import { MAX_SECTION_HEIGHT_PX } from "@/lib/canvasDrag";
 import { sectionMinHeight, setSectionFont, setSectionMinHeight } from "./canvasEdits";
 import { FontPairField } from "@/components/fonts/FontPairField";
-
-/** The section's Font group (components/fonts). */
-const SECTION_FONT = {
-  en: { title: "Section font", hint: "Arabic and English fonts for everything in this section. Store default follows the page, then the store's fonts." },
-  ar: { title: "خط القسم", hint: "الخط العربي والإنجليزي لكل ما في هذا القسم. الافتراضي يتبع الصفحة ثم خطوط المتجر." },
-} as const;
-
-function hasSectionFont(section: PageSection): boolean {
-  const font = section.settings?.font;
-  return Boolean(font && typeof font === "object" && ((font as { ar?: unknown }).ar || (font as { en?: unknown }).en));
-}
+import { fontTarget } from "@/components/fonts/fontFocus";
+import { pageLevels, useEditorFonts } from "@/lib/editorFonts";
 import { ChoiceField, Group, NumberField } from "./inspector/controls";
 import { ElementField, ElementFields } from "./inspector/ElementFields";
 import { elementSummary } from "./inspector/elementSummary";
@@ -86,6 +77,17 @@ import {
 } from "./inspector/env";
 import { HideOnDevices, hiddenScreenNames } from "./inspector/HideOnDevices";
 import { inspectorNumber, inspectorUi } from "./inspector/strings";
+
+/** The section's Font group (components/fonts). */
+const SECTION_FONT = {
+  en: { title: "Section font", hint: "Arabic and English fonts for everything in this section. Left on default, it follows the page, then the store's fonts." },
+  ar: { title: "خط القسم", hint: "الخط العربي والإنجليزي لكل ما في هذا القسم. على الافتراضي بيتبع الصفحة، ثم خطوط المتجر." },
+} as const;
+
+function hasSectionFont(section: PageSection): boolean {
+  const font = section.settings?.font;
+  return Boolean(font && typeof font === "object" && ((font as { ar?: unknown }).ar || (font as { en?: unknown }).en));
+}
 
 /**
  * The end panel: what is selected, and three pages for it — Content, Style,
@@ -354,6 +356,7 @@ export function SectionInspector({
   const locale = useEditorLocale();
   const ui = editorUi(locale);
   const t = inspectorUi(locale);
+  const editorFonts = useEditorFonts();
   const named = namedStyles ?? [];
   const elements = sectionElements(section);
   const columnCount = sectionColumnCount(section);
@@ -560,8 +563,16 @@ export function SectionInspector({
         />
       </Group>
       {/* The section's own fonts, over the page's and the store's (storefront page-renderer/fonts.ts). */}
-      <Group title={SECTION_FONT[locale].title} hint={SECTION_FONT[locale].hint} collapsible defaultOpen={hasSectionFont(section)} mark={hasSectionFont(section) ? 1 : 0}>
-        <FontPairField value={section.settings?.font} onChange={(pair) => onChange(setSectionFont(section, pair))} locale={locale} />
+      <Group id="style:section-font" title={SECTION_FONT[locale].title} hint={SECTION_FONT[locale].hint} collapsible defaultOpen mark={hasSectionFont(section) ? 1 : 0}>
+        <FontPairField
+          value={section.settings?.font}
+          onChange={(pair) => onChange(setSectionFont(section, pair))}
+          locale={locale}
+          level="section"
+          inherits={pageLevels(editorFonts)}
+          template={editorFonts.template}
+          focusTarget={fontTarget.section(section.id)}
+        />
       </Group>
       {multiColumn &&
         rows.map((row, r) =>
@@ -648,6 +659,7 @@ export function SectionInspector({
           element={active}
           tab="all"
           showHide={false}
+          sectionFont={section.settings?.font}
           named={named}
           onSettingsChange={(settings) => changeSettings(active, settings)}
           onNamedChange={onNamedStylesChange}

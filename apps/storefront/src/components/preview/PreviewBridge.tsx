@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowDownIcon, ArrowUpIcon, CopySimpleIcon, EyeIcon, EyeSlashIcon, PlusIcon, TrashIcon } from "./canvasIcons";
+import { ArrowDownIcon, ArrowUpIcon, CopySimpleIcon, EyeIcon, EyeSlashIcon, PlusIcon, TextAaIcon, TrashIcon } from "./canvasIcons";
 import {
   BRAND_VAR_NAMES,
   brandVars,
@@ -46,6 +46,8 @@ import { deepTextNodes, useCanvasText } from "./useCanvasText";
  *   { type: "zimos:move-section", sectionId, direction } the section grip's arrow keys
  *   { type: "zimos:section-action", sectionId, action }  the selected section's floating bar
  *   { type: "zimos:pick-image", sectionId, elementId, field } "replace this picture"
+ *   { type: "zimos:pick-font", sectionId, elementId? }  the "Aa" on the selected element (or the section's bar):
+ *                                                          open its font in the inspector
  *   { type: "zimos:bg-position", sectionId, elementId, path, x, y } a band's ground picture centred on a new point
  *   { type: "zimos:item-action", sectionId, elementId, list, action, from, to? } one item of a band moved,
  *                                                          duplicated or deleted (ItemHandles.tsx)
@@ -185,7 +187,7 @@ const OVERLAY_ATTR = "data-zimos-overlay";
 const SERVER_THEME_ID = "zimos-preview-theme";
 
 /** What the bar on a selected section can ask the editor for. */
-const SECTION_ACTIONS = ["up", "down", "duplicate", "hide", "delete"] as const;
+const SECTION_ACTIONS = ["up", "down", "duplicate", "hide", "delete", "font"] as const;
 type SectionAction = (typeof SECTION_ACTIONS)[number];
 
 /**
@@ -201,9 +203,11 @@ interface Abilities {
   sectionActions: SectionAction[] | null;
   /** A template band's pictures, and a template header's or footer's logo, resize on the page. */
   resizePicture: boolean;
+  /** The selected element's tag carries "Aa": its font, in the inspector. */
+  pickFont: boolean;
 }
 
-const LEGACY_ABILITIES: Abilities = { selectElement: false, pickImage: false, sectionActions: null, resizePicture: false };
+const LEGACY_ABILITIES: Abilities = { selectElement: false, pickImage: false, sectionActions: null, resizePicture: false, pickFont: false };
 
 function readAbilities(raw: unknown): Abilities {
   if (!raw || typeof raw !== "object") return LEGACY_ABILITIES;
@@ -215,6 +219,7 @@ function readAbilities(raw: unknown): Abilities {
       ? SECTION_ACTIONS.filter((action) => (can.sectionActions as unknown[]).includes(action))
       : [],
     resizePicture: can.resizePicture === true,
+    pickFont: can.pickFont === true,
   };
 }
 
@@ -223,6 +228,7 @@ function sameAbilities(a: Abilities, b: Abilities): boolean {
     a.selectElement === b.selectElement &&
     a.pickImage === b.pickImage &&
     a.resizePicture === b.resizePicture &&
+    a.pickFont === b.pickFont &&
     (a.sectionActions === null ? b.sectionActions === null : b.sectionActions !== null && a.sectionActions.join() === b.sectionActions.join())
   );
 }
@@ -255,6 +261,8 @@ interface Strings {
   moveItem: string;
   duplicateItem: string;
   deleteItem: string;
+  /** The "Aa" on the selected element and on the section's bar. */
+  font: string;
 }
 
 const DEFAULT_STRINGS: Strings = {
@@ -284,6 +292,7 @@ const DEFAULT_STRINGS: Strings = {
   moveItem: "Drag to move this item (or Space, then the arrow keys)",
   duplicateItem: "Duplicate this item",
   deleteItem: "Delete this item",
+  font: "Font",
 };
 
 /** "product_card" → "Product card", for an element type the editor sent no name for. */
@@ -958,6 +967,7 @@ export function PreviewBridge({
             ? (elementId, field) => post({ type: "zimos:pick-image", sectionId: selected, elementId, field })
             : undefined
         }
+        onPickFont={abilities.pickFont && selected ? (elementId) => post({ type: "zimos:pick-font", sectionId: selected, elementId }) : undefined}
         resizePictures={abilities.resizePicture}
       />
       {abilities.resizePicture && (selectedShell === "header" || selectedShell === "footer") && (
@@ -1083,6 +1093,11 @@ function SectionOutline({
               {has("duplicate") && (
                 <BarButton label={strings.duplicate} onClick={() => onAction("duplicate")}>
                   <CopySimpleIcon size={18} aria-hidden />
+                </BarButton>
+              )}
+              {has("font") && (
+                <BarButton label={strings.font} onClick={() => onAction("font")}>
+                  <TextAaIcon size={18} aria-hidden />
                 </BarButton>
               )}
               {has("hide") && (

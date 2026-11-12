@@ -35,6 +35,14 @@ export interface FontPickerProps {
   hint?: string;
   /** What "store default" stands for here, shown beside it (a font's name, or a level above this one). */
   defaultName?: string | null;
+  /**
+   * The whole text for "no font of its own" where the default is not the
+   * store's (an element, a section, a page: "Inherited: Cairo"). Replaces
+   * "Store default (…)" on the button and under the reset option.
+   */
+  defaultLabel?: string | null;
+  /** The reset option's and the clear button's words ("Use default (inherit)"); default "Use store default". */
+  resetLabel?: string;
   disabled?: boolean;
   className?: string;
 }
@@ -43,8 +51,22 @@ type ScriptFilter = "all" | "only" | "both";
 
 const PAGE = 8;
 
-export function FontPicker({ fonts, role, value, onChange, locale, label, hint, defaultName, disabled = false, className }: FontPickerProps) {
+export function FontPicker({
+  fonts,
+  role,
+  value,
+  onChange,
+  locale,
+  label,
+  hint,
+  defaultName,
+  defaultLabel,
+  resetLabel,
+  disabled = false,
+  className,
+}: FontPickerProps) {
   const t = FONT_PICKER_STRINGS[locale];
+  const resetText = resetLabel ?? t.useDefault;
   const baseId = useId();
   const labelId = `${baseId}-label`;
   const triggerId = `${baseId}-trigger`;
@@ -150,7 +172,8 @@ export function FontPicker({ fonts, role, value, onChange, locale, label, hint, 
     }
   }
 
-  const defaultText = defaultName ? fill(t.storeDefaultNamed, { name: defaultName }) : t.storeDefault;
+  const defaultText = defaultLabel ?? (defaultName ? fill(t.storeDefaultNamed, { name: defaultName }) : t.storeDefault);
+  const defaultNote = defaultLabel ?? (defaultName ? defaultText : null);
   const chip = (pressed: boolean) =>
     cn(
       "inline-flex min-h-11 shrink-0 cursor-pointer items-center rounded-full px-3 text-sm whitespace-nowrap ring-1 ring-inset transition-colors",
@@ -195,8 +218,8 @@ export function FontPicker({ fonts, role, value, onChange, locale, label, hint, 
           <button
             type="button"
             onClick={() => onChange(null)}
-            aria-label={`${t.useDefault} — ${label}`}
-            title={t.useDefault}
+            aria-label={`${resetText} — ${label}`}
+            title={resetText}
             className="inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-[0.5rem] text-ink-soft ring-1 ring-line ring-inset hover:bg-paper-sunken hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <X className="size-4" aria-hidden />
@@ -288,8 +311,8 @@ export function FontPicker({ fonts, role, value, onChange, locale, label, hint, 
               className={rowClass(activeIndex === 0)}
             >
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium">{t.useDefault}</span>
-                {defaultName && <span className="block text-xs text-ink-soft">{defaultText}</span>}
+                <span className="block text-sm font-medium">{resetText}</span>
+                {defaultNote && <span className="block text-xs text-ink-soft">{defaultNote}</span>}
               </span>
               {value === null && <Check className="size-4 shrink-0 text-primary" aria-hidden />}
             </li>

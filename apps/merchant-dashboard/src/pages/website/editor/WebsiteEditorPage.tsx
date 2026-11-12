@@ -65,6 +65,10 @@ import {
 } from "./shell/useEditorLayout";
 import { usePublishFlow } from "./shell/usePublishFlow";
 import { useSectionEdits } from "./shell/useSectionEdits";
+import type { PageSettingsTab } from "./PageSettingsDialog";
+import { openGroup } from "./inspector/groupState";
+import { fontTarget, requestFontFocus } from "@/components/fonts/fontFocus";
+import { EditorFontsContext, editorFontsValue } from "@/lib/editorFonts";
 
 /**
  * The website editor — the real storefront, live, with the tools around it.
@@ -208,6 +212,7 @@ function WebsiteEditor() {
   const [brandOpen, setBrandOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<PageSettingsTab>("seo");
   const [showNewPage, setShowNewPage] = useState(false);
   /** Asked from the keyboard (Delete / Backspace): a stray key should not cost a section. */
   const [pendingDelete, setPendingDelete] = useState<PageSection | null>(null);
@@ -232,6 +237,8 @@ function WebsiteEditor() {
     [sections, locale]
   );
   const tree = useMemo(() => ({ ...treeMeta, sections }), [treeMeta, sections]);
+  // What every font field falls back to: the unsaved Store look's fonts and the open page's own (lib/editorFonts).
+  const editorFonts = useMemo(() => editorFontsValue(look.fonts, treeMeta.font, xsLook !== null), [look.fonts, treeMeta.font, xsLook]);
   const inlineText = useMemo(() => inlineTextIds(sections), [sections]);
   // The words of each band with many (an imported template's), which a double-click edits where they stand.
   const deepText = useMemo(() => deepTextOf(sections), [sections]);
@@ -274,6 +281,29 @@ function WebsiteEditor() {
   function pickElement(elementId: string | null) {
     setSelectedElementId(elementId);
     setAutoElementId(null);
+  }
+
+  /**
+   * The canvas's "Aa": the element (or, from the section's bar, the section)
+   * selected, its Style page open, its Font group open and its first picker
+   * focused (components/fonts/fontFocus.ts).
+   */
+  function pickFont({ sectionId, elementId: picked }: { sectionId: string; elementId: string | null }) {
+    if (picked) selectElement({ sectionId, elementId: picked });
+    else {
+      selectSection(sectionId, { scroll: false });
+      pickElement(null);
+    }
+    setInspectorTab("style");
+    openGroup(picked ? "style:font" : "style:section-font");
+    requestFontFocus(picked ? fontTarget.element(picked) : fontTarget.section(sectionId));
+  }
+
+  /** Page settings, on the tab asked for (the Store look's "This page's font…" opens Font). */
+  function openPageSettings(tab: PageSettingsTab = "seo") {
+    setSettingsTab(tab);
+    setSettingsOpen(true);
+    if (tab === "font") requestFontFocus(fontTarget.page);
   }
 
   /** Opens the announcement bar's, header's or footer's panel — and, from the editor side, scrolls the preview to it. */
@@ -519,7 +549,7 @@ function WebsiteEditor() {
   // not here: the API has none.
   const menu: EditorMenuItem[][] = [
     [
-      ...(page ? [{ id: "settings", label: t.menuPageSettings, icon: IconSliders, onSelect: () => setSettingsOpen(true) }] : []),
+      ...(page ? [{ id: "settings", label: t.menuPageSettings, icon: IconSliders, onSelect: () => openPageSettings() }] : []),
       { id: "history", label: t.menuHistory, icon: IconClock, onSelect: () => setHistoryOpen(true) },
       ...(website?.status === "published" && slug
         ? [{ id: "live", label: t.menuLiveStore, icon: IconExternal, onSelect: publish.openStore }]
@@ -587,6 +617,7 @@ function WebsiteEditor() {
       storeName={currentWorkspace?.name ?? ""}
       previewMode={previewMode ?? "light"}
       onPreviewMode={setPreviewMode}
+      onEditPageFont={page ? () => openPageSettings("font") : undefined}
     />
   );
 
@@ -631,6 +662,7 @@ function WebsiteEditor() {
     // `.flex.h-full.flex-col > .border-b.bg-paper-raised:first-child`, which would outrank the toolbar's glass.)
     // The screen the preview shows: what a per-screen setting is set for (editorScreen.tsx).
     <EditorScreenProvider value={screenOf(roomy ? device : "phone")}>
+    <EditorFontsContext.Provider value={editorFonts}>
     <ShellPartFocusProvider value={shellPartFocus}>
     <div data-slot="editor" className="flex size-full flex-col">
       <EditorToolbar
@@ -786,6 +818,7 @@ function WebsiteEditor() {
                   onInsert={requestInsert}
                   onMoveSection={edits.moveBy}
                   onSectionAction={edits.act}
+                  onPickFont={pickFont}
                   onPickImage={(target) => {
                     // A band with many pictures names the one that was pressed by its address, not by a field.
                     const { src, nth, elementId: picked } = target;
@@ -944,6 +977,7 @@ function WebsiteEditor() {
           treeMeta={treeMeta}
           onTreeMetaChange={doc.setTreeMeta}
           onSaveSeo={(seo) => doc.saveSeo(page.id, seo)}
+          initialTab={settingsTab}
           onClose={() => setSettingsOpen(false)}
         />
       )}
@@ -1003,6 +1037,7 @@ function WebsiteEditor() {
       />
     </div>
     </ShellPartFocusProvider>
+    </EditorFontsContext.Provider>
     </EditorScreenProvider>
   );
 }

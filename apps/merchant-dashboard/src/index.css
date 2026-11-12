@@ -37,3 +37,15 @@
     animation-timing-function: steps(1, end);
   }
 }
+
+/* An open font picker's list (@store-builder/ui/font-picker) lies over the
+   blocks that follow it. An inspector group's or a look block's body settles in
+   with an animation, which makes each body a stacking context of its own, so
+   the list's own z-index stays inside it: the block that holds the open picker
+   is lifted above its siblings instead. */
+:is([data-slot="inspector-group"], [data-slot="look-block"], [data-slot="font-pair"]):has(
+    [data-slot="font-picker"] [aria-haspopup="listbox"][aria-expanded="true"]
+  ) {
+  position: relative;
+  z-index: 30;
+}

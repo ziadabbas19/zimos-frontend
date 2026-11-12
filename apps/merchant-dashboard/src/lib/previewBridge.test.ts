@@ -188,3 +188,19 @@ describe("nearestGapIndex", () => {
     expect(nearestGapIndex([], 500)).toBe(0);
   });
 });
+
+describe("readFrameMessage — the canvas's font button", () => {
+  const read = (data: unknown) => readFrameMessage({ origin: STOREFRONT, data, source: frameA }, STOREFRONT, frames);
+
+  it("passes an element's 'Aa', and the section's bar (no element)", () => {
+    expect(read({ type: "zimos:pick-font", sectionId: "hero-1", elementId: "h1-2" })).toEqual({ type: "zimos:pick-font", sectionId: "hero-1", elementId: "h1-2" });
+    expect(read({ type: "zimos:pick-font", sectionId: "hero-1" })).toEqual({ type: "zimos:pick-font", sectionId: "hero-1" });
+    expect(read({ type: "zimos:section-action", sectionId: "hero-1", action: "font" })).toEqual({ type: "zimos:section-action", sectionId: "hero-1", action: "font" });
+  });
+
+  it("drops one that names no section, or names its element with anything but an id", () => {
+    expect(read({ type: "zimos:pick-font" })).toBeNull();
+    expect(read({ type: "zimos:pick-font", sectionId: "hero-1", elementId: 7 })).toBeNull();
+    expect(read({ type: "zimos:pick-font", sectionId: "hero-1", elementId: "x".repeat(500) })).toBeNull();
+  });
+});

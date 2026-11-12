@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Button } from "@store-builder/ui";
 import { FontPicker, loadSampleFont, sampleStack } from "@store-builder/ui/font-picker";
-import { readStoreFonts, storeFontsValue, type ResolvedFontPair, type StoreFonts } from "@store-builder/ui/fonts";
+import { readStoreFonts, storeFontsValue, storeLevel, type ResolvedFontPair, type StoreFonts } from "@store-builder/ui/fonts";
 import { ApiError } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useFontCatalog } from "@/lib/fontCatalog";
@@ -42,9 +42,12 @@ const STRINGS = {
     sampleDefault: "Store default",
     header: "Header",
     headerHint: "The store name, the menu and the announcement bar. Store default uses the fonts above.",
+    footer: "Footer",
+    footerHint: "Everything in the footer. Store default uses the fonts above.",
     products: "Products",
     productsHint: "Product pages and product cards. A product can also have its own font, on its page settings.",
-    template: "Your store wears an imported template: its own bands, header and footer keep the template's fonts (Website → Store look → Template look).",
+    template:
+      "Your store wears an imported template: the fonts you pick here are used on its bands, header and footer too. A script left on store default keeps the template's font (Website → Store look → Template look).",
     readOnly: "Only the store owner, a workspace manager or an editor can change the store fonts.",
     save: "Save fonts",
     saving: "Saving…",
@@ -64,9 +67,12 @@ const STRINGS = {
     sampleDefault: "خط المتجر الافتراضي",
     header: "رأس الصفحة",
     headerHint: "اسم المتجر والقائمة وشريط الإعلان. الافتراضي يستخدم الخطين بالأعلى.",
+    footer: "تذييل الصفحة",
+    footerHint: "كل ما في تذييل الصفحة. الافتراضي يستخدم الخطين بالأعلى.",
     products: "المنتجات",
     productsHint: "صفحات المنتجات وبطاقاتها. ويمكن لكل منتج أن يكون له خط خاص من إعدادات صفحته.",
-    template: "متجرك يستخدم قالبًا مستوردًا: أقسام القالب ورأسه وتذييله تحتفظ بخطوط القالب (الموقع ← شكل المتجر ← شكل القالب).",
+    template:
+      "متجرك يستخدم قالبًا مستوردًا: الخطوط اللي تختارها هنا بتتطبق على أقسام القالب ورأسه وتذييله كمان. أي لغة تسيبها على الافتراضي بتحتفظ بخط القالب (الموقع ← شكل المتجر ← شكل القالب).",
     readOnly: "يمكن لمالك المتجر أو مدير مساحة العمل أو المحرر فقط تغيير خطوط المتجر.",
     save: "حفظ الخطوط",
     saving: "جارٍ الحفظ…",
@@ -109,8 +115,7 @@ export function FontsSection() {
     }
   }, [draft.primary.ar, draft.primary.en, byId]);
 
-  const name = (id: string | null) => (id ? (byId.get(id)?.family ?? id) : null);
-  const setPair = (key: "header" | "products", pair: ResolvedFontPair | null) => setDraft((d) => ({ ...d, [key]: pair ?? { ar: null, en: null } }));
+  const setPair = (key: "header" | "footer" | "products", pair: ResolvedFontPair | null) => setDraft((d) => ({ ...d, [key]: pair ?? { ar: null, en: null } }));
 
   async function save() {
     setSaving(true);
@@ -139,7 +144,7 @@ export function FontsSection() {
   }
 
   const stack = sampleStack(draft.primary);
-  const primaryName = { ar: name(draft.primary.ar) ?? undefined, en: name(draft.primary.en) ?? undefined };
+  const above = [storeLevel(draft)];
 
   return (
     <section className="rounded-[var(--radius-card)] border border-line p-5" data-slot="store-fonts">
@@ -199,7 +204,22 @@ export function FontsSection() {
               onChange={(pair) => setPair("header", pair)}
               locale={locale}
               hint={t.headerHint}
-              inheritedName={primaryName}
+              level="header"
+              inherits={above}
+              template={wearsTemplate}
+              disabled={!editable || saving}
+            />
+          </fieldset>
+          <fieldset className="space-y-2" disabled={!editable || saving}>
+            <legend className="text-sm font-semibold text-ink">{t.footer}</legend>
+            <FontPairField
+              value={draft.footer}
+              onChange={(pair) => setPair("footer", pair)}
+              locale={locale}
+              hint={t.footerHint}
+              level="footer"
+              inherits={above}
+              template={wearsTemplate}
               disabled={!editable || saving}
             />
           </fieldset>
@@ -210,7 +230,9 @@ export function FontsSection() {
               onChange={(pair) => setPair("products", pair)}
               locale={locale}
               hint={t.productsHint}
-              inheritedName={primaryName}
+              level="products"
+              inherits={above}
+              template={wearsTemplate}
               disabled={!editable || saving}
             />
           </fieldset>

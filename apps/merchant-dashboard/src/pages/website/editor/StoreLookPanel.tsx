@@ -26,6 +26,7 @@ import { useThemeFonts } from "@/lib/themeFonts";
 import { ImageField } from "./ImageField";
 import { StorePagesBlock } from "./StorePagesBlock";
 import { TemplateLookBlock } from "./TemplateLookBlock";
+import { StoreFontsBlock } from "./StoreFontsBlock";
 import { StoreWordsBlock } from "./StoreWordsBlock";
 import { useEditorLocale, type EditorLocale, type EditorUi } from "./editorLocale";
 import {
@@ -108,10 +109,13 @@ export function StoreLookPanel({
   storeName = "",
   previewMode = "light",
   onPreviewMode,
+  onEditPageFont,
   variant = "panel",
 }: {
   look: StoreLook;
   onChange: (next: StoreLook, historyKey?: string) => void;
+  /** Opens Page settings → Font for the open page (StoreFontsBlock). */
+  onEditPageFont?: () => void;
   /** Opens the announcement bar's, header's or footer's own panel. */
   onEditShell?: (part: ShellPart) => void;
   /** The specimen in each theme's thumbnail. */
@@ -293,6 +297,9 @@ export function StoreLookPanel({
           </div>
         )}
       </LookBlock>
+
+      {/* The store's own faces over the theme's (or the template's), live on the canvas. */}
+      <StoreFontsBlock look={look} onChange={onChange} onEditPageFont={onEditPageFont} />
 
       {/* A theme brings its own type; the original look chooses one of its pairings. */}
       {original && (

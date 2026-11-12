@@ -66,7 +66,8 @@ export function StoreFooter({ store, locale, year }: { store: StorefrontMeta; lo
   const blocks = (footer.showBrand ? 1 : 0) + groups.length + (footer.showHelp ? 1 : 0);
 
   return (
-    <footer data-zimos-shell="footer" className="mt-auto border-t border-line bg-paper-raised">
+    // `data-zf-part`: the store's footer font (Store settings → Fonts, lib/storeFonts.ts) lands here.
+    <footer data-zimos-shell="footer" data-zf-part="footer" className="mt-auto border-t border-line bg-paper-raised">
       {blocks > 0 && (
         <div className={`${container} grid gap-8 py-10 ${GRID_COLS[blocks] ?? GRID_COLS[6]}`.trimEnd()}>
           {footer.showBrand && (

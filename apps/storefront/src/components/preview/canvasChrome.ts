@@ -77,6 +77,9 @@ export const CHROME_CSS = [
   `[data-zc="tag"]{display:inline-flex;align-items:center;max-width:100%;height:28px;border-radius:9999px;background:${INK};color:#fff;box-shadow:0 0 0 1px rgb(255 255 255/.16),0 2px 8px rgb(0 0 0/.24);pointer-events:auto}`,
   '[data-zc="tag"]>span{min-width:0;padding-inline:2px 12px;font-weight:600;font-size:11px;line-height:28px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
   '[data-zc="tag"]>span:only-child{padding-inline:12px}',
+  // The name with a button after it (the "Aa" of an element's font): less room before the button.
+  '[data-zc="tag"]>span:has(+[data-zc="act"]){padding-inline-end:2px}',
+  '[data-zc="tag"]>[data-zc="act"]:last-child{margin-inline-end:2px}',
   '[data-zc="tag"]>[data-zc="act"]{width:28px;height:28px}',
   '[data-zc="tag"]>[data-zc="act"]::after{inset:-8px}',
   '@media (pointer:coarse){[data-zc="tag"]{height:36px}[data-zc="tag"]>span{line-height:36px}[data-zc="tag"]>[data-zc="act"]{width:36px;height:36px}[data-zc="tag"]>[data-zc="act"]::after{inset:-4px}}',

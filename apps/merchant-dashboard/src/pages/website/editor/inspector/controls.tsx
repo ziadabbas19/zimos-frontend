@@ -8,6 +8,7 @@ import { Segmented } from "@/components/Segmented";
 import { normalizeHex } from "@/lib/brandColors";
 import { useEditorLocale } from "../editorLocale";
 import { inspectorNumber, inspectorUi } from "./strings";
+import { OPEN_GROUP_EVENT, openGroups } from "./groupState";
 
 /**
  * The inspector's small building blocks: a titled group, a number with
@@ -17,8 +18,6 @@ import { inspectorNumber, inspectorUi } from "./strings";
 
 // --- group -------------------------------------------------------------------
 
-/** Which foldable groups were left open, for as long as the editor stays open. */
-const openGroups = new Map<string, boolean>();
 
 /**
  * One titled block of the panel. Foldable ones remember whether they were
@@ -63,6 +62,14 @@ export function Group({
     const remembered = id ? openGroups.get(id) : undefined;
     return remembered ?? defaultOpen;
   });
+  useEffect(() => {
+    if (!collapsible || !id) return;
+    const onOpen = (event: Event) => {
+      if ((event as CustomEvent<unknown>).detail === id) setOpen(true);
+    };
+    window.addEventListener(OPEN_GROUP_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_GROUP_EVENT, onOpen);
+  }, [collapsible, id]);
 
   const heading = (
     <>

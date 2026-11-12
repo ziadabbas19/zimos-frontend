@@ -13,6 +13,7 @@ const STRINGS = {
     title: "Page settings — {name}",
     tabs: "Page settings sections",
     details: "Details",
+    font: "Font",
     seo: "SEO",
     seoTitle: "Title in search results",
     seoDescription: "Description",
@@ -31,6 +32,7 @@ const STRINGS = {
     title: "إعدادات الصفحة — {name}",
     tabs: "أقسام إعدادات الصفحة",
     details: "التفاصيل",
+    font: "الخط",
     seo: "SEO",
     seoTitle: "العنوان في نتائج البحث",
     seoDescription: "الوصف",
@@ -50,7 +52,7 @@ const STRINGS = {
 /** Whether the dialog is for a website page or a funnel step (its SEO hints differ). */
 type PageScriptKind = "page" | "step";
 
-export type PageSettingsTab = "details" | "seo";
+export type PageSettingsTab = "details" | "font" | "seo";
 type Tab = PageSettingsTab;
 
 /** The builder toolbar's "Page settings" button and its dialog. */
@@ -122,12 +124,15 @@ export function PageSettingsDialog({
   onSaveSeo,
   scripts,
   details,
+  font,
   initialTab,
   onClose,
 }: {
   name: string;
   seo: Record<string, unknown>;
   details?: ReactNode;
+  /** The Font tab: the whole page's own font (PageFontField), shown after Details when given. */
+  font?: ReactNode;
   /** Left out: shown for a website page, not for a funnel step. */
   showNoindex?: boolean;
   /** Where the SEO goes: "live with your next Publish" / "saved with the funnel". Left out: the sentence for this kind of page. */
@@ -140,9 +145,11 @@ export function PageSettingsDialog({
 }) {
   const t = useT(STRINGS);
   const isPage = scripts.kind === "page";
-  const [tab, setTab] = useState<Tab>(initialTab && (initialTab !== "details" || details) ? initialTab : details ? "details" : "seo");
+  const offered = (wanted: Tab) => (wanted === "details" ? Boolean(details) : wanted === "font" ? Boolean(font) : true);
+  const [tab, setTab] = useState<Tab>(initialTab && offered(initialTab) ? initialTab : details ? "details" : "seo");
   const tabs = [
     ...(details ? [{ value: "details" as const, label: t.details }] : []),
+    ...(font ? [{ value: "font" as const, label: t.font }] : []),
     { value: "seo" as const, label: t.seo },
   ];
   return (
@@ -151,6 +158,8 @@ export function PageSettingsDialog({
         {tabs.length > 1 && <FilterTabs label={t.tabs} value={tab} onChange={setTab} tabs={tabs} />}
         {tab === "details" ? (
           details
+        ) : tab === "font" ? (
+          font
         ) : (
           <SeoForm seo={seo} showNoindex={showNoindex ?? isPage} hint={seoHint ?? (isPage ? t.hintPage : t.hintStep)} onSave={onSaveSeo} />
         )}

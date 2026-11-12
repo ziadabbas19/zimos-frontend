@@ -195,6 +195,7 @@ const CANVAS_STRINGS = {
     remove: "Delete section",
     replaceImage: "Replace picture",
     hidden: "Hidden",
+    font: "Font",
   },
   ar: {
     addSection: "إضافة قسم",
@@ -204,6 +205,7 @@ const CANVAS_STRINGS = {
     remove: "حذف القسم",
     replaceImage: "تبديل الصورة",
     hidden: "مخفي",
+    font: "الخط",
   },
 };
 
@@ -268,6 +270,7 @@ export function StorefrontPreview({
   selectedElementId: controlledElementId,
   onSectionAction,
   onPickImage,
+  onPickFont,
   device: controlledDevice,
   onDeviceChange,
   defaultDevice = "desktop",
@@ -301,9 +304,14 @@ export function StorefrontPreview({
   /** The element outlined inside the selected section. Left out, the preview follows the frame's own clicks. */
   selectedElementId?: string | null;
   /** The floating bar on the selected section. Left out, the bar keeps its two move buttons (`canvas.onMoveSection`). */
-  onSectionAction?: (sectionId: string, action: SectionAction) => void;
+  onSectionAction?: (sectionId: string, action: Exclude<SectionAction, "font">) => void;
   /** "Replace this picture" on a selected element; `field` is the prop that holds it. */
   onPickImage?: (target: { sectionId: string; elementId: string; field: string; src?: string; nth?: number }) => void;
+  /**
+   * "Aa" on the selected element's tag, and on the selected section's bar (elementId null): open that
+   * part's font in the inspector. Left out, neither button is drawn.
+   */
+  onPickFont?: (target: { sectionId: string; elementId: string | null }) => void;
   /** "phone" | "tablet" | "desktop". Uncontrolled it starts at `defaultDevice` (desktop, as before). */
   device?: PreviewDevice;
   onDeviceChange?: (device: PreviewDevice) => void;
@@ -389,7 +397,7 @@ export function StorefrontPreview({
   const shellRef = useRef(shellJson);
   const storePathRef = useRef(storePath ?? "");
   storePathRef.current = storePath ?? "";
-  const handlersRef = useRef({ onSelectElement, onSectionAction, onPickImage });
+  const handlersRef = useRef({ onSelectElement, onSectionAction, onPickImage, onPickFont });
   useEffect(() => {
     canvasRef.current = canvas;
     themeRef.current = themeJson;
@@ -398,7 +406,7 @@ export function StorefrontPreview({
     treeRef.current = tree;
     chosenRef.current = chosen;
     pickModeRef.current = pickMode;
-    handlersRef.current = { onSelectElement, onSectionAction, onPickImage };
+    handlersRef.current = { onSelectElement, onSectionAction, onPickImage, onPickFont };
   });
 
   const frames = useCallback(
@@ -597,6 +605,7 @@ export function StorefrontPreview({
   // whenever they change (and to each render as it reports ready, below).
   const canSelectElement = onSelectElement !== undefined;
   const canPickImage = onPickImage !== undefined;
+  const canPickFont = onPickFont !== undefined;
   const hasSectionAction = onSectionAction !== undefined;
   const hasMoveSection = canvas?.onMoveSection !== undefined;
   const elementLabels = useMemo(
@@ -621,8 +630,9 @@ export function StorefrontPreview({
         can: {
           selectElement: canSelectElement,
           pickImage: canPickImage,
-          sectionActions: hasSectionAction ? ALL_SECTION_ACTIONS : hasMoveSection ? ["up", "down"] : [],
+          sectionActions: hasSectionAction ? (canPickFont ? [...ALL_SECTION_ACTIONS, "font"] : ALL_SECTION_ACTIONS) : hasMoveSection ? ["up", "down"] : [],
           resizePicture: canvas?.onCanvasEdit !== undefined && canvas.templateTools === true,
+          pickFont: canPickFont,
         },
         elementLabels,
       } satisfies EditorStateMessage)
@@ -828,7 +838,9 @@ export function StorefrontPreview({
           else handlers.onSectionAction?.(message.sectionId, message.direction);
           break;
         case "zimos:section-action":
-          if (handlers.onSectionAction) handlers.onSectionAction(message.sectionId, message.action);
+          // The bar's "Aa" is not an edit: it opens the section's font in the inspector.
+          if (message.action === "font") handlers.onPickFont?.({ sectionId: message.sectionId, elementId: null });
+          else if (handlers.onSectionAction) handlers.onSectionAction(message.sectionId, message.action);
           else if (message.action === "up" || message.action === "down") {
             current?.onMoveSection?.(message.sectionId, message.action);
           }
@@ -845,6 +857,9 @@ export function StorefrontPreview({
           break;
         case "zimos:pick-image":
           handlers.onPickImage?.({ sectionId: message.sectionId, elementId: message.elementId, field: message.field, src: message.src, nth: message.nth });
+          break;
+        case "zimos:pick-font":
+          handlers.onPickFont?.({ sectionId: message.sectionId, elementId: message.elementId ?? null });
           break;
         case "zimos:section-rects": {
           const source = event.source as Window | null;
