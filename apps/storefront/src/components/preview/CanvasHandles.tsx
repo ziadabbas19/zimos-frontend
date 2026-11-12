@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
-import { DotsSixVerticalIcon, ImageIcon } from "./canvasIcons";
+import { elementTakesFont } from "@store-builder/ui/fonts";
+import { DotsSixVerticalIcon, ImageIcon, TextAaIcon } from "./canvasIcons";
 import {
   EL_ATTR,
   SECTION_ATTR,
@@ -58,6 +59,8 @@ export interface CanvasStrings {
   resizeImage: string;
   /** The button on a selected picture; without it the button is not drawn. */
   replaceImage?: string;
+  /** The "Aa" on the selected element's tag. */
+  font?: string;
   /** The handles on a template band's picture and on a template logo; without them they are not drawn. */
   resizePicture?: string;
   resizeLogo?: string;
@@ -125,6 +128,7 @@ export function CanvasHandles({
   selectedElementId = null,
   elementName,
   onPickImage,
+  onPickFont,
   resizePictures = false,
 }: {
   /** The selected section; nothing is drawn without one. */
@@ -139,6 +143,8 @@ export function CanvasHandles({
   elementName?: (type: string) => string;
   /** "Replace this picture" — present when the editor listens for it. */
   onPickImage?: (elementId: string, field: string) => void;
+  /** "Aa" on the tag of an element with words: its font, in the editor — present when the editor listens for it. */
+  onPickFont?: (elementId: string) => void;
   /** A template band's pictures get resize handles (the editor listens for them). */
   resizePictures?: boolean;
 }) {
@@ -216,6 +222,7 @@ export function CanvasHandles({
           coarse={coarse}
           elementName={elementName}
           onPickImage={onPickImage}
+          onPickFont={onPickFont}
         />
       )}
       {sectionId && shownEl && shownEl !== selectedElementId && (
@@ -362,6 +369,7 @@ function SelectedElement({
   coarse,
   elementName,
   onPickImage,
+  onPickFont,
 }: {
   sectionId: string;
   elementId: string;
@@ -370,6 +378,7 @@ function SelectedElement({
   coarse: boolean;
   elementName?: (type: string) => string;
   onPickImage?: (elementId: string, field: string) => void;
+  onPickFont?: (elementId: string) => void;
 }) {
   const marker = elementNode(elementId);
   if (!marker || marker.closest(`[${SECTION_ATTR}]`)?.getAttribute(SECTION_ATTR) !== sectionId) return null;
@@ -431,6 +440,11 @@ function SelectedElement({
             <DotsSixVerticalIcon size={16} aria-hidden />
           </button>
           {name ? <span>{name}</span> : null}
+          {onPickFont && strings.font && elementTakesFont(type) ? (
+            <button type="button" data-zc="act" data-zc-font="" aria-label={strings.font} title={strings.font} onClick={() => onPickFont(elementId)}>
+              <TextAaIcon size={16} aria-hidden />
+            </button>
+          ) : null}
         </span>
       </div>
       {img && field && (

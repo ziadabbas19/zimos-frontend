@@ -7,6 +7,7 @@
  *
  *   themeSettings.fonts = { primaryAr, primaryEn,         the whole store
  *                           header:   { ar, en },         store name, menu, announcement bar
+ *                           footer:   { ar, en },         the store's footer
  *                           products: { ar, en } }        product pages and product cards
  *   page tree:  data.font, section.settings.font, element.settings.font = { ar, en }
  *   product:    pageSettings.font = { ar, en }            that product's page
@@ -61,6 +62,7 @@ export interface ResolvedFontPair {
 export interface StoreFonts {
   primary: ResolvedFontPair;
   header: ResolvedFontPair;
+  footer: ResolvedFontPair;
   products: ResolvedFontPair;
 }
 
@@ -110,7 +112,7 @@ export function resolveFontPair(...levels: Array<FontPair | null | undefined>): 
 /** `themeSettings.fonts`, read defensively: anything missing or malformed is "the store's own". */
 export function readStoreFonts(themeSettings: Record<string, unknown> | null | undefined): StoreFonts {
   const fonts = objectOf(themeSettings?.fonts);
-  if (!fonts) return { primary: NONE, header: NONE, products: NONE };
+  if (!fonts) return { primary: NONE, header: NONE, footer: NONE, products: NONE };
   const primary: ResolvedFontPair = {
     ar: isFontId(fonts.primaryAr) ? fonts.primaryAr : null,
     en: isFontId(fonts.primaryEn) ? fonts.primaryEn : null,
@@ -118,6 +120,7 @@ export function readStoreFonts(themeSettings: Record<string, unknown> | null | u
   return {
     primary,
     header: readFontPair(fonts.header) ?? NONE,
+    footer: readFontPair(fonts.footer) ?? NONE,
     products: readFontPair(fonts.products) ?? NONE,
   };
 }
@@ -129,8 +132,10 @@ export function storeFontsValue(fonts: StoreFonts): Record<string, unknown> | nu
   if (fonts.primary.en) out.primaryEn = fonts.primary.en;
   const pair = (p: ResolvedFontPair) => (p.ar || p.en ? { ...(p.ar ? { ar: p.ar } : {}), ...(p.en ? { en: p.en } : {}) } : null);
   const header = pair(fonts.header);
+  const footer = pair(fonts.footer ?? NONE);
   const products = pair(fonts.products);
   if (header) out.header = header;
+  if (footer) out.footer = footer;
   if (products) out.products = products;
   return Object.keys(out).length > 0 ? out : null;
 }
@@ -278,4 +283,81 @@ export function fontUses(...pairs: Array<FontPair | null | undefined>): Array<{ 
     }
   }
   return out;
+}
+
+/**
+ * The picked faces alone, each followed by a comma — `"zf-en-inter", "zf-ar-cairo", ` —
+ * for a stack that continues with a face only known further down the page:
+ * an imported template's band puts its own faces after it (lib/storeFonts.ts
+ * in the storefront, `--zf-xs-pick`). Empty when the pair picks nothing.
+ */
+export function fontPick(pair: ResolvedFontPair): string {
+  let out = "";
+  if (pair.en) out += `"${fontAlias("en", pair.en)}", `;
+  if (pair.ar) out += `"${fontAlias("ar", pair.ar)}", `;
+  return out;
+}
+
+// --- where a font comes from (the editors' "source" line) ---------------------
+
+/**
+ * The parts of a store that can have a font of their own, as the editors
+ * name them. A page part sits in its section, its page and the store; a
+ * store part (header, footer, products) in the store; one product in the
+ * store's product font, then the store.
+ */
+export type FontLevel = "element" | "section" | "page" | "store" | "header" | "footer" | "products" | "product";
+
+export interface FontLevelPair {
+  level: FontLevel;
+  pair: FontPair | null | undefined;
+}
+
+export interface FontSource {
+  level: FontLevel;
+  id: string;
+}
+
+/**
+ * Per script, the nearest level that picks a face — the part's own first,
+ * then each level it sits in — or null when none does and the part shows the
+ * store's theme (or template) face. The same order the storefront draws in
+ * (resolveFontPair).
+ */
+export function fontSources(levels: FontLevelPair[]): Record<FontRole, FontSource | null> {
+  const out: Record<FontRole, FontSource | null> = { ar: null, en: null };
+  for (const { level, pair } of levels) {
+    for (const role of FONT_ROLES) {
+      const id = pair?.[role];
+      if (out[role] === null && isFontId(id)) out[role] = { level, id };
+    }
+  }
+  return out;
+}
+
+/** The store's own pair (its primary faces) as a level a part can inherit from. */
+export function storeLevel(fonts: StoreFonts): FontLevelPair {
+  return { level: "store", pair: fonts.primary };
+}
+
+/**
+ * Element types that draw no words of their own — a picture, a gap, a line, a
+ * map, a video, someone else's page — so the editors offer them no font.
+ * Every other element type carries text (its words, a label, a price, a
+ * field) and takes `settings.font`; the API accepts it on all of them.
+ */
+export const FONTLESS_ELEMENT_TYPES: ReadonlySet<string> = new Set([
+  "image",
+  "video",
+  "embed",
+  "spacer",
+  "divider",
+  "icon",
+  "map",
+  "social_icons",
+  "html_block",
+]);
+
+export function elementTakesFont(type: string): boolean {
+  return !FONTLESS_ELEMENT_TYPES.has(type);
 }

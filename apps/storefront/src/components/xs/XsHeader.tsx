@@ -268,7 +268,7 @@ export function XsHeader({
   }
 
   return (
-    <header className="xs-header" data-xs-look={look} data-zimos-shell="header" data-scrolled={scrolled ? "" : undefined} style={own as CSSProperties}>
+    <header className="xs-header" data-xs-look={look} data-zimos-shell="header" data-zf-part="header" data-scrolled={scrolled ? "" : undefined} style={own as CSSProperties}>
       {/* Whole numbers only, clamped by lib/storeShell (./shellSizes). */}
       {sizeCss ? <style dangerouslySetInnerHTML={{ __html: sizeCss }} /> : null}
       <div className="xs-header__strip" data-zimos-shell={announcement ? "announcement" : undefined}>

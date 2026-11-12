@@ -1,5 +1,8 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { FontPairField } from "@/components/fonts/FontPairField";
+import { fontTarget } from "@/components/fonts/fontFocus";
+import { useEditorFonts } from "@/lib/editorFonts";
+import { readStoreFonts, storeLevel } from "@store-builder/ui/fonts";
 import {
   DndContext,
   KeyboardSensor,
@@ -170,13 +173,16 @@ export function ShellPanel({
       {part === "header" && <HeaderFields look={look} onChange={onChange} pages={pages} />}
       {part === "footer" && <FooterFields look={look} onChange={onChange} pages={pages} />}
       {part === "announcement" && (
-        <LookBlock>
-          <AnnouncementSection
-            announcement={look.announcement}
-            onChange={(next, key) => onChange({ ...look, announcement: next }, key)}
-            bare
-          />
-        </LookBlock>
+        <>
+          <LookBlock>
+            <AnnouncementSection
+              announcement={look.announcement}
+              onChange={(next, key) => onChange({ ...look, announcement: next }, key)}
+              bare
+            />
+          </LookBlock>
+          <ShellFontBlock part="announcement" look={look} onChange={onChange} />
+        </>
       )}
     </>
   );
@@ -229,19 +235,49 @@ function ControlLabel({ children }: { children: ReactNode }) {
   return <p className="text-xs font-medium text-ink-soft">{children}</p>;
 }
 
-/** The header panel's Font block (components/fonts). */
-const HEADER_FONT = {
-  en: { title: "Header font", hint: "The store name, the menu and the announcement bar. Store default uses the store's fonts (Settings → Store fonts)." },
-  ar: { title: "خط رأس الصفحة", hint: "اسم المتجر والقائمة وشريط الإعلان. الافتراضي يستخدم خطوط المتجر (الإعدادات ← خطوط المتجر)." },
+/** The header's, the footer's and the announcement bar's Font block (components/fonts). */
+const SHELL_FONT = {
+  en: {
+    header: { title: "Header font", hint: "The store name, the menu and the announcement bar. Store default uses the store's fonts (Settings → Store fonts)." },
+    footer: { title: "Footer font", hint: "Everything in the footer. Store default uses the store's fonts (Settings → Store fonts)." },
+    announcement: { title: "Font", hint: "The announcement bar is set in the header's font: changing it here changes the header too." },
+  },
+  ar: {
+    header: { title: "خط رأس الصفحة", hint: "اسم المتجر والقائمة وشريط الإعلان. الافتراضي يستخدم خطوط المتجر (الإعدادات ← خطوط المتجر)." },
+    footer: { title: "خط تذييل الصفحة", hint: "كل ما في تذييل الصفحة. الافتراضي يستخدم خطوط المتجر (الإعدادات ← خطوط المتجر)." },
+    announcement: { title: "الخط", hint: "شريط الإعلان بيتكتب بخط رأس الصفحة: تغييره هنا بيغيّر رأس الصفحة كمان." },
+  },
 } as const;
 
-/** The look with the header's own font (`themeSettings.fonts.header`) set, or dropped for null. */
-function withHeaderFont(look: StoreLook, pair: { ar: string | null; en: string | null } | null): StoreLook {
+/** The look with a store part's own font (`themeSettings.fonts.header` / `.footer`) set, or dropped for null. */
+function withShellFont(look: StoreLook, part: "header" | "footer", pair: { ar: string | null; en: string | null } | null): StoreLook {
   const { fonts: current, ...rest } = look;
   const fonts: Record<string, unknown> = { ...(current ?? {}) };
-  if (pair && (pair.ar || pair.en)) fonts.header = { ...(pair.ar ? { ar: pair.ar } : {}), ...(pair.en ? { en: pair.en } : {}) };
-  else delete fonts.header;
+  if (pair && (pair.ar || pair.en)) fonts[part] = { ...(pair.ar ? { ar: pair.ar } : {}), ...(pair.en ? { en: pair.en } : {}) };
+  else delete fonts[part];
   return Object.keys(fonts).length > 0 ? { ...rest, fonts } : rest;
+}
+
+/** One Font block of the shell panels: the part's own pair, over the store's (unsaved) fonts. */
+function ShellFontBlock({ part, look, onChange }: { part: ShellPart; look: StoreLook; onChange: OnLookChange }) {
+  const locale = useEditorLocale();
+  const editorFonts = useEditorFonts();
+  const owner = part === "footer" ? "footer" : "header";
+  const words = SHELL_FONT[locale][part];
+  const stored = readStoreFonts({ fonts: look.fonts });
+  return (
+    <LookBlock title={words.title} hint={words.hint}>
+      <FontPairField
+        value={stored[owner]}
+        onChange={(pair) => onChange(withShellFont(look, owner, pair), `shell:${owner}:font`)}
+        locale={locale}
+        level={owner}
+        inherits={[storeLevel(stored)]}
+        template={editorFonts.template}
+        focusTarget={part === "announcement" ? undefined : fontTarget[owner]}
+      />
+    </LookBlock>
+  );
 }
 
 function HeaderFields({ look, onChange, pages }: { look: StoreLook; onChange: OnLookChange; pages: WebsitePage[] }) {
@@ -319,13 +355,7 @@ function HeaderFields({ look, onChange, pages }: { look: StoreLook; onChange: On
         <SwitchRow label={ui.stickyHeader} checked={header.sticky} onChange={(sticky) => set({ sticky })} />
       </LookBlock>
 
-      <LookBlock title={HEADER_FONT[locale].title} hint={HEADER_FONT[locale].hint}>
-        <FontPairField
-          value={(look.fonts as { header?: unknown } | undefined)?.header}
-          onChange={(pair) => onChange(withHeaderFont(look, pair), "shell:header:font")}
-          locale={locale}
-        />
-      </LookBlock>
+      <ShellFontBlock part="header" look={look} onChange={onChange} />
 
       <ShellColours
         colors={header.colors}
@@ -678,6 +708,8 @@ function FooterFields({ look, onChange, pages }: { look: StoreLook; onChange: On
       <LookBlock>
         <SwitchRow label={ui.footerHelp} checked={footer.showHelp} onChange={(showHelp) => set({ showHelp })} />
       </LookBlock>
+
+      <ShellFontBlock part="footer" look={look} onChange={onChange} />
 
       <ShellColours
         colors={footer.colors}

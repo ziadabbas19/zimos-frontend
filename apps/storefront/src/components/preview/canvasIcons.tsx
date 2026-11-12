@@ -102,3 +102,13 @@ export const ImageIcon = glyph(
     <path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" />
   </>
 );
+
+/** "Aa": the font of the selected section or element (Lucide's "type" letters, drawn as two). */
+export const TextAaIcon = glyph(
+  <>
+    <path d="M3 18 8 6l5 12" />
+    <path d="M4.7 14h6.6" />
+    <circle cx="17.5" cy="15" r="3" />
+    <path d="M20.5 12v6" />
+  </>
+);

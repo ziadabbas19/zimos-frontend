@@ -1,8 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { PageTree } from "@store-builder/api-client";
-import { fontFaceCss, fontStack, googleFontsCssUrl, readStoreFonts, resolveFontPair, type FontOption } from "@store-builder/ui/fonts";
-import { productFontPair, storeFontRules } from "@/lib/storeFonts";
+import {
+  elementTakesFont,
+  fontFaceCss,
+  fontPick,
+  fontSources,
+  fontStack,
+  googleFontsCssUrl,
+  readStoreFonts,
+  resolveFontPair,
+  storeFontsValue,
+  type FontOption,
+} from "@store-builder/ui/fonts";
+import { productFontPair, storeFontRules, xsFontRules } from "@/lib/storeFonts";
 import { pageFontPairs } from "./fonts";
 import { PageRenderer } from "./PageRenderer";
 
@@ -50,9 +61,10 @@ describe("which pick wins", () => {
 
   it("ignores anything that is not shaped like a catalog id", () => {
     expect(resolveFontPair({ ar: 'x"}body{', en: "Comic Sans" }, { ar: "cairo" })).toEqual({ ar: "cairo", en: null });
-    expect(readStoreFonts({ fonts: { primaryAr: "</style>", primaryEn: 7, header: "inter" } })).toEqual({
+    expect(readStoreFonts({ fonts: { primaryAr: "</style>", primaryEn: 7, header: "inter", footer: { ar: "x;}" } } })).toEqual({
       primary: { ar: null, en: null },
       header: { ar: null, en: null },
+      footer: { ar: null, en: null },
       products: { ar: null, en: null },
     });
   });
@@ -93,21 +105,56 @@ describe("the store's rules (layout)", () => {
     expect(storeFontRules({ fontFamily: "modern", primaryColor: "#123456" }).css).toBe("");
   });
 
-  it("sets the store's pair on the wrapper's children, never on a store wearing a template", () => {
+  it("sets the store's pair on the wrapper's children, and its picks alone on the wrapper for imported bands", () => {
     const { css } = storeFontRules(store);
     expect(css).toContain('.brand-theme:not([data-xs-shell])>*{--font-sans:"zf-en-inter", "zf-ar-cairo", var(--zf-base-sans);');
-    expect(css).toContain('--font-display:"zf-en-inter", "zf-ar-cairo", var(--zf-base-display);font-family:var(--font-sans)}');
+    expect(css).toContain('--font-display:"zf-en-inter", "zf-ar-cairo", var(--zf-base-display);font-family:var(--font-sans);--zf-xs-pick:"zf-en-inter", "zf-ar-cairo", }');
+    expect(css).toContain('.brand-theme{--zf-xs-pick:"zf-en-inter", "zf-ar-cairo", }');
+    // The template's bands, header and footer: the picks in front of the look's own faces, one level down.
+    expect(css).toContain(xsFontRules("store"));
   });
 
-  it("gives the header and products their own pair, and lets a nearer pick win over the products one", () => {
-    const { css, pairs } = storeFontRules({ fonts: { primaryAr: "cairo", header: { en: "bebas-neue" }, products: { ar: "amiri" } } });
-    expect(css).toContain('.brand-theme [data-zf-part="header"]{--font-sans:"zf-en-bebas-neue", "zf-ar-cairo", var(--zf-base-sans)');
+  it("puts the picks in front of a template's faces without any custom property reading itself", () => {
+    const rules = xsFontRules("store");
+    expect(rules).toContain(".brand-theme[data-xs-shell],.brand-theme [data-xs-look]{--zf-xs-sans:var(--xs-sans);--zf-xs-display:var(--xs-display,var(--xs-sans))}");
+    expect(rules).toContain(
+      ".brand-theme[data-xs-shell]>:not([data-xs-look]),.brand-theme [data-xs-look]>:not([data-xs-look]){--xs-sans:var(--zf-xs-pick,) var(--zf-xs-sans);--xs-display:var(--zf-xs-pick,) var(--zf-xs-display)}"
+    );
+    // The band's children take the face again, at no specificity: a look's own rule for a part still wins.
+    expect(rules).toContain(":where(.brand-theme [data-xs-look])>:not([data-xs-look]){font-family:var(--xs-sans)}");
+    // Only inside a section or element with its own font, for a page whose store picked none.
+    const node = xsFontRules("node");
+    expect(node).toContain(".brand-theme [data-zf-node] [data-xs-look]{--zf-xs-sans:var(--xs-sans)");
+    expect(node).not.toContain("[data-xs-shell]");
+  });
+
+  it("gives the header, footer and products their own pair, and lets a nearer pick win over the products one", () => {
+    const { css, pairs } = storeFontRules({
+      fonts: { primaryAr: "cairo", header: { en: "bebas-neue" }, footer: { en: "lora" }, products: { ar: "amiri" } },
+    });
+    expect(css).toContain('.brand-theme [data-zf-part="header"]:not([data-xs-look]){--font-sans:"zf-en-bebas-neue", "zf-ar-cairo", var(--zf-base-sans)');
+    expect(css).toContain('.brand-theme [data-zf-part="footer"]:not([data-xs-look]){--font-sans:"zf-en-lora", "zf-ar-cairo", var(--zf-base-sans)');
     expect(css).toContain('.brand-theme [data-zf-part="product"]:not([data-zf-node] *){--font-sans:"zf-ar-amiri", var(--zf-base-sans)');
+    // A template's header and footer are bands: only the picks go on them, the look's faces stay behind them.
+    expect(css).toContain('.brand-theme [data-zf-part="header"][data-xs-look]{--zf-xs-pick:"zf-en-bebas-neue", "zf-ar-cairo", }');
+    expect(css).toContain('.brand-theme [data-zf-part="footer"][data-xs-look]{--zf-xs-pick:"zf-en-lora", "zf-ar-cairo", }');
     expect(pairs).toEqual([
       { ar: "cairo", en: null },
       { ar: "cairo", en: "bebas-neue" },
+      { ar: "cairo", en: "lora" },
       { ar: "amiri", en: null },
     ]);
+  });
+
+  it("writes every part in the editor's live preview, undoing a pick just removed", () => {
+    const { css } = storeFontRules({ fonts: { footer: { ar: "amiri" } } }, { complete: true });
+    expect(css).toContain(".brand-theme{--zf-xs-pick:initial}");
+    expect(css).toContain('.brand-theme [data-zf-part="header"]:not([data-xs-look]){--font-sans:var(--zf-base-sans);--font-display:var(--zf-base-display);font-family:var(--font-sans);--zf-xs-pick:initial}');
+    expect(css).toContain('.brand-theme [data-zf-part="footer"][data-xs-look]{--zf-xs-pick:"zf-ar-amiri", }');
+    // Saved, a store with a footer font only touches the footer.
+    const saved = storeFontRules({ fonts: { footer: { ar: "amiri" } } }).css;
+    expect(saved).not.toContain('[data-zf-part="header"]');
+    expect(saved).not.toContain(".brand-theme{");
   });
 });
 
@@ -181,6 +228,9 @@ describe("a built page", () => {
       { ar: "amiri", en: "inter" },
       { ar: "amiri", en: "lora" },
     ]);
+    // An imported band inside reads the picks too, before its look's own faces.
+    expect(sectionEl.style.getPropertyValue("--zf-xs-pick")).toBe('"zf-en-inter", "zf-ar-amiri",');
+    expect(root.innerHTML).toContain(xsFontRules("node"));
   });
 
   it("keeps a styled element's own box and adds the font to it", async () => {
@@ -196,5 +246,41 @@ describe("a built page", () => {
     const root = await draw(tree([section("s1", null, [heading("e1")])], { en: "poppins" }));
     const pageEl = root.querySelector<HTMLElement>(".zt-sections")!;
     expect(pageEl.style.getPropertyValue("--font-sans")).toBe('"zf-en-poppins", var(--zf-base-sans)');
+  });
+});
+
+describe("the shared helpers (@store-builder/ui/fonts)", () => {
+  it("reads and writes the footer's pair with the store's other parts", () => {
+    const fonts = readStoreFonts({ fonts: { primaryEn: "inter", footer: { ar: "amiri", css: "x" }, header: "cairo" } });
+    expect(fonts.footer).toEqual({ ar: "amiri", en: null });
+    expect(fonts.header).toEqual({ ar: null, en: null });
+    expect(storeFontsValue(fonts)).toEqual({ primaryEn: "inter", footer: { ar: "amiri" } });
+    expect(readStoreFonts(null).footer).toEqual({ ar: null, en: null });
+  });
+
+  it("writes the picks alone for a stack that continues further down the page", () => {
+    expect(fontPick({ en: "inter", ar: "cairo" })).toBe('"zf-en-inter", "zf-ar-cairo", ');
+    expect(fontPick({ en: null, ar: "cairo" })).toBe('"zf-ar-cairo", ');
+    expect(fontPick({ en: null, ar: null })).toBe("");
+  });
+
+  it("says, per script, which level a part's face comes from", () => {
+    const sources = fontSources([
+      { level: "element", pair: { en: "lora" } },
+      { level: "section", pair: null },
+      { level: "page", pair: { ar: "amiri", en: "inter" } },
+      { level: "store", pair: { ar: "cairo", en: "poppins" } },
+    ]);
+    expect(sources).toEqual({ en: { level: "element", id: "lora" }, ar: { level: "page", id: "amiri" } });
+    expect(fontSources([{ level: "store", pair: { ar: "Comic Sans" } }])).toEqual({ ar: null, en: null });
+  });
+
+  it("offers a font to every element with words, and not to a picture, a gap or a line", () => {
+    for (const type of ["heading", "text", "rich_text", "button", "text_link", "price", "countdown", "form", "cod_form", "product_list", "marquee", "faq", "xs_slider"]) {
+      expect({ type, takes: elementTakesFont(type) }).toEqual({ type, takes: true });
+    }
+    for (const type of ["image", "video", "spacer", "divider", "map", "embed", "icon", "social_icons"]) {
+      expect({ type, takes: elementTakesFont(type) }).toEqual({ type, takes: false });
+    }
   });
 });

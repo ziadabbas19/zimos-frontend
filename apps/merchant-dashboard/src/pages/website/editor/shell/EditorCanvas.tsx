@@ -51,6 +51,7 @@ export function EditorCanvas({
   onMoveSection,
   onSectionAction,
   onPickImage,
+  onPickFont,
   onCanvasEdit,
   onCanvasStep,
   onTextEdit,
@@ -94,6 +95,8 @@ export function EditorCanvas({
   onMoveSection: (sectionId: string, direction: "up" | "down") => void;
   onSectionAction: (sectionId: string, action: SectionActionKind) => void;
   onPickImage: (target: { sectionId: string; elementId: string; field: string; src?: string; nth?: number }) => void;
+  /** "Aa" on the selected element (or the section's bar, elementId null): its font in the inspector. */
+  onPickFont?: (target: { sectionId: string; elementId: string | null }) => void;
   onCanvasEdit: (edit: CanvasEdit) => void;
   onCanvasStep: (step: CanvasStep) => void;
   onTextEdit: (elementId: string, text: string, match?: DeepMatch) => void;
@@ -132,6 +135,7 @@ export function EditorCanvas({
       onSelectElement={onSelectElement}
       onSectionAction={onSectionAction}
       onPickImage={onPickImage}
+      onPickFont={onPickFont}
       canvas={{
         selectedId: selectedSectionId,
         labels,

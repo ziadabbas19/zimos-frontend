@@ -565,6 +565,8 @@ export interface PageSection {
 export interface PageTree {
   version?: number;
   globalStyles?: Record<string, unknown>;
+  /** The whole page's own font: catalog ids per script (GET /fonts), under its sections' and elements' own. */
+  font?: { ar?: string | null; en?: string | null } | null;
   sections: PageSection[];
 }
 

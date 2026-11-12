@@ -1,7 +1,8 @@
 import type { WebsitePage } from "@store-builder/api-client";
 import { useT } from "@/i18n/LocaleContext";
 import { PageProductField } from "../DataBinding";
-import { PageSettingsDialog } from "../PageSettingsDialog";
+import { PageSettingsDialog, type PageSettingsTab } from "../PageSettingsDialog";
+import { PageFontField } from "../PageFontField";
 import { SHELL_STRINGS } from "./shellStrings";
 import type { TreeMeta } from "./useEditorDocument";
 
@@ -10,16 +11,20 @@ import type { TreeMeta } from "./useEditorDocument";
  * (SEO and scripts, as before), opened on SEO, plus a Details tab that holds
  * what used to sit on the start pane — the page's product, the one product
  * bindings read when an element names none. The product is part of the page
- * draft (`tree.productId`), so changing it saves with the page.
+ * draft (`tree.productId`), so changing it saves with the page. The Font tab
+ * is the whole page's own font (`tree.font`), saved with the page the same way.
  */
 export function EditorPageSettings({
   page,
   treeMeta,
   onTreeMetaChange,
   onSaveSeo,
+  initialTab = "seo",
   onClose,
 }: {
   page: WebsitePage;
+  /** The tab it opens on: SEO, or Font when the canvas asked for the page's font. */
+  initialTab?: PageSettingsTab;
   treeMeta: TreeMeta;
   onTreeMetaChange: (update: (prev: TreeMeta) => TreeMeta) => void;
   /** Saved at once; live with the next publish. */
@@ -40,13 +45,22 @@ export function EditorPageSettings({
     });
   }
 
+  function setFont(font: { ar: string | null; en: string | null } | null) {
+    onTreeMetaChange((prev) => {
+      const { font: _old, ...rest } = prev;
+      void _old;
+      return font ? { ...rest, font } : rest;
+    });
+  }
+
   return (
     <PageSettingsDialog
       name={page.title}
       seo={(page.seo ?? {}) as Record<string, unknown>}
       scripts={{ kind: "page", id: page.id }}
-      initialTab="seo"
+      initialTab={initialTab}
       onSaveSeo={onSaveSeo}
+      font={<PageFontField value={treeMeta.font} onChange={setFont} />}
       details={
         <div className="space-y-3">
           <dl className="rounded-[0.875rem] bg-paper-sunken px-3 py-2.5 text-sm">

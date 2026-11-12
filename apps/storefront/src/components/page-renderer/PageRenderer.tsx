@@ -67,7 +67,7 @@ import { RepeaterElement } from "./repeater";
 import { MasonryGridElement, ProductActionElement, productAction } from "./builderMore";
 import { StoryGalleryElement } from "./StoryGallery";
 import { StoreFontFaces } from "@/components/fonts/StoreFontFaces";
-import { fontStyle } from "@/lib/storeFonts";
+import { fontStyle, xsFontRules } from "@/lib/storeFonts";
 import { pageFontPairs, ownFont, type FontLevels } from "./fonts";
 
 /**
@@ -583,6 +583,12 @@ export async function PageRenderer({
     >
       {/* The faces of every font the page picked; nothing for a page that picked none. */}
       {fonts.pairs.length > 0 && <StoreFontFaces pairs={fonts.pairs} />}
+      {/* An imported band inside a section or element with its own font takes it too (lib/storeFonts xsFontRules). */}
+      {fonts.pairs.length > 0 && (
+        <style href="zf-xs-node" precedence="zf-fonts">
+          {xsFontRules("node")}
+        </style>
+      )}
       {/* Built only from clamped numbers, keywords and hex colours — see elementStyle.ts. */}
       {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
       {/* Each imported template's look its bands use, one small stylesheet each (./xs). */}

@@ -16,6 +16,7 @@
  *   { type: "zimos:move-section", sectionId, direction } the section grip's arrow keys
  *   { type: "zimos:section-action", sectionId, action }  the selected section's floating bar
  *   { type: "zimos:pick-image", sectionId, elementId, field } "replace this picture"
+ *   { type: "zimos:pick-font", sectionId, elementId? }  "Aa": open this element's (or section's) font
  *   { type: "zimos:bg-position", sectionId, elementId, path, x, y } a band's ground picture centred on a new point
  *   { type: "zimos:item-action", sectionId, elementId, list, action, from, to? } one item of a band moved,
  *                                                          duplicated or deleted
@@ -98,8 +99,9 @@ export const PREVIEW_DEVICE_WIDTH: Record<PreviewDevice, number> = {
 };
 
 /** What the floating bar on a selected section can ask for. */
-export type SectionAction = "up" | "down" | "duplicate" | "hide" | "delete";
-const SECTION_ACTIONS: readonly SectionAction[] = ["up", "down", "duplicate", "hide", "delete"];
+/** "font" opens the section's font in the inspector (the frame draws it only for an editor that listens: `pickFont`). */
+export type SectionAction = "up" | "down" | "duplicate" | "hide" | "delete" | "font";
+const SECTION_ACTIONS: readonly SectionAction[] = ["up", "down", "duplicate", "hide", "delete", "font"];
 
 export function isSectionAction(value: unknown): value is SectionAction {
   return typeof value === "string" && (SECTION_ACTIONS as readonly string[]).includes(value);
@@ -147,6 +149,7 @@ export type FrameMessage =
   | { type: "zimos:move-section"; sectionId: string; direction: "up" | "down" }
   | { type: "zimos:section-action"; sectionId: string; action: SectionAction }
   | { type: "zimos:pick-image"; sectionId: string; elementId: string; field: string; src?: string; nth?: number }
+  | { type: "zimos:pick-font"; sectionId: string; elementId?: string }
   | { type: "zimos:bg-position"; sectionId: string; elementId: string; path: string; x: number; y: number }
   | { type: "zimos:item-action"; sectionId: string; elementId: string; list: string; action: "move" | "duplicate" | "delete"; from: number; to?: number }
   | { type: "zimos:section-rects"; sections: SectionRect[] }
@@ -229,6 +232,8 @@ export interface CanvasStrings {
   remove?: string;
   /** The corner button on a selected picture. */
   replaceImage?: string;
+  /** The "Aa" on the selected element's tag and on the section's bar. */
+  font?: string;
   /** The chip on a section or element that shoppers don't see. */
   hidden?: string;
 }
@@ -243,6 +248,8 @@ export interface CanvasAbilities {
   sectionActions?: SectionAction[];
   /** A picture of a template band (and a template header's or footer's logo) can be resized from the canvas. */
   resizePicture?: boolean;
+  /** "Aa" on the selected element's tag (and "font" on the section's bar) opens its font in the inspector. */
+  pickFont?: boolean;
 }
 
 export interface EditorStateMessage {
@@ -427,6 +434,12 @@ export function readFrameMessage(
             ...(typeof data.src === "string" && data.src.length > 0 && data.src.length <= 2000 ? { src: data.src, nth: isNth(data.nth) ? data.nth : 0 } : {}),
           }
         : null;
+    case "zimos:pick-font": {
+      const picked = data.elementId;
+      if (!isId(data.sectionId)) return null;
+      if (picked === undefined) return { type: "zimos:pick-font", sectionId: data.sectionId };
+      return isId(picked) ? { type: "zimos:pick-font", sectionId: data.sectionId, elementId: picked } : null;
+    }
     case "zimos:section-rects":
       return Array.isArray(data.sections)
         ? { type: "zimos:section-rects", sections: data.sections.filter(isSectionRect) }

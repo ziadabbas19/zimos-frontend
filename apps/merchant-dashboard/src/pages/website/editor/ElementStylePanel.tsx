@@ -8,6 +8,9 @@ import { useEditorLocale } from "./editorLocale";
 import { ColourControl, Group, NumberField, SwitchRow } from "./inspector/controls";
 import { inspectorUi, type InspectorUi } from "./inspector/strings";
 import { FontPairField } from "@/components/fonts/FontPairField";
+import { fontTarget } from "@/components/fonts/fontFocus";
+import { pageLevels, useEditorFonts } from "@/lib/editorFonts";
+import { elementTakesFont } from "@store-builder/ui/fonts";
 import { withFont } from "./canvasEdits";
 
 /**
@@ -68,7 +71,7 @@ const STRINGS = {
     marginBottom: "Outside: below",
     unset: "Default",
     fontGroup: "Font",
-    fontHint: "This element's own Arabic and English fonts. Store default follows its section, then the store's fonts.",
+    fontHint: "This element's own Arabic and English fonts. Left on default, it follows its section, then the page, then the store's fonts.",
     start: "Start",
     center: "Centre",
     end: "End",
@@ -115,7 +118,7 @@ const STRINGS = {
     marginBottom: "الخارجية: أسفل",
     unset: "الافتراضي",
     fontGroup: "الخط",
-    fontHint: "الخط العربي والإنجليزي لهذا العنصر. الافتراضي يتبع القسم ثم خطوط المتجر.",
+    fontHint: "الخط العربي والإنجليزي لهذا العنصر. على الافتراضي بيتبع القسم، ثم الصفحة، ثم خطوط المتجر.",
     start: "البداية",
     center: "الوسط",
     end: "النهاية",
@@ -331,8 +334,11 @@ export function ElementStylePanel({
   onSettingsChange,
   onNamedChange,
   showHide = true,
+  sectionFont,
 }: {
   element: PageElement;
+  /** The font of the element's section (section.settings.font), for the font's "source" line. Left out: the page's and the store's only. */
+  sectionFont?: unknown;
   /** "all" is the whole look on one page; "style" and "layout" are the two old halves of it. */
   tab: "style" | "layout" | "all";
   named: NamedStyle[];
@@ -345,6 +351,7 @@ export function ElementStylePanel({
   const locale = useEditorLocale();
   const t: T = STRINGS[locale] as unknown as T;
   const ti = inspectorUi(locale);
+  const editorFonts = useEditorFonts();
   const [device, setDevice] = useState<StyleDevice>("base");
   const [newName, setNewName] = useState("");
 
@@ -490,13 +497,18 @@ export function ElementStylePanel({
         )}
       </div>
 
-      {shows("style") && (
-        <Group id="style:font" title={t.fontGroup} mark={hasOwnFont(element) ? 1 : 0} collapsible defaultOpen={hasOwnFont(element)}>
+      {/* Every element with words (a heading, a button, a price, a form…): first, and open — the font is one tap away. */}
+      {shows("style") && elementTakesFont(element.type) && (
+        <Group id="style:font" title={t.fontGroup} mark={hasOwnFont(element) ? 1 : 0} collapsible defaultOpen>
           <FontPairField
             value={isObject(element.settings) ? element.settings.font : null}
             onChange={(pair) => onSettingsChange(withFont(element, pair))}
             locale={locale}
             hint={t.fontHint}
+            level="element"
+            inherits={pageLevels(editorFonts, sectionFont)}
+            template={editorFonts.template}
+            focusTarget={fontTarget.element(element.id)}
           />
         </Group>
       )}

@@ -229,7 +229,7 @@ export function XsFooter({ store, locale, year, look }: { store: StorefrontMeta;
   }
 
   return (
-    <footer className="xs-footer" data-xs-look={look} data-zimos-shell="footer" style={own as CSSProperties}>
+    <footer className="xs-footer" data-xs-look={look} data-zimos-shell="footer" data-zf-part="footer" style={own as CSSProperties}>
       {/* Whole numbers only, clamped by lib/storeShell (./shellSizes). */}
       {sizeCss ? <style dangerouslySetInnerHTML={{ __html: sizeCss }} /> : null}
       <div className="xs-footer__grid">

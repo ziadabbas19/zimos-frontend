@@ -16,6 +16,7 @@ import { useToast } from "@/components/Toast";
 import { TextField } from "@/components/Field";
 import { LandingPagePicker } from "./LandingPagePicker";
 import { FontPairField } from "@/components/fonts/FontPairField";
+import { useEditorFonts } from "@/lib/editorFonts";
 
 /**
  * How the product's storefront page behaves (SPEC §7.3) plus the three small
@@ -179,6 +180,8 @@ function draftOf(product: CatalogProduct): Draft {
 export function ProductPageSettingsSection({ product, onChanged }: { product: CatalogProduct; onChanged: () => void }) {
   const t = useT(STRINGS);
   const { locale } = useLocale();
+  // The store's saved fonts: what this product's page shows with no font of its own.
+  const storeFonts = useEditorFonts();
   const workspaceId = useWorkspaceId();
   const toast = useToast();
   const errorMessage = useErrorMessage();
@@ -323,7 +326,18 @@ export function ProductPageSettingsSection({ product, onChanged }: { product: Ca
             <p className="text-xs text-ink-soft">{t.fontHint}</p>
           </div>
           <div className="max-w-xl">
-            <FontPairField value={draft.settings.font} onChange={(pair) => setSetting("font", pair)} locale={locale} disabled={busy} />
+            <FontPairField
+              value={draft.settings.font}
+              onChange={(pair) => setSetting("font", pair)}
+              locale={locale}
+              level="product"
+              inherits={[
+                { level: "products", pair: storeFonts.store.products },
+                { level: "store", pair: storeFonts.store.primary },
+              ]}
+              template={storeFonts.template}
+              disabled={busy}
+            />
           </div>
         </div>
 

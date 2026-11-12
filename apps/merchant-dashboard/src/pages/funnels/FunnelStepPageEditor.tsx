@@ -54,6 +54,11 @@ import { StepDock } from "./stepPage/StepDock";
 import { STEP_PAGE_STRINGS } from "./stepPage/strings";
 import { ROOMY_BOX, WIDE_BOX, useBoxWidth } from "./stepPage/useBoxWidth";
 import { useStepHistory } from "./useStepHistory";
+import { openGroup } from "@/pages/website/editor/inspector/groupState";
+import { PageFontField } from "@/pages/website/editor/PageFontField";
+import { fontTarget, requestFontFocus } from "@/components/fonts/fontFocus";
+import { EditorFontsContext, editorFontsValue } from "@/lib/editorFonts";
+import { useWorkspace } from "@/context/WorkspaceContext";
 
 /**
  * The page of one funnel step — the store editor (website/editor), with a
@@ -281,6 +286,18 @@ function StepPageEditor({
     setAutoElementId(null);
   }
 
+  /** The canvas's "Aa": that element's (or section's) Font group, open on its Style page (components/fonts/fontFocus.ts). */
+  function pickFont({ sectionId, elementId: picked }: { sectionId: string; elementId: string | null }) {
+    if (picked) selectElement({ sectionId, elementId: picked });
+    else {
+      selectSection(sectionId, { scroll: false });
+      pickElement(null);
+    }
+    setInspectorTab("style");
+    openGroup(picked ? "style:font" : "style:section-font");
+    requestFontFocus(picked ? fontTarget.element(picked) : fontTarget.section(sectionId));
+  }
+
   function clearSelection() {
     setSelectedSectionId(null);
     setSelectedElementId(null);
@@ -367,6 +384,23 @@ function StepPageEditor({
   }
 
   const productField = <PageProductField value={pageProductId} onChange={setPageProduct} />;
+
+  // --- the whole page's font (tree.font, under its sections' and elements') ---------
+  function setPageFont(font: { ar: string | null; en: string | null } | null) {
+    update((current) => {
+      const { font: _old, ...rest } = current;
+      void _old;
+      return font ? { ...rest, font } : rest;
+    }, "page:font");
+  }
+  const pageFontField = <PageFontField value={tree.font} onChange={setPageFont} />;
+  // A funnel step has no store look of its own: the store's saved fonts, and this page's.
+  const { currentWorkspace } = useWorkspace();
+  const storeThemeSettings = currentWorkspace?.themeSettings;
+  const editorFonts = useMemo(
+    () => editorFontsValue(storeThemeSettings?.fonts, tree.font, typeof storeThemeSettings?.xsLook === "string"),
+    [storeThemeSettings, tree.font]
+  );
 
   // --- pictures: one media picker for the canvas and the inspector ---------------
   function requestImage(request: ImageRequest) {
@@ -494,6 +528,7 @@ function StepPageEditor({
   return (
     // `size-full`, not `h-full`: index.css has an old rule keyed on
     // `.flex.h-full.flex-col > .border-b.bg-paper-raised:first-child` that would catch the step bar.
+    <EditorFontsContext.Provider value={editorFonts}>
     <div ref={boxRef} data-slot="funnel-step-page" className="flex size-full min-h-0 min-w-0 flex-1 flex-col">
       {/* The zone’s name for a screen reader: the bar shows the step’s name as a button, not a heading. */}
       <h2 className="sr-only" dir="auto">
@@ -537,6 +572,7 @@ function StepPageEditor({
               {layerList("panel")}
               {/* Without page settings (a split-test version) the page's product has no other home. */}
               {!hasSettings && productField}
+              {!hasSettings && <div className="border-t border-line px-4 py-3">{pageFontField}</div>}
             </div>
             <div className="flex shrink-0 items-center gap-2 border-t border-line p-3">
               <Button
@@ -610,6 +646,7 @@ function StepPageEditor({
               selectedElementId={elementId}
               onSelectElement={selectElement}
               onSectionAction={edits.act}
+              onPickFont={pickFont}
               onPickImage={(target) =>
                 requestImage({ kind: "field", sectionId: target.sectionId, elementId: target.elementId, field: target.field })
               }
@@ -675,6 +712,7 @@ function StepPageEditor({
           <Sheet open={sectionsOpen} onOpenChange={setSectionsOpen} title={shell.sectionsSheet} size="md">
             {layerList("sheet")}
             {!hasSettings && productField}
+            {!hasSettings && <div className="border-t border-line py-3">{pageFontField}</div>}
           </Sheet>
           {/* Not a dialog: the page above it stays alive (see PhoneInspectorSheet). */}
           {inspectorOpen && inspector && (
@@ -733,6 +771,7 @@ function StepPageEditor({
               {productField}
             </div>
           }
+          font={pageFontField}
           onClose={() => setSettingsOpen(false)}
         />
       )}
@@ -751,5 +790,6 @@ function StepPageEditor({
         }}
       />
     </div>
+    </EditorFontsContext.Provider>
   );
 }
