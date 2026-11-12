@@ -85,6 +85,7 @@ import {
   withShellSize,
 } from "./storeShell";
 import { valueOnDevice } from "@/lib/deviceValue";
+import { storePictureSrc } from "@/lib/media";
 import { FooterLayoutBlock, HeaderLayoutBlock } from "./ShellLayoutBlocks";
 import { NumberField } from "./inspector/controls";
 import { ImageField } from "./ImageField";
@@ -455,7 +456,7 @@ function HeaderLogo({ look, onChange }: { look: StoreLook; onChange: OnLookChang
       )}
       {asName ? null : template && header.logoImage ? (
         <div className="space-y-2 rounded-xl bg-paper-sunken p-3">
-          <img src={header.logoImage} alt="" className="max-h-10 max-w-40 object-contain" />
+          <img src={storePictureSrc(header.logoImage) ?? undefined} alt="" className="max-h-10 max-w-40 object-contain" />
           <p className="text-xs text-ink-soft">
             {ar ? "هذه الترويسة تعرض صورة خاصة بها بدل شعار متجرك." : "This header shows a picture of its own instead of your store's logo."}
           </p>
