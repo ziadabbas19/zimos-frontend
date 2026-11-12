@@ -1,6 +1,7 @@
 import type { Product, ProductMedia } from "@store-builder/api-client";
 import { compressImageIfNeeded as compressImage, humanSize } from "@store-builder/image-tools";
 import { shrinkForUpload, type ShrinkResult } from "@/lib/imageResize";
+import { STOREFRONT_URL } from "@/lib/storefrontUrl";
 
 /** Matches the backend's multer limit (5 MB) in modules/media/mediaService.js. */
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -84,6 +85,25 @@ export function imageSrc(url: string | null | undefined, devProxy: boolean = imp
   } catch {
     return url;
   }
+}
+
+/**
+ * Displayable src for a picture stored in a store page (a slide, a banner, a
+ * logo...). The storefront draws these on its own host, so a host-relative
+ * path in a page (a template's own art, "/xs/16/slide-1.jpg") is a file the
+ * storefront serves: the dashboard asks the storefront for it, not itself,
+ * where it would get its index.html back. The stored value is never changed.
+ * Anything else goes through imageSrc. Empty or blank: null.
+ */
+export function storePictureSrc(
+  url: string | null | undefined,
+  storefront: string = STOREFRONT_URL,
+  devProxy: boolean = import.meta.env.DEV
+): string | null {
+  const trimmed = url?.trim() ?? "";
+  if (trimmed === "") return null;
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//")) return `${storefront}${trimmed}`;
+  return imageSrc(trimmed, devProxy);
 }
 
 /** First media entry is the primary image. */

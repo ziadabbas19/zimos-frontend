@@ -1,13 +1,13 @@
 import { useRef, useState } from "react";
 import { IconClose, IconDelete, IconImage, IconMedia, IconUpload } from "@/components/icons";
-import { Alert, Button, Label, ZLoader } from "@store-builder/ui";
+import { Alert, Button, Label, ZLoader, cn } from "@store-builder/ui";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { getErrorMessage } from "@/lib/errors";
-import { ACCEPTED_IMAGE_ACCEPT, compressImageIfNeeded, validateImageFile } from "@/lib/media";
+import { ACCEPTED_IMAGE_ACCEPT, compressImageIfNeeded, storePictureSrc, validateImageFile } from "@/lib/media";
 import { editorUi, useEditorLocale } from "./editorLocale";
 import { useInspectorEnv, type RequestImage } from "./inspector/env";
-import { inspectorUi } from "./inspector/strings";
+import { inspectorNumber, inspectorUi } from "./inspector/strings";
 
 /**
  * Image picker for a page element's props. Uploads through the same R2 flow the
@@ -98,17 +98,60 @@ function useUpload() {
   return { upload, busy, error };
 }
 
-function Thumb({ src, onRemove }: { src: string; onRemove: () => void }) {
-  const ui = editorUi(useEditorLocale());
-  const [broken, setBroken] = useState(false);
+/** The empty field's square: drawn only when there is no picture at all. */
+function EmptyThumb() {
   return (
-    <div className="group relative size-20 shrink-0 overflow-hidden rounded-[0.5rem] border border-line bg-paper">
-      {broken ? (
-        <div className="flex size-full items-center justify-center text-ink-soft">
+    <div
+      data-slot="image-placeholder"
+      className="flex size-20 shrink-0 items-center justify-center rounded-[0.5rem] border border-dashed border-line text-ink-soft"
+    >
+      <IconImage className="size-5" aria-hidden />
+    </div>
+  );
+}
+
+/**
+ * The stored picture itself. A host-relative address (a template's own art)
+ * is asked of the storefront that serves it (storePictureSrc). A skeleton
+ * holds the square while it loads; one that will not load falls back to the
+ * empty field's icon, and its remove button stays so a dead address can be
+ * cleared.
+ */
+function Thumb({ src, alt, onRemove }: { src: string; alt: string; onRemove: () => void }) {
+  const ui = editorUi(useEditorLocale());
+  const shown = storePictureSrc(src);
+  // The outcome belongs to one address: a new picture in the same box loads afresh.
+  const [settled, setSettled] = useState<{ src: string; ok: boolean } | null>(null);
+  const status = !shown ? "error" : settled?.src === shown ? (settled.ok ? "ready" : "error") : "loading";
+  return (
+    <div
+      className={cn(
+        "group relative size-20 shrink-0 overflow-hidden rounded-[0.5rem] border border-line",
+        status === "error" ? "border-dashed" : "bg-paper"
+      )}
+    >
+      {status === "error" || !shown ? (
+        <div data-slot="image-placeholder" className="flex size-full items-center justify-center text-ink-soft">
           <IconImage className="size-5" aria-hidden />
         </div>
       ) : (
-        <img src={src} alt="" className="size-full object-cover" onError={() => setBroken(true)} />
+        <>
+          {status === "loading" && (
+            <span
+              aria-hidden
+              data-slot="image-skeleton"
+              className="absolute inset-0 animate-pulse bg-paper-sunken motion-reduce:animate-none"
+            />
+          )}
+          <img
+            src={shown}
+            alt={alt}
+            decoding="async"
+            className={cn("relative size-full object-cover", status === "loading" && "opacity-0")}
+            onLoad={() => setSettled({ src: shown, ok: true })}
+            onError={() => setSettled({ src: shown, ok: false })}
+          />
+        </>
       )}
       <button
         type="button"
@@ -145,10 +188,12 @@ export function ImageField({
   const { upload, busy, error } = useUpload();
   const ui = editorUi(useEditorLocale());
   const openLibrary = useLibraryRequest(onRequestImage, onChange);
+  // Blank is empty: the storefront draws nothing for it either.
+  const filled = value.trim() !== "";
   const uploadButton = (
     <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => inputRef.current?.click()}>
       {busy ? <ZLoader size="sm" /> : <IconUpload className="size-4" aria-hidden />}
-      {value ? ui.replace : ui.upload}
+      {filled ? ui.replace : ui.upload}
     </Button>
   );
 
@@ -162,13 +207,7 @@ export function ImageField({
     <div className="space-y-1.5">
       <Label className={labelHidden ? "sr-only" : undefined}>{label}</Label>
       <div className="flex items-center gap-3">
-        {value ? (
-          <Thumb src={value} onRemove={() => onChange("")} />
-        ) : (
-          <div className="flex size-20 shrink-0 items-center justify-center rounded-[0.5rem] border border-dashed border-line text-ink-soft">
-            <IconImage className="size-5" aria-hidden />
-          </div>
-        )}
+        {filled ? <Thumb src={value} alt={label} onRemove={() => onChange("")} /> : <EmptyThumb />}
         <div className="min-w-0 space-y-1">
           {openLibrary ? (
             <div className="flex flex-wrap gap-2">
@@ -213,7 +252,8 @@ export function ImageListField({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const { upload, busy, error } = useUpload();
-  const ui = editorUi(useEditorLocale());
+  const locale = useEditorLocale();
+  const ui = editorUi(locale);
   const openLibrary = useLibraryRequest(onRequestImage, (url) => onChange([...value, url]));
 
   async function add(list: FileList | null) {
@@ -231,6 +271,7 @@ export function ImageListField({
             <Thumb
               key={`${src}-${i}`}
               src={src}
+              alt={`${label} ${inspectorNumber(i + 1, locale)}`}
               onRemove={() => onChange(value.filter((_, j) => j !== i))}
             />
           ))}

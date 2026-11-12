@@ -3,6 +3,7 @@ import { IconArrowDown, IconArrowUp, IconCaretDown, IconCopy, IconDelete, IconDr
 import { Button, Input, Label, cn } from "@store-builder/ui";
 import { Select } from "@/components/Select";
 import { Textarea } from "@/components/Textarea";
+import { storePictureSrc } from "@/lib/media";
 import { ImageField } from "./ImageField";
 import { useEditorLocale } from "./editorLocale";
 import { plainText } from "./plainText";
@@ -306,7 +307,8 @@ export function ItemListField({
           {items.map((item, i) => {
             const isOpen = open === i;
             const title = str(item[titleKey]).trim() || `${noun} ${inspectorNumber(i + 1, locale)}`;
-            const picture = pictureKey ? str(item[pictureKey]) : "";
+            // A template's own art is a host-relative path the storefront serves (storePictureSrc).
+            const picture = pictureKey ? (storePictureSrc(str(item[pictureKey])) ?? "") : "";
             const bodyId = `${uid}-${i}`;
             return (
               <li
