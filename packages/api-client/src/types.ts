@@ -2507,6 +2507,15 @@ export interface ShippingQuotePayload {
   governorate?: string | null;
   /** A combo line sends `comboId` + `comboSelection` instead of a variant (endpoints/combos.ts). */
   items?: Array<{ variantId?: string; offerId?: string; quantity?: number; comboId?: string; comboSelection?: Array<{ itemId: string; variantId: string }> }>;
+  /*
+   * The checkout's choices, read only while cart rewards are on for the store
+   * (endpoints/cartRewards.ts): the code the reward is weighed against, and
+   * what the delivery costs (pickup, a zone, an option). An older server drops them.
+   */
+  discountCode?: string | null;
+  deliveryMethod?: "delivery" | "pickup" | null;
+  deliveryZoneId?: string | null;
+  shippingOption?: string | null;
 }
 
 export interface FreeShippingProgress {
@@ -2539,6 +2548,8 @@ export interface ShippingQuote {
   destinationRequired?: boolean;
   /** false: the store prices no shipping (every order is charged 0). */
   configured?: boolean;
+  /** Cart rewards (endpoints/cartRewards.ts): absent while off for the store; read with storefrontQuoteRewards. */
+  rewards?: import("./endpoints/cartRewards").CartRewardsQuote | null;
 }
 
 /** GET/PATCH /shipping/settings — the store's prices and default courier. */
@@ -2782,11 +2793,13 @@ export type PlanFeatureKey =
   | "priority_support"
   // Loyalty points: with LOYALTY_REQUIRE_PLAN_FEATURE, switching the programme on, and earning or spending points.
   | "loyalty"
-  // The four below are refused only with GROWTH_REQUIRE_PLAN_FEATURE on too (WorkspacePlanFeatures.growthEnforced).
+  // The ones below are refused only with GROWTH_REQUIRE_PLAN_FEATURE on too (WorkspacePlanFeatures.growthEnforced).
   | "reviews"
   | "about_gallery"
   // Exists only while PRODUCT_COMBOS_ENABLED is on.
   | "combos"
+  // Cart rewards; exists only while CART_REWARDS_ENABLED is on.
+  | "cart_rewards"
   // The coupon controls (audience, schedule, cap, ...) and the coupon report; plain codes are on every plan.
   | "advanced_coupons";
 

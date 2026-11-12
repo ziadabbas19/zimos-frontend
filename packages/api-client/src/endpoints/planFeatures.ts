@@ -18,14 +18,14 @@ export interface WorkspacePlanFeatures {
   enforced: boolean;
   /**
    * GROWTH_PLAN_FEATURES are refused only while this is true as well
-   * (GROWTH_REQUIRE_PLAN_FEATURE). Absent from an older API: those four are
+   * (GROWTH_REQUIRE_PLAN_FEATURE). Absent from an older API: those are
    * never locked.
    */
   growthEnforced?: boolean;
 }
 
 /** Whole features a store without the key doesn't see at all (backend billing/growthFeatures.js). */
-export const GROWTH_PLAN_FEATURES: readonly PlanFeatureKey[] = ["reviews", "about_gallery", "combos", "advanced_coupons"];
+export const GROWTH_PLAN_FEATURES: readonly PlanFeatureKey[] = ["reviews", "about_gallery", "combos", "cart_rewards", "advanced_coupons"];
 
 export async function workspacePlanFeatures(client: ApiClient, workspaceId: string): Promise<WorkspacePlanFeatures> {
   const { planFeatures } = await client.request<{ planFeatures: WorkspacePlanFeatures }>(

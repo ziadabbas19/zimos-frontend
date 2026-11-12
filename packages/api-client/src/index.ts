@@ -51,6 +51,8 @@ export * from "./endpoints/catalog";
 export * from "./endpoints/reviews";
 // Combos: different products at one price (combos/, PRODUCT_COMBOS_ENABLED).
 export * from "./endpoints/combos";
+// Cart rewards: spend thresholds that unlock a discount or free shipping (cartRewards/, CART_REWARDS_ENABLED).
+export * from "./endpoints/cartRewards";
 // Protection against fake orders: blocklist, rules, risk (Fraud protection page).
 export * from "./endpoints/protection";
 // Dashboard home overview, attribution, profit and ad spend.
