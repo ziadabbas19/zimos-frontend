@@ -36,15 +36,16 @@ import { SavedBanner } from "./RewardRows";
  *
  *   auto          a bottom sheet on a phone, a side drawer on a wider screen
  *   bottom_sheet  rising from the bottom edge (narrower, centred, on a wide screen)
- *   side_drawer   along the right edge: the start side in Arabic, the end side
- *                 in English (as it always was there)
+ *   side_drawer   along the inline end, as the cart drawer always opened: the
+ *                 left in Arabic, the right in English
  *   popup         a centred window
  *
  * Top to bottom: the rewards bar (only for a store whose cart rewards are on;
  * it stays at the top of the scrolling part while the lines scroll under it),
  * the lines with their old prices struck through, "you saved" (compare-at
  * prices and bundles, plus the reward and the code with rewards), the totals,
- * then the way to checkout and the merchant's trust lines.
+ * then the way to checkout and the merchant's trust lines (Store settings →
+ * Cart behavior, for every store).
  *
  * A product page's "Order now" may open it on that product instead (the
  * merchant's quickOrder): the page draws its own quick order form into the
@@ -127,13 +128,14 @@ const LAYER: Record<SheetVariant, string> = {
 };
 const PANEL: Record<SheetVariant, string> = {
   bottom: "relative max-h-[92dvh] w-full rounded-t-3xl transition-transform sm:max-w-xl",
-  // The right edge: the start side in Arabic, the end side in English.
-  side: "absolute inset-y-0 right-0 w-full max-w-md transition-transform",
+  // The inline end: mirrored with the text, the left in Arabic and the right in English.
+  side: "absolute inset-y-0 end-0 w-full max-w-md transition-transform",
   popup: "relative max-h-[min(88dvh,46rem)] w-full max-w-lg rounded-2xl transition-[transform,opacity]",
 };
 const PANEL_STATE: Record<SheetVariant, [open: string, closed: string]> = {
   bottom: ["translate-y-0", "translate-y-full"],
-  side: ["translate-x-0", "translate-x-full"],
+  // Parked off the edge it lives on (an RTL page parks it to the left).
+  side: ["translate-x-0", "translate-x-full rtl:-translate-x-full"],
   popup: ["scale-100 opacity-100", "scale-95 opacity-0"],
 };
 
@@ -351,8 +353,8 @@ export function CartSheet({ config, settings }: { config: StorefrontCartRewards 
   }, [isDrawerOpen, dialogRef]);
 
   const motion: CSSProperties = { transitionDuration: `${duration}ms`, transitionTimingFunction: CART_EASE };
-  // The store's own lines (every store); an API from before them: the rewards config's.
-  const trust = trustTexts(sheet.trustItems.length > 0 ? sheet.trustItems : (config?.trustItems ?? []), locale);
+  // The store's own lines (Store settings → Cart behavior), with or without rewards.
+  const trust = trustTexts(sheet.trustItems, locale);
   const tiers = barTiers(config, rewards);
   const [openClass, closedClass] = PANEL_STATE[variant];
 

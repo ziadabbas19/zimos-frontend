@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import {
   CartRewardsBar,
@@ -6,6 +6,8 @@ import {
   autoFixLook,
   contrastProblems,
   contrastRatio,
+  parseCssColor,
+  readableAccent,
   rewardIconOf,
   type BarAppearance,
   type BarLook,
@@ -39,11 +41,12 @@ const track = () => screen.getByRole("progressbar");
 const markers = () => Array.from(document.querySelectorAll<HTMLElement>("span[aria-hidden='true'].absolute"));
 
 describe("match the store style (the default)", () => {
-  it("is today's bar: the theme's tokens, a rounded 8px track, 28px circles, amounts, the message at the start", () => {
+  it("fills with the store's accent, on the theme's tokens: a rounded 8px track, 28px circles, amounts, the message at the start", () => {
     bar();
     expect(track().className).toBe("relative h-2 overflow-hidden rounded-full bg-line");
     const fill = track().firstElementChild as HTMLElement;
-    expect(fill.className).toContain("bg-success");
+    expect(fill.className).toContain("bg-primary");
+    expect(fill.className).not.toContain("bg-success");
     expect(fill.className).toContain("rounded-full");
     expect(fill.className).toContain("rtl:origin-right");
     expect(fill.style.backgroundColor).toBe("");
@@ -52,7 +55,7 @@ describe("match the store style (the default)", () => {
     expect(first.className).toContain("h-7 w-7");
     expect(first.className).toContain("rounded-full");
     expect(first.style.backgroundColor).toBe("");
-    expect(second.className).toContain("border-success bg-success text-paper-raised");
+    expect(second.className).toContain("border-primary bg-primary text-on-primary");
     expect(third.className).toContain("border-line-strong bg-paper-raised text-ink-soft");
     expect(screen.getByText("EGP 500")).toBeTruthy();
     expect(screen.getByText(/more for EGP 20 off/).className).not.toContain("text-center");
@@ -84,6 +87,58 @@ describe("match the store style (the default)", () => {
     expect(icons).toEqual(["truck", "crown", "tag"]);
     expect(rewardIconOf({ type: "percent" })).toBe("percent");
     expect(rewardIconOf({ type: "free_shipping", icon: "rocket" })).toBe("truck");
+  });
+});
+
+describe("the accent, kept readable (the store's style)", () => {
+  // The page's colours, as a theme would draw them: the accent, the track (line) and the card (paper).
+  function themed(accent: string, mode: "light" | "dark" = "light") {
+    const style = document.createElement("style");
+    const [line, paper] = mode === "light" ? ["#dcdace", "#f5f4ef"] : ["#22304a", "#0b1220"];
+    style.textContent = `.bg-primary{background-color:${accent}} .bg-line{background-color:${line}} .bg-paper{background-color:${paper}}`;
+    document.head.appendChild(style);
+    return () => style.remove();
+  }
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("keeps an accent that reads on the track and the card as it is (its class, no colour of its own)", async () => {
+    const undo = themed("#1f5d5b");
+    bar();
+    await new Promise((r) => setTimeout(r, 30));
+    const fill = track().firstElementChild as HTMLElement;
+    expect(fill.className).toContain("bg-primary");
+    expect(fill.style.backgroundColor).toBe("");
+    undo();
+  });
+
+  it("swaps a pale accent for the nearest shade that reaches 3:1, on its markers too", async () => {
+    const undo = themed("#ffe066");
+    bar();
+    const fill = track().firstElementChild as HTMLElement;
+    await waitFor(() => expect(fill.style.backgroundColor).not.toBe(""));
+    const shown = parseCssColor(fill.style.backgroundColor)!;
+    expect(contrastRatio(shown, "#dcdace")).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(shown, "#f5f4ef")).toBeGreaterThanOrEqual(3);
+    expect(markers()[0].style.backgroundColor).toBe(fill.style.backgroundColor);
+    undo();
+  });
+
+  it("in dark mode, lightens an accent too dark to read there", () => {
+    const shown = readableAccent("#1f2a44", ["#22304a", "#0b1220"]);
+    expect(contrastRatio(shown, "#22304a")).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(shown, "#0b1220")).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(shown, "#ffffff")).toBeLessThan(contrastRatio("#1f2a44", "#ffffff"));
+    // And leaves the dark default accent (#5b8df6) alone.
+    expect(readableAccent("#5b8df6", ["#22304a", "#0b1220"])).toBe("#5b8df6");
+  });
+
+  it("reads the colours the browser gives back", () => {
+    expect(parseCssColor("rgb(31, 93, 91)")).toBe("#1f5d5b");
+    expect(parseCssColor("rgba(0, 0, 0, 0)")).toBeNull();
+    expect(parseCssColor("color(srgb 1 0 0)")).toBe("#ff0000");
+    expect(parseCssColor("oklch(0.6 0.15 150)")).toMatch(/^#[0-9a-f]{6}$/);
+    expect(parseCssColor("oklab(1 0 0)")).toBe("#ffffff");
+    expect(parseCssColor("transparent")).toBeNull();
   });
 });
 

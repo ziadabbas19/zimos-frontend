@@ -183,6 +183,18 @@ describe("a store with rewards", () => {
     expect(dialog.querySelector('[data-reward-icon="crown"]')).not.toBeNull();
   });
 
+  it("shows the store's own trust lines, never the rewards config's", async () => {
+    const config = { ...CONFIG, trustItems: [{ text: { ar: "سطر قديم", en: "Old line" } }] };
+    render(
+      <StoreContextProvider locale="ar" store={storeWith({ ...SETTINGS, trustItems: [{ text: { ar: "شحن سريع", en: "Fast delivery" } }] })}>
+        <CartSheet config={config as never} />
+      </StoreContextProvider>
+    );
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("شحن سريع")).toBeTruthy();
+    expect(within(dialog).queryByText("سطر قديم")).toBeNull();
+  });
+
   it("shows the bar on an empty cart too", async () => {
     Object.assign(cartState, { cart: { ...CART, items: [], subtotal: 0 }, itemCount: 0 });
     sheet();
@@ -203,7 +215,7 @@ describe("how it appears", () => {
 
   it.each([
     ["bottom_sheet", "bottom", /rounded-t-3xl/],
-    ["side_drawer", "side", /\bright-0\b/],
+    ["side_drawer", "side", /(^|\s)end-0(\s|$)/],
     ["popup", "popup", /rounded-2xl/],
   ] as const)("%s", (presentation, variant, shape) => {
     sheet({ settings: { presentation } });
@@ -213,11 +225,18 @@ describe("how it appears", () => {
     expect(panel().querySelector(".h-1\\.5.w-10") !== null).toBe(variant === "bottom");
   });
 
-  it("the side drawer comes from the right edge in Arabic too: the start side there", () => {
+  it("the side drawer mirrors with the text: the inline end, parked off the left in Arabic, off the right in English", async () => {
+    vi.useFakeTimers();
     sheet({ settings: { presentation: "side_drawer" }, locale: "ar" });
     expect(panel().closest("[dir]")?.getAttribute("dir")).toBe("rtl");
-    expect(panel().className).toMatch(/\bright-0\b/);
-    expect(panel().className).not.toMatch(/\bend-0\b|\bleft-0\b/);
+    expect(panel().className).toMatch(/(^|\s)end-0(\s|$)/);
+    expect(panel().className).not.toMatch(/(^|\s)(right-0|left-0)(\s|$)/);
+    // Closed (before it slides in): off the inline end, flipped for right to left.
+    expect(panel().className).toContain("translate-x-full rtl:-translate-x-full");
+    await act(async () => {
+      vi.advanceTimersByTime(30);
+    });
+    expect(panel().className).toContain("translate-x-0");
   });
 });
 
