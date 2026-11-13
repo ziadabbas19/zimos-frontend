@@ -111,13 +111,13 @@ export const STORE_SKELETONS_ENABLED = process.env.NEXT_PUBLIC_STORE_SKELETONS_E
 
 /**
  * Cart rewards: the rewards bar (spend thresholds that unlock a discount or
- * free shipping) and the redesigned cart — a bottom sheet on a phone, a side
- * drawer on a wider screen — for a store whose merchant switched rewards on;
- * the reward line in the cart page's and the checkout's totals, and the
- * checkout's choices sent with the shipping quote so the reward is weighed as
- * the order will be. Off, the cart, the cart page and the checkout are exactly
- * as before and the store asks nothing about rewards. Pairs with the API's
- * CART_REWARDS_ENABLED and the dashboard's VITE_CART_REWARDS_ENABLED.
+ * free shipping) inside the cart sheet and at the top of the cart page, for a
+ * store whose merchant switched rewards on; the reward line in the cart page's
+ * and the checkout's totals, and the checkout's choices sent with the shipping
+ * quote so the reward is weighed as the order will be. Off, the store asks
+ * nothing about rewards and shows no bar. The cart sheet itself is every
+ * store's whatever this says (components/cart/CartSheet, lib/cartSheet).
+ * Pairs with the API's CART_REWARDS_ENABLED and the dashboard's VITE_CART_REWARDS_ENABLED.
  */
 export const CART_REWARDS_ENABLED = process.env.NEXT_PUBLIC_CART_REWARDS_ENABLED === "true";
 

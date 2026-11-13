@@ -8,6 +8,7 @@ import { BoxIcon, CartGlyph, CheckIcon } from "@/components/Icons";
 import { StoreLink, useStoreBasePath } from "@/components/StoreRoute";
 import { btnPrimary, card, skeleton } from "@/components/ui";
 import { useCart } from "@/lib/CartProvider";
+import { useCartSheet } from "@/lib/cartSheet";
 import { defaultOfferOf, offerAppliesTo } from "@/lib/product";
 import { useShopperApi, type ShopperApi } from "@/lib/shopperSession";
 import { storeHref } from "@/lib/storeHref";
@@ -62,6 +63,7 @@ export function AccountWishlist() {
   const wishlist = useWishlist();
   const api = useShopperApi();
   const cart = useCart();
+  const { afterAdd } = useCartSheet(cart.openDrawer);
   const router = useRouter();
   const basePath = useStoreBasePath();
   const [removing, setRemoving] = useState<string | null>(null);
@@ -116,7 +118,7 @@ export function AccountWishlist() {
         offerId = offer && offerAppliesTo(offer, only.id) ? offer.id : undefined;
       }
       await cart.addItem(variantId, offerId, 1);
-      cart.openDrawer();
+      afterAdd();
       set({ status: "added" });
       window.setTimeout(() => {
         setAdding((prev) => {

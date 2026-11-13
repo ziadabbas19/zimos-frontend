@@ -13,8 +13,9 @@ import type { Locale } from "./i18n";
  * says what is applied and what the shopper saves, and the order is charged
  * by the same function. What lives here is only:
  *
- *  - the store's tiers and trust lines (GET /store/:id/cart-rewards), read
- *    once per store and kept for the visit;
+ *  - the store's tiers, the bar's look and its icons (GET /store/:id/cart-rewards),
+ *    read once per store and kept for the visit (the trust lines reach every
+ *    store's cart sheet with the store itself, lib/cartSheet);
  *  - `cartTotal`, the one sum the cart drawer, the cart page and the checkout
  *    make of the quote's numbers, so the three never disagree.
  */
@@ -69,7 +70,7 @@ export const rewardsLocale = (locale: Locale): "ar" | "en" => (locale === "ar" ?
 /** The tiers as the bar draws them: the quote's when there is one (named by the server), else the config's. */
 export function barTiers(config: StorefrontCartRewards | null | undefined, rewards: CartRewardsQuote | null): RewardTier[] {
   const source = rewards?.tiers ?? config?.tiers ?? [];
-  return source.map((tier) => ({ thresholdAmount: tier.thresholdAmount, type: tier.type, value: tier.value, label: tier.label }));
+  return source.map((tier) => ({ thresholdAmount: tier.thresholdAmount, type: tier.type, value: tier.value, label: tier.label, icon: tier.icon ?? null }));
 }
 
 export interface CartTotalInput {
@@ -88,11 +89,4 @@ export interface CartTotalInput {
 /** The estimated total, the same sum in the drawer, the cart page and the checkout. */
 export function cartTotal({ subtotal, shipping, extras = 0, automaticOff = 0, rewards = null }: CartTotalInput): number {
   return Number(subtotal) + extras + shipping - automaticOff - (rewards ? rewards.discountAmount : 0);
-}
-
-/** The trust lines in the shopper's language (the other language when the merchant wrote only that one). */
-export function trustLines(config: StorefrontCartRewards | null | undefined, locale: Locale): string[] {
-  const lang = rewardsLocale(locale);
-  const other = lang === "ar" ? "en" : "ar";
-  return (config?.trustItems ?? []).map((item) => (item.text[lang] || item.text[other] || "").trim()).filter(Boolean);
 }

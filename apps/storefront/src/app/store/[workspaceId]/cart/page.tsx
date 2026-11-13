@@ -10,7 +10,7 @@ import { CartBodyBones, SkeletonStatus } from "@/components/Skeleton";
 import { StoreLink } from "@/components/StoreRoute";
 import { TrustStrip } from "@/components/TrustStrip";
 import { storeCards } from "@/lib/storePromises";
-import { CartPageSummary } from "@/components/cart/CartPageSummary";
+import { CartPageMoney } from "@/components/cart/CartPageSummary";
 import { HolidayCheckoutGate } from "@/components/holiday/HolidayCheckoutGate";
 import { CartConsentBox } from "@/components/emailSignup/CartConsentBox";
 import { btnPrimaryLg, btnSecondary, card, container } from "@/components/ui";
@@ -88,8 +88,12 @@ export default function CartPage() {
       ) : (
         // minmax(0, …): a long name or a wide price row must not widen the
         // column past the screen (a bare `1fr` grows to its content).
+        <CartPageMoney workspaceId={workspaceId} cart={cart}>
+          {({ bar, summary }) => (
         <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <div>
+            {/* The rewards bar (a store with cart rewards on), at the top of the cart, above the lines. */}
+            {bar}
             <div aria-live="polite" className="empty:hidden">
               {error && <p className="mb-4 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">{error}</p>}
             </div>
@@ -180,9 +184,7 @@ export default function CartPage() {
               <h2 className="text-base font-semibold text-ink">{t.cart.summary}</h2>
               {/* Shipping comes from the same quote the order is charged by,
                   once the shopper picks a governorate here or at checkout. */}
-              <div className="mt-4">
-                <CartPageSummary workspaceId={workspaceId} cart={cart} />
-              </div>
+              <div className="mt-4">{summary}</div>
               {/* "Email me offers", when the merchant put it in the cart (lib/emailSignup). */}
               <CartConsentBox className="mt-5" />
               {/* On holiday: the same link under its ship date, or a button that is off while orders are paused. */}
@@ -201,6 +203,8 @@ export default function CartPage() {
             <TrustStrip cards={storeCards(store)} locale={locale} compact />
           </aside>
         </div>
+          )}
+        </CartPageMoney>
       )}
 
       {/* What goes with the cart: the merchant's cross-sell rule, or what was bought together. */}

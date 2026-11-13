@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { storefrontShippingQuoteFor, type ApiClient, type StorefrontBundle, type StorefrontBundleTier, type StorefrontProduct, type StorefrontVariant } from "@store-builder/api-client";
 import { useCart } from "@/lib/CartProvider";
+import { useCartSheet } from "@/lib/cartSheet";
 import { useStore } from "@/lib/StoreContext";
 import { useStoreCountry } from "@/lib/storeCountry";
 import { useOfferView } from "@/lib/offerViews";
@@ -295,6 +296,7 @@ export function BundleAddToCartButton({ selection, disabled }: { selection: Bund
   const { locale } = useStore();
   const text = pickText(TEXT, locale);
   const { addItem, openDrawer } = useCart();
+  const { afterAdd } = useCartSheet(openDrawer);
   const [status, setStatus] = useState<"idle" | "loading" | "added" | "error">("idle");
 
   async function add() {
@@ -303,7 +305,7 @@ export function BundleAddToCartButton({ selection, disabled }: { selection: Bund
     try {
       for (const line of selection.lines) await addItem(line.variantId, undefined, line.quantity);
       setStatus("added");
-      openDrawer();
+      afterAdd();
       setTimeout(() => setStatus((s) => (s === "added" ? "idle" : s)), 2000);
     } catch {
       setStatus("error");

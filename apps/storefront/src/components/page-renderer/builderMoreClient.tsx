@@ -7,6 +7,7 @@ import { compressImageIfNeeded } from "@store-builder/image-tools";
 import { useStoreBasePath } from "@/components/StoreRoute";
 import { createStorefrontApiClient } from "@/lib/apiClient";
 import { useCart } from "@/lib/CartProvider";
+import { useCartSheet } from "@/lib/cartSheet";
 import { pickText } from "@/lib/i18n";
 import { readPick, usePick } from "@/lib/pagePicks";
 import { useStore } from "@/lib/StoreContext";
@@ -64,6 +65,7 @@ export function CartActionButton({
   productHref?: string | null;
 }) {
   const { addItem, openDrawer } = useCart();
+  const { afterAdd } = useCartSheet(openDrawer);
   const { locale } = useStore();
   const text = pickText(TEXT, locale);
   const router = useRouter();
@@ -88,7 +90,7 @@ export function CartActionButton({
     try {
       await addItem(variant.id, undefined, 1);
       if (mode === "buy_now") router.push(storeHref(basePath, "/checkout"));
-      else openDrawer();
+      else afterAdd();
     } catch {
       setError(true);
     } finally {

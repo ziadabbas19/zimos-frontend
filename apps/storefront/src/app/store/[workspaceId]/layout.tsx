@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BackToTop } from "@/components/BackToTop";
 import { StoreAppInstall } from "@/components/StoreAppInstall";
-import { CartDrawerSwitch } from "@/components/cart/CartSheet";
+import { StoreCartSheet } from "@/components/cart/CartSheet";
 import { ExitDownsell } from "@/components/offers/StoreOffers";
 import { CouponFromLink } from "@/components/offers/CouponBits";
 import { NewsletterSignup, SocialProofPopup } from "@/components/offers/Engagement";
@@ -30,6 +30,7 @@ import {
   storefrontGeneralMeta,
   storefrontStoreApp,
   storefrontHolidayOf,
+  storeCartSheetOf,
   storeEmailSignupOf,
 } from "@store-builder/api-client";
 import { FloatingWhatsapp } from "@/components/FloatingWhatsapp";
@@ -209,6 +210,7 @@ export default async function StoreLayout({
     reviews: store.reviews ?? null,
     // Where shoppers may sign up for the store's emails (lib/emailSignup); undefined from an older API.
     emailSignup: storeEmailSignupOf(store),
+    cartSheet: storeCartSheetOf(store),
   };
   // GET /store/:workspaceId doesn't name a websiteId yet; read it defensively
   // so events carry it as soon as the API sends one.
@@ -326,10 +328,10 @@ export default async function StoreLayout({
                   ) : (
                     <StoreFooter store={store} locale={locale} year={new Date().getFullYear()} />
                   )}
-                  {/* The slide-over cart: opened by "add to cart" and the header's
-                      cart icon. Funnel pages have no cart, so it steps aside with
-                      the rest of the store's chrome. */}
-                  <CartDrawerSwitch />
+                  {/* The cart sheet, every store's: opened by the taps the merchant
+                      chose (Settings → Cart). Funnel pages have no cart, so it
+                      steps aside with the rest of the store's chrome. */}
+                  <StoreCartSheet />
                   {/* The merchant's exit popup, once per visitor (Offers → Exit popup). */}
                   <ExitDownsell workspaceId={store.id} />
                   {/* Sales notifications from real orders (Offers → Sales notifications). */}

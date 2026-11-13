@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ApiError, type StorefrontCombo } from "@store-builder/api-client";
 import { useCart } from "@/lib/CartProvider";
+import { useCartSheet } from "@/lib/cartSheet";
 import { useStore } from "@/lib/StoreContext";
 import { cartErrorMessage } from "@/lib/placeOrder";
 import { variantLabel } from "@/lib/product";
@@ -52,6 +53,7 @@ export function ComboCard({ combo }: { combo: StorefrontCombo }) {
   const { locale, money, t } = useStore();
   const text = comboText(locale);
   const { addItem, openDrawer } = useCart();
+  const { afterAdd } = useCartSheet(openDrawer);
   const [picks, setPicks] = useState<ComboPicks>(() => initialComboPicks(combo));
   const [status, setStatus] = useState<"idle" | "loading" | "added" | "error">("idle");
   const [error, setError] = useState("");
@@ -69,7 +71,7 @@ export function ComboCard({ combo }: { combo: StorefrontCombo }) {
     try {
       await addItem({ comboId: combo.id, comboSelection: selection }, undefined, 1);
       setStatus("added");
-      openDrawer();
+      afterAdd();
       setTimeout(() => setStatus((s) => (s === "added" ? "idle" : s)), 2000);
     } catch (err) {
       setStatus("error");

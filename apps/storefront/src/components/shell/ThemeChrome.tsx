@@ -1,10 +1,11 @@
 "use client";
 
-import { useTransition, type MouseEvent } from "react";
+import { useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { StorefrontMeta } from "@store-builder/api-client";
 import { StoreLink } from "@/components/StoreRoute";
 import { useCart } from "@/lib/CartProvider";
+import { useCartSheet } from "@/lib/cartSheet";
 import { LOCALE_COOKIE, nextLocale, switchLabel } from "@/lib/i18n";
 import { useStore } from "@/lib/StoreContext";
 
@@ -33,6 +34,7 @@ export function ThemeChrome({ store }: { store: StorefrontMeta }) {
   const toolbar = settings.mobileToolbar === true;
   const { t, locale, intlLocale } = useStore();
   const { itemCount, openDrawer } = useCart();
+  const { onCartLinkClick } = useCartSheet(openDrawer);
   const pathname = usePathname();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -45,11 +47,6 @@ export function ThemeChrome({ store }: { store: StorefrontMeta }) {
   function switchLanguage() {
     document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
     startTransition(() => router.refresh());
-  }
-  function openCart(e: MouseEvent<HTMLAnchorElement>) {
-    if (/\/(cart|checkout)$/.test(pathname) || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-    e.preventDefault();
-    openDrawer();
   }
 
   return (
@@ -92,7 +89,8 @@ export function ThemeChrome({ store }: { store: StorefrontMeta }) {
             </svg>
             <span>{locale === "ar" ? "تسوق" : "Shop"}</span>
           </StoreLink>
-          <StoreLink href="/cart" onClick={openCart}>
+          {/* The cart sheet when the merchant has the cart icon open it (lib/cartSheet), else the cart page. */}
+          <StoreLink href="/cart" onClick={onCartLinkClick}>
             <span className="zs-toolbar__icon">
               <svg viewBox="0 0 24 24" {...stroke} aria-hidden>
                 <circle cx="9" cy="21" r="1" />

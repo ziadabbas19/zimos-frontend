@@ -12,6 +12,7 @@ import type {
   ThankYouPageSettings,
   StorefrontHoliday,
   StoreEmailSignup,
+  StorefrontCartSheet,
 } from "@store-builder/api-client";
 import {
   DEFAULT_LOCALE,
@@ -64,6 +65,12 @@ export interface StoreInfo {
    * undefined from an API older than the places.
    */
   emailSignup?: StoreEmailSignup | null;
+  /**
+   * How the cart opens (GET /store/:ws `cartSheet`, lib/cartSheet): the taps,
+   * bottom sheet / side drawer / popup, the speed, the lines under its
+   * checkout button. Every store's; the defaults from an older API.
+   */
+  cartSheet?: StorefrontCartSheet | null;
 }
 
 /** How a store that delivers itself takes orders (GET /store/:ws `delivery`). */

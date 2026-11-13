@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useParams, usePathname } from "next/navigation";
-import type { Cart, CartLine, StorefrontCartRewards } from "@store-builder/api-client";
+import type { Cart, CartLine, StorefrontCartRewards, StorefrontCartSheet } from "@store-builder/api-client";
 import { CART_EASE, CartRewardsBar, reducedMotion, useTweenedNumber } from "@store-builder/ui/cart-rewards";
 import { useCart } from "@/lib/CartProvider";
 import { variantLabel } from "@/lib/product";
@@ -11,9 +11,9 @@ import { useStore } from "@/lib/StoreContext";
 import { cartErrorMessage } from "@/lib/placeOrder";
 import { useCatalog } from "@/lib/useCatalog";
 import { useDialog, useSheetPresence } from "@/lib/useDialog";
-import { pickText } from "@/lib/i18n";
-import { CART_REWARDS_ENABLED } from "@/lib/features";
-import { barTiers, rewardsLocale, trustLines, useCartRewardsConfig } from "@/lib/cartRewards";
+import { pickText, type Locale } from "@/lib/i18n";
+import { barTiers, rewardsLocale, useCartRewardsConfig } from "@/lib/cartRewards";
+import { STICKY_BAR_CLASS, cartSheetOf, setQuickOrderSlot, sheetDuration, useMediaQuery } from "@/lib/cartSheet";
 import { comboLineImages, isComboLine } from "@/lib/combos";
 import { StoreLink } from "@/components/StoreRoute";
 import { CartShippingSummary, useCartQuote } from "@/components/checkout/CartShippingSummary";
@@ -22,7 +22,6 @@ import { CartConsentBox } from "@/components/emailSignup/CartConsentBox";
 import { LineCustomizations } from "@/components/LineCustomizations";
 import { LineOptions } from "@/components/LineOptions";
 import { ComboLineFullTotal, ComboLineInfo, ComboLineThumb } from "@/components/combos/ComboLine";
-import { CartDrawer } from "@/components/CartDrawer";
 import { BoxIcon, CartGlyph, CrossIcon } from "@/components/Icons";
 import { QuantityStepper } from "@/components/QuantityStepper";
 import { StoreImage } from "@/components/StoreImage";
@@ -30,44 +29,65 @@ import { btnPrimaryLg, btnSecondary, focusRing, iconBtn, modalLayer, skeleton } 
 import { SavedBanner } from "./RewardRows";
 
 /**
- * The cart with rewards (CART_REWARDS_ENABLED, for a store whose merchant
- * switched cart rewards on): a bottom sheet on a phone, a side drawer from
- * the inline end on a wider screen. Top to bottom: the rewards bar, the
- * lines, "you saved", the totals, then the way to checkout and the
- * merchant's trust lines.
+ * The store's cart sheet, for every store (whatever its plan; no build or API
+ * switch turns it on). The merchant chooses in Settings → The store → Cart
+ * (GET /store/:ws `cartSheet`, lib/cartSheet) which taps open it, how it
+ * appears and how fast it moves:
+ *
+ *   auto          a bottom sheet on a phone, a side drawer on a wider screen
+ *   bottom_sheet  rising from the bottom edge (narrower, centred, on a wide screen)
+ *   side_drawer   along the right edge: the start side in Arabic, the end side
+ *                 in English (as it always was there)
+ *   popup         a centred window
+ *
+ * Top to bottom: the rewards bar (only for a store whose cart rewards are on;
+ * it stays at the top of the scrolling part while the lines scroll under it),
+ * the lines with their old prices struck through, "you saved" (compare-at
+ * prices and bundles, plus the reward and the code with rewards), the totals,
+ * then the way to checkout and the merchant's trust lines.
+ *
+ * A product page's "Order now" may open it on that product instead (the
+ * merchant's quickOrder): the page draws its own quick order form into the
+ * sheet (lib/cartSheet setQuickOrderSlot), so the shopper orders from there.
  *
  * Every number comes from the server: the cart's lines, and the shipping
  * quote (asked once, shared by the bar and the totals) for the reward, the
- * discounts and the total — the same function that prices the order. A
- * quantity change shows at once on its line (and goes back if the server
- * refuses it); the totals and the bar follow the server's answer, gliding to
- * their new numbers.
+ * discounts, the savings and the total — the same function that prices the
+ * order. A quantity change shows at once on its line (and goes back if the
+ * server refuses it); the totals and the bar follow the server's answer,
+ * gliding to their new numbers.
  *
- * Motion: the sheet opens and closes in 260 ms on the cart's ease-out curve
- * with the backdrop fading alongside; on a phone it can be dragged down from
- * anywhere while its content is scrolled to the top, and let go it closes or
- * snaps back by how far and how fast it went. A removed line fades and folds
- * away in 200 ms. Only transform and opacity animate (and the removed row's
- * own height). Under reduced motion it all happens at once.
+ * Motion: it opens and closes on the cart's ease-out curve at the merchant's
+ * speed (260 ms fast, 400 ms normal, or at once), the backdrop fading
+ * alongside; as a bottom sheet it can be dragged down from anywhere while its
+ * content is scrolled to the top, and let go it closes or snaps back by how
+ * far and how fast it went. A removed line fades and folds away in 200 ms.
+ * Only transform and opacity animate (and the removed row's own height).
+ * Under reduced motion it all happens at once.
  *
  * Keyboard and screen readers: a modal dialog (lib/useDialog: Tab stays
- * inside, Escape closes, focus goes back), a live region for the count.
+ * inside, Escape closes, the page behind stops scrolling, focus goes back to
+ * what opened it), a live region for the count.
  */
 
-const DURATION = 260;
 const REMOVE_MS = 200;
 
 const TEXT = {
-  en: { title: "Shopping cart", completeOrder: "Complete order", trust: "Why shop with us" },
-  ar: { title: "سلة المشتريات", completeOrder: "كمّل الطلب", trust: "ليه تشتري مننا" },
+  en: { title: "Shopping cart", quickTitle: "Order now", completeOrder: "Complete order", trust: "Why shop with us" },
+  ar: { title: "سلة المشتريات", quickTitle: "اطلب الآن", completeOrder: "كمّل الطلب", trust: "ليه تشتري مننا" },
 };
 
-/** The store's cart: the rewards sheet when the store has rewards, the drawer as it always was otherwise. */
-export function CartDrawerSwitch() {
+/**
+ * The cart sheet as the store's layout mounts it: the store's own settings,
+ * and the rewards bar's tiers when its cart rewards are on. The sheet is the
+ * same component either way; the rewards config only adds the bar (while it
+ * is being read, the sheet already opens, without it).
+ */
+export function StoreCartSheet() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const config = useCartRewardsConfig(CART_REWARDS_ENABLED ? workspaceId : undefined);
-  if (!CART_REWARDS_ENABLED || !config) return <CartDrawer />;
-  return <CartSheet config={config} />;
+  const { store } = useStore();
+  const config = useCartRewardsConfig(workspaceId);
+  return <CartSheet config={config ?? null} settings={cartSheetOf(store)} />;
 }
 
 const EMPTY_CART: Cart = { id: "", guestToken: "", currency: "EGP", status: "active", items: [], subtotal: 0 };
@@ -89,12 +109,56 @@ interface Leaving {
   gone: boolean;
 }
 
-export function CartSheet({ config }: { config: StorefrontCartRewards }) {
+/** The shape the sheet takes on this screen. */
+export type SheetVariant = "bottom" | "side" | "popup";
+
+export function sheetVariant(presentation: StorefrontCartSheet["presentation"], wide: boolean): SheetVariant {
+  if (presentation === "bottom_sheet") return "bottom";
+  if (presentation === "side_drawer") return "side";
+  if (presentation === "popup") return "popup";
+  return wide ? "side" : "bottom";
+}
+
+/** The layer around it, and the panel, open and closed. */
+const LAYER: Record<SheetVariant, string> = {
+  bottom: "flex items-end justify-center",
+  side: "",
+  popup: "flex items-center justify-center p-4 sm:p-6",
+};
+const PANEL: Record<SheetVariant, string> = {
+  bottom: "relative max-h-[92dvh] w-full rounded-t-3xl transition-transform sm:max-w-xl",
+  // The right edge: the start side in Arabic, the end side in English.
+  side: "absolute inset-y-0 right-0 w-full max-w-md transition-transform",
+  popup: "relative max-h-[min(88dvh,46rem)] w-full max-w-lg rounded-2xl transition-[transform,opacity]",
+};
+const PANEL_STATE: Record<SheetVariant, [open: string, closed: string]> = {
+  bottom: ["translate-y-0", "translate-y-full"],
+  side: ["translate-x-0", "translate-x-full"],
+  popup: ["scale-100 opacity-100", "scale-95 opacity-0"],
+};
+
+/** The trust lines in the shopper's language (the other language when the merchant wrote only that one). */
+function trustTexts(items: ReadonlyArray<{ text: { ar: string; en: string } }>, locale: Locale): string[] {
+  const lang = rewardsLocale(locale);
+  const other = lang === "ar" ? "en" : "ar";
+  return items.map((item) => (item.text[lang] || item.text[other] || "").trim()).filter(Boolean);
+}
+
+export function CartSheet({ config, settings }: { config: StorefrontCartRewards | null; settings?: StorefrontCartSheet }) {
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const { cart, isLoading, isAdding, itemCount, updateItem, removeItem, isDrawerOpen, closeDrawer } = useCart();
-  const { t, locale, money } = useStore();
+  const { cart, isLoading, isAdding, itemCount, updateItem, removeItem, isDrawerOpen: drawerOpen, closeDrawer, sheetView } = useCart();
+  const { t, locale, money, store } = useStore();
   const text = pickText(TEXT, locale);
   const lang = rewardsLocale(locale);
+  const sheet = settings ?? cartSheetOf(store);
+  // Off for all: nothing opens (every trigger checks the same settings first, lib/cartSheet).
+  const isDrawerOpen = drawerOpen && sheet.enabled;
+  const quick = sheetView === "quick";
+  const duration = sheetDuration(sheet.speed);
+  const wide = useMediaQuery("(min-width: 640px)");
+  const variant = sheetVariant(sheet.presentation, wide);
+  // The bar, only for a store whose cart rewards are on (and only over the cart's own lines).
+  const withBar = Boolean(config && config.tiers.length > 0);
 
   // The catalogue names and pictures the lines; read once the cart has a line, the sheet opens or a line is on its way in.
   const [catalogWanted, setCatalogWanted] = useState(false);
@@ -105,7 +169,7 @@ export function CartSheet({ config }: { config: StorefrontCartRewards }) {
 
   const pathname = usePathname();
   const dialogRef = useDialog<HTMLDivElement>({ open: isDrawerOpen, onClose: closeDrawer });
-  const { present, shown } = useSheetPresence(isDrawerOpen, DURATION);
+  const { present, shown } = useSheetPresence(isDrawerOpen, duration);
   const backdropRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -133,7 +197,7 @@ export function CartSheet({ config }: { config: StorefrontCartRewards }) {
   }, [itemCount, t]);
 
   // The quote, asked only while the sheet is open: the bar and the totals read the same one.
-  const quote = useCartQuote({ workspaceId, cart: cart ?? EMPTY_CART, enabled: isDrawerOpen && Boolean(cart && cart.items.length > 0) });
+  const quote = useCartQuote({ workspaceId, cart: cart ?? EMPTY_CART, enabled: isDrawerOpen && !quick && Boolean(cart && cart.items.length > 0) });
   const rewards = quote.shipping.rewards;
 
   // ---- quantities: shown at once, sent one at a time per line, the last one wins; refused = back to the server's.
@@ -185,7 +249,7 @@ export function CartSheet({ config }: { config: StorefrontCartRewards }) {
     desired.current.delete(line.id);
     const index = Math.max(0, (cart?.items ?? []).findIndex((l) => l.id === line.id));
     setLeaving((all) => ({ ...all, [line.id]: { line, index, folded: false, gone: false } }));
-    window.setTimeout(() => settle(line.id, { folded: true }), reducedMotion() ? 0 : REMOVE_MS);
+    window.setTimeout(() => settle(line.id, { folded: true }), reducedMotion() || duration === 0 ? 0 : REMOVE_MS);
     try {
       await removeItem(line.id);
       settle(line.id, { gone: true });
@@ -209,16 +273,16 @@ export function CartSheet({ config }: { config: StorefrontCartRewards }) {
   const currency = cart?.currency;
   const moneyOf = (amount: number) => money(amount, currency);
 
-  // ---- swipe down to close (touch, phones only): from the handle and header, or from the content while it is at its top.
+  // ---- swipe down to close (touch, a bottom sheet only): from the handle and header, or from the content while it is at its top.
+  const swipeable = variant === "bottom";
   useEffect(() => {
     const sheetEl = dialogRef.current;
-    if (!present || !sheetEl) return;
+    if (!present || !sheetEl || !swipeable) return;
     let drag: { startY: number; base: number; lastY: number; lastT: number; v: number; dy: number; active: boolean } | null = null;
     const backdropEl = backdropRef.current;
-    const wide = () => typeof window.matchMedia === "function" && window.matchMedia("(min-width: 640px)").matches;
 
     const onStart = (e: TouchEvent) => {
-      if (e.touches.length !== 1 || wide() || !isDrawerOpen) return;
+      if (e.touches.length !== 1 || !isDrawerOpen) return;
       const target = e.target as HTMLElement;
       const body = bodyRef.current;
       const inBody = Boolean(body && body.contains(target));
@@ -279,16 +343,26 @@ export function CartSheet({ config }: { config: StorefrontCartRewards }) {
       sheetEl.removeEventListener("touchend", onEnd);
       sheetEl.removeEventListener("touchcancel", onEnd);
     };
-  }, [present, isDrawerOpen, closeDrawer, dialogRef]);
+  }, [present, isDrawerOpen, closeDrawer, dialogRef, swipeable]);
 
   // A sheet opened again starts clean (a drag may have left it where the finger let go).
   useEffect(() => {
     if (isDrawerOpen && dialogRef.current) dialogRef.current.style.transform = "";
   }, [isDrawerOpen, dialogRef]);
 
-  const motion: CSSProperties = { transitionDuration: `${DURATION}ms`, transitionTimingFunction: CART_EASE };
-  const trust = trustLines(config, locale);
+  const motion: CSSProperties = { transitionDuration: `${duration}ms`, transitionTimingFunction: CART_EASE };
+  // The store's own lines (every store); an API from before them: the rewards config's.
+  const trust = trustTexts(sheet.trustItems.length > 0 ? sheet.trustItems : (config?.trustItems ?? []), locale);
   const tiers = barTiers(config, rewards);
+  const [openClass, closedClass] = PANEL_STATE[variant];
+
+  // The rewards bar, at the top of the scrolling part and kept there while the lines scroll under it.
+  const bar = (children: ReactNode) =>
+    withBar ? (
+      <div data-rewards-sticky="" className={STICKY_BAR_CLASS}>
+        {children}
+      </div>
+    ) : null;
 
   return (
     <>
@@ -297,7 +371,7 @@ export function CartSheet({ config }: { config: StorefrontCartRewards }) {
       </p>
 
       {present && (
-        <div className={modalLayer}>
+        <div className={`${modalLayer} ${LAYER[variant]}`} data-cart-sheet={variant}>
           <div
             ref={backdropRef}
             aria-hidden
@@ -313,21 +387,23 @@ export function CartSheet({ config }: { config: StorefrontCartRewards }) {
             aria-labelledby="cart-sheet-title"
             aria-hidden={!isDrawerOpen}
             inert={!isDrawerOpen}
-            className={`absolute inset-x-0 bottom-0 flex max-h-[92dvh] flex-col rounded-t-3xl bg-paper-raised shadow-2xl will-change-transform transition-transform motion-reduce:transition-none sm:inset-y-0 sm:start-auto sm:end-0 sm:max-h-none sm:w-full sm:max-w-md sm:rounded-none ${
-              shown ? "translate-y-0 sm:translate-x-0" : "translate-y-full sm:translate-x-full sm:translate-y-0 sm:rtl:-translate-x-full"
-            }`}
+            data-presentation={sheet.presentation}
+            data-speed={sheet.speed}
+            className={`${PANEL[variant]} flex flex-col bg-paper-raised shadow-2xl will-change-transform motion-reduce:transition-none ${shown ? openClass : closedClass}`}
             style={motion}
           >
-            {/* The handle says the sheet can be pulled down (phones). */}
-            <div className="flex shrink-0 justify-center pt-2.5 sm:hidden" aria-hidden="true">
-              <span className="h-1.5 w-10 rounded-full bg-line-strong/70" />
-            </div>
+            {/* The handle says the sheet can be pulled down. */}
+            {swipeable && (
+              <div className="flex shrink-0 justify-center pt-2.5" aria-hidden="true">
+                <span className="h-1.5 w-10 rounded-full bg-line-strong/70" />
+              </div>
+            )}
 
             <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line px-4 sm:h-16 sm:px-5">
-              <h2 id="cart-sheet-title" className="flex items-center gap-2 font-display text-lg font-bold text-ink">
-                <CartGlyph className="text-primary" />
-                {text.title}
-                {itemCount > 0 && (
+              <h2 id="cart-sheet-title" className="flex min-w-0 items-center gap-2 font-display text-lg font-bold text-ink">
+                <CartGlyph className="shrink-0 text-primary" />
+                <span className="truncate">{quick ? text.quickTitle : text.title}</span>
+                {!quick && itemCount > 0 && (
                   <span className="rounded-full bg-primary-soft px-2 py-0.5 text-xs font-semibold tabular-nums text-primary">
                     {new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en").format(itemCount)}
                   </span>
@@ -339,148 +415,76 @@ export function CartSheet({ config }: { config: StorefrontCartRewards }) {
             </div>
 
             <div ref={bodyRef} className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
-              <div aria-live="polite" className="empty:hidden">
-                {error && <p className="mb-3 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">{error}</p>}
-              </div>
-
-              {isLoading && !cart ? (
-                <div aria-busy="true" aria-label={t.cart.loading} className="space-y-4">
-                  <CartRewardsBar tiers={tiers} subtotal={0} applied={null} locale={lang} formatMoney={moneyOf} loading />
-                  {[0, 1].map((i) => (
-                    <div key={i} className="flex gap-3">
-                      <span className={`${skeleton} h-20 w-20 shrink-0`} />
-                      <span className="flex-1 space-y-2 pt-1">
-                        <span className={`${skeleton} block h-4 w-3/4`} />
-                        <span className={`${skeleton} block h-3 w-1/3`} />
-                        <span className={`${skeleton} block h-9 w-28`} />
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : isEmpty ? (
-                <div className="space-y-6">
-                  {/* An empty cart still shows what the first reward needs. */}
-                  <CartRewardsBar tiers={tiers} subtotal={0} applied={null} locale={lang} formatMoney={moneyOf} />
-                  <div className="flex flex-col items-center px-4 py-8 text-center">
-                    <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-soft text-primary">
-                      <CartGlyph size={32} />
-                    </span>
-                    <p className="mt-4 text-lg font-semibold text-ink">{t.cart.empty}</p>
-                    <p className="mt-1 text-sm text-ink-soft">{t.cart.emptyHint}</p>
-                    <button type="button" onClick={closeDrawer} className={`${btnSecondary} mt-6`}>
-                      {t.common.continueShopping}
-                    </button>
-                  </div>
-                </div>
+              {quick ? (
+                // The product page draws its quick order here: that product, its totals (and the bar) and its form.
+                <div ref={setQuickOrderSlot} data-quick-order-slot="" />
               ) : (
-                <div className="space-y-4">
-                  <CartRewardsBar
-                    tiers={tiers}
-                    subtotal={Number(cart?.subtotal ?? 0)}
-                    applied={rewards?.applied ?? null}
-                    notes={rewards?.notes ?? []}
-                    locale={lang}
-                    formatMoney={moneyOf}
-                    loading={!rewards && quote.shipping.stale}
-                  />
+                <>
+                  <div aria-live="polite" className="empty:hidden">
+                    {error && <p className="mb-3 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">{error}</p>}
+                  </div>
 
-                  <ul className="divide-y divide-line">
-                    {lines.map((line) => {
-                      const leavingNow = Boolean(leaving[line.id]);
-                      const quantity = wanted[line.id] ?? line.quantity;
-                      const lineTotal = quantity === line.quantity ? line.lineTotal : Number(line.currentUnitPrice) * quantity;
-                      const product = byVariant.get(line.variantId);
-                      const combo = isComboLine(line);
-                      const comboImages = combo ? comboLineImages(line, byVariant) : [];
-                      const image = product ? lineImage(product, line.variantId) : null;
-                      const options = variantLabel(line.variant);
-                      const lineName = combo ? line.combo?.name : product?.name;
-                      const compareAt = line.variant?.compareAtAmount ?? null;
-                      const wasTotal = !combo && !line.offerId && compareAt && compareAt > Number(line.currentUnitPrice) ? compareAt * quantity : null;
-                      return (
-                        <li
-                          key={line.id}
-                          // The row folds away (its own height, 1fr → 0fr) and fades as it goes.
-                          className="grid transition-[grid-template-rows,opacity] ease-out motion-reduce:transition-none"
-                          style={{ gridTemplateRows: leavingNow ? "0fr" : "1fr", opacity: leavingNow ? 0 : 1, transitionDuration: `${REMOVE_MS}ms` }}
-                          aria-hidden={leavingNow || undefined}
-                        >
-                          <div className="min-h-0 overflow-hidden">
-                            <div className="flex gap-3 py-4">
-                              <div className={`h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-line bg-paper ${line.unavailable ? "opacity-50" : ""}`}>
-                                {combo && comboImages.length > 0 ? (
-                                  <ComboLineThumb images={comboImages} />
-                                ) : !combo && image ? (
-                                  <StoreImage src={image} alt="" width={80} height={80} sizes="80px" loading="lazy" decoding="async" className="h-full w-full object-cover" />
-                                ) : loaded ? (
-                                  <div className="flex h-full w-full items-center justify-center text-primary/40">
-                                    <BoxIcon size={28} />
-                                  </div>
-                                ) : (
-                                  <span className={`${skeleton} block h-full w-full rounded-none`} />
-                                )}
-                              </div>
-
-                              <div className="flex min-w-0 flex-1 flex-col">
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="min-w-0">
-                                    {combo ? (
-                                      <ComboLineInfo line={line} />
-                                    ) : product ? (
-                                      <StoreLink href={`/products/${product.slug}`} className={`line-clamp-2 rounded text-sm font-semibold text-ink hover:text-primary ${focusRing}`}>
-                                        {product.name}
-                                      </StoreLink>
-                                    ) : loaded ? (
-                                      <span className="text-sm font-semibold text-ink">{options || t.cart.item}</span>
-                                    ) : (
-                                      <span className={`${skeleton} block h-4 w-32`} />
-                                    )}
-                                    {!combo && product && options && <p className="mt-0.5 text-xs text-ink-soft">{options}</p>}
-                                    <LineOptions options={line.options} />
-                                    <LineCustomizations customizations={line.customizations} />
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => remove(line)}
-                                    disabled={leavingNow}
-                                    aria-label={`${t.cart.remove}${lineName ? ` — ${lineName}` : ""}`}
-                                    data-no-drag=""
-                                    className={`-me-2 -mt-2 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-soft transition-colors hover:text-danger disabled:opacity-50 ${focusRing}`}
-                                  >
-                                    <CrossIcon size={18} />
-                                  </button>
-                                </div>
-
-                                {!line.unavailable && (
-                                  <div className="mt-2 flex items-center justify-between gap-3" data-no-drag="">
-                                    <QuantityStepper size="sm" value={quantity} disabled={leavingNow} onChange={(next) => changeQuantity(line.id, next)} />
-                                    <span className="flex flex-wrap items-baseline justify-end gap-x-2">
-                                      <ComboLineFullTotal line={line} currency={currency} />
-                                      {wasTotal !== null && (
-                                        <s className="text-xs tabular-nums text-ink-soft">
-                                          <Money value={wasTotal} currency={currency} />
-                                        </s>
-                                      )}
-                                      <Money value={lineTotal} currency={currency} className="text-sm font-bold tabular-nums text-ink" />
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
+                  {isLoading && !cart ? (
+                    <div aria-busy="true" aria-label={t.cart.loading}>
+                      {bar(<CartRewardsBar tiers={tiers} subtotal={0} applied={null} locale={lang} formatMoney={moneyOf} loading appearance={config?.appearance} speed={sheet.speed} />)}
+                      <div className="space-y-4">
+                        {[0, 1].map((i) => (
+                          <div key={i} className="flex gap-3">
+                            <span className={`${skeleton} h-20 w-20 shrink-0`} />
+                            <span className="flex-1 space-y-2 pt-1">
+                              <span className={`${skeleton} block h-4 w-3/4`} />
+                              <span className={`${skeleton} block h-3 w-1/3`} />
+                              <span className={`${skeleton} block h-9 w-28`} />
+                            </span>
                           </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                        ))}
+                      </div>
+                    </div>
+                  ) : isEmpty ? (
+                    <div>
+                      {/* An empty cart still shows what the first reward needs. */}
+                      {bar(<CartRewardsBar tiers={tiers} subtotal={0} applied={null} locale={lang} formatMoney={moneyOf} appearance={config?.appearance} speed={sheet.speed} />)}
+                      <div className="flex flex-col items-center px-4 py-8 text-center">
+                        <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-soft text-primary">
+                          <CartGlyph size={32} />
+                        </span>
+                        <p className="mt-4 text-lg font-semibold text-ink">{t.cart.empty}</p>
+                        <p className="mt-1 text-sm text-ink-soft">{t.cart.emptyHint}</p>
+                        <button type="button" onClick={closeDrawer} className={`${btnSecondary} mt-6`}>
+                          {t.common.continueShopping}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      {bar(
+                        <CartRewardsBar
+                          tiers={tiers}
+                          subtotal={Number(cart?.subtotal ?? 0)}
+                          applied={rewards?.applied ?? null}
+                          notes={rewards?.notes ?? []}
+                          locale={lang}
+                          formatMoney={moneyOf}
+                          loading={!rewards && quote.shipping.stale}
+                          appearance={config?.appearance}
+                          speed={sheet.speed}
+                        />
+                      )}
 
-                  <SavedBanner rewards={rewards} currency={currency} />
+                      <div className="space-y-4">
+                        <ul className="divide-y divide-line">{lines.map(renderLine)}</ul>
 
-                  {cart && <CartShippingSummary workspaceId={workspaceId} cart={cart} quote={quote} />}
-                </div>
+                        <SavedBanner rewards={rewards} lineSavings={quote.shipping.lineSavings} currency={currency} />
+
+                        {cart && <CartShippingSummary workspaceId={workspaceId} cart={cart} quote={quote} />}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
-            {!isEmpty && cart && (
+            {!quick && !isEmpty && cart && (
               // The button clears the home indicator (0 where there is none).
               <div className="shrink-0 border-t border-line bg-paper-raised px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-5 sm:pt-4">
                 {/* "Email me offers", when the merchant put it in the cart (lib/emailSignup). */}
@@ -509,4 +513,91 @@ export function CartSheet({ config }: { config: StorefrontCartRewards }) {
       )}
     </>
   );
+
+  function renderLine(line: CartLine) {
+    const leavingNow = Boolean(leaving[line.id]);
+    const quantity = wanted[line.id] ?? line.quantity;
+    const lineTotal = quantity === line.quantity ? line.lineTotal : Number(line.currentUnitPrice) * quantity;
+    const product = byVariant.get(line.variantId);
+    const combo = isComboLine(line);
+    const comboImages = combo ? comboLineImages(line, byVariant) : [];
+    const image = product ? lineImage(product, line.variantId) : null;
+    const options = variantLabel(line.variant);
+    const lineName = combo ? line.combo?.name : product?.name;
+    const compareAt = line.variant?.compareAtAmount ?? null;
+    const wasTotal = !combo && !line.offerId && compareAt && compareAt > Number(line.currentUnitPrice) ? compareAt * quantity : null;
+    return (
+      <li
+        key={line.id}
+        // The row folds away (its own height, 1fr → 0fr) and fades as it goes.
+        className="grid transition-[grid-template-rows,opacity] ease-out motion-reduce:transition-none"
+        style={{ gridTemplateRows: leavingNow ? "0fr" : "1fr", opacity: leavingNow ? 0 : 1, transitionDuration: `${duration === 0 ? 0 : REMOVE_MS}ms` }}
+        aria-hidden={leavingNow || undefined}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="flex gap-3 py-4">
+            <div className={`h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-line bg-paper ${line.unavailable ? "opacity-50" : ""}`}>
+              {combo && comboImages.length > 0 ? (
+                <ComboLineThumb images={comboImages} />
+              ) : !combo && image ? (
+                <StoreImage src={image} alt="" width={80} height={80} sizes="80px" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+              ) : loaded ? (
+                <div className="flex h-full w-full items-center justify-center text-primary/40">
+                  <BoxIcon size={28} />
+                </div>
+              ) : (
+                <span className={`${skeleton} block h-full w-full rounded-none`} />
+              )}
+            </div>
+
+            <div className="flex min-w-0 flex-1 flex-col">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  {combo ? (
+                    <ComboLineInfo line={line} />
+                  ) : product ? (
+                    <StoreLink href={`/products/${product.slug}`} className={`line-clamp-2 rounded text-sm font-semibold text-ink hover:text-primary ${focusRing}`}>
+                      {product.name}
+                    </StoreLink>
+                  ) : loaded ? (
+                    <span className="text-sm font-semibold text-ink">{options || t.cart.item}</span>
+                  ) : (
+                    <span className={`${skeleton} block h-4 w-32`} />
+                  )}
+                  {!combo && product && options && <p className="mt-0.5 text-xs text-ink-soft">{options}</p>}
+                  <LineOptions options={line.options} />
+                  <LineCustomizations customizations={line.customizations} />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => remove(line)}
+                  disabled={leavingNow}
+                  aria-label={`${t.cart.remove}${lineName ? ` — ${lineName}` : ""}`}
+                  data-no-drag=""
+                  className={`-me-2 -mt-2 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-soft transition-colors hover:text-danger disabled:opacity-50 ${focusRing}`}
+                >
+                  <CrossIcon size={18} />
+                </button>
+              </div>
+
+              {!line.unavailable && (
+                <div className="mt-2 flex items-center justify-between gap-3" data-no-drag="">
+                  <QuantityStepper size="sm" value={quantity} disabled={leavingNow} onChange={(next) => changeQuantity(line.id, next)} />
+                  <span className="flex flex-wrap items-baseline justify-end gap-x-2">
+                    <ComboLineFullTotal line={line} currency={currency} />
+                    {wasTotal !== null && (
+                      <s className="text-xs tabular-nums text-ink-soft">
+                        <Money value={wasTotal} currency={currency} />
+                      </s>
+                    )}
+                    <Money value={lineTotal} currency={currency} className="text-sm font-bold tabular-nums text-ink" />
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </li>
+    );
+  }
 }

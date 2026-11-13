@@ -53,11 +53,15 @@ export function AutomaticDiscountRow({ amount, currency }: { amount: number; cur
   );
 }
 
-/** "You saved EGP X on this order": compare-at prices, bundles, the reward and the code; only when there is something saved. */
-export function SavedBanner({ rewards, currency, className = "" }: { rewards: CartRewardsQuote | null; currency?: string; className?: string }) {
+/**
+ * "You saved EGP X on this order": compare-at prices, bundles, the reward and
+ * the code; only when there is something saved. A store without rewards says
+ * what its compare-at prices and bundles save (`lineSavings`, the quote's).
+ */
+export function SavedBanner({ rewards, lineSavings = 0, currency, className = "" }: { rewards: CartRewardsQuote | null; lineSavings?: number; currency?: string; className?: string }) {
   const { locale, money } = useStore();
   const text = pickText(TEXT, locale);
-  const target = rewards ? rewards.savedAmount : 0;
+  const target = rewards ? rewards.savedAmount : lineSavings;
   const amount = useTweenedNumber(target);
   if (target <= 0) return null;
   return (

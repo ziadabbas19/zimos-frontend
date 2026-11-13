@@ -42,6 +42,12 @@ export interface ShippingQuoteState {
    * is), and while there is no answer for these lines yet.
    */
   rewards: CartRewardsQuote | null;
+  /**
+   * What the lines sell below their compare-at price plus bundle and combo
+   * savings (the quote's `lineSavingsAmount`, every store): the cart's "you
+   * saved" when the store gives no rewards. 0 until there is an answer.
+   */
+  lineSavings: number;
   /** The last answer is for older lines or choices: the numbers on screen are about to change. */
   stale: boolean;
 }
@@ -126,17 +132,18 @@ export function useShippingQuote({
   // The last rewards answer stays on screen while a newer one is on its way, so the bar never blinks out.
   const rewards = active ? storefrontQuoteRewards(state?.quote) : null;
   const stale = Boolean(state && state.key !== requestKey);
-  if (!active) return { line: { kind: "on_confirmation" }, amount: 0, freeShipping: null, extras, rewards: null, stale: false };
-  if (!state) return { line: province ? { kind: "calculating" } : { kind: "pick_governorate" }, amount: 0, freeShipping: null, extras, rewards: null, stale: true };
+  const lineSavings = active ? Math.max(0, Number((state?.quote as { lineSavingsAmount?: unknown } | null | undefined)?.lineSavingsAmount) || 0) : 0;
+  if (!active) return { line: { kind: "on_confirmation" }, amount: 0, freeShipping: null, extras, rewards: null, lineSavings: 0, stale: false };
+  if (!state) return { line: province ? { kind: "calculating" } : { kind: "pick_governorate" }, amount: 0, freeShipping: null, extras, rewards: null, lineSavings: 0, stale: true };
   if (state.failed || !state.quote) {
     // A failure for an older request says nothing about this one yet.
-    return { line: state.key === requestKey ? { kind: "on_confirmation" } : { kind: "calculating" }, amount: 0, freeShipping: null, extras, rewards: null, stale };
+    return { line: state.key === requestKey ? { kind: "on_confirmation" } : { kind: "calculating" }, amount: 0, freeShipping: null, extras, rewards: null, lineSavings: 0, stale };
   }
 
   const line = shippingLineFor(state.quote, { hasGovernorate: Boolean(province), fresh: state.key === requestKey });
   const freeShipping = quotePricesShipping(state.quote) ? (state.quote.freeShipping ?? null) : null;
   const options = line.kind === "amount" || line.kind === "free" ? quoteOptionsOf(state.quote) : [];
-  return { line, amount: line.kind === "amount" ? line.amount : 0, freeShipping, extras, options, rewards, stale };
+  return { line, amount: line.kind === "amount" ? line.amount : 0, freeShipping, extras, options, rewards, lineSavings, stale };
 }
 
 /** Only the choices that say something, so an empty one does not change the request. */

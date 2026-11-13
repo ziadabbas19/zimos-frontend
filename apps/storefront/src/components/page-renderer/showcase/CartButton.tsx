@@ -2,6 +2,7 @@
 
 import { useState, type MouseEvent, type ReactNode } from "react";
 import { useCart } from "@/lib/CartProvider";
+import { useCartSheet } from "@/lib/cartSheet";
 import { useStore } from "@/lib/StoreContext";
 
 /**
@@ -24,6 +25,7 @@ export function CartButton({
   children?: ReactNode;
 }) {
   const { addItem, openDrawer } = useCart();
+  const { afterAdd } = useCartSheet(openDrawer);
   const { t } = useStore();
   const [status, setStatus] = useState<"idle" | "loading" | "added" | "error">("idle");
 
@@ -36,7 +38,7 @@ export function CartButton({
     try {
       await addItem(variantId, offerId, 1);
       setStatus("added");
-      openDrawer();
+      afterAdd();
       setTimeout(() => setStatus((s) => (s === "added" ? "idle" : s)), 1500);
     } catch {
       setStatus("error");
