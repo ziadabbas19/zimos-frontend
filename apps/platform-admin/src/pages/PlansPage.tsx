@@ -49,6 +49,7 @@ const STRINGS = {
     storeOne: "store",
     storeMany: "stores",
     funnelsPerMonth: "Funnels per month",
+    campaignEmailsPerMonth: "Campaign emails per month",
     perMo: "/mo",
     orderQuota: "Order quota",
     quotaPerMo: "{count}/mo",
@@ -71,6 +72,7 @@ const STRINGS = {
     errTrial: "Free trial must be a whole number of days from 0 (no trial) to 90.",
     errMaxStores: "Max stores must be a whole number of at least 1 — or tick Unlimited.",
     errMaxFunnels: "Max funnels per month must be a whole number (0 or more) — or tick Unlimited.",
+    errMaxCampaignEmails: "Campaign emails per month must be a whole number (0 or more) — or tick Unlimited.",
     errDisplayOrder: "Display order must be a whole number from 0 to 10000.",
     errFee: "The fee per order must be a number, 0 for none.",
     errFeePlan: "A fee per order is only for a plan priced 0 a month, in EGP. Set the monthly price to 0, or the fee to 0.",
@@ -100,6 +102,8 @@ const STRINGS = {
     maxStoresHint: "Stores one owner may have. The largest limit among their current stores' plans applies.",
     maxFunnels: "Max funnels per month",
     maxFunnelsHint: "Funnels one store may create each calendar month (Cairo time), deleted ones included.",
+    maxCampaignEmails: "Email campaign emails per month",
+    maxCampaignEmailsHint: "Marketing emails one store may send each calendar month (Cairo time). 0 = none; plans from before email campaigns start at 0.",
     limitsNote: "New limits apply to stores and funnels created from now on. Nothing that exists is removed or switched off.",
     showAtSignup: "Show at sign-up",
     showAtSignupHint: "Listed on the marketing site's pricing page and offered on the sign-up form.",
@@ -135,6 +139,7 @@ const STRINGS = {
     storeOne: "متجر",
     storeMany: "متاجر",
     funnelsPerMonth: "مسارات البيع شهريًا",
+    campaignEmailsPerMonth: "رسائل الحملات شهريًا",
     perMo: "/شهر",
     orderQuota: "حصة الطلبات",
     quotaPerMo: "{count}/شهر",
@@ -157,6 +162,7 @@ const STRINGS = {
     errTrial: "يجب أن تكون الفترة التجريبية عددًا صحيحًا من الأيام من 0 (بلا تجربة) إلى 90.",
     errMaxStores: "يجب أن يكون الحد الأقصى للمتاجر عددًا صحيحًا لا يقل عن 1 — أو حدّد «غير محدود».",
     errMaxFunnels: "يجب أن يكون الحد الأقصى لمسارات البيع شهريًا عددًا صحيحًا (0 أو أكثر) — أو حدّد «غير محدود».",
+    errMaxCampaignEmails: "يجب أن تكون رسائل الحملات شهريًا عددًا صحيحًا (0 أو أكثر) — أو حدّد «غير محدود».",
     errDisplayOrder: "يجب أن يكون ترتيب العرض عددًا صحيحًا من 0 إلى 10000.",
     errFee: "يجب أن تكون الرسوم لكل طلب رقمًا، و0 لعدم وجود رسوم.",
     errFeePlan: "الرسوم لكل طلب متاحة فقط لخطة سعرها 0 شهريًا بالجنيه المصري. اجعل السعر الشهري 0، أو الرسوم 0.",
@@ -186,6 +192,8 @@ const STRINGS = {
     maxStoresHint: "عدد المتاجر المسموح بها لمالك واحد. يُطبَّق أكبر حد بين خطط متاجره الحالية.",
     maxFunnels: "الحد الأقصى لمسارات البيع شهريًا",
     maxFunnelsHint: "مسارات البيع التي يمكن لمتجر واحد إنشاؤها كل شهر تقويمي (بتوقيت القاهرة)، بما فيها المحذوفة.",
+    maxCampaignEmails: "رسائل حملات البريد شهريًا",
+    maxCampaignEmailsHint: "الرسائل التسويقية التي يمكن لمتجر واحد إرسالها كل شهر تقويمي (بتوقيت القاهرة). 0 = لا شيء؛ الخطط القديمة تبدأ من 0.",
     limitsNote: "تُطبَّق الحدود الجديدة على المتاجر ومسارات البيع التي تُنشأ من الآن فصاعدًا. لا يُحذف أو يُعطَّل شيء موجود.",
     showAtSignup: "الإظهار عند التسجيل",
     showAtSignupHint: "تُدرج في صفحة الأسعار على موقع التسويق وتُعرض في نموذج التسجيل.",
@@ -225,6 +233,10 @@ interface PlanForm {
   storesUnlimited: boolean;
   maxFunnels: string;
   funnelsUnlimited: boolean;
+  maxCampaignEmails: string;
+  campaignEmailsUnlimited: boolean;
+  /** The API sent the field (an older API doesn't): only then is it saved. */
+  campaignEmailsKnown: boolean;
   /** Listed on the marketing site and offered at sign-up. */
   isPublic: boolean;
   displayOrder: string;
@@ -255,6 +267,10 @@ const EMPTY: PlanForm = {
   storesUnlimited: true,
   maxFunnels: "10",
   funnelsUnlimited: true,
+  // A new plan sends no campaign emails until someone gives it a number.
+  maxCampaignEmails: "0",
+  campaignEmailsUnlimited: false,
+  campaignEmailsKnown: true,
   // Never shown to the public until someone decides it should be.
   isPublic: false,
   displayOrder: "0",
@@ -282,6 +298,9 @@ function toForm(p: Plan): PlanForm {
     storesUnlimited: p.maxStores === null || p.maxStores === undefined,
     maxFunnels: p.maxFunnelsPerMonth === null || p.maxFunnelsPerMonth === undefined ? "10" : String(p.maxFunnelsPerMonth),
     funnelsUnlimited: p.maxFunnelsPerMonth === null || p.maxFunnelsPerMonth === undefined,
+    maxCampaignEmails: p.maxCampaignEmailsPerMonth === null || p.maxCampaignEmailsPerMonth === undefined ? "0" : String(p.maxCampaignEmailsPerMonth),
+    campaignEmailsUnlimited: p.maxCampaignEmailsPerMonth === null,
+    campaignEmailsKnown: p.maxCampaignEmailsPerMonth !== undefined,
     isPublic: Boolean(p.isPublic),
     displayOrder: String(p.displayOrder ?? 0),
     perOrderFee: String(toMajorAmount(p.perOrderFee ?? 0, p.currency)),
@@ -369,6 +388,12 @@ export function PlansPage() {
                   <dd className="text-end text-ink">{limitLabel(p.maxStores, p.maxStores === 1 ? t.storeOne : t.storeMany, t.unlimited)}</dd>
                   <dt className="text-ink-soft">{t.funnelsPerMonth}</dt>
                   <dd className="text-end text-ink">{limitLabel(p.maxFunnelsPerMonth, t.perMo, t.unlimited)}</dd>
+                  {p.maxCampaignEmailsPerMonth !== undefined && (
+                    <>
+                      <dt className="text-ink-soft">{t.campaignEmailsPerMonth}</dt>
+                      <dd className="text-end text-ink">{limitLabel(p.maxCampaignEmailsPerMonth, t.perMo, t.unlimited)}</dd>
+                    </>
+                  )}
                   <dt className="text-ink-soft">{t.orderQuota}</dt>
                   <dd className="text-end text-ink">{p.orderQuota === null ? t.unlimited : fmt(t.quotaPerMo, { count: formatNumber(p.orderQuota) })}</dd>
                   <dt className="text-ink-soft">{t.transactionFee}</dt>
@@ -502,6 +527,11 @@ function PlanEditor({
       setError(t.errMaxFunnels);
       return;
     }
+    const maxCampaignEmails = form.campaignEmailsUnlimited ? null : wholeNumber(form.maxCampaignEmails, 0, 10000000);
+    if (!form.campaignEmailsUnlimited && maxCampaignEmails === null) {
+      setError(t.errMaxCampaignEmails);
+      return;
+    }
     const displayOrder = wholeNumber(form.displayOrder, 0, 10000);
     if (displayOrder === null) {
       setError(t.errDisplayOrder);
@@ -547,6 +577,7 @@ function PlanEditor({
         active: form.active,
         maxStores,
         maxFunnelsPerMonth: maxFunnels,
+        ...(form.campaignEmailsKnown ? { maxCampaignEmailsPerMonth: maxCampaignEmails } : {}),
         isPublic: form.isPublic,
         displayOrder,
         perOrderFee: feeMinor,
@@ -659,6 +690,17 @@ function PlanEditor({
             onValue={(v) => set("maxFunnels", v)}
             onUnlimited={(v) => set("funnelsUnlimited", v)}
           />
+          {form.campaignEmailsKnown && (
+            <LimitField
+              label={t.maxCampaignEmails}
+              hint={t.maxCampaignEmailsHint}
+              min={0}
+              value={form.maxCampaignEmails}
+              unlimited={form.campaignEmailsUnlimited}
+              onValue={(v) => set("maxCampaignEmails", v)}
+              onUnlimited={(v) => set("campaignEmailsUnlimited", v)}
+            />
+          )}
           <p className="text-xs text-ink-soft sm:col-span-2">
             {t.limitsNote}
           </p>
