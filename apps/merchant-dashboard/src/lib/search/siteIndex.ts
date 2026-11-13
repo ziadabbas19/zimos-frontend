@@ -60,6 +60,7 @@ import {
 import {
   AI_ENABLED,
   BLOG_ENABLED,
+  CART_REWARDS_ENABLED,
   CUSTOMER_REFERRALS_ENABLED,
   CUSTOM_DOMAINS_ENABLED,
   EMAIL_SUPPRESSIONS_ENABLED,
@@ -360,6 +361,7 @@ const DECLARED: EntryDef[] = [
   { id: pageId("/blog/categories"), kind: "page", title: both(BLOG_WORDS, "categories"), keywords: ["blog categories", "تصنيفات المدونة"], to: "/blog/categories", icon: IconBlog, parent: pageId("/blog"), when: BLOG_ENABLED },
   { id: pageId("/offers/bundles"), kind: "page", title: text("bundles"), keywords: ["bundle", "باقة"], to: "/offers/bundles", icon: IconGift, parent: pageId("/offers") },
   { id: pageId("/offers/combos"), kind: "page", title: text("combos"), keywords: ["combo", "kit", "set", "باقة منتجات", "كومبو"], to: "/offers/combos", icon: IconGift, parent: pageId("/offers"), when: PRODUCT_COMBOS_ENABLED },
+  { id: pageId("/offers/cart-rewards"), kind: "page", title: text("cartRewards"), keywords: ["cart rewards", "progress bar", "free shipping", "tier", "مكافآت", "شريط", "شحن مجاني"], to: "/offers/cart-rewards", icon: IconGift, parent: pageId("/offers"), when: CART_REWARDS_ENABLED },
   { id: pageId("/offers/order-bumps"), kind: "page", title: text("bumps"), keywords: ["order bump", "add-on", "إضافة"], to: "/offers/order-bumps", icon: IconGift, parent: pageId("/offers") },
   { id: pageId("/offers/upsells"), kind: "page", title: text("upsells"), keywords: ["upsell", "one click", "بعد الشراء"], to: "/offers/upsells", icon: IconTrendUp, parent: pageId("/offers") },
   { id: pageId("/offers/cross-sell"), kind: "page", title: text("crossSell"), keywords: ["related products", "frequently bought together", "منتجات مرتبطة"], to: "/offers/cross-sell", icon: IconShuffle, parent: pageId("/offers") },

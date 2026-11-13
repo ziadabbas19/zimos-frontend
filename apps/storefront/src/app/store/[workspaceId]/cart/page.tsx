@@ -10,7 +10,7 @@ import { CartBodyBones, SkeletonStatus } from "@/components/Skeleton";
 import { StoreLink } from "@/components/StoreRoute";
 import { TrustStrip } from "@/components/TrustStrip";
 import { storeCards } from "@/lib/storePromises";
-import { CartShippingSummary } from "@/components/checkout/CartShippingSummary";
+import { CartPageSummary } from "@/components/cart/CartPageSummary";
 import { HolidayCheckoutGate } from "@/components/holiday/HolidayCheckoutGate";
 import { btnPrimaryLg, btnSecondary, card, container } from "@/components/ui";
 import { useCart } from "@/lib/CartProvider";
@@ -180,7 +180,7 @@ export default function CartPage() {
               {/* Shipping comes from the same quote the order is charged by,
                   once the shopper picks a governorate here or at checkout. */}
               <div className="mt-4">
-                <CartShippingSummary workspaceId={workspaceId} cart={cart} />
+                <CartPageSummary workspaceId={workspaceId} cart={cart} />
               </div>
               {/* On holiday: the same link under its ship date, or a button that is off while orders are paused. */}
               <HolidayCheckoutGate buttonClassName={`${btnPrimaryLg} mt-5`} noteClassName="mt-4">

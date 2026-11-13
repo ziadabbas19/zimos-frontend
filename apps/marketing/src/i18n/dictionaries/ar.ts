@@ -264,6 +264,7 @@ export const ar: Dictionary = {
       reviews: "تقييمات المنتجات والمتجر",
       about_gallery: "معرض صور صفحة من نحن",
       combos: "باقات المنتجات",
+      cart_rewards: "مكافآت السلة",
       advanced_coupons: "كوبونات متقدمة",
     },
     payPerOrder: {

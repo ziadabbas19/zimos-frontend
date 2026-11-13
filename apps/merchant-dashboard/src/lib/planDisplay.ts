@@ -38,6 +38,7 @@ export const PLAN_STRINGS = {
     reviews: "Product and store reviews",
     about_gallery: "About page photo gallery",
     combos: "Product combos",
+    cart_rewards: "Cart rewards",
     advanced_coupons: "Advanced coupons",
   },
   ar: {
@@ -71,6 +72,7 @@ export const PLAN_STRINGS = {
     reviews: "تقييمات المنتجات والمتجر",
     about_gallery: "معرض صور صفحة من نحن",
     combos: "باقات المنتجات",
+    cart_rewards: "مكافآت السلة",
     advanced_coupons: "كوبونات متقدمة",
   },
 } satisfies Messages;
