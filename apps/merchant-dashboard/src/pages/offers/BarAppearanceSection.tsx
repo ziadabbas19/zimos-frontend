@@ -10,7 +10,8 @@ import { APPEARANCE_STRINGS, appearanceProblems, type Appearance, type Look } fr
 
 /**
  * Offers → Cart rewards → Bar appearance: the store's style (the default; the
- * bar takes the theme's colours, corners, fonts and light or dark mode, and
+ * bar fills with the store's accent, kept readable on the track and the card,
+ * and takes the theme's other colours, corners, fonts and light or dark mode, and
  * follows a later theme change on its own) or the merchant's own look. Its
  * controls only work while customising; while the store's style is chosen
  * they show, greyed, the values the theme gives. Switching to "Customize"
@@ -24,7 +25,7 @@ import { APPEARANCE_STRINGS, appearanceProblems, type Appearance, type Look } fr
  */
 
 
-export function BarAppearanceSection({ appearance, onChange, disabled }: { appearance: Appearance; onChange: (next: Appearance) => void; disabled: boolean }) {
+export function BarAppearanceSection({ appearance, onChange, disabled, accent }: { appearance: Appearance; onChange: (next: Appearance) => void; disabled: boolean; accent: string }) {
   const t = useT(APPEARANCE_STRINGS);
   const [confirming, setConfirming] = useState(false);
   const custom = appearance.mode === "custom";
@@ -32,7 +33,7 @@ export function BarAppearanceSection({ appearance, onChange, disabled }: { appea
   const look: Look = custom && appearance.custom ? appearance.custom : CART_REWARDS_INHERITED_LOOK;
   const locked = disabled || !custom;
   const set = (change: Partial<Look>) => onChange({ mode: "custom", custom: { ...look, ...change } });
-  const problems = appearanceProblems(appearance);
+  const problems = appearanceProblems(appearance, accent);
   const describe = (p: ContrastProblem) => {
     const name = (c: string, own: string | null) => (own ? c.toUpperCase() : `${c.toUpperCase()} ${t.themeColor}`);
     const [a, b] = p.colors;
@@ -68,7 +69,7 @@ export function BarAppearanceSection({ appearance, onChange, disabled }: { appea
           <Choice label={t.shape} value={look.shape} onChange={(shape) => set({ shape })} options={(["thin", "thick", "segmented"] as const).map((v) => ({ value: v, label: t[`shape_${v}`] }))} />
           <Choice label={t.corners} value={look.corners} onChange={(corners) => set({ corners })} options={(["rounded", "square"] as const).map((v) => ({ value: v, label: t[`corners_${v}`] }))} />
           <div className="grid gap-4 sm:grid-cols-2">
-            <LookColor name={t.fillColor} value={look.fillColor} fallback="#357150" disabled={locked} onChange={(fillColor) => set({ fillColor })} />
+            <LookColor name={t.fillColor} value={look.fillColor} fallback={accent} disabled={locked} onChange={(fillColor) => set({ fillColor })} />
             <LookColor name={t.trackColor} value={look.trackColor} fallback="#DCDACE" disabled={locked} onChange={(trackColor) => set({ trackColor })} />
           </div>
           {problems.length > 0 && (
@@ -85,7 +86,7 @@ export function BarAppearanceSection({ appearance, onChange, disabled }: { appea
                   </li>
                 ))}
               </ul>
-              <Button type="button" variant="outline" className="min-h-11" onClick={() => onChange({ mode: "custom", custom: autoFixLook(look) })}>
+              <Button type="button" variant="outline" className="min-h-11" onClick={() => onChange({ mode: "custom", custom: autoFixLook(look, accent) })}>
                 {t.autoFix}
               </Button>
             </div>

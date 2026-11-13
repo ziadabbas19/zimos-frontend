@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
 import { Button, Input } from "@store-builder/ui";
-import { CartRewardsBar, previewApplied, type RewardTier } from "@store-builder/ui/cart-rewards";
+import { CartRewardsBar, iconColorOn, previewApplied, type RewardTier } from "@store-builder/ui/cart-rewards";
 import {
   CART_REWARDS_MAX_TIERS,
-  CART_REWARDS_MAX_TRUST_ITEMS,
   cartRewardsGet,
   cartRewardsSave,
   cartRewardsValidate,
@@ -31,7 +30,7 @@ import { Select } from "@/components/Select";
 import { SettingsGroup, SettingsSwitch } from "@/components/settings";
 import { useToast } from "@/components/Toast";
 import { FormProblem, OfferPage, OfferPreview } from "./OfferKit";
-import { autoLabelOf, draftOf, emptyTier, newKey, payloadOf, type Draft, type TierDraft, type TrustDraft } from "./cartRewardsForm";
+import { autoLabelOf, draftOf, emptyTier, payloadOf, storeAccentOf, type Draft, type TierDraft } from "./cartRewardsForm";
 import { BarAppearanceSection, RewardIconPicker } from "./BarAppearanceSection";
 import { appearanceProblems, lookValid } from "./barAppearanceLook";
 
@@ -40,10 +39,10 @@ import { appearanceProblems, lookValid } from "./barAppearanceLook";
  * that unlock a discount or free shipping, shown to shoppers as a progress
  * bar in the cart. The merchant lists up to six rewards, each a threshold on
  * the cart's subtotal (after product and offer prices, before any coupon and
- * shipping), a kind (percent off, an amount off, free shipping) and an
- * optional name in Arabic and English; the lines under the checkout button
- * the store wants to promise (nothing is shown that the merchant did not
- * write); and whether a coupon adds to the reward.
+ * shipping), a kind (percent off, an amount off, free shipping), an optional
+ * name in Arabic and English and an icon; whether a coupon adds to the
+ * reward; and the bar's look. (The lines under the checkout button are the
+ * store's cart behavior now: Store settings → Cart behavior, every store.)
  *
  * The checks the server makes are made here first (api-client
  * cartRewardsValidate): a positive threshold, thresholds rising within each
@@ -83,15 +82,6 @@ const STRINGS = {
     add: "Add a reward",
     maxTiers: "Up to {max} rewards.",
     noTiers: "No rewards yet. Add the first one: free shipping from an amount is a good start.",
-    trustGroup: "Lines under the checkout button",
-    trustHint: "Short promises your store keeps, like how it takes payment. Only the lines you write and switch on are shown.",
-    trustAr: "In Arabic",
-    trustEn: "In English",
-    trustOn: "Show line {n}",
-    trustRemove: "Remove line {n}",
-    trustAdd: "Add a line",
-    trustPlaceholderAr: "مثال: الدفع عند الاستلام",
-    trustPlaceholderEn: "e.g. Cash on delivery",
     previewTitle: "Preview",
     previewCart: "A cart of {amount}",
     previewLanguage: "Preview language",
@@ -135,15 +125,6 @@ const STRINGS = {
     add: "إضافة مكافأة",
     maxTiers: "حتى {max} مكافآت.",
     noTiers: "لا توجد مكافآت بعد. أضف الأولى: الشحن المجاني من مبلغ معيّن بداية جيدة.",
-    trustGroup: "سطور تحت زر إتمام الطلب",
-    trustHint: "وعود قصيرة يلتزم بها متجرك، مثل طريقة الدفع. لا يظهر إلا ما تكتبه وتفعّله.",
-    trustAr: "بالعربية",
-    trustEn: "بالإنجليزية",
-    trustOn: "إظهار السطر {n}",
-    trustRemove: "حذف السطر {n}",
-    trustAdd: "إضافة سطر",
-    trustPlaceholderAr: "مثال: الدفع عند الاستلام",
-    trustPlaceholderEn: "e.g. Cash on delivery",
     previewTitle: "المعاينة",
     previewCart: "سلة بقيمة {amount}",
     previewLanguage: "لغة المعاينة",
@@ -195,6 +176,8 @@ function CartRewardsScreen() {
   const errorMessage = useErrorMessage();
   const { currentWorkspace } = useWorkspace();
   const fallbackCurrency = currentWorkspace?.defaultCurrency ?? "EGP";
+  // The store's accent: what the bar fills with in the store's style (the preview and the contrast check).
+  const accent = storeAccentOf(currentWorkspace?.themeSettings);
 
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saved, setSaved] = useState<Draft | null>(null);
@@ -232,7 +215,6 @@ function CartRewardsScreen() {
       tiers.splice(index + by, 0, moved);
       return { ...d, tiers };
     });
-  const setTrust = (key: string, change: Partial<TrustDraft>) => update((d) => ({ ...d, trust: d.trust.map((item) => (item.key === key ? { ...item, ...change } : item)) }));
 
   async function save() {
     if (!draft || !payload) return;
@@ -242,7 +224,7 @@ function CartRewardsScreen() {
       return;
     }
     // A custom look whose colours do not read apart (or are not colours) is not saved; the section says which pair.
-    if (draft.appearance.mode === "custom" && draft.appearance.custom && (!lookValid(draft.appearance.custom) || appearanceProblems(draft.appearance).length > 0)) {
+    if (draft.appearance.mode === "custom" && draft.appearance.custom && (!lookValid(draft.appearance.custom) || appearanceProblems(draft.appearance, accent.light).length > 0)) {
       setError(t.fixLook);
       return;
     }
@@ -316,52 +298,9 @@ function CartRewardsScreen() {
               </div>
             </SettingsGroup>
 
-            <SettingsGroup title={t.trustGroup} description={t.trustHint}>
-              <div className="space-y-3 px-4 py-4">
-                <ol className="space-y-3">
-                  {draft.trust.map((item, index) => (
-                    <li key={item.key} className="space-y-2 rounded-xl p-3 ring-1 ring-line">
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        <Field label={t.trustAr} error={errorOf(`trustItems.${index}.text`)}>
-                          {(aria) => <Input {...aria} dir="rtl" lang="ar" value={item.ar} placeholder={t.trustPlaceholderAr} maxLength={80} disabled={busy} onChange={(e) => setTrust(item.key, { ar: e.target.value })} className="min-h-11" />}
-                        </Field>
-                        <Field label={t.trustEn}>
-                          {(aria) => <Input {...aria} dir="ltr" lang="en" value={item.en} placeholder={t.trustPlaceholderEn} maxLength={80} disabled={busy} onChange={(e) => setTrust(item.key, { en: e.target.value })} className="min-h-11" />}
-                        </Field>
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <SettingsSwitch checked={item.enabled} onChange={(enabled) => setTrust(item.key, { enabled })} label={fmt(t.trustOn, { n: index + 1 })} disabled={busy} className="flex-1 px-0" />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="size-11 text-ink-soft hover:text-danger"
-                          aria-label={fmt(t.trustRemove, { n: index + 1 })}
-                          disabled={busy}
-                          onClick={() => update((d) => ({ ...d, trust: d.trust.filter((x) => x.key !== item.key) }))}
-                        >
-                          <IconDelete className="size-4" aria-hidden />
-                        </Button>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="min-h-11"
-                  disabled={busy || draft.trust.length >= CART_REWARDS_MAX_TRUST_ITEMS}
-                  onClick={() => update((d) => ({ ...d, trust: [...d.trust, { key: newKey(), ar: "", en: "", enabled: true }] }))}
-                >
-                  <IconPlus className="size-4" aria-hidden />
-                  {t.trustAdd}
-                </Button>
-              </div>
-            </SettingsGroup>
+            <BarAppearanceSection appearance={draft.appearance} onChange={(appearance) => update((d) => ({ ...d, appearance }))} disabled={busy} accent={accent.light} />
 
-            <BarAppearanceSection appearance={draft.appearance} onChange={(appearance) => update((d) => ({ ...d, appearance }))} disabled={busy} />
-
-            <CartRewardsPreview draft={draft} currency={currency} speed={cartSpeed} />
+            <CartRewardsPreview draft={draft} currency={currency} speed={cartSpeed} accent={accent} />
 
             <FormProblem>{error}</FormProblem>
             <SaveBar
@@ -465,7 +404,7 @@ function TierEditor({
 }
 
 /** The shoppers' bar on a cart of the amount the slider sets, in either language: tiers that are filled in only. */
-function CartRewardsPreview({ draft, currency, speed }: { draft: Draft; currency: string; speed: "fast" | "normal" | "none" }) {
+function CartRewardsPreview({ draft, currency, speed, accent }: { draft: Draft; currency: string; speed: "fast" | "normal" | "none"; accent: { light: string; dark: string } }) {
   const t = useT(STRINGS);
   const { locale } = useLocale();
   const [lang, setLang] = useState<"ar" | "en">(locale === "ar" ? "ar" : "en");
@@ -490,7 +429,6 @@ function CartRewardsPreview({ draft, currency, speed }: { draft: Draft; currency
   const money = (n: number) => formatMoney(n, currency, lang === "ar" ? "ar-EG" : "en-EG");
   // The look as the store will draw it: the custom one only while it is chosen and its colours read.
   const look = draft.appearance.mode === "custom" && draft.appearance.custom && lookValid(draft.appearance.custom) ? ({ mode: "custom", ...draft.appearance.custom } as const) : ({ mode: "inherit" } as const);
-  const trust = draft.trust.filter((item) => item.enabled).map((item) => (lang === "ar" ? item.ar || item.en : item.en || item.ar).trim()).filter(Boolean);
 
   return (
     <SettingsGroup title={t.previewTitle}>
@@ -514,9 +452,10 @@ function CartRewardsPreview({ draft, currency, speed }: { draft: Draft; currency
             <RangeInput label={fmt(t.previewCart, { amount: money(amount) })} valueText={money(amount)} value={amount} min={0} max={max} step={step} onChange={setSubtotal} />
             <p className="text-xs text-ink-soft">{fmt(t.previewCart, { amount: money(amount) })}</p>
             <OfferPreview>
-              <div dir={lang === "ar" ? "rtl" : "ltr"} lang={lang} className="space-y-2">
+              {/* The store's accent in place of the dashboard's, per light and dark look, as the store draws the bar. */}
+              <style>{`[data-store-accent]{--color-primary:${accent.light};--color-on-primary:${iconColorOn(accent.light)}}.dark [data-store-accent]{--color-primary:${accent.dark};--color-on-primary:${iconColorOn(accent.dark)}}`}</style>
+              <div dir={lang === "ar" ? "rtl" : "ltr"} lang={lang} data-store-accent="" className="space-y-2">
                 <CartRewardsBar tiers={tiers} subtotal={amount} applied={previewApplied(tiers, amount)} locale={lang} formatMoney={money} appearance={look} speed={speed} />
-                {trust.length > 0 && <p className="text-center text-xs text-ink-soft">{trust.join(" · ")}</p>}
               </div>
             </OfferPreview>
             <p className="text-xs text-ink-soft">{t.previewNote}</p>

@@ -63,6 +63,27 @@ describe("match the store style", () => {
   });
 });
 
+describe("the store's accent", () => {
+  it("is what the preview fills with, in the light and the dark look", async () => {
+    Object.assign(workspaceMock, { currentWorkspace: { ...testWorkspace, defaultCurrency: "EGP", settings: {}, themeSettings: { primaryColor: "#C2410C", primaryColorDark: "#FB923C" } } });
+    open();
+    const bar = await screen.findByRole("progressbar", { name: "Rewards progress" });
+    expect(bar.closest("[data-store-accent]")).not.toBeNull();
+    const css = Array.from(document.querySelectorAll("style")).map((el) => el.textContent).join("");
+    expect(css).toContain("[data-store-accent]{--color-primary:#c2410c");
+    expect(css).toContain(".dark [data-store-accent]{--color-primary:#fb923c");
+    // The fill draws with the accent's class, not the old green.
+    expect((bar.querySelector("div") as HTMLElement).className).toContain("bg-primary");
+  });
+
+  it("stands for a fill left to the theme in the contrast check", async () => {
+    Object.assign(workspaceMock, { currentWorkspace: { ...testWorkspace, defaultCurrency: "EGP", settings: {}, themeSettings: { primaryColor: "#ffe066" } } });
+    open({ ...SAVED, appearance: { mode: "custom", custom: { ...CART_REWARDS_INHERITED_LOOK, trackColor: "#ffffff" } } });
+    const alert = await screen.findByText("These colors are too close to tell apart");
+    expect(alert.closest("[role='alert']")?.textContent).toMatch(/The fill #FFE066 \(store theme\) and the track #FFFFFF/);
+  });
+});
+
 describe("customize", () => {
   it("starts from the store's look, then applies each choice to the preview", async () => {
     const { user } = open();

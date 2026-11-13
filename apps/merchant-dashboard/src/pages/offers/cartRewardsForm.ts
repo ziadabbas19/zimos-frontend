@@ -28,18 +28,10 @@ export interface TierDraft {
   icon: CartRewardIcon | null;
 }
 
-export interface TrustDraft {
-  key: string;
-  ar: string;
-  en: string;
-  enabled: boolean;
-}
-
 export interface Draft {
   enabled: boolean;
   allowCouponStacking: boolean;
   tiers: TierDraft[];
-  trust: TrustDraft[];
   /**
    * The bar's look: the store's theme (`inherit`) or the merchant's (`custom`).
    * The custom values stay here while the store inherits, so going back to
@@ -64,7 +56,6 @@ export function draftOf(settings: CartRewardsSettings): Draft {
       labelEn: tier.label?.en ?? "",
       icon: tier.icon && (CART_REWARD_ICONS as readonly string[]).includes(tier.icon) ? tier.icon : null,
     })),
-    trust: settings.trustItems.map((item) => ({ key: newKey(), ar: item.text.ar, en: item.text.en, enabled: item.enabled })),
     appearance: appearanceOf(settings.appearance),
   };
 }
@@ -87,7 +78,7 @@ export function payloadOf(draft: Draft): CartRewardsSettingsPayload {
       label: tier.labelAr.trim() || tier.labelEn.trim() ? { ar: tier.labelAr.trim() || null, en: tier.labelEn.trim() || null } : null,
       icon: tier.icon,
     })),
-    trustItems: draft.trust.map((item) => ({ text: { ar: item.ar.trim(), en: item.en.trim() }, enabled: item.enabled })),
+    // No trustItems: the lines under the checkout button are the store's cart behavior now (Store settings → Cart behavior).
     appearance: { mode: draft.appearance.mode, custom: draft.appearance.custom },
   };
 }
@@ -101,3 +92,14 @@ export function autoLabelOf(type: CartRewardType, value: number, currency: strin
 }
 
 export const emptyTier = (type: CartRewardType = "free_shipping"): TierDraft => ({ key: newKey(), type, threshold: "", value: "", labelAr: "", labelEn: "", icon: null });
+
+/**
+ * The store's accent, as its storefront draws it unless a theme or a template
+ * says otherwise: its primary colour in the light look (the dark look's own
+ * when it set one), else the storefront's defaults.
+ */
+export function storeAccentOf(themeSettings: Record<string, unknown> | null | undefined): { light: string; dark: string } {
+  const hex = (v: unknown) => (typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v.trim()) ? v.trim().toLowerCase() : null);
+  const light = hex(themeSettings?.primaryColor);
+  return { light: light ?? "#1f5d5b", dark: hex(themeSettings?.primaryColorDark) ?? light ?? "#5b8df6" };
+}

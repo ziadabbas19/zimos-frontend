@@ -109,9 +109,9 @@ export const APPEARANCE_STRINGS = {
 export type Look = CartRewardsCustomLook;
 export type Appearance = Draft["appearance"];
 
-/** The custom look's failing pairs (none while the store's style is used). */
-export const appearanceProblems = (appearance: Appearance): ContrastProblem[] =>
-  appearance.mode === "custom" && appearance.custom && lookValid(appearance.custom) ? contrastProblems(appearance.custom) : [];
+/** The custom look's failing pairs (none while the store's style is used); a fill left to the theme is the store's accent. */
+export const appearanceProblems = (appearance: Appearance, accent?: string): ContrastProblem[] =>
+  appearance.mode === "custom" && appearance.custom && lookValid(appearance.custom) ? contrastProblems(appearance.custom, accent) : [];
 
 /** Both colours are a theme's or a full #rrggbb. */
 export const lookValid = (look: Look) => [look.fillColor, look.trackColor].every((c) => c === null || HEX.test(c));
