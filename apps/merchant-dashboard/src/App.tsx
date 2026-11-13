@@ -16,8 +16,10 @@ import {
   BLOG_ENABLED,
   CART_REWARDS_ENABLED,
   CUSTOMER_REFERRALS_ENABLED,
+  EMAIL_CAMPAIGNS_ENABLED,
   GIFT_CARDS_ENABLED,
   LOYALTY_ENABLED,
+  ORDER_PRODUCT_REPORTS_ENABLED,
   PRODUCT_COMBOS_ENABLED,
   PRODUCT_QUESTIONS_ENABLED,
   PRODUCT_SPECS_ENABLED,
@@ -108,6 +110,10 @@ const GiftCardsPage = lazy(() => import("@/pages/giftCards/GiftCardsPage").then(
 const GiftCardDetailPage = lazy(() => import("@/pages/giftCards/GiftCardDetailPage").then((m) => ({ default: m.GiftCardDetailPage })));
 const CombosPage = lazy(() => import("@/pages/offers/CombosPage").then((m) => ({ default: m.CombosPage })));
 const CartRewardsPage = lazy(() => import("@/pages/offers/CartRewardsPage").then((m) => ({ default: m.CartRewardsPage })));
+const OrdersReportPage = lazy(() => import("@/pages/analytics/orderProductReports/OrdersReportPage").then((m) => ({ default: m.OrdersReportPage })));
+const ProductsReportPage = lazy(() => import("@/pages/analytics/orderProductReports/ProductsReportPage").then((m) => ({ default: m.ProductsReportPage })));
+const EmailCampaignsPage = lazy(() => import("@/pages/marketing/emailCampaigns/EmailCampaignsPage").then((m) => ({ default: m.EmailCampaignsPage })));
+const EmailCampaignEditorPage = lazy(() => import("@/pages/marketing/emailCampaigns/EmailCampaignEditorPage").then((m) => ({ default: m.EmailCampaignEditorPage })));
 const BlogPostsPage = lazy(() => import("@/pages/blog/BlogPostsPage").then((m) => ({ default: m.BlogPostsPage })));
 const BlogPostEditorPage = lazy(() => import("@/pages/blog/BlogPostEditorPage").then((m) => ({ default: m.BlogPostEditorPage })));
 const BlogCategoriesPage = lazy(() => import("@/pages/blog/BlogCategoriesPage").then((m) => ({ default: m.BlogCategoriesPage })));
@@ -261,6 +267,9 @@ export default function App() {
                         path="/analytics/reports/:report?"
                         element={STORE_REPORTS_ENABLED ? <LazyRoute><StoreReportPage /></LazyRoute> : <Navigate to="/analytics" replace />}
                       />
+                      {/* The orders and products reports (lib/features): off, these addresses go to /analytics. */}
+                      <Route path="/analytics/orders" element={ORDER_PRODUCT_REPORTS_ENABLED ? <LazyRoute><OrdersReportPage /></LazyRoute> : <Navigate to="/analytics" replace />} />
+                      <Route path="/analytics/products" element={ORDER_PRODUCT_REPORTS_ENABLED ? <LazyRoute><ProductsReportPage /></LazyRoute> : <Navigate to="/analytics" replace />} />
                       <Route path="/analytics/summary" element={<LazyRoute><AnalyticsPage /></LazyRoute>} />
                       <Route path="/analytics/web" element={<LazyRoute><WebAnalyticsPage /></LazyRoute>} />
                       {VISITORS_ENABLED && <Route path="/analytics/visitors" element={<LazyRoute><VisitorsPage /></LazyRoute>} />}
@@ -275,6 +284,9 @@ export default function App() {
                       <Route path="/inbox" element={<LazyRoute><InboxPage /></LazyRoute>} />
                       <Route path="/automations" element={<LazyRoute><AutomationsPage /></LazyRoute>} />
                       <Route path="/marketing" element={<LazyRoute><MarketingPage /></LazyRoute>} />
+                      {/* Email campaigns (lib/features): off, these addresses go to /marketing. */}
+                      <Route path="/marketing/email-campaigns" element={EMAIL_CAMPAIGNS_ENABLED ? <LazyRoute><EmailCampaignsPage /></LazyRoute> : <Navigate to="/marketing" replace />} />
+                      <Route path="/marketing/email-campaigns/:campaignId" element={EMAIL_CAMPAIGNS_ENABLED ? <LazyRoute><EmailCampaignEditorPage /></LazyRoute> : <Navigate to="/marketing" replace />} />
                       <Route path="/profit" element={<LazyRoute><ProfitPage /></LazyRoute>} />
                       <Route path="/profit/costs" element={<LazyRoute><ProfitCostsPage /></LazyRoute>} />
                       <Route path="/ads" element={<LazyRoute><AdsPage /></LazyRoute>} />

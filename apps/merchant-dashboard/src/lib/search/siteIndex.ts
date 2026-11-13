@@ -213,6 +213,9 @@ const PAGE_WORDS: Partial<Record<NavKey, readonly string[]>> = {
   funnels: ["landing pages", "sales funnel", "صفحات هبوط", "فانل"],
   shoppableImages: ["lookbook", "tagged photos"],
   analytics: ["reports", "statistics", "تقارير", "إحصائيات"],
+  ordersReport: ["orders report", "cancellation rate", "return rate", "delivery rate", "average order", "تقرير الطلبات", "نسبة الإلغاء", "نسبة المرتجع", "متوسط الطلب"],
+  productsReport: ["products report", "best sellers", "top products", "low stock", "out of stock", "تقرير المنتجات", "الأكثر مبيعًا", "مخزون منخفض", "نفد المخزون"],
+  emailCampaigns: ["email campaign", "newsletter", "email marketing", "mailing", "حملة بريد", "نشرة بريدية", "تسويق بالبريد", "إيميل"],
   realtime: ["live", "now", "مباشر", "الآن"],
   webAnalytics: ["traffic", "visits", "page views", "زيارات", "ترافيك"],
   visitors: ["sessions", "جلسات"],
@@ -233,6 +236,7 @@ const PAGE_WORDS: Partial<Record<NavKey, readonly string[]>> = {
 const PAGE_PLAN: Partial<Record<NavKey, SearchPlanRule>> = {
   webAnalytics: { feature: "advanced_analytics" },
   reviews: { feature: "reviews" },
+  emailCampaigns: { feature: "email_campaigns" },
 };
 
 /** The heading of each menu page: its group's name, or its own for a page in a group without one. */
