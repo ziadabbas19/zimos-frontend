@@ -1,6 +1,7 @@
 import type { SettingsTone } from "@/components/settings";
 import {
   IconAccount,
+  IconCart,
   IconClipboard,
   IconDocument,
   IconGift,
@@ -22,7 +23,7 @@ import { CUSTOM_DOMAINS_ENABLED, GIFT_OPTIONS_ENABLED, SHOPPER_ACCOUNTS_ENABLED,
  * and what the dashboard's search finds (lib/search/siteIndex.ts) — one list
  * for both, so a new section is found as soon as it is here.
  */
-export const ALL_STORE_SETTINGS_TABS = ["general", "store-info", "policies", "checkout-form", "gift-options", "thank-you", "pages", "seo", "redirects", "languages", "domains", "customer-accounts"] as const;
+export const ALL_STORE_SETTINGS_TABS = ["general", "store-info", "policies", "cart", "checkout-form", "gift-options", "thank-you", "pages", "seo", "redirects", "languages", "domains", "customer-accounts"] as const;
 export type StoreSettingsTab = (typeof ALL_STORE_SETTINGS_TABS)[number];
 type GroupKey = "basics" | "buying" | "showing" | "access";
 
@@ -49,6 +50,7 @@ const ALL_SECTIONS: ReadonlyArray<StoreSettingsSectionMeta> = [
   { id: "general", group: "basics", icon: IconStoreSettings, tone: "gray", keywords: ["favicon", "icon", "country", "أيقونة", "الدولة", "البلد"] },
   { id: "store-info", group: "basics", icon: IconPhone, tone: "green", keywords: ["contact", "email", "phone", "address", "trust", "هاتف", "بريد", "عنوان", "بطاقات الثقة"] },
   { id: "policies", group: "basics", icon: IconDocument, tone: "gray", keywords: ["legal", "refund", "privacy policy", "terms", "shipping policy", "سياسة الشحن", "سياسة الاسترجاع", "سياسة الخصوصية", "الشروط"] },
+  { id: "cart", group: "buying", icon: IconCart, tone: "green", keywords: ["cart", "cart behavior", "cart sheet", "drawer", "bottom sheet", "popup", "animation", "add to cart", "سلوك السلة", "السلة", "درج", "لوحة", "نافذة", "حركة", "أضف للسلة"] },
   { id: "checkout-form", group: "buying", icon: IconClipboard, tone: "blue", keywords: ["checkout", "purchase form", "order form", "fields", "custom field", "نموذج الشراء", "نموذج الطلب", "الحقول"] },
   { id: "gift-options", group: "buying", icon: IconGift, tone: "pink", keywords: ["gift", "wrap", "message", "هدية", "هدايا", "تغليف", "رسالة إهداء"] },
   { id: "thank-you", group: "buying", icon: IconHeart, tone: "red", keywords: ["thank you", "after order", "شكرًا", "بعد الطلب", "رسالة الشكر"] },
@@ -69,6 +71,7 @@ export const STORE_SETTINGS_SECTION_STRINGS = {
     group_buying: "Buying",
     group_showing: "Showing up",
     group_access: "Access",
+    cart: "Cart behavior",
     "checkout-form": "Purchase form",
     "thank-you": "Thank-you page",
     "store-info": "Store information",
@@ -88,6 +91,7 @@ export const STORE_SETTINGS_SECTION_STRINGS = {
     group_buying: "الشراء",
     group_showing: "الظهور",
     group_access: "الوصول",
+    cart: "سلوك السلة",
     "checkout-form": "نموذج الشراء",
     "thank-you": "صفحة الشكر",
     "store-info": "بيانات المتجر",
@@ -109,6 +113,7 @@ export const STORE_SETTINGS_DESCRIPTIONS = {
     general: "The store's tab icon and its country.",
     "store-info": "Your phone, email and address, and the trust cards on product pages.",
     policies: "Shipping, refund, privacy and terms — written once, linked everywhere.",
+    cart: "When the cart opens over the page, how it appears and how fast it moves.",
     "checkout-form": "What the shopper fills in to order, and what is required.",
     "gift-options": "“Is this a gift?” at checkout: gift wrap and a message.",
     "thank-you": "What the shopper sees right after placing the order.",
@@ -123,6 +128,7 @@ export const STORE_SETTINGS_DESCRIPTIONS = {
     general: "أيقونة تبويب المتجر ودولته.",
     "store-info": "هاتفك وبريدك وعنوانك، وبطاقات الثقة في صفحات المنتجات.",
     policies: "الشحن والاسترجاع والخصوصية والشروط — تُكتب مرة واحدة وتظهر في كل مكان.",
+    cart: "متى تفتح السلة فوق الصفحة، وطريقة ظهورها وسرعة حركتها.",
     "checkout-form": "ما يملؤه العميل ليطلب، وما هو المطلوب منه.",
     "gift-options": "«هل هذا الطلب هدية؟» عند إتمام الشراء: تغليف ورسالة إهداء.",
     "thank-you": "ما يراه العميل فور تسجيل الطلب.",

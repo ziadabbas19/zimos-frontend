@@ -32,6 +32,8 @@ import { SettingsGroup, SettingsSwitch } from "@/components/settings";
 import { useToast } from "@/components/Toast";
 import { FormProblem, OfferPage, OfferPreview } from "./OfferKit";
 import { autoLabelOf, draftOf, emptyTier, newKey, payloadOf, type Draft, type TierDraft, type TrustDraft } from "./cartRewardsForm";
+import { BarAppearanceSection, RewardIconPicker } from "./BarAppearanceSection";
+import { appearanceProblems, lookValid } from "./barAppearanceLook";
 
 /**
  * Cart rewards (/offers/cart-rewards, CART_REWARDS_ENABLED): spend thresholds
@@ -104,6 +106,7 @@ const STRINGS = {
     error_noTiers: "Add at least one reward before turning the bar on.",
     error_trustText: "Write the line in Arabic or English, or remove it.",
     fix: "Some rewards need a fix before saving.",
+    fixLook: "The bar's custom colors need a fix before saving (see Bar appearance).",
   },
   ar: {
     title: "مكافآت السلة",
@@ -155,6 +158,7 @@ const STRINGS = {
     error_noTiers: "أضف مكافأة واحدة على الأقل قبل تفعيل الشريط.",
     error_trustText: "اكتب السطر بالعربية أو بالإنجليزية، أو احذفه.",
     fix: "بعض المكافآت تحتاج تصحيحًا قبل الحفظ.",
+    fixLook: "ألوان الشريط المخصصة تحتاج إلى إصلاح قبل الحفظ (انظر شكل الشريط).",
   },
 } satisfies Messages;
 
@@ -195,6 +199,8 @@ function CartRewardsScreen() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saved, setSaved] = useState<Draft | null>(null);
   const [currency, setCurrency] = useState(fallbackCurrency);
+  // The store's cart speed (Store settings → Cart behavior): the preview's fill glides at it.
+  const [cartSpeed, setCartSpeed] = useState<"fast" | "normal" | "none">("fast");
   const [busy, setBusy] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -205,6 +211,7 @@ function CartRewardsScreen() {
     setDraft(next);
     setSaved(next);
     setCurrency(settings.currency || fallbackCurrency);
+    setCartSpeed(settings.cartSpeed ?? "fast");
     return settings;
   }, [workspaceId]);
 
@@ -232,6 +239,11 @@ function CartRewardsScreen() {
     if (Object.keys(errors).length > 0) {
       setShowErrors(true);
       setError(t.fix);
+      return;
+    }
+    // A custom look whose colours do not read apart (or are not colours) is not saved; the section says which pair.
+    if (draft.appearance.mode === "custom" && draft.appearance.custom && (!lookValid(draft.appearance.custom) || appearanceProblems(draft.appearance).length > 0)) {
+      setError(t.fixLook);
       return;
     }
     setBusy(true);
@@ -347,7 +359,9 @@ function CartRewardsScreen() {
               </div>
             </SettingsGroup>
 
-            <CartRewardsPreview draft={draft} currency={currency} />
+            <BarAppearanceSection appearance={draft.appearance} onChange={(appearance) => update((d) => ({ ...d, appearance }))} disabled={busy} />
+
+            <CartRewardsPreview draft={draft} currency={currency} speed={cartSpeed} />
 
             <FormProblem>{error}</FormProblem>
             <SaveBar
@@ -436,6 +450,8 @@ function TierEditor({
         )}
       </div>
 
+      <RewardIconPicker type={tier.type} value={tier.icon} onChange={(icon) => onChange({ icon })} disabled={disabled} />
+
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label={t.labelAr} hint={fmt(t.labelHint, { auto: auto.ar })}>
           {(aria) => <Input {...aria} dir="rtl" lang="ar" value={tier.labelAr} placeholder={auto.ar} maxLength={60} disabled={disabled} onChange={(e) => onChange({ labelAr: e.target.value })} className="min-h-11" />}
@@ -449,7 +465,7 @@ function TierEditor({
 }
 
 /** The shoppers' bar on a cart of the amount the slider sets, in either language: tiers that are filled in only. */
-function CartRewardsPreview({ draft, currency }: { draft: Draft; currency: string }) {
+function CartRewardsPreview({ draft, currency, speed }: { draft: Draft; currency: string; speed: "fast" | "normal" | "none" }) {
   const t = useT(STRINGS);
   const { locale } = useLocale();
   const [lang, setLang] = useState<"ar" | "en">(locale === "ar" ? "ar" : "en");
@@ -462,7 +478,7 @@ function CartRewardsPreview({ draft, currency }: { draft: Draft; currency: strin
         const value = tier.type === "percent" ? Number(tier.value) : tier.type === "fixed" ? majorToMinor(tier.value) : null;
         if (tier.type !== "free_shipping" && (!Number.isFinite(value) || (value ?? 0) < 1)) return [];
         const auto = autoLabelOf(tier.type, value ?? 0, currency);
-        return [{ thresholdAmount: threshold, type: tier.type, value, label: { ar: tier.labelAr.trim() || auto.ar, en: tier.labelEn.trim() || auto.en } }];
+        return [{ thresholdAmount: threshold, type: tier.type, value, label: { ar: tier.labelAr.trim() || auto.ar, en: tier.labelEn.trim() || auto.en }, icon: tier.icon }];
       }),
     [draft.tiers, currency]
   );
@@ -472,6 +488,8 @@ function CartRewardsPreview({ draft, currency }: { draft: Draft; currency: strin
   const [subtotal, setSubtotal] = useState<number | null>(null);
   const amount = Math.min(max, subtotal ?? Math.round(max / 2 / step) * step);
   const money = (n: number) => formatMoney(n, currency, lang === "ar" ? "ar-EG" : "en-EG");
+  // The look as the store will draw it: the custom one only while it is chosen and its colours read.
+  const look = draft.appearance.mode === "custom" && draft.appearance.custom && lookValid(draft.appearance.custom) ? ({ mode: "custom", ...draft.appearance.custom } as const) : ({ mode: "inherit" } as const);
   const trust = draft.trust.filter((item) => item.enabled).map((item) => (lang === "ar" ? item.ar || item.en : item.en || item.ar).trim()).filter(Boolean);
 
   return (
@@ -497,7 +515,7 @@ function CartRewardsPreview({ draft, currency }: { draft: Draft; currency: strin
             <p className="text-xs text-ink-soft">{fmt(t.previewCart, { amount: money(amount) })}</p>
             <OfferPreview>
               <div dir={lang === "ar" ? "rtl" : "ltr"} lang={lang} className="space-y-2">
-                <CartRewardsBar tiers={tiers} subtotal={amount} applied={previewApplied(tiers, amount)} locale={lang} formatMoney={money} />
+                <CartRewardsBar tiers={tiers} subtotal={amount} applied={previewApplied(tiers, amount)} locale={lang} formatMoney={money} appearance={look} speed={speed} />
                 {trust.length > 0 && <p className="text-center text-xs text-ink-soft">{trust.join(" · ")}</p>}
               </div>
             </OfferPreview>

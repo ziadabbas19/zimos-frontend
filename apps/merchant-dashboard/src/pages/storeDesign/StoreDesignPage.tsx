@@ -10,6 +10,7 @@ import { UnsavedGuardProvider, useUnsavedGuard } from "@/lib/useUnsavedGuard";
 import { StoreLivePreview } from "./StoreLivePreview";
 import { CheckoutFormTab } from "./CheckoutFormTab";
 import { ThankYouTab } from "./ThankYouTab";
+import { CartTab } from "./CartTab";
 import { StoreInfoTab } from "./StoreInfoTab";
 import { PoliciesTab } from "./PoliciesTab";
 import { PagesTab } from "./PagesTab";
@@ -196,6 +197,7 @@ function StoreDesignBody() {
           {shown === "store-info" && <StoreInfoTab key={workspaceId} />}
           {shown === "policies" && <PoliciesTab key={workspaceId} />}
           {shown === "checkout-form" && <CheckoutFormTab key={workspaceId} />}
+          {shown === "cart" && <CartTab key={workspaceId} />}
           {shown === "gift-options" && <GiftOptionsTab key={workspaceId} />}
           {shown === "thank-you" && <ThankYouTab key={workspaceId} />}
           {shown === "pages" && <PagesTab key={workspaceId} />}

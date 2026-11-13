@@ -64,10 +64,12 @@ describe("the checks the form makes before saving (the server's own)", () => {
       enabled: true,
       allowCouponStacking: false,
       tiers: [
-        { thresholdAmount: 50000, type: "free_shipping", label: null },
-        { thresholdAmount: 100000, type: "percent", value: 5, label: null },
+        { thresholdAmount: 50000, type: "free_shipping", label: null, icon: null },
+        { thresholdAmount: 100000, type: "percent", value: 5, label: null, icon: null },
       ],
       trustItems: [{ text: { ar: "الدفع عند الاستلام", en: "Cash on delivery" }, enabled: true }],
+      // An API from before the bar's look: the store's style, nothing custom.
+      appearance: { mode: "inherit", custom: null },
     });
   });
 });
@@ -104,11 +106,12 @@ describe("the page", () => {
       enabled: true,
       allowCouponStacking: false,
       tiers: [
-        { thresholdAmount: 50000, type: "free_shipping", label: null },
-        { thresholdAmount: 100000, type: "percent", value: 5, label: null },
-        { thresholdAmount: 200000, type: "percent", value: 10, label: null },
+        { thresholdAmount: 50000, type: "free_shipping", label: null, icon: null },
+        { thresholdAmount: 100000, type: "percent", value: 5, label: null, icon: null },
+        { thresholdAmount: 200000, type: "percent", value: 10, label: null, icon: null },
       ],
       trustItems: [{ text: { ar: "الدفع عند الاستلام", en: "Cash on delivery" }, enabled: true }],
+      appearance: { mode: "inherit", custom: null },
     });
   });
 
