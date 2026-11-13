@@ -109,6 +109,25 @@ export const PRODUCT_COMBOS_ENABLED = import.meta.env.VITE_PRODUCT_COMBOS_ENABLE
  */
 export const CART_REWARDS_ENABLED = import.meta.env.VITE_CART_REWARDS_ENABLED === "true";
 
+/**
+ * The orders report and the products report (Analytics → Orders report /
+ * Products report): KPIs against the previous period, the daily trend, the
+ * breakdowns and the orders behind them; top and slow products, products
+ * with no sales and the stock running out — each with a CSV. Off: no menu
+ * entries, no search entries, and their addresses go to /analytics. Turn on
+ * once the API runs with STORE_FEATURES order_product_reports.
+ */
+export const ORDER_PRODUCT_REPORTS_ENABLED = import.meta.env.VITE_ORDER_PRODUCT_REPORTS_ENABLED === "true";
+
+/**
+ * Email campaigns (Marketing → Email campaigns): emails to the store's own
+ * customers who agreed to marketing — the audience, a block editor with a
+ * desktop and phone preview, a test to yourself, send now or later, the
+ * quota and the numbers afterwards. Off: no menu entry, no search entry, no
+ * route. Turn on once the API runs with EMAIL_CAMPAIGNS_ENABLED.
+ */
+export const EMAIL_CAMPAIGNS_ENABLED = import.meta.env.VITE_EMAIL_CAMPAIGNS_ENABLED === "true";
+
 /** The block designer for order emails. */
 export const ORDER_EMAIL_DESIGN_ENABLED = import.meta.env.VITE_ORDER_EMAIL_DESIGN_ENABLED === "true";
 

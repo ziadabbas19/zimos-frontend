@@ -120,3 +120,12 @@ export const STORE_SKELETONS_ENABLED = process.env.NEXT_PUBLIC_STORE_SKELETONS_E
  * CART_REWARDS_ENABLED and the dashboard's VITE_CART_REWARDS_ENABLED.
  */
 export const CART_REWARDS_ENABLED = process.env.NEXT_PUBLIC_CART_REWARDS_ENABLED === "true";
+
+/**
+ * Email campaigns: the "Email me offers" box at checkout, unticked until the
+ * shopper ticks it (the store may then email them its campaigns; every email
+ * has a one-click unsubscribe). Off, the checkout asks nothing and sends
+ * nothing new. Pairs with the API's EMAIL_CAMPAIGNS_ENABLED and the
+ * dashboard's VITE_EMAIL_CAMPAIGNS_ENABLED.
+ */
+export const EMAIL_CAMPAIGNS_ENABLED = process.env.NEXT_PUBLIC_EMAIL_CAMPAIGNS_ENABLED === "true";

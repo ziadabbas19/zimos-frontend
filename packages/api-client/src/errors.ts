@@ -179,6 +179,16 @@ export type ApiErrorCode =
   // weight tiers
   | "SHIPPING_TIERS_REQUIRED" // 422 — tier pricing needs at least one tier
   | "DEFAULT_ITEM_WEIGHT_REQUIRED" // 422 — tier pricing needs a default item weight
+  // email campaigns (endpoints/emailCampaigns.ts)
+  | "EMAIL_QUOTA_EXCEEDED" // 422 — details: needed, remaining, max, used, resetsAt
+  | "NO_RECIPIENTS" // 422 — nobody in the audience can receive marketing emails
+  | "CAMPAIGN_INCOMPLETE" // 422 — details.field: subject | blocks
+  | "CAMPAIGN_LOCKED" // 409 — a campaign that started can't be edited or deleted
+  | "CAMPAIGN_NOT_SENDABLE" // 409
+  | "CAMPAIGN_NOT_CANCELLABLE" // 409
+  | "CAMPAIGN_NOT_SCHEDULED" // 409
+  | "EMAIL_PROVIDER_NOT_CONFIGURED" // 503 — the platform's sending isn't set up
+  | "TEST_EMAIL_FAILED" // 502
   | (string & {});
 
 /** `details` of a 409 TASK_ALREADY_LOCKED: who holds the task and until when. */

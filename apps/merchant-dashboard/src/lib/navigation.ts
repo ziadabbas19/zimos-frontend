@@ -10,6 +10,9 @@ import {
   Activity,
   CircleDollarSign,
   BarChart3,
+  ClipboardList,
+  Mail,
+  PackageSearch,
   Bot,
   PhoneCall,
   CreditCard,
@@ -51,8 +54,10 @@ import {
   AI_ENABLED,
   BLOG_ENABLED,
   CUSTOMER_REFERRALS_ENABLED,
+  EMAIL_CAMPAIGNS_ENABLED,
   GIFT_CARDS_ENABLED,
   LOYALTY_ENABLED,
+  ORDER_PRODUCT_REPORTS_ENABLED,
   PRODUCT_QUESTIONS_ENABLED,
   SIZE_CHARTS_ENABLED,
   STORE_CREDIT_ENABLED,
@@ -93,6 +98,9 @@ export type NavKey =
   | "website"
   | "funnels"
   | "analytics"
+  | "ordersReport"
+  | "productsReport"
+  | "emailCampaigns"
   | "webAnalytics"
   | "visitors"
   | "attribution"
@@ -219,6 +227,10 @@ export const NAV_GROUPS: NavGroup[] = [
       { key: "marketing", to: "/marketing", icon: Megaphone, requires: ["workspace.manage"] },
       { key: "offers", to: "/offers", icon: Gift, requires: ["products.view"] },
       { key: "discounts", to: "/discounts", icon: Tag, requires: ["discounts.manage"] },
+      // Email campaigns only while the feature is switched on (lib/features); hidden while the plan lacks them.
+      ...(EMAIL_CAMPAIGNS_ENABLED
+        ? [{ key: "emailCampaigns" as const, to: "/marketing/email-campaigns", icon: Mail, requires: ["discounts.manage"] as Permission[], plan: "email_campaigns" as const }]
+        : []),
       // Gift cards only while the feature is switched on (lib/features).
       ...(GIFT_CARDS_ENABLED ? [{ key: "giftCards" as const, to: "/gift-cards", icon: Ticket, requires: ["discounts.manage"] as Permission[] }] : []),
       { key: "automations", to: "/automations", icon: Bot, requires: ["automations.manage"] },
@@ -243,6 +255,13 @@ export const NAV_GROUPS: NavGroup[] = [
     labelKey: "analytics",
     items: [
       { key: "analytics", to: "/analytics", icon: BarChart3, requires: ["analytics.view"] },
+      // The orders and products reports only while switched on (lib/features).
+      ...(ORDER_PRODUCT_REPORTS_ENABLED
+        ? [
+            { key: "ordersReport" as const, to: "/analytics/orders", icon: ClipboardList, requires: ["analytics.view"] as Permission[] },
+            { key: "productsReport" as const, to: "/analytics/products", icon: PackageSearch, requires: ["analytics.view"] as Permission[] },
+          ]
+        : []),
       { key: "realtime", to: "/analytics/realtime", icon: Activity, requires: ["analytics.view"] },
       { key: "webAnalytics", to: "/analytics/web", icon: LineChart, requires: ["analytics.view"] },
       // The store's visitors, only while the feature is switched on (lib/features).
@@ -344,6 +363,9 @@ export const NAV_LABELS = {
     website: "Website",
     funnels: "Funnels",
     analytics: "Analytics",
+    ordersReport: "Orders report",
+    productsReport: "Products report",
+    emailCampaigns: "Email campaigns",
     webAnalytics: "Web analytics",
     visitors: "Visitors",
     realtime: "Realtime",
@@ -392,6 +414,9 @@ export const NAV_LABELS = {
     website: "الموقع",
     funnels: "مسارات البيع",
     analytics: "النظرة العامة والتقارير",
+    ordersReport: "تقرير الطلبات",
+    productsReport: "تقرير المنتجات",
+    emailCampaigns: "حملات البريد",
     webAnalytics: "زيارات الموقع",
     visitors: "الزوار",
     attribution: "مصادر المبيعات",

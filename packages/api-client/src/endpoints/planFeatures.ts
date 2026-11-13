@@ -25,7 +25,7 @@ export interface WorkspacePlanFeatures {
 }
 
 /** Whole features a store without the key doesn't see at all (backend billing/growthFeatures.js). */
-export const GROWTH_PLAN_FEATURES: readonly PlanFeatureKey[] = ["reviews", "about_gallery", "combos", "cart_rewards", "advanced_coupons"];
+export const GROWTH_PLAN_FEATURES: readonly PlanFeatureKey[] = ["reviews", "about_gallery", "combos", "cart_rewards", "email_campaigns", "advanced_coupons"];
 
 export async function workspacePlanFeatures(client: ApiClient, workspaceId: string): Promise<WorkspacePlanFeatures> {
   const { planFeatures } = await client.request<{ planFeatures: WorkspacePlanFeatures }>(

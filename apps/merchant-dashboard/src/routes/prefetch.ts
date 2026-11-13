@@ -17,8 +17,10 @@ import {
   AI_ENABLED,
   BLOG_ENABLED,
   CUSTOMER_REFERRALS_ENABLED,
+  EMAIL_CAMPAIGNS_ENABLED,
   GIFT_CARDS_ENABLED,
   LOYALTY_ENABLED,
+  ORDER_PRODUCT_REPORTS_ENABLED,
   PRODUCT_COMBOS_ENABLED,
   PRODUCT_QUESTIONS_ENABLED,
   PRODUCT_SPECS_ENABLED,
@@ -113,6 +115,9 @@ if (SIZE_CHARTS_ENABLED) registerPrefetch("/size-charts", () => import("@/pages/
 if (STORE_CREDIT_ENABLED) registerPrefetch("/store-credit", () => import("@/pages/storeCredit/StoreCreditPage"));
 if (STORE_REPORTS_ENABLED) registerPrefetch("/analytics/reports", () => import("@/pages/analytics/storeReports/StoreReportPage"));
 if (VIP_TIERS_ENABLED) registerPrefetch("/loyalty/vip", () => import("@/pages/vipTiers/VipTiersPage"));
+if (ORDER_PRODUCT_REPORTS_ENABLED) registerPrefetch("/analytics/orders", () => import("@/pages/analytics/orderProductReports/OrdersReportPage"));
+if (ORDER_PRODUCT_REPORTS_ENABLED) registerPrefetch("/analytics/products", () => import("@/pages/analytics/orderProductReports/ProductsReportPage"));
+if (EMAIL_CAMPAIGNS_ENABLED) registerPrefetch("/marketing/email-campaigns", () => import("@/pages/marketing/emailCampaigns/EmailCampaignsPage"));
 
 /**
  * The frame and the pages that came with the main bundle before every page

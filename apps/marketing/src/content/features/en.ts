@@ -241,6 +241,10 @@ export const en: FeaturesCopy = {
           body: "A progress bar in the cart that tells shoppers how much more unlocks the next reward: free shipping, a percentage or an amount off, at the thresholds and names you choose, priced by the server when the order is placed.",
         },
         {
+          title: "Email campaigns",
+          body: "Email the customers who agreed to hear from you: everyone subscribed or a segment, with a block editor (heading, text, image, button and products from your store), a desktop and phone preview, a test to yourself, and sending now or later. Every email has a one-click unsubscribe.",
+        },
+        {
           title: "Bigger orders",
           body: "Bundles, order bumps, post-purchase upsells, suggested products and an exit pop-up.",
         },

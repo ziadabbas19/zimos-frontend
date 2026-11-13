@@ -260,6 +260,7 @@ export const en: Dictionary = {
       about_gallery: "About page photo gallery",
       combos: "Product combos",
       cart_rewards: "Cart rewards",
+      email_campaigns: "Email campaigns",
       advanced_coupons: "Advanced coupons",
     },
     payPerOrder: {

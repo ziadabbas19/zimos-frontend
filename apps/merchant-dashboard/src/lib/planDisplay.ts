@@ -39,6 +39,7 @@ export const PLAN_STRINGS = {
     about_gallery: "About page photo gallery",
     combos: "Product combos",
     cart_rewards: "Cart rewards",
+    email_campaigns: "Email campaigns",
     advanced_coupons: "Advanced coupons",
   },
   ar: {
@@ -73,6 +74,7 @@ export const PLAN_STRINGS = {
     about_gallery: "معرض صور صفحة من نحن",
     combos: "باقات المنتجات",
     cart_rewards: "مكافآت السلة",
+    email_campaigns: "حملات البريد الإلكتروني",
     advanced_coupons: "كوبونات متقدمة",
   },
 } satisfies Messages;

@@ -53,6 +53,10 @@ export * from "./endpoints/reviews";
 export * from "./endpoints/combos";
 // Cart rewards: spend thresholds that unlock a discount or free shipping (cartRewards/, CART_REWARDS_ENABLED).
 export * from "./endpoints/cartRewards";
+// Email campaigns: a store emails its customers who agreed to marketing (emailCampaigns/, EMAIL_CAMPAIGNS_ENABLED).
+export * from "./endpoints/emailCampaigns";
+// The orders report and the products report (analytics/orderProductReports.js, STORE_FEATURES order_product_reports).
+export * from "./endpoints/orderProductReports";
 // Protection against fake orders: blocklist, rules, risk (Fraud protection page).
 export * from "./endpoints/protection";
 // Dashboard home overview, attribution, profit and ad spend.

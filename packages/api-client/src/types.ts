@@ -1092,6 +1092,12 @@ export interface CheckoutPayload {
    * ORDER_BUMP_UNAVAILABLE when it has just sold out or been withdrawn.
    */
   orderBump?: { offerId: string };
+  /**
+   * "Email me offers" ticked (endpoints/emailCampaigns.ts): the customer agrees
+   * to the store's marketing emails. Only true is sent; ignored by a server
+   * running without EMAIL_CAMPAIGNS_ENABLED.
+   */
+  marketingConsent?: boolean;
 }
 
 // ---------------------------------------------------------------------
@@ -2800,6 +2806,8 @@ export type PlanFeatureKey =
   | "combos"
   // Cart rewards; exists only while CART_REWARDS_ENABLED is on.
   | "cart_rewards"
+  // Email campaigns; exists only while EMAIL_CAMPAIGNS_ENABLED is on. The emails a month are the plan's maxCampaignEmailsPerMonth.
+  | "email_campaigns"
   // The coupon controls (audience, schedule, cap, ...) and the coupon report; plain codes are on every plan.
   | "advanced_coupons";
 
@@ -3120,6 +3128,8 @@ export interface AdminPlan {
   maxStores: number | null;
   /** Funnels one store may make a month (Cairo time); null = unlimited. */
   maxFunnelsPerMonth: number | null;
+  /** Email campaign emails one store may send a month (Cairo time); null = unlimited, 0 = none. An API from before it sends nothing. */
+  maxCampaignEmailsPerMonth?: number | null;
   /** On the marketing site and at sign-up. */
   isPublic: boolean;
   displayOrder: number;
@@ -3141,6 +3151,7 @@ export type AdminPlanInput = Omit<
   | "updatedAt"
   | "maxStores"
   | "maxFunnelsPerMonth"
+  | "maxCampaignEmailsPerMonth"
   | "isPublic"
   | "displayOrder"
   | "perOrderFee"
@@ -3151,6 +3162,8 @@ export type AdminPlanInput = Omit<
   currency?: string;
   maxStores?: number | null;
   maxFunnelsPerMonth?: number | null;
+  /** Left out: kept as it is. null = unlimited. */
+  maxCampaignEmailsPerMonth?: number | null;
   isPublic?: boolean;
   displayOrder?: number;
   /** Only on a plan priced 0 a month, in EGP (422 PER_ORDER_FEE_NOT_ALLOWED). */
