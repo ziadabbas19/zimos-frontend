@@ -4,9 +4,10 @@ import type { ReactNode } from "react";
 import type { StorefrontCartSheet } from "@store-builder/api-client";
 
 // What opens the cart sheet (lib/cartSheet), as the merchant chose in
-// Settings → Cart: the header's cart icon (on by default; off, it is a link to
-// the cart page), "Add to cart" (off by default), the quick order button, or
-// nothing at all. A store that never chose gets the defaults.
+// Store settings → Cart behavior: the header's cart icon (on by default; off,
+// it is a link to the cart page), "Add to cart" (on by default), the quick
+// order button (off by default), or nothing at all. A store that never chose
+// gets the defaults.
 
 // The page the shopper is on, as the browser has it.
 const goTo = (path: string) => window.history.pushState({}, "", path);
@@ -35,7 +36,7 @@ const { CartIcon } = await import("@/components/CartIcon");
 const { AddToCartButton } = await import("@/components/AddToCartButton");
 const { useCartSheet, cartSheetOf, sheetOpensOn } = await import("./cartSheet");
 
-const DEFAULTS: StorefrontCartSheet = { enabled: true, openOn: { addToCart: false, cartIcon: true, quickOrder: false }, presentation: "auto", speed: "fast", trustItems: [] };
+const DEFAULTS: StorefrontCartSheet = { enabled: true, openOn: { addToCart: true, cartIcon: true, quickOrder: false }, presentation: "auto", speed: "fast", trustItems: [] };
 
 function store(cartSheet: StorefrontCartSheet | undefined) {
   return { workspaceId: "ws1", id: "ws1", slug: "shop", name: "Shop", currency: "EGP", logoUrl: null, phone: null, checkout: { email: "optional", postal_code: "hidden", notes: "optional" }, orderBump: null, cartSheet } as never;
@@ -63,11 +64,11 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("defaults", () => {
-  it("a store that never chose: the cart icon opens it, add to cart and the quick order do not", () => {
+  it("a store that never chose: the cart icon and add to cart open it, the quick order does not", () => {
     const sheet = cartSheetOf(null);
     expect(sheet).toEqual(DEFAULTS);
     expect(sheetOpensOn(sheet, "cartIcon")).toBe(true);
-    expect(sheetOpensOn(sheet, "addToCart")).toBe(false);
+    expect(sheetOpensOn(sheet, "addToCart")).toBe(true);
     expect(sheetOpensOn(sheet, "quickOrder")).toBe(false);
   });
 
@@ -109,18 +110,18 @@ describe("the cart icon", () => {
 });
 
 describe("add to cart", () => {
-  it("adds and says so, without opening the sheet, while it is off (the default)", async () => {
+  it("opens the sheet once the line is in, for a store that never chose (on by default)", async () => {
     render(<AddToCartButton variantId="v1" />, { wrapper: withStore(undefined) });
     fireEvent.click(screen.getByRole("button", { name: "Add to cart" }));
-    expect(await screen.findByRole("button", { name: "Added to cart" })).toBeTruthy();
+    await waitFor(() => expect(openDrawer).toHaveBeenCalledTimes(1));
     expect(addItem).toHaveBeenCalledWith("v1", undefined, 1, undefined, undefined);
-    expect(openDrawer).not.toHaveBeenCalled();
   });
 
-  it("opens the sheet once the line is in, while it is on", async () => {
-    render(<AddToCartButton variantId="v1" />, { wrapper: withStore(settings({ openOn: { addToCart: true } })) });
+  it("adds and says so, without opening the sheet, once the merchant switched it off", async () => {
+    render(<AddToCartButton variantId="v1" />, { wrapper: withStore(settings({ openOn: { addToCart: false } })) });
     fireEvent.click(screen.getByRole("button", { name: "Add to cart" }));
-    await waitFor(() => expect(openDrawer).toHaveBeenCalledTimes(1));
+    expect(await screen.findByRole("button", { name: "Added to cart" })).toBeTruthy();
+    expect(openDrawer).not.toHaveBeenCalled();
   });
 
   it("does not open it while the sheet is off for all", async () => {

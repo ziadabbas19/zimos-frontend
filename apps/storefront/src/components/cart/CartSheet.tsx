@@ -30,7 +30,7 @@ import { SavedBanner } from "./RewardRows";
 
 /**
  * The store's cart sheet, for every store (whatever its plan; no build or API
- * switch turns it on). The merchant chooses in Settings → The store → Cart
+ * switch turns it on). The merchant chooses in Store settings → Cart behavior
  * (GET /store/:ws `cartSheet`, lib/cartSheet) which taps open it, how it
  * appears and how fast it moves:
  *

@@ -112,7 +112,7 @@ export interface CartRewardsBarProps {
   footer?: ReactNode;
   /** How it looks: absent or `inherit`, the store's theme (as it always looked). */
   appearance?: BarAppearance | null;
-  /** The store's cart speed (Settings → Cart): how fast the fill glides; "none" moves nothing. */
+  /** The store's cart speed (Store settings → Cart behavior): how fast the fill glides; "none" moves nothing. */
   speed?: CartSpeed;
 }
 

@@ -54,11 +54,11 @@ const STRINGS = {
   en: {
     title: "Cart behavior",
     description: "How your store's cart opens and moves, for every shopper.",
-    defaults: "Your store uses the default cart: the cart icon opens it, a bottom sheet on phones and a side drawer on wide screens.",
+    defaults: "Your store uses the default cart: it opens after “Add to cart” and from the cart icon, as a bottom sheet on phones and a side drawer on wide screens.",
     whenTitle: "When the cart opens",
     whenHint: "The cart opens over the page the shopper is on, so they never lose their place.",
     addToCart: "After “Add to cart”",
-    addToCartHint: "Opens by itself once a product is added. Off: the button says “added” and the cart count moves.",
+    addToCartHint: "On by default: opens by itself once a product is added. Off: the button says “added” and the cart count moves.",
     cartIcon: "When the shopper taps the cart icon",
     cartIconHint: "Off: the icon goes to the cart page.",
     quickOrder: "From the “Order now” button",
@@ -82,6 +82,11 @@ const STRINGS = {
     preview: "Preview",
     previewHint: "How the cart opens, at the speed you chose.",
     previewLanguage: "Preview language",
+    opensFrom: "Opens: {list}",
+    opensNone: "No tap opens it: the cart icon goes to the cart page.",
+    from_addToCart: "after “Add to cart”",
+    from_cartIcon: "from the cart icon",
+    from_quickOrder: "from “Order now”",
     replay: "Play again",
     phone: "Phone",
     computer: "Computer",
@@ -105,11 +110,11 @@ const STRINGS = {
   ar: {
     title: "سلوك السلة",
     description: "طريقة فتح سلة متجرك وحركتها، لكل العملاء.",
-    defaults: "متجرك يستخدم السلة الافتراضية: تفتح من أيقونة السلة، كلوحة من الأسفل على الهاتف وكدرج جانبي على الشاشات العريضة.",
+    defaults: "متجرك يستخدم السلة الافتراضية: تفتح بعد «أضف للسلة» ومن أيقونة السلة، كلوحة من الأسفل على الهاتف وكدرج جانبي على الشاشات العريضة.",
     whenTitle: "متى تفتح السلة",
     whenHint: "تفتح السلة فوق الصفحة التي يتصفحها العميل، فلا يفقد مكانه.",
     addToCart: "بعد «أضف للسلة»",
-    addToCartHint: "تفتح تلقائيًا بعد إضافة منتج. عند الإيقاف يعرض الزر «تمت الإضافة» ويتغير عدد السلة.",
+    addToCartHint: "مفعّل افتراضيًا: تفتح تلقائيًا بعد إضافة منتج. عند الإيقاف يعرض الزر «تمت الإضافة» ويتغير عدد السلة.",
     cartIcon: "عند الضغط على أيقونة السلة",
     cartIconHint: "عند الإيقاف تنتقل الأيقونة إلى صفحة السلة.",
     quickOrder: "من زر «اطلب الآن»",
@@ -133,6 +138,11 @@ const STRINGS = {
     preview: "معاينة",
     previewHint: "طريقة فتح السلة بالسرعة التي اخترتها.",
     previewLanguage: "لغة المعاينة",
+    opensFrom: "تفتح: {list}",
+    opensNone: "لا شيء يفتحها: أيقونة السلة تنتقل إلى صفحة السلة.",
+    from_addToCart: "بعد «أضف للسلة»",
+    from_cartIcon: "من أيقونة السلة",
+    from_quickOrder: "من «اطلب الآن»",
     replay: "إعادة التشغيل",
     phone: "الهاتف",
     computer: "الكمبيوتر",
@@ -369,6 +379,7 @@ export function CartSheetPreview({ settings, trust = [] }: { settings: Omit<Cart
   const text = SHOPPER_TEXT[lang];
   const other = lang === "ar" ? "en" : "ar";
   const firstLine = trust.filter((item) => item.enabled).map((item) => (item[lang] || item[other]).trim()).find(Boolean) ?? null;
+  const opens = (["addToCart", "cartIcon", "quickOrder"] as const).filter((key) => settings.openOn[key]);
   return (
     <Section
       title={t.preview}
@@ -385,10 +396,16 @@ export function CartSheetPreview({ settings, trust = [] }: { settings: Omit<Cart
       {!settings.enabled ? (
         <p className="text-sm text-ink-soft">{t.offPreview}</p>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-[9rem_minmax(0,1fr)]" dir={lang === "ar" ? "rtl" : "ltr"} lang={lang}>
-          {/* Drawn again (closed, then opening) whenever the choice or "Play again" changes. */}
-          <MiniScreen key={`phone-${run}-${settings.presentation}-${settings.speed}`} wide={false} label={t.phone} settings={settings} text={text} trustLine={firstLine} />
-          <MiniScreen key={`computer-${run}-${settings.presentation}-${settings.speed}`} wide label={t.computer} settings={settings} text={text} trustLine={firstLine} />
+        <div className="space-y-3">
+          {/* What opens it, as chosen above (after "Add to cart" and the cart icon by default). */}
+          <p className="text-xs text-ink-soft" data-preview-opens="">
+            {opens.length > 0 ? fmt(t.opensFrom, { list: opens.map((key) => t[`from_${key}`]).join(" · ") }) : t.opensNone}
+          </p>
+          <div className="grid gap-4 sm:grid-cols-[9rem_minmax(0,1fr)]" dir={lang === "ar" ? "rtl" : "ltr"} lang={lang}>
+            {/* Drawn again (closed, then opening) whenever the choice or "Play again" changes. */}
+            <MiniScreen key={`phone-${run}-${settings.presentation}-${settings.speed}`} wide={false} label={t.phone} settings={settings} text={text} trustLine={firstLine} />
+            <MiniScreen key={`computer-${run}-${settings.presentation}-${settings.speed}`} wide label={t.computer} settings={settings} text={text} trustLine={firstLine} />
+          </div>
         </div>
       )}
     </Section>

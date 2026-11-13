@@ -55,7 +55,7 @@ export function AddToCartButton({
     try {
       await addItem(variantId, offerId, defaultQuantity, customizations, options);
       setStatus("added");
-      // The cart sheet opens when the merchant wants it to (Settings → Cart,
+      // The cart sheet opens when the merchant wants it to (Store settings → Cart behavior,
       // lib/cartSheet); either way the button says "added" and the header's
       // count moves, so the shopper knows without leaving the page.
       afterAdd();

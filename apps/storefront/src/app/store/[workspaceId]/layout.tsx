@@ -329,7 +329,7 @@ export default async function StoreLayout({
                     <StoreFooter store={store} locale={locale} year={new Date().getFullYear()} />
                   )}
                   {/* The cart sheet, every store's: opened by the taps the merchant
-                      chose (Settings → Cart). Funnel pages have no cart, so it
+                      chose (Store settings → Cart behavior). Funnel pages have no cart, so it
                       steps aside with the rest of the store's chrome. */}
                   <StoreCartSheet />
                   {/* The merchant's exit popup, once per visitor (Offers → Exit popup). */}

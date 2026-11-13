@@ -11,7 +11,7 @@ import { iconBtn } from "./ui";
  * The header's cart control with its live count. It is a link to the cart
  * page — that is where it goes without JavaScript and where a middle-click
  * opens — but while the merchant has the cart icon open the cart sheet (the
- * default; Settings → Cart, lib/cartSheet) a plain tap opens the sheet
+ * default; Store settings → Cart behavior, lib/cartSheet) a plain tap opens the sheet
  * instead, so the shopper never leaves the page they were on. On the cart and
  * checkout pages themselves the sheet would only repeat the page, so there
  * the link goes through.

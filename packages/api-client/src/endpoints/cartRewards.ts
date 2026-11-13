@@ -114,7 +114,7 @@ export interface CartRewardsSettings {
   trustItems: CartRewardTrustItem[];
   /** The bar's look; absent from an API older than it (= the theme's). */
   appearance?: CartRewardsAppearance;
-  /** The store's cart speed (Settings → Cart), which the bar's fill glides at: shown in the preview only. */
+  /** The store's cart speed (Store settings → Cart behavior), which the bar's fill glides at: shown in the preview only. */
   cartSpeed?: "fast" | "normal" | "none";
 }
 

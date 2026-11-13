@@ -30,7 +30,7 @@ export interface CartSheetSettings {
   /** false: no sheet at all, the cart is a page of its own ("off for all"). */
   enabled: boolean;
   openOn: {
-    /** Opens by itself once a product is added. */
+    /** Opens by itself once a product is added (on unless the merchant switches it off). */
     addToCart: boolean;
     /** Opens from the cart icon (header, phone toolbar). */
     cartIcon: boolean;
@@ -50,7 +50,7 @@ export interface CartSheetSettings {
 /** What a store that never chose gets. */
 export const CART_SHEET_DEFAULTS: CartSheetSettings = {
   enabled: true,
-  openOn: { addToCart: false, cartIcon: true, quickOrder: false },
+  openOn: { addToCart: true, cartIcon: true, quickOrder: false },
   presentation: "auto",
   speed: "fast",
 };

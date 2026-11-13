@@ -6,12 +6,13 @@ import { useStore } from "./StoreContext";
 
 /**
  * How the store's cart opens (GET /store/:ws `cartSheet`, chosen by the
- * merchant in Settings → The store → Cart). Every store has the sheet,
+ * merchant in Store settings → Cart behavior). Every store has the sheet,
  * whatever its plan and whatever the cart rewards switches say; the rewards
  * bar is only something drawn inside it.
  *
- *   addToCart   a product was added → the sheet opens by itself (off by default:
- *               the button says "added" and the header's count moves)
+ *   addToCart   a product was added → the sheet opens by itself (on by default,
+ *               as the cart always did; off, the button says "added" and the
+ *               header's count moves)
  *   cartIcon    the header's cart icon and the phone toolbar's open it in place
  *               (on by default); off, they are links to the cart page
  *   quickOrder  a product page's "Order now" opens it with that product and the

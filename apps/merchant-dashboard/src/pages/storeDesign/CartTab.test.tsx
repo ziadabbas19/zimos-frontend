@@ -26,7 +26,7 @@ describe("the cart behavior section", () => {
     fakeBackend({ "GET /cart-sheet": view() });
     renderWithProviders(<CartTab />);
     expect(await screen.findByText(/Your store uses the default cart/)).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: /After “Add to cart”/ })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /After “Add to cart”/ })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: /When the shopper taps the cart icon/ })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: /From the “Order now” button/ })).not.toBeChecked();
     expect(screen.getByRole("checkbox", { name: /Off for all/ })).not.toBeChecked();
@@ -37,6 +37,7 @@ describe("the cart behavior section", () => {
   it("saves the merchant's choices whole through the store settings", async () => {
     const calls = fakeBackend({ "GET /cart-sheet": view(), "PATCH /workspaces/ws_1": { workspace: { id: "ws_1", settings: { cart_sheet: { ...CART_SHEET_DEFAULTS, presentation: "popup", trustItems: [] } } } } });
     const { user } = renderWithProviders(<CartTab />);
+    // On by default: switched off here.
     await user.click(await screen.findByRole("checkbox", { name: /After “Add to cart”/ }));
     await user.click(screen.getByRole("checkbox", { name: /From the “Order now” button/ }));
     await user.click(screen.getByRole("radio", { name: /Centered popup/ }));
@@ -44,7 +45,7 @@ describe("the cart behavior section", () => {
     await user.click(screen.getByRole("button", { name: "Save changes" }));
     await waitFor(() => expect(callsTo(calls, "PATCH", "/workspaces/ws_1")).toHaveLength(1));
     expect(callsTo(calls, "PATCH", "/workspaces/ws_1")[0].body).toEqual({
-      settings: { cart_sheet: { enabled: true, openOn: { addToCart: true, cartIcon: true, quickOrder: true }, presentation: "popup", speed: "none", trustItems: [] } },
+      settings: { cart_sheet: { enabled: true, openOn: { addToCart: false, cartIcon: true, quickOrder: true }, presentation: "popup", speed: "none", trustItems: [] } },
     });
   });
 
@@ -77,6 +78,20 @@ describe("the cart behavior section", () => {
     expect(side.className).not.toMatch(/(^|\s)right-0(\s|$)/);
     await user.click(screen.getByRole("radio", { name: /Centered popup/ }));
     expect(variants()).toEqual(["phone:popup", "computer:popup"]);
+  });
+
+  it("says in the preview what opens the sheet, following the switches", async () => {
+    fakeBackend({ "GET /cart-sheet": view() });
+    const { user } = renderWithProviders(<CartTab />);
+    const opens = async () => (await screen.findByText(/^Opens:|^No tap opens it/)).textContent;
+    expect(await opens()).toBe("Opens: after “Add to cart” · from the cart icon");
+    await user.click(screen.getByRole("checkbox", { name: /After “Add to cart”/ }));
+    expect(await opens()).toBe("Opens: from the cart icon");
+    await user.click(screen.getByRole("checkbox", { name: /From the “Order now” button/ }));
+    await user.click(screen.getByRole("checkbox", { name: /When the shopper taps the cart icon/ }));
+    expect(await opens()).toBe("Opens: from “Order now”");
+    await user.click(screen.getByRole("checkbox", { name: /From the “Order now” button/ }));
+    expect(await opens()).toBe("No tap opens it: the cart icon goes to the cart page.");
   });
 
   it("no speed: the preview is open at once", async () => {

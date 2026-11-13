@@ -499,7 +499,7 @@ export function ProductLanding({
     return () => io.disconnect();
   }, [formEl]);
 
-  // --- "Order now" in the cart sheet (Settings → Cart → quick order, lib/cartSheet) ---
+  // --- "Order now" in the cart sheet (Store settings → Cart behavior → quick order, lib/cartSheet) ---
   // On, the button opens the sheet on this product: its totals, the rewards bar
   // and this very form, drawn into the sheet. Without the form on this page,
   // the product goes into the cart and the cart sheet opens instead of the cart page.
