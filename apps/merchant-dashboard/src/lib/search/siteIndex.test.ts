@@ -19,6 +19,7 @@ const TAB_PAGES: Record<string, string> = {
   "/analytics": "/src/pages/analytics/reports/ReportsPage.tsx",
   "/analytics/visitors": "/src/pages/analytics/visitors/VisitorsPage.tsx",
   "/settlements": "/src/pages/settlements/SettlementsPage.tsx",
+  "/marketing/email-campaigns": "/src/pages/marketing/emailCampaigns/EmailCampaignsPage.tsx",
 };
 
 /**
