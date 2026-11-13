@@ -54,10 +54,12 @@ export const HEX = /^#[0-9a-fA-F]{6}$/;
 
 /*
  * The theme's colours a "match the store theme" side stands for, in the
- * storefront's light look (apps/storefront globals.css: --color-success and
- * --color-line). The server checks against the same two.
+ * storefront's light look (apps/storefront globals.css): the fill is the
+ * store's accent (--color-primary; this is the default one, a store's own
+ * primaryColor is passed in where known), the track --color-line. The server
+ * checks against the same.
  */
-export const THEME_COLORS = { fill: "#357150", track: "#dcdace" } as const;
+export const THEME_COLORS = { fill: "#1f5d5b", track: "#dcdace" } as const;
 export const MIN_CONTRAST = 3;
 
 function channel(value: number): number {
@@ -94,9 +96,9 @@ export interface ContrastProblem {
  * against the track (when either is the merchant's), and a reached marker's
  * icon against its fill (black or white, so it always passes).
  */
-export function contrastProblems(look: BarLook): ContrastProblem[] {
+export function contrastProblems(look: BarLook, themeFill: string = THEME_COLORS.fill): ContrastProblem[] {
   const out: ContrastProblem[] = [];
-  const fill = look.fillColor ?? THEME_COLORS.fill;
+  const fill = look.fillColor ?? themeFill;
   const track = look.trackColor ?? THEME_COLORS.track;
   if (look.fillColor || look.trackColor) {
     const ratio = contrastRatio(fill, track);
@@ -150,28 +152,93 @@ function fromHsl(h: number, s: number, l: number): string {
 
 /**
  * The nearest colour to `color` (same hue and saturation, lighter or darker,
- * whichever is the smaller step) that reaches 3:1 against `against`.
+ * whichever is the smaller step) that reaches 3:1 against `against` — every
+ * one of them when it is a list.
  */
-export function nearestPassing(color: string, against: string): string {
-  if (contrastRatio(color, against) >= MIN_CONTRAST) return color;
+export function nearestPassing(color: string, against: string | readonly string[]): string {
+  const all = typeof against === "string" ? [against] : against;
+  const passes = (c: string) => all.every((other) => contrastRatio(c, other) >= MIN_CONTRAST);
+  if (passes(color)) return color;
   const [h, s, l] = toHsl(color);
   for (let step = 1; step <= 100; step++) {
     for (const next of [l - step / 100, l + step / 100]) {
       if (next < 0 || next > 1) continue;
       const candidate = fromHsl(h, s, next);
-      if (contrastRatio(candidate, against) >= MIN_CONTRAST) return candidate;
+      if (passes(candidate)) return candidate;
     }
   }
-  return iconColorOn(against);
+  // Nothing in between reads on all of them: whichever of black and white does best on the first.
+  return iconColorOn(all[0]);
+}
+
+/**
+ * The store's accent as the rewards bar fills with it (the store's style):
+ * itself when it reaches 3:1 against the track and the card it sits on, else
+ * the nearest shade of it that does (darker on a light page, lighter on a
+ * dark one). The colours are the ones the page actually draws, so a theme, a
+ * template or dark mode is taken as it is.
+ */
+export const readableAccent = (accent: string, against: readonly string[]): string => nearestPassing(accent, against.filter((c) => HEX.test(c)));
+
+const hex2 = (n: number) => Math.round(Math.min(255, Math.max(0, n))).toString(16).padStart(2, "0");
+const toHex = (r: number, g: number, b: number) => `#${hex2(r)}${hex2(g)}${hex2(b)}`;
+const gamma = (c: number) => 255 * (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
+
+function fromOklab(L: number, a: number, b: number): string {
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  return toHex(gamma(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s), gamma(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s), gamma(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s));
+}
+
+/**
+ * A colour as getComputedStyle gives it (#hex, rgb()/rgba(), color(srgb …),
+ * oklab(), oklch()) as #rrggbb; null for anything else, or a see-through one.
+ */
+export function parseCssColor(value: string | null | undefined): string | null {
+  const v = (value ?? "").trim().toLowerCase();
+  if (HEX.test(v)) return v;
+  if (/^#[0-9a-f]{3}$/.test(v)) return `#${v[1]}${v[1]}${v[2]}${v[2]}${v[3]}${v[3]}`;
+  const parts = (inside: string) => inside.split(/[\s,/]+/).filter(Boolean);
+  const num = (x: string, scale = 1) => (x.endsWith("%") ? (parseFloat(x) / 100) * scale : parseFloat(x));
+  let m = /^rgba?\((.*)\)$/.exec(v);
+  if (m) {
+    const [r, g, b, alpha] = parts(m[1]);
+    if (alpha !== undefined && num(alpha) === 0) return null;
+    const out = [r, g, b].map((x) => num(x, 255));
+    return out.every(Number.isFinite) ? toHex(out[0], out[1], out[2]) : null;
+  }
+  m = /^color\(srgb (.*)\)$/.exec(v);
+  if (m) {
+    const [r, g, b, alpha] = parts(m[1]);
+    if (alpha !== undefined && num(alpha) === 0) return null;
+    const out = [r, g, b].map((x) => num(x) * 255);
+    return out.every(Number.isFinite) ? toHex(out[0], out[1], out[2]) : null;
+  }
+  m = /^oklab\((.*)\)$/.exec(v);
+  if (m) {
+    const [L, a, b] = parts(m[1]);
+    const out = [num(L), num(a, 0.4), num(b, 0.4)];
+    return out.every(Number.isFinite) ? fromOklab(out[0], out[1], out[2]) : null;
+  }
+  m = /^oklch\((.*)\)$/.exec(v);
+  if (m) {
+    const [L, C, H] = parts(m[1]);
+    const h = (parseFloat(H) * Math.PI) / 180;
+    const c = num(C, 0.4);
+    const l = num(L);
+    return [l, c, h].every(Number.isFinite) ? fromOklab(l, c * Math.cos(h), c * Math.sin(h)) : null;
+  }
+  return null;
 }
 
 /**
  * "Auto-fix": the look with the merchant's own colour nudged until every pair
  * passes (the fill when it is theirs, else the track). Unchanged when nothing fails.
  */
-export function autoFixLook(look: BarLook): BarLook {
-  if (contrastProblems(look).length === 0) return look;
+export function autoFixLook(look: BarLook, themeFill: string = THEME_COLORS.fill): BarLook {
+  if (contrastProblems(look, themeFill).length === 0) return look;
   if (look.fillColor) return { ...look, fillColor: nearestPassing(look.fillColor, look.trackColor ?? THEME_COLORS.track) };
-  if (look.trackColor) return { ...look, trackColor: nearestPassing(look.trackColor, THEME_COLORS.fill) };
+  if (look.trackColor) return { ...look, trackColor: nearestPassing(look.trackColor, themeFill) };
   return look;
 }

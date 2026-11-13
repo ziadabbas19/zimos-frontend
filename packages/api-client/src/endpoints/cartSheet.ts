@@ -15,6 +15,15 @@ export type CartSheetPresentation = "auto" | "bottom_sheet" | "side_drawer" | "p
 export type CartSheetSpeed = "fast" | "normal" | "none";
 
 export const CART_SHEET_PRESENTATIONS: readonly CartSheetPresentation[] = ["auto", "bottom_sheet", "side_drawer", "popup"];
+/** The most trust lines a store may write, and the longest one in either language. */
+export const CART_SHEET_MAX_TRUST_ITEMS = 4;
+export const CART_SHEET_TRUST_TEXT_MAX = 80;
+
+/** One line under the checkout button ("Cash on delivery"), in both languages; off ones are kept, not shown. */
+export interface CartSheetTrustItem {
+  text: { ar: string; en: string };
+  enabled: boolean;
+}
 export const CART_SHEET_SPEEDS: readonly CartSheetSpeed[] = ["fast", "normal", "none"];
 
 export interface CartSheetSettings {
@@ -31,6 +40,11 @@ export interface CartSheetSettings {
   /** auto: a bottom sheet on a phone, a side drawer on a wider screen. */
   presentation: CartSheetPresentation;
   speed: CartSheetSpeed;
+  /**
+   * The lines under the checkout button. Left out (never saved here), the
+   * server reads the ones written on the cart rewards page before they moved.
+   */
+  trustItems?: CartSheetTrustItem[];
 }
 
 /** What a store that never chose gets. */
@@ -42,7 +56,7 @@ export const CART_SHEET_DEFAULTS: CartSheetSettings = {
 };
 
 /** GET /store/:id → `cartSheet`. */
-export interface StorefrontCartSheet extends CartSheetSettings {
+export interface StorefrontCartSheet extends Omit<CartSheetSettings, "trustItems"> {
   /** The lines under the checkout button the merchant wrote and switched on. */
   trustItems: Array<{ text: { ar: string; en: string } }>;
 }
@@ -64,7 +78,37 @@ export function cartSheetSettingsOf(raw: unknown): CartSheetSettings {
     },
     presentation: CART_SHEET_PRESENTATIONS.includes(v.presentation as CartSheetPresentation) ? (v.presentation as CartSheetPresentation) : CART_SHEET_DEFAULTS.presentation,
     speed: CART_SHEET_SPEEDS.includes(v.speed as CartSheetSpeed) ? (v.speed as CartSheetSpeed) : CART_SHEET_DEFAULTS.speed,
+    ...(Array.isArray(v.trustItems) ? { trustItems: v.trustItems.map(trustItemOf) } : {}),
   };
+}
+
+function trustItemOf(raw: unknown): CartSheetTrustItem {
+  const o = (raw && typeof raw === "object" ? raw : {}) as { text?: { ar?: unknown; en?: unknown }; enabled?: unknown };
+  const str = (x: unknown) => (typeof x === "string" ? x : "");
+  return { text: { ar: str(o.text?.ar), en: str(o.text?.en) }, enabled: o.enabled !== false };
+}
+
+/** GET /workspaces/:id/cart-sheet: the settings as the dashboard edits them, with every trust line and where they were read from. */
+export interface CartSheetStaffView extends CartSheetSettings {
+  trustItems: CartSheetTrustItem[];
+  /** cart_rewards: the lines written on the rewards page before they moved here; saving writes them here. */
+  trustItemsFrom: "cart_sheet" | "cart_rewards";
+}
+
+export async function cartSheetGet(client: ApiClient, workspaceId: string): Promise<CartSheetStaffView> {
+  const { cartSheet } = await client.request<{ cartSheet: CartSheetStaffView }>(`/workspaces/${workspaceId}/cart-sheet`);
+  return { ...cartSheetSettingsOf(cartSheet), trustItems: (cartSheet.trustItems ?? []).map(trustItemOf), trustItemsFrom: cartSheet.trustItemsFrom === "cart_rewards" ? "cart_rewards" : "cart_sheet" };
+}
+
+/** The server's checks on the trust lines, said before saving: field → "trustText" (no text) or "tooLong"; "tooMany" on `trustItems`. */
+export function cartSheetTrustErrors(items: readonly CartSheetTrustItem[]): Record<string, "trustText" | "tooLong" | "tooMany"> {
+  const errors: Record<string, "trustText" | "tooLong" | "tooMany"> = {};
+  if (items.length > CART_SHEET_MAX_TRUST_ITEMS) errors.trustItems = "tooMany";
+  items.forEach((item, i) => {
+    if (!item.text.ar.trim() && !item.text.en.trim()) errors[`trustItems.${i}.text`] = "trustText";
+    else if (item.text.ar.trim().length > CART_SHEET_TRUST_TEXT_MAX || item.text.en.trim().length > CART_SHEET_TRUST_TEXT_MAX) errors[`trustItems.${i}.text`] = "tooLong";
+  });
+  return errors;
 }
 
 /**

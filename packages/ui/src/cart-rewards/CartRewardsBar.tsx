@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { FILL_MS, customLookOf, iconColorOn, type BarAppearance, type BarLook, type CartSpeed } from "./appearance";
 import { RewardIcon } from "./icons";
+import { useReadableAccent } from "./readableAccent";
 import { rewardIconOf } from "./iconNames";
 import { pop, reducedMotion, useTweenedNumber } from "./motion";
 import { nextTier, reached, rewardsFill, sortedTiers, type RewardText, type RewardTier } from "./progress";
@@ -25,9 +26,12 @@ import { nextTier, reached, rewardsFill, sortedTiers, type RewardText, type Rewa
  * bar is a labelled progressbar whose text is the status line; reaching a
  * tier is announced politely.
  *
- * Its look: the store's theme (`appearance` absent or `inherit`: the theme's
- * colour tokens and today's shapes, so a theme change, dark mode included,
- * reaches it on its own), or the merchant's custom look (appearance.ts). Each
+ * Its look: the store's theme (`appearance` absent or `inherit`: the store's
+ * accent for the fill, the theme's other colour tokens and the usual shapes,
+ * so a theme change, dark mode included, reaches it on its own; an accent too
+ * pale or too dark to read on the track and the card is shown as the nearest
+ * shade that is, readableAccent.ts), or the merchant's custom look
+ * (appearance.ts). Each
  * reward shows its icon (icons.tsx). A reached marker is filled and an
  * unreached one only outlined, so the state never rests on colour alone.
  */
@@ -125,6 +129,9 @@ export function CartRewardsBar({ tiers, subtotal, applied, notes = [], locale, f
   // null: the theme's look, drawn exactly as before.
   const look: BarLook | null = customLookOf(appearance);
   const still = speed === "none";
+  // The store's accent, or the nearest shade of it that reads on the track and the card (readableAccent.ts).
+  const [root, setRoot] = useState<HTMLElement | null>(null);
+  const accentFix = useReadableAccent(root, !look?.fillColor);
 
   // The fill grows from empty once the card is on screen, then follows the cart. Empty on the
   // first draw everywhere (the server's too), so a page drawn there and in the browser agree.
@@ -174,26 +181,30 @@ export function CartRewardsBar({ tiers, subtotal, applied, notes = [], locale, f
   const round = look && look.corners === "square" ? "rounded-none" : "rounded-full";
   const segmented = Boolean(look && look.shape === "segmented");
   const trackStyle: CSSProperties | undefined = look?.trackColor ? { backgroundColor: look.trackColor } : undefined;
+  const fillColor = look?.fillColor ?? accentFix;
   const fillStyle = (scale: number): CSSProperties => ({
     transform: `scaleX(${scale})`,
-    ...(look?.fillColor ? { backgroundColor: look.fillColor } : {}),
+    ...(fillColor ? { backgroundColor: fillColor } : {}),
     ...(speed !== "fast" ? { transitionDuration: `${FILL_MS[speed]}ms` } : {}),
   });
   // The curve is CART_EASE; in a class so reduced motion can take the transition away.
-  const fillClass = `absolute inset-0 origin-left ${round} ${look?.fillColor ? "" : "bg-success"} transition-transform duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform rtl:origin-right motion-reduce:transition-none`;
+  const fillClass = `absolute inset-0 origin-left ${round} ${fillColor ? "" : "bg-primary"} transition-transform duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform rtl:origin-right motion-reduce:transition-none`;
   const markerShape = look && look.marker === "rounded_square" ? (size === "lg" ? "rounded-lg" : "rounded-md") : "rounded-full";
   const markerSize = size === "md" ? "h-7 w-7" : size === "sm" ? "h-[22px] w-[22px]" : "h-9 w-9";
   const markerTop = trackHeight === "h-1" ? "top-0.5" : "top-1";
   const reachedMarker = (on: boolean): { className: string; style?: CSSProperties } => {
-    if (on && look?.fillColor) return { className: "", style: { backgroundColor: look.fillColor, borderColor: look.fillColor, color: iconColorOn(look.fillColor) } };
-    return { className: on ? "border-success bg-success text-paper-raised" : "border-line-strong bg-paper-raised text-ink-soft" };
+    if (on && fillColor) return { className: "", style: { backgroundColor: fillColor, borderColor: fillColor, color: iconColorOn(fillColor) } };
+    return { className: on ? "border-primary bg-primary text-on-primary" : "border-line-strong bg-paper-raised text-ink-soft" };
   };
 
   return (
-    <section aria-labelledby={titleId} className={`rounded-2xl border border-line bg-paper p-3.5 ${className}`}>
+    <section ref={setRoot} aria-labelledby={titleId} className={`rounded-2xl border border-line bg-paper p-3.5 ${className}`}>
       <h3 id={titleId} className="sr-only">
         {t.title}
       </h3>
+      {/* What the page draws the accent and the track with, read to keep the fill readable (readableAccent.ts). */}
+      <span hidden data-probe="accent" className="bg-primary" />
+      <span hidden data-probe="track" className="bg-line" />
       {loading ? (
         <div aria-busy="true" aria-label={t.loading} className="space-y-3">
           <span className="block h-4 w-4/5 animate-pulse rounded-md bg-line/70 motion-reduce:animate-none" />

@@ -122,7 +122,11 @@ export interface CartRewardsSettingsPayload {
   enabled: boolean;
   allowCouponStacking: boolean;
   tiers: CartRewardTierInput[];
-  trustItems: CartRewardTrustItem[];
+  /**
+   * Moved to the store's cart behavior (endpoints/cartSheet.ts); the server
+   * still takes them from an older dashboard. Left out, nothing changes.
+   */
+  trustItems?: CartRewardTrustItem[];
   /** Left out, the look already saved is kept. */
   appearance?: CartRewardsAppearance;
 }
@@ -237,7 +241,7 @@ export function cartRewardsValidate(payload: CartRewardsSettingsPayload): Record
     if (tier.type === "percent" && (!Number.isInteger(value) || value < 1 || value > 100)) errors[`tiers.${i}.value`] = "percent";
     if (tier.type === "fixed" && (!Number.isInteger(value) || value < 1)) errors[`tiers.${i}.value`] = "amount";
   });
-  payload.trustItems.forEach((item, i) => {
+  (payload.trustItems ?? []).forEach((item, i) => {
     if (!item.text.ar.trim() && !item.text.en.trim()) errors[`trustItems.${i}.text`] = "trustText";
   });
   return errors;
