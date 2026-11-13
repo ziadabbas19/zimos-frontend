@@ -265,6 +265,7 @@ export const ar: Dictionary = {
       about_gallery: "معرض صور صفحة من نحن",
       combos: "باقات المنتجات",
       cart_rewards: "مكافآت السلة",
+      email_campaigns: "حملات البريد الإلكتروني",
       advanced_coupons: "كوبونات متقدمة",
     },
     payPerOrder: {
