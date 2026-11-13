@@ -12,6 +12,7 @@ import { TrustStrip } from "@/components/TrustStrip";
 import { storeCards } from "@/lib/storePromises";
 import { CartPageSummary } from "@/components/cart/CartPageSummary";
 import { HolidayCheckoutGate } from "@/components/holiday/HolidayCheckoutGate";
+import { CartConsentBox } from "@/components/emailSignup/CartConsentBox";
 import { btnPrimaryLg, btnSecondary, card, container } from "@/components/ui";
 import { useCart } from "@/lib/CartProvider";
 import { variantLabel } from "@/lib/product";
@@ -182,6 +183,8 @@ export default function CartPage() {
               <div className="mt-4">
                 <CartPageSummary workspaceId={workspaceId} cart={cart} />
               </div>
+              {/* "Email me offers", when the merchant put it in the cart (lib/emailSignup). */}
+              <CartConsentBox className="mt-5" />
               {/* On holiday: the same link under its ship date, or a button that is off while orders are paused. */}
               <HolidayCheckoutGate buttonClassName={`${btnPrimaryLg} mt-5`} noteClassName="mt-4">
                 <StoreLink href="/checkout" className={`${btnPrimaryLg} mt-5`}>

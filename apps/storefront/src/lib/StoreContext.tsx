@@ -11,6 +11,7 @@ import type {
   StorefrontOrderBump,
   ThankYouPageSettings,
   StorefrontHoliday,
+  StoreEmailSignup,
 } from "@store-builder/api-client";
 import {
   DEFAULT_LOCALE,
@@ -57,6 +58,12 @@ export interface StoreInfo {
   words?: Record<string, StoreWords>;
   /** Whether shoppers may send reviews now, and the store's own stars (GET /store/:ws `reviews`); absent from older APIs. */
   reviews?: StorefrontMeta["reviews"] | null;
+  /**
+   * Where shoppers may sign up for the store's marketing emails (GET /store/:ws
+   * `emailSignup`, lib/emailSignup.ts): null while off or without the plan,
+   * undefined from an API older than the places.
+   */
+  emailSignup?: StoreEmailSignup | null;
 }
 
 /** How a store that delivers itself takes orders (GET /store/:ws `delivery`). */
