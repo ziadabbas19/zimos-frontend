@@ -1098,6 +1098,12 @@ export interface CheckoutPayload {
    * running without EMAIL_CAMPAIGNS_ENABLED.
    */
   marketingConsent?: boolean;
+  /**
+   * Which box gave it (endpoints/emailSignup.ts): the checkout page's (the
+   * default when left out), a product page's quick order form, or the cart's
+   * carried to checkout. The server keeps the consent only while that place is on.
+   */
+  marketingConsentSource?: "checkout" | "quick_order" | "cart";
 }
 
 // ---------------------------------------------------------------------
@@ -3130,6 +3136,10 @@ export interface AdminPlan {
   maxFunnelsPerMonth: number | null;
   /** Email campaign emails one store may send a month (Cairo time); null = unlimited, 0 = none. An API from before it sends nothing. */
   maxCampaignEmailsPerMonth?: number | null;
+  /** Email campaigns one store may send or schedule a month (Cairo time); null = unlimited. An API from before it sends nothing. */
+  maxCampaignsPerMonth?: number | null;
+  /** The largest audience one email campaign may have; null = unlimited. An API from before it sends nothing. */
+  maxRecipientsPerCampaign?: number | null;
   /** On the marketing site and at sign-up. */
   isPublic: boolean;
   displayOrder: number;
@@ -3152,6 +3162,8 @@ export type AdminPlanInput = Omit<
   | "maxStores"
   | "maxFunnelsPerMonth"
   | "maxCampaignEmailsPerMonth"
+  | "maxCampaignsPerMonth"
+  | "maxRecipientsPerCampaign"
   | "isPublic"
   | "displayOrder"
   | "perOrderFee"
@@ -3164,6 +3176,10 @@ export type AdminPlanInput = Omit<
   maxFunnelsPerMonth?: number | null;
   /** Left out: kept as it is. null = unlimited. */
   maxCampaignEmailsPerMonth?: number | null;
+  /** Left out: kept as it is. null = unlimited. */
+  maxCampaignsPerMonth?: number | null;
+  /** Left out: kept as it is. null = unlimited. */
+  maxRecipientsPerCampaign?: number | null;
   isPublic?: boolean;
   displayOrder?: number;
   /** Only on a plan priced 0 a month, in EGP (422 PER_ORDER_FEE_NOT_ALLOWED). */

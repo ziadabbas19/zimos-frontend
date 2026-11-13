@@ -55,6 +55,8 @@ export * from "./endpoints/combos";
 export * from "./endpoints/cartRewards";
 // Email campaigns: a store emails its customers who agreed to marketing (emailCampaigns/, EMAIL_CAMPAIGNS_ENABLED).
 export * from "./endpoints/emailCampaigns";
+// Where shoppers sign up for those emails: the merchant's places, and the footer and popup signup.
+export * from "./endpoints/emailSignup";
 // The orders report and the products report (analytics/orderProductReports.js, STORE_FEATURES order_product_reports).
 export * from "./endpoints/orderProductReports";
 // Protection against fake orders: blocklist, rules, risk (Fraud protection page).
