@@ -7,6 +7,7 @@ import { flushSync } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import { CheckoutProgress, type CheckoutStep } from "@/components/checkout/CheckoutProgress";
 import { OrderBumpCard } from "@/components/checkout/OrderBumpCard";
+import { MarketingConsentField } from "@/components/checkout/MarketingConsentField";
 import { OrderFormFields, fieldId } from "@/components/checkout/OrderFormFields";
 import { PaymentMethodPicker } from "@/components/checkout/PaymentMethodPicker";
 import type { CheckoutPayload } from "@store-builder/api-client";
@@ -26,6 +27,7 @@ import { purchaseLimitMessage } from "@/lib/buyInfo";
 import {
   CART_REWARDS_ENABLED,
   CUSTOMER_REFERRALS_ENABLED,
+  EMAIL_CAMPAIGNS_ENABLED,
   GIFT_CARDS_ENABLED,
   LOYALTY_ENABLED,
   PURCHASE_LIMITS_ENABLED,
@@ -44,6 +46,7 @@ import { GiftCardField, useGiftCard } from "@/components/giftCards/GiftCardField
 import { useHolidayCheckout } from "@/lib/storeHoliday";
 import {
   FIELD_ORDER,
+  formOf,
   formOptionsOf,
   toCheckoutPayload,
   validateOrderForm,
@@ -109,6 +112,8 @@ export default function CheckoutPage() {
   // The form starts on the store's country (dashboard → General → Country).
   const storeCountry = useStoreCountry();
   const [values, setValues] = useState<OrderFormValues>(() => emptyOrderFormFor(storeCountry));
+  // "Email me offers" (EMAIL_CAMPAIGNS_ENABLED): unticked until the shopper ticks it.
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   // Arriving from a recovery link (/r/:token): what the shopper had typed comes back, once.
   useEffect(() => {
     const prefill = takeRecoveryPrefill(workspaceId);
@@ -331,6 +336,7 @@ export default function CheckoutPage() {
         ...giftCard.payload,
         ...(TENDERS_ON ? tenders.payload : {}),
         ...(PERKS_ON ? perks.payload : {}),
+        ...(EMAIL_CAMPAIGNS_ENABLED && marketingOptIn && values.email.trim() ? { marketingConsent: true } : {}),
       };
       if (manualChosen) {
         const { order } = await placeManualOrder({
@@ -496,6 +502,9 @@ export default function CheckoutPage() {
                 pickup={storePickup}
                 zones={storeZones}
               />
+              {EMAIL_CAMPAIGNS_ENABLED && formOf(fields, { showAltPhone: true }).some((f) => f.key === "email") && (
+                <MarketingConsentField checked={marketingOptIn} onChange={setMarketingOptIn} storeName={store?.name ?? ""} locale={locale} />
+              )}
               {!pickingUp && !storeZones && <ShippingOptionPicker choice={shippingChoice} idPrefix={FORM_PREFIX} />}
             </div>
           </section>
