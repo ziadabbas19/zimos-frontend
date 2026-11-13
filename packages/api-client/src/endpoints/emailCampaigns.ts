@@ -12,7 +12,9 @@
  * name, with the store's Reply-To.
  *
  * Codes: 422 EMAIL_QUOTA_EXCEEDED (details: needed, remaining, max, used,
- * resetsAt), 422 NO_RECIPIENTS, 422 CAMPAIGN_INCOMPLETE (details.field),
+ * resetsAt), 422 CAMPAIGN_LIMIT_REACHED (details: max, used, resetsAt),
+ * 422 AUDIENCE_TOO_LARGE (details: audienceSize, max), 422 NO_RECIPIENTS,
+ * 422 CAMPAIGN_INCOMPLETE (details.field),
  * 409 CAMPAIGN_LOCKED / CAMPAIGN_NOT_SENDABLE / CAMPAIGN_NOT_CANCELLABLE,
  * 503 EMAIL_PROVIDER_NOT_CONFIGURED, 429 on too many writes or test emails.
  */
@@ -90,7 +92,7 @@ export interface EmailCampaign {
   cancelledAt: string | null;
   /** Sending waits until then: the store's daily cap was reached. */
   pausedUntil: string | null;
-  /** quota_exceeded | no_recipients | incomplete | plan_feature | all_failed | start_failed */
+  /** quota_exceeded | no_recipients | incomplete | plan_feature | all_failed | start_failed | audience_too_large | campaign_limit */
   failureReason: string | null;
   stats: EmailCampaignStats;
   createdAt: string;
@@ -108,9 +110,13 @@ export interface EmailCampaignDraft {
 }
 
 export interface EmailCampaignQuota {
-  /** null = unlimited. */
+  /** Emails this month. null = unlimited. */
   monthly: { max: number | null; used: number; remaining: number | null; resetsAt: string };
   daily: { cap: number; used: number; remaining: number; resetsAt: string };
+  /** Campaigns sent or scheduled this month (Cairo time). null max = unlimited. An API from before it sends nothing. */
+  campaigns?: { max: number | null; used: number; remaining: number | null; resetsAt: string };
+  /** The largest audience one campaign may have; null = unlimited. An API from before it sends nothing. */
+  recipientsPerCampaign?: number | null;
 }
 
 export interface EmailCampaignOverview {

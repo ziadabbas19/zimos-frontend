@@ -2,12 +2,13 @@
 
 import { DiscountRows, MinimumOrderNotice, clearStoredCoupon, useStoredCoupon } from "@/components/offers/CouponBits";
 import { takeRecoveryPrefill } from "@/lib/recoveryPrefill";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { flushSync } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import { CheckoutProgress, type CheckoutStep } from "@/components/checkout/CheckoutProgress";
 import { OrderBumpCard } from "@/components/checkout/OrderBumpCard";
 import { MarketingConsentField } from "@/components/checkout/MarketingConsentField";
+import { cartChoice, signupCopy, signupPlaces, subscribeCartChoice } from "@/lib/emailSignup";
 import { OrderFormFields, fieldId } from "@/components/checkout/OrderFormFields";
 import { PaymentMethodPicker } from "@/components/checkout/PaymentMethodPicker";
 import type { CheckoutPayload } from "@store-builder/api-client";
@@ -112,8 +113,18 @@ export default function CheckoutPage() {
   // The form starts on the store's country (dashboard → General → Country).
   const storeCountry = useStoreCountry();
   const [values, setValues] = useState<OrderFormValues>(() => emptyOrderFormFor(storeCountry));
-  // "Email me offers" (EMAIL_CAMPAIGNS_ENABLED): unticked until the shopper ticks it.
-  const [marketingOptIn, setMarketingOptIn] = useState(false);
+  // "Email me offers" (EMAIL_CAMPAIGNS_ENABLED): the places the merchant switched on (lib/emailSignup).
+  // The box starts as the merchant set it — or as the shopper left the cart's box — and what it
+  // shows when the order is placed is what is sent.
+  const signup = signupPlaces(store?.emailSignup);
+  const signupStoreId = store?.id;
+  const cartBoxOn = Boolean(signup?.cart);
+  // The cart's box as the shopper left it (this tab), read after hydration only; null if never shown.
+  const carriedConsent = useSyncExternalStore(subscribeCartChoice, () => (cartBoxOn && signupStoreId ? cartChoice(signupStoreId) : null), () => null);
+  // What the shopper did with this page's box; until then it shows the cart's choice, or the merchant's setting.
+  const [ownConsent, setOwnConsent] = useState<boolean | null>(null);
+  const marketingOptIn = ownConsent ?? carriedConsent ?? signup?.checkout?.preTicked === true;
+  const consentTouched = ownConsent !== null;
   // Arriving from a recovery link (/r/:token): what the shopper had typed comes back, once.
   useEffect(() => {
     const prefill = takeRecoveryPrefill(workspaceId);
@@ -284,6 +295,12 @@ export default function CheckoutPage() {
     if (field === "governorate") setShipTo(value);
   }
 
+  // The box shows where the merchant has it on and the form asks for an email. Without it, a
+  // ticked cart box still travels here; its source says where the shopper ticked it.
+  const consentBoxShown = Boolean(signup?.checkout) && formOf(fields, { showAltPhone: true }).some((f) => f.key === "email");
+  const consentTicked = consentBoxShown ? marketingOptIn : carriedConsent === true;
+  const consentSource: "checkout" | "cart" = consentBoxShown && (carriedConsent === null || consentTouched) ? "checkout" : "cart";
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (submitting) return;
@@ -336,7 +353,9 @@ export default function CheckoutPage() {
         ...giftCard.payload,
         ...(TENDERS_ON ? tenders.payload : {}),
         ...(PERKS_ON ? perks.payload : {}),
-        ...(EMAIL_CAMPAIGNS_ENABLED && marketingOptIn && values.email.trim() ? { marketingConsent: true } : {}),
+        ...(EMAIL_CAMPAIGNS_ENABLED && consentTicked && values.email.trim()
+          ? { marketingConsent: true, ...(consentSource === "checkout" ? {} : { marketingConsentSource: consentSource }) }
+          : {}),
       };
       if (manualChosen) {
         const { order } = await placeManualOrder({
@@ -502,8 +521,14 @@ export default function CheckoutPage() {
                 pickup={storePickup}
                 zones={storeZones}
               />
-              {EMAIL_CAMPAIGNS_ENABLED && formOf(fields, { showAltPhone: true }).some((f) => f.key === "email") && (
-                <MarketingConsentField checked={marketingOptIn} onChange={setMarketingOptIn} storeName={store?.name ?? ""} locale={locale} />
+              {EMAIL_CAMPAIGNS_ENABLED && consentBoxShown && (
+                <MarketingConsentField
+                  checked={marketingOptIn}
+                  onChange={setOwnConsent}
+                  storeName={store?.name ?? ""}
+                  locale={locale}
+                  {...signupCopy(signup, locale)}
+                />
               )}
               {!pickingUp && !storeZones && <ShippingOptionPicker choice={shippingChoice} idPrefix={FORM_PREFIX} />}
             </div>

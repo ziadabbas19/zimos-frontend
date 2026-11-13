@@ -18,6 +18,7 @@ import { ShippingOptionPicker } from "../ShippingOptionPicker";
 import { ShippingFee } from "@/components/checkout/ShippingFee";
 import { bundlePricing, bundleTiers, type OrderBumpOffer } from "@/lib/commerce";
 import {
+  formOf,
   formOptionsOf,
   FIELD_ORDER,
   quickFormFields,
@@ -62,7 +63,7 @@ import { ProductBuyNotes } from "./ProductBuyNotes";
 import { SizeGuideLink } from "./SizeGuide";
 import { BackInStock } from "../stockAlert/BackInStock";
 import { preorderFor, stepperLimits, takesPreorders } from "@/lib/buyInfo";
-import { LOYALTY_ENABLED, PREORDERS_ENABLED, PURCHASE_LIMITS_ENABLED, SHOPPER_ACCOUNTS_ENABLED, SIZE_CHARTS_ENABLED, STOCK_ALERTS_ENABLED } from "@/lib/features";
+import { EMAIL_CAMPAIGNS_ENABLED, LOYALTY_ENABLED, PREORDERS_ENABLED, PURCHASE_LIMITS_ENABLED, SHOPPER_ACCOUNTS_ENABLED, SIZE_CHARTS_ENABLED, STOCK_ALERTS_ENABLED } from "@/lib/features";
 import { EarnPointsNote } from "../tenders/EarnPointsNote";
 import { WishlistHeart } from "../wishlist/WishlistHeart";
 import { useHoliday } from "@/lib/storeHoliday";
@@ -85,6 +86,8 @@ import { OptionPicker } from "./OptionPicker";
 import { setChosenVariantImage, variantImageOf } from "@/lib/variantImage";
 import { productPageText } from "./productPageText";
 import { btnPrimary, btnPrimaryLg, card } from "../ui";
+import { MarketingConsentField } from "../checkout/MarketingConsentField";
+import { quickFormEmailMode, signupCopy, signupPlaces } from "@/lib/emailSignup";
 
 const FORM_PREFIX = "quick";
 
@@ -145,8 +148,17 @@ export function ProductLanding({
       : page.pageSettings;
   const cart = useCart();
   const buyLabel = ps.buy_now_text || (ps.inline_checkout ? t.product.orderNow : text.buyNow);
-  const quickFields = useMemo(() => quickFormFields(checkoutSettings), [checkoutSettings]);
+  // "Email me offers" in this form, when the merchant switched it on (lib/emailSignup): the form
+  // then asks for an email as an option too, unless the store's form has no email field at all.
+  const signup = signupPlaces(store?.emailSignup);
+  const quickBoxOn = Boolean(signup?.quickOrder);
+  const quickFields = useMemo(() => {
+    const quick = quickFormFields(checkoutSettings);
+    return { ...quick, email: quickFormEmailMode(quick.email, checkoutSettings.email, quickBoxOn) };
+  }, [checkoutSettings, quickBoxOn]);
+  const [marketingOptIn, setMarketingOptIn] = useState(() => signup?.quickOrder?.preTicked === true);
   const { fields, reveal } = useOrderFormFields(quickFields);
+  const quickBoxShown = quickBoxOn && formOf(fields).some((f) => f.key === "email");
   const basePath = useStoreBasePath();
   const router = useRouter();
   const [client] = useState(() => createStorefrontApiClient());
@@ -392,6 +404,10 @@ export function ProductLanding({
         ? { orderBumps: productBumps.selected.map((b) => ({ offerId: b.offerId })) }
         : {}),
       ...(checkoutSessionId ? { checkoutSessionId } : {}),
+      // What the box showed when the order was placed, with an address to send to.
+      ...(EMAIL_CAMPAIGNS_ENABLED && quickBoxShown && marketingOptIn && values.email.trim()
+        ? { marketingConsent: true, marketingConsentSource: "quick_order" as const }
+        : {}),
     };
     try {
       if (manualChosen) {
@@ -708,6 +724,16 @@ export function ProductLanding({
             pickup={storePickup}
             zones={storeZones}
           />
+          {EMAIL_CAMPAIGNS_ENABLED && quickBoxShown && (
+            <MarketingConsentField
+              checked={marketingOptIn}
+              onChange={setMarketingOptIn}
+              storeName={store?.name ?? ""}
+              locale={locale}
+              className=""
+              {...signupCopy(signup, locale)}
+            />
+          )}
           {!pickingUp && !storeZones && <ShippingOptionPicker choice={shippingChoice} idPrefix={FORM_PREFIX} />}
 
           <dl className="space-y-2 rounded-xl bg-paper p-4 text-sm ">

@@ -7,6 +7,7 @@ import { CartDrawerSwitch } from "@/components/cart/CartSheet";
 import { ExitDownsell } from "@/components/offers/StoreOffers";
 import { CouponFromLink } from "@/components/offers/CouponBits";
 import { NewsletterSignup, SocialProofPopup } from "@/components/offers/Engagement";
+import { EmailSignupPopup, FooterEmailSignup } from "@/components/emailSignup/EmailSignup";
 import { HideInFunnel } from "@/components/HideInFunnel";
 import { MobileCategoryStrip } from "@/components/MobileCategoryStrip";
 import { PaymentsPreviewBanner } from "@/components/PaymentsPreviewBanner";
@@ -29,6 +30,7 @@ import {
   storefrontGeneralMeta,
   storefrontStoreApp,
   storefrontHolidayOf,
+  storeEmailSignupOf,
 } from "@store-builder/api-client";
 import { FloatingWhatsapp } from "@/components/FloatingWhatsapp";
 import { brandingRemoved } from "@/components/PoweredByZimos";
@@ -205,6 +207,8 @@ export default async function StoreLayout({
     words: readAllStoreWords(store.themeSettings),
     // Whether the review forms show, and the store's stars (components/reviews).
     reviews: store.reviews ?? null,
+    // Where shoppers may sign up for the store's emails (lib/emailSignup); undefined from an older API.
+    emailSignup: storeEmailSignupOf(store),
   };
   // GET /store/:workspaceId doesn't name a websiteId yet; read it defensively
   // so events carry it as soon as the API sends one.
@@ -315,6 +319,8 @@ export default async function StoreLayout({
                 <HideInFunnel>
                   {/* The merchant's sign-up form: a band above the footer, or a popup (Offers → Newsletter). */}
                   <NewsletterSignup workspaceId={store.id} />
+                  {/* The store's email signup above whichever footer is drawn (Marketing → Email campaigns → Signup placement). */}
+                  <FooterEmailSignup />
                   {xsShell ? (
                     <XsFooter store={store} locale={locale} year={new Date().getFullYear()} look={xsShell} />
                   ) : (
@@ -328,6 +334,8 @@ export default async function StoreLayout({
                   <ExitDownsell workspaceId={store.id} />
                   {/* Sales notifications from real orders (Offers → Sales notifications). */}
                   <SocialProofPopup workspaceId={store.id} />
+                  {/* The email signup popup, once per visitor, never at checkout (Signup placement). */}
+                  <EmailSignupPopup />
                   {floatingWhatsapp && <FloatingWhatsapp phone={floatingWhatsapp.phone} message={floatingWhatsapp.message} />}
                 </HideInFunnel>
                 {/* Remembers a ?coupon=CODE link so a checkout applies it — the store's or a funnel's. */}

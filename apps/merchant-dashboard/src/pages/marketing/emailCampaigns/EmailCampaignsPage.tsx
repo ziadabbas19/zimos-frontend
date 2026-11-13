@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, Plus } from "lucide-react";
 import { Button } from "@store-builder/ui";
 import {
@@ -25,6 +25,8 @@ import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useT } from "@/i18n/LocaleContext";
 import { CAMPAIGN_STRINGS, type CampaignText } from "./campaignStrings";
 import { QuotaMeter } from "./QuotaMeter";
+import { SignupPlacement } from "./SignupPlacement";
+import { SectionTabs } from "@/components/SectionTabs";
 
 type Tab = "all" | EmailCampaignStatus;
 const TABS: Tab[] = ["all", "draft", "scheduled", "sending", "sent"];
@@ -51,15 +53,65 @@ function whenOf(c: EmailCampaign) {
   return c.status === "scheduled" ? c.scheduledAt : c.startedAt ?? c.updatedAt;
 }
 
-/** /marketing/email-campaigns — EMAIL_CAMPAIGNS_ENABLED. */
+type Section = "campaigns" | "signup";
+
+/**
+ * /marketing/email-campaigns — EMAIL_CAMPAIGNS_ENABLED. Two sections, the
+ * second kept in the address (`?tab=signup`, found by Ctrl K): the campaigns,
+ * and where shoppers sign up (SignupPlacement.tsx).
+ */
 export function EmailCampaignsPage() {
+  const t = useT(CAMPAIGN_STRINGS);
+  const plan = usePlanFeatures();
+  const locked = plan.gated("email_campaigns");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const section: Section = searchParams.get("tab") === "signup" ? "signup" : "campaigns";
+
+  if (locked) {
+    return (
+      <div className="min-w-0">
+        <PageHeader title={t.title} description={t.description} />
+        <PlanFeatureNotice feature="email_campaigns" />
+      </div>
+    );
+  }
+
+  const tabs = (
+    <SectionTabs
+      label={t.tabs}
+      value={section}
+      onChange={(next) => {
+        const params = new URLSearchParams(searchParams);
+        if (next === "signup") params.set("tab", "signup");
+        else params.delete("tab");
+        setSearchParams(params, { replace: true });
+      }}
+      tabs={[
+        { value: "campaigns", label: t.tabCampaigns },
+        { value: "signup", label: t.tabSignup },
+      ]}
+    />
+  );
+  if (section === "signup") {
+    return (
+      <div className="min-w-0">
+        <PageHeader title={t.title} description={t.description} />
+        {tabs}
+        <div role="tabpanel" aria-label={t.tabSignup}>
+          <SignupPlacement />
+        </div>
+      </div>
+    );
+  }
+  return <CampaignList tabs={tabs} />;
+}
+
+function CampaignList({ tabs }: { tabs: React.ReactNode }) {
   const t = useT(CAMPAIGN_STRINGS);
   const workspaceId = useWorkspaceId();
   const navigate = useNavigate();
-  const plan = usePlanFeatures();
-  const locked = plan.gated("email_campaigns");
   const [tab, setTab] = useState<Tab>("all");
-  const overview = useAsync(() => (locked ? Promise.resolve(null) : emailCampaignOverview(apiClient, workspaceId)), [workspaceId, locked]);
+  const overview = useAsync(() => emailCampaignOverview(apiClient, workspaceId), [workspaceId]);
 
   const [rows, setRows] = useState<EmailCampaign[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -82,19 +134,9 @@ export function EmailCampaignsPage() {
     [workspaceId, tab]
   );
   useEffect(() => {
-    if (locked) return;
     setRows([]);
     void load(null);
-  }, [load, locked]);
-
-  if (locked) {
-    return (
-      <div className="min-w-0">
-        <PageHeader title={t.title} description={t.description} />
-        <PlanFeatureNotice feature="email_campaigns" />
-      </div>
-    );
-  }
+  }, [load]);
 
   const engagement = Boolean(overview.data?.provider.reportsEngagement);
   const stat = (key: "sent" | "delivered" | "opened" | "clicked" | "failed" | "unsubscribed", header: string) => ({
@@ -143,6 +185,7 @@ export function EmailCampaignsPage() {
     <div className="min-w-0">
       <PageHeader title={t.title} description={t.description} primaryAction={create} />
       <PageActionBar>{create}</PageActionBar>
+      {tabs}
 
       {overview.data && <QuotaMeter overview={overview.data} className="mb-5" />}
 

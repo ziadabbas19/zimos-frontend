@@ -44,6 +44,7 @@ import { CAMPAIGN_STRINGS, type CampaignText } from "./campaignStrings";
 import { CampaignStatusBadge } from "./EmailCampaignsPage";
 import { EmailPreview } from "./EmailPreview";
 import { QuotaMeter } from "./QuotaMeter";
+import { campaignLimitProblem, campaignLimitText } from "./campaignLimits";
 import {
   RULE_KEYS,
   audiencePayload,
@@ -195,6 +196,9 @@ function CampaignEditor({ initial, overview, onSaved }: { initial: EmailCampaign
   const needed = audience.count?.count ?? null;
   const remaining = overview.quota.monthly.remaining;
   const short = needed !== null && remaining !== null && needed > remaining;
+  // The plan's other two limits: the month's campaigns, and the largest audience (QuotaMeter.tsx).
+  const limit = campaignLimitProblem(overview, { audienceSize: needed, alreadyScheduled: initial?.status === "scheduled" });
+  const blocked = short || limit !== null;
   const from = `"${overview.sender.fromName}" <${overview.sender.fromAddress}>`;
 
   return (
@@ -417,10 +421,15 @@ function CampaignEditor({ initial, overview, onSaved }: { initial: EmailCampaign
                 {fmt(t.quotaShort, { needed: formatCount(needed), remaining: formatCount(remaining) })}
               </Alert>
             )}
+            {limit && (
+              <Alert variant="danger" className="mt-4" role="alert" data-limit={limit.kind}>
+                {campaignLimitText(t, limit)}
+              </Alert>
+            )}
             {!short && needed !== null && remaining !== null && <p className="mt-3 text-xs text-ink-soft">{fmt(t.quotaAfter, { needed: formatCount(needed), remaining: formatCount(remaining) })}</p>}
 
             <div className="mt-5 flex flex-wrap gap-2">
-              <Button className="min-h-11" disabled={busy !== null || short || needed === 0 || !overview.provider.ready} onClick={() => setConfirm("send")}>
+              <Button className="min-h-11" disabled={busy !== null || blocked || needed === 0 || !overview.provider.ready} onClick={() => setConfirm("send")}>
                 {t.sendNow}
               </Button>
               <Button variant="outline" className="min-h-11" onClick={() => goTo("content")}>
@@ -450,7 +459,7 @@ function CampaignEditor({ initial, overview, onSaved }: { initial: EmailCampaign
                 <Button
                   variant="outline"
                   className="min-h-11"
-                  disabled={busy !== null || short || !scheduleAt}
+                  disabled={busy !== null || blocked || !scheduleAt}
                   onClick={() =>
                     void run("schedule", async () => {
                       const saved = await save({ forSending: true });
@@ -515,6 +524,14 @@ function CampaignEditor({ initial, overview, onSaved }: { initial: EmailCampaign
             if (apiErrorCode(e) === "EMAIL_QUOTA_EXCEEDED") {
               const d = apiErrorDetails<{ needed: number; remaining: number }>(e);
               throw new Error(d ? fmt(t.quotaShort, { needed: formatCount(d.needed), remaining: formatCount(d.remaining) }) : errorMessage(e));
+            }
+            if (apiErrorCode(e) === "AUDIENCE_TOO_LARGE") {
+              const d = apiErrorDetails<{ audienceSize: number; max: number }>(e);
+              throw new Error(d ? campaignLimitText(t, { kind: "audience", size: d.audienceSize, max: d.max }) : errorMessage(e));
+            }
+            if (apiErrorCode(e) === "CAMPAIGN_LIMIT_REACHED") {
+              const d = apiErrorDetails<{ max: number; used: number; resetsAt: string }>(e);
+              throw new Error(d ? campaignLimitText(t, { kind: "campaigns", ...d }) : errorMessage(e));
             }
             throw new Error(errorMessage(e));
           }

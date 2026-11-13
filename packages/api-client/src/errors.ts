@@ -189,6 +189,8 @@ export type ApiErrorCode =
   | "CAMPAIGN_NOT_SCHEDULED" // 409
   | "EMAIL_PROVIDER_NOT_CONFIGURED" // 503 — the platform's sending isn't set up
   | "TEST_EMAIL_FAILED" // 502
+  | "CAMPAIGN_LIMIT_REACHED" // 422 — the plan's campaigns this month; details: max, used, resetsAt
+  | "AUDIENCE_TOO_LARGE" // 422 — over the plan's largest audience; details: audienceSize, max
   | (string & {});
 
 /** `details` of a 409 TASK_ALREADY_LOCKED: who holds the task and until when. */

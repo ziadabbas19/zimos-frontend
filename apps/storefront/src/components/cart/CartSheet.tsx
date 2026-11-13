@@ -18,6 +18,7 @@ import { comboLineImages, isComboLine } from "@/lib/combos";
 import { StoreLink } from "@/components/StoreRoute";
 import { CartShippingSummary, useCartQuote } from "@/components/checkout/CartShippingSummary";
 import { HolidayCheckoutGate } from "@/components/holiday/HolidayCheckoutGate";
+import { CartConsentBox } from "@/components/emailSignup/CartConsentBox";
 import { LineCustomizations } from "@/components/LineCustomizations";
 import { LineOptions } from "@/components/LineOptions";
 import { ComboLineFullTotal, ComboLineInfo, ComboLineThumb } from "@/components/combos/ComboLine";
@@ -482,6 +483,8 @@ export function CartSheet({ config }: { config: StorefrontCartRewards }) {
             {!isEmpty && cart && (
               // The button clears the home indicator (0 where there is none).
               <div className="shrink-0 border-t border-line bg-paper-raised px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:px-5 sm:pt-4">
+                {/* "Email me offers", when the merchant put it in the cart (lib/emailSignup). */}
+                <CartConsentBox className="mb-2" />
                 <HolidayCheckoutGate buttonClassName={btnPrimaryLg}>
                   <StoreLink href="/checkout" className={btnPrimaryLg} data-autofocus="">
                     {text.completeOrder}

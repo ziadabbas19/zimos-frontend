@@ -63,6 +63,7 @@ import {
   CART_REWARDS_ENABLED,
   CUSTOMER_REFERRALS_ENABLED,
   CUSTOM_DOMAINS_ENABLED,
+  EMAIL_CAMPAIGNS_ENABLED,
   EMAIL_SUPPRESSIONS_ENABLED,
   LOYALTY_ENABLED,
   PRODUCT_COMBOS_ENABLED,
@@ -88,6 +89,7 @@ import { SPEC_STRINGS } from "@/pages/productSpecs/specStrings";
 import { COSTS_STRINGS } from "@/pages/profit/costsModel";
 import { SETTINGS_SECTIONS, SETTINGS_SECTION_STRINGS } from "@/pages/settings/settingsSections";
 import { SETTLEMENT_STRINGS } from "@/pages/settlements/settlementStrings";
+import { SIGNUP_STRINGS } from "@/pages/marketing/emailCampaigns/signupStrings";
 import { SHIPPING_ICONS, SHIPPING_KEYWORDS, SHIPPING_SECTION_STRINGS, SHIPPING_TABS } from "@/pages/shipping/ShippingTabs";
 import { STORE_CREDIT_STRINGS } from "@/pages/storeCredit/storeCreditStrings";
 import { STORE_SETTINGS_DESCRIPTIONS, STORE_SETTINGS_SECTIONS, STORE_SETTINGS_SECTION_STRINGS, storeSettingsPath } from "@/pages/storeDesign/storeSettingsSections";
@@ -393,6 +395,17 @@ const DECLARED: EntryDef[] = [
   { id: "tab:/subscription?tab=invoices", kind: "tab", title: both(SUBSCRIPTION_STRINGS, "invoicesTab"), keywords: ["invoice", "pay", "receipt", "فاتورة", "دفع", "إيصال"], to: "/subscription?tab=invoices", icon: IconInvoice, parent: pageId("/subscription") },
   { id: "tab:/customers?tab=segments", kind: "tab", title: text("segments"), keywords: ["contact segments", "audience", "شرائح جهات الاتصال", "جمهور"], to: "/customers?tab=segments", icon: IconContacts, parent: pageId("/customers") },
   { id: "tab:/customers?tab=suppressed", kind: "tab", title: both(SUPPRESSION_STRINGS, "tab"), keywords: ["unsubscribed", "bounced", "إلغاء الاشتراك"], to: "/customers?tab=suppressed", icon: IconBlock, parent: pageId("/customers"), when: EMAIL_SUPPRESSIONS_ENABLED },
+  {
+    id: "tab:/marketing/email-campaigns?tab=signup",
+    kind: "tab",
+    title: both(SIGNUP_STRINGS, "title"),
+    keywords: ["signup placement", "subscribe", "newsletter form", "email popup", "opt-in", "consent", "أماكن الاشتراك", "اشتراك", "نافذة منبثقة", "موافقة"],
+    to: "/marketing/email-campaigns?tab=signup",
+    icon: IconEmail,
+    parent: pageId("/marketing/email-campaigns"),
+    plan: { feature: "email_campaigns" },
+    when: EMAIL_CAMPAIGNS_ENABLED,
+  },
   { id: "tab:/customers?tab=groups", kind: "tab", title: text("customerGroups"), keywords: ["rfm", "champions", "loyal customers", "أفضل العملاء"], to: "/customers?tab=groups", icon: IconPeople, parent: pageId("/customers"), when: STORE_REPORTS_ENABLED },
   { id: "tab:/fraud?tab=rules", kind: "tab", title: text("fraudRules"), keywords: ["fraud rules", "قواعد الاحتيال"], to: "/fraud?tab=rules", icon: IconShield, parent: pageId("/fraud") },
   { id: "tab:/fraud?tab=flagged", kind: "tab", title: text("fraudFlagged"), keywords: ["suspicious orders", "طلبات مشبوهة"], to: "/fraud?tab=flagged", icon: IconShield, parent: pageId("/fraud") },
