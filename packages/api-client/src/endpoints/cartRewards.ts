@@ -22,6 +22,58 @@ import type { ShippingQuote } from "../types";
 
 export type CartRewardType = "percent" | "fixed" | "free_shipping";
 
+/** The icons a reward may show on the bar (cartRewards/barAppearance.js ICONS). */
+export const CART_REWARD_ICONS = ["gift", "truck", "percent", "tag", "star", "heart", "crown", "bolt", "check"] as const;
+export type CartRewardIcon = (typeof CART_REWARD_ICONS)[number];
+
+/** The icon a reward shows when the merchant picked none: by its kind. */
+export function cartRewardDefaultIcon(type: CartRewardType | string): CartRewardIcon {
+  if (type === "free_shipping") return "truck";
+  if (type === "percent") return "percent";
+  if (type === "fixed") return "tag";
+  return "gift";
+}
+
+/**
+ * The bar's own look, while the merchant customises it (Offers → Cart rewards
+ * → Bar appearance). A colour is a #rrggbb, or null for the theme's.
+ */
+export interface CartRewardsCustomLook {
+  shape: "thin" | "thick" | "segmented";
+  corners: "rounded" | "square";
+  fillColor: string | null;
+  trackColor: string | null;
+  marker: "circle" | "rounded_square" | "none";
+  markerSize: "sm" | "md" | "lg";
+  showAmounts: boolean;
+  reachedPop: boolean;
+  showMessage: boolean;
+  messageAlign: "start" | "center";
+}
+
+/** As saved: the store's theme (`inherit`, the custom values kept unused) or the custom look. */
+export interface CartRewardsAppearance {
+  mode: "inherit" | "custom";
+  custom: CartRewardsCustomLook | null;
+}
+
+/** As the store draws it: the mode alone while inheriting, the full look while customised. */
+export type StorefrontCartRewardsLook = { mode: "inherit" } | ({ mode: "custom" } & CartRewardsCustomLook);
+
+/** Today's look, which "Customize" starts from (barAppearance.CUSTOM_DEFAULTS). */
+export const CART_REWARDS_INHERITED_LOOK: CartRewardsCustomLook = {
+  shape: "thick",
+  corners: "rounded",
+  fillColor: null,
+  trackColor: null,
+  marker: "circle",
+  markerSize: "md",
+  showAmounts: true,
+  reachedPop: true,
+  showMessage: true,
+  messageAlign: "start",
+};
+
 /** A name in both languages. */
 export interface CartRewardText {
   ar: string;
@@ -35,11 +87,15 @@ export interface CartRewardTierInput {
   value?: number;
   /** The merchant's own name; empty in a language = the automatic one there. */
   label?: { ar: string | null; en: string | null } | null;
+  /** The icon on its marker; null = by its kind. */
+  icon?: CartRewardIcon | null;
 }
 
 export interface CartRewardTier extends CartRewardTierInput {
   /** What the bar calls it when the merchant wrote nothing. */
   autoLabel: CartRewardText;
+  /** The icon it shows (its own, or its kind's); absent from an API older than the icons. */
+  shownIcon?: CartRewardIcon;
 }
 
 export interface CartRewardTrustItem {
@@ -56,6 +112,10 @@ export interface CartRewardsSettings {
   /** Lowest threshold first. */
   tiers: CartRewardTier[];
   trustItems: CartRewardTrustItem[];
+  /** The bar's look; absent from an API older than it (= the theme's). */
+  appearance?: CartRewardsAppearance;
+  /** The store's cart speed (Settings → Cart), which the bar's fill glides at: shown in the preview only. */
+  cartSpeed?: "fast" | "normal" | "none";
 }
 
 export interface CartRewardsSettingsPayload {
@@ -63,6 +123,8 @@ export interface CartRewardsSettingsPayload {
   allowCouponStacking: boolean;
   tiers: CartRewardTierInput[];
   trustItems: CartRewardTrustItem[];
+  /** Left out, the look already saved is kept. */
+  appearance?: CartRewardsAppearance;
 }
 
 /** One tier as the storefront shows it: its name resolved. */
@@ -71,6 +133,8 @@ export interface CartRewardMilestone {
   type: CartRewardType;
   value: number | null;
   label: CartRewardText;
+  /** The icon on its marker (absent from an API older than the icons: by its kind). */
+  icon?: CartRewardIcon;
   /** Only in a quote. */
   reached?: boolean;
 }
@@ -82,6 +146,8 @@ export interface StorefrontCartRewards {
   tiers: CartRewardMilestone[];
   /** The lines under the checkout button the merchant switched on. */
   trustItems: Array<{ text: CartRewardText }>;
+  /** How the bar looks; absent from an API older than it (= the theme's). */
+  appearance?: StorefrontCartRewardsLook;
 }
 
 /** Why the shopper got what they got. */
