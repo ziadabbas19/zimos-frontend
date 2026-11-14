@@ -139,8 +139,14 @@ describe("DashboardHomePage", () => {
 
     renderWithProviders(<DashboardHomePage />, { route: "/" });
 
+    // Wait for the overview by its text, then look the link up by role once. A
+    // role query works out the accessibility tree of the whole page (each
+    // element's styles and its ancestors') on every poll and DOM change, on the
+    // thread the page renders on: waited on, it held back the render it waited
+    // for and, with the full suite running, ran past findBy's one second.
+    await screen.findByText("Total sales");
     // 250,000 against 200,000 the period before: +25%.
-    const sales = await screen.findByRole("link", { name: /Total sales/ });
+    const sales = screen.getByRole("link", { name: /Total sales/ });
     expect(sales).toHaveAttribute("href", "/analytics");
     expect(sales).toHaveTextContent("25.0%");
     expect(screen.getByRole("link", { name: /Confirmation rate/ })).toHaveTextContent("75.0%");
