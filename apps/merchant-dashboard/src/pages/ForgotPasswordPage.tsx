@@ -70,7 +70,7 @@ export function ForgotPasswordPage() {
   );
 
   return (
-    <AuthShell>
+    <AuthShell side>
       {sent ? (
         <>
           <AuthHeading title={t.title} />

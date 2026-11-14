@@ -209,7 +209,7 @@ export function InviteAcceptPage() {
 
   if (load.kind === "loading" || status === "loading") {
     return (
-      <AuthShell>
+      <AuthShell side>
         <AuthBusy>{t.loading}</AuthBusy>
       </AuthShell>
     );
@@ -231,7 +231,7 @@ export function InviteAcceptPage() {
   if (ready.state === "expired") return <Problem title={t.expiredTitle} body={t.expired} />;
   if (ready.state === "accepted") {
     return (
-      <AuthShell>
+      <AuthShell side>
         <AuthHeading title={t.acceptedTitle} icon={<IconVerified aria-hidden />} tone="success">
           {t.accepted}
         </AuthHeading>
@@ -247,7 +247,7 @@ export function InviteAcceptPage() {
   const email = ready.email ?? "";
 
   return (
-    <AuthShell>
+    <AuthShell side>
       <AuthHeading title={fmt(t.title, { store: ready.workspace.name })}>{fmt(t.asRole, { role: roleLabel })}</AuthHeading>
       {email && (
         <p className="mt-2 text-sm text-ink-soft">
@@ -298,7 +298,7 @@ export function InviteAcceptPage() {
 
 function Problem({ title, body, children }: { title: string; body: string; children?: ReactNode }) {
   return (
-    <AuthShell>
+    <AuthShell side>
       <AuthHeading title={title} icon={<IconLinkOff aria-hidden />} tone="danger">
         <span role="alert">{body}</span>
       </AuthHeading>

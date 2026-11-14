@@ -114,7 +114,7 @@ export function ResetPasswordPage() {
   );
 
   return (
-    <AuthShell>
+    <AuthShell side>
       {!token ? (
         <>
           <AuthHeading title={t.title} />

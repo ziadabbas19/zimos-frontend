@@ -268,7 +268,7 @@ export function RegisterPage() {
   const showsAccountForm = !loadingOptions && step !== "plan" && !(step === "code" && challenge);
 
   return (
-    <AuthShell size={step === "plan" ? "md" : "sm"} className={showsAccountForm ? "lg:max-w-4xl" : undefined}>
+    <AuthShell side size={step === "plan" ? "md" : "sm"} className={showsAccountForm ? "lg:max-w-2xl" : undefined}>
       {totalSteps > 1 && (
         <p className="mb-2 text-xs font-medium text-ink-soft tabular-nums">
           {fmt(t.stepOf, { n: stepNumber, total: totalSteps })}
@@ -327,7 +327,9 @@ export function RegisterPage() {
   function accountForm() {
     return (
       <>
-        <AuthHeading title={t.title}>{t.subtitle}</AuthHeading>
+        <AuthHeading title={t.title} center>
+          {t.subtitle}
+        </AuthHeading>
 
         {planStep && selectedPlan && (
           <div className="mt-6 rounded-[var(--radius-card)] border border-line bg-paper-raised p-4">

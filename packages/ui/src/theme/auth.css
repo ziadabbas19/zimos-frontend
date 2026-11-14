@@ -72,3 +72,179 @@ html:not(.dark) .auth-glass {
 .auth-blob {
   display: none;
 }
+
+/* Sign in and sign up (pages/AuthShell.tsx `side`): the form in one half of
+   the screen and a photograph of a shop in the other, after Net Profit's
+   sign-in (the owner, 2026-11-14), in our own colours. The form stands
+   straight on the paper — no card, no wallpaper — with round fields and
+   buttons. The attribute is written three times in these selectors so they
+   win over the glass layer's rules for the ground, the card and the fields
+   (theme/glass/sweep-account.css), whichever file loads last. */
+.auth-glass[data-split][data-split][data-split] {
+  display: block;
+  padding: 0;
+  overflow: visible;
+  background: var(--color-paper-raised);
+}
+.auth-glass[data-split][data-split][data-split]::before {
+  content: none;
+}
+.auth-split {
+  display: grid;
+  min-height: 100dvh;
+  grid-template-columns: minmax(0, 1fr);
+}
+.auth-split__form {
+  display: flex;
+  min-width: 0;
+  min-height: 100dvh;
+  flex-direction: column;
+  padding: 0.625rem 1rem 2rem;
+}
+.auth-split__top {
+  display: flex;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.auth-split__home {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding-inline: 0.5rem;
+  border-radius: 999px;
+  color: var(--color-ink-soft);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+.auth-split__home:hover {
+  color: var(--color-ink);
+}
+.auth-split__home:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.auth-split__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding-block: 1.5rem;
+}
+.auth-split__body > header {
+  display: flex;
+  justify-content: center;
+}
+.auth-glass[data-split][data-split][data-split] .auth-glass-stage > * {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.auth-glass[data-split][data-split][data-split] [data-slot="input"] {
+  height: 3rem;
+  border-radius: 999px;
+  padding-inline: 1.125rem;
+}
+/* The buttons that take the form's whole width (Google, the submit): round, 48px under the thumb. */
+.auth-glass[data-split][data-split][data-split] [data-slot="button"].w-full {
+  min-height: 3rem;
+  border-radius: 999px;
+}
+.auth-split__panel {
+  display: none;
+}
+@media (min-width: 64rem) {
+  .auth-split {
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  }
+  .auth-split__form {
+    padding-inline: 2rem;
+  }
+  .auth-split__panel {
+    position: sticky;
+    top: 0;
+    display: block;
+    height: 100dvh;
+    padding: 0.75rem;
+  }
+}
+.auth-split__photo {
+  position: relative;
+  isolation: isolate;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 1.75rem;
+  background: #0a1226;
+  color: #fff;
+}
+.auth-split__photo img {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Dark at the foot, where the words stand. */
+.auth-split__photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgb(5 9 18 / 0.08) 28%, rgb(6 12 30 / 0.7) 66%, rgb(5 9 18 / 0.94) 100%);
+}
+.auth-split__words {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  padding: 2.5rem;
+}
+.auth-split__title {
+  margin: 0 0 1.25rem;
+  font-family: var(--font-display, inherit);
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  font-weight: 600;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+.auth-split__words ul {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.auth-split__words li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: rgb(255 255 255 / 0.92);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.auth-split__words li > span {
+  display: grid;
+  width: 2.375rem;
+  height: 2.375rem;
+  flex: none;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 0.75rem;
+  background: rgb(255 255 255 / 0.12);
+  color: #8fe0ff;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.auth-split__words li svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}

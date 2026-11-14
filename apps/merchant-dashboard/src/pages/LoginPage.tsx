@@ -139,7 +139,7 @@ export function LoginPage() {
 
   if (twoFactor) {
     return (
-      <AuthShell>
+      <AuthShell side>
         <TwoFactorStep
           challenge={twoFactor}
           onBack={() => {
@@ -157,7 +157,7 @@ export function LoginPage() {
 
   if (challenge) {
     return (
-      <AuthShell>
+      <AuthShell side>
         <VerifyCodePanel
           challenge={challenge}
           onVerified={async () => {
@@ -170,8 +170,10 @@ export function LoginPage() {
   }
 
   return (
-    <AuthShell>
-      <AuthHeading title={t.title}>{t.subtitle}</AuthHeading>
+    <AuthShell side>
+      <AuthHeading title={t.title} center>
+        {t.subtitle}
+      </AuthHeading>
 
       <div className="mt-6">
         <Button type="button" variant="outline" className="min-h-12 w-full text-base" onClick={handleGoogleLogin}>

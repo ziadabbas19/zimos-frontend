@@ -1,3 +1,6 @@
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/renderWithProviders";
@@ -57,6 +60,26 @@ describe("the frame of the sign-in screens", () => {
     const { user } = renderWithProviders(<LoginPage />, { route: "/login", locale: "ar", auth: { status: "guest", user: null } });
     await user.click(screen.getByRole("button", { name: "إظهار كلمة المرور" }));
     expect(screen.getByRole("button", { name: "إخفاء كلمة المرور" })).toBeInTheDocument();
+  });
+
+  it("lays sign in beside a photograph of a shop, with the way back to the site", () => {
+    const { container } = renderWithProviders(<LoginPage />, { route: "/login", auth: { status: "guest", user: null } });
+    const frame = container.querySelector(".auth-glass[data-split]")!;
+    expect(frame).not.toBeNull();
+    expect(screen.getByRole("link", { name: "Home page" })).toHaveAttribute("href", expect.stringMatching(/^https:\/\/[^/]+\/en$/));
+    const panel = frame.querySelector("aside")!;
+    expect(panel.querySelector("img")).toHaveAttribute("src", "/photos/store-racks-1080.webp");
+    // Decoration: the words beside it say what ZIMOS does, and the page keeps one title.
+    expect(panel.querySelector("img")).toHaveAttribute("alt", "");
+    expect(panel).toHaveTextContent("Your store, from the first product to the profit");
+    expect(panel.querySelectorAll("li")).toHaveLength(3);
+    expect(panel.querySelector("h1, h2")).toBeNull();
+  });
+
+  it("has the photograph it shows on disk", () => {
+    for (const file of ["store-racks-720.webp", "store-racks-1080.webp"]) {
+      expect(existsSync(join(dirname(fileURLToPath(import.meta.url)), "../../public/photos", file)), file).toBe(true);
+    }
   });
 
   it("draws our mark and nothing of another brand", () => {

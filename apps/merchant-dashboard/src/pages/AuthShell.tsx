@@ -1,10 +1,11 @@
 import { useId, useState, type ComponentProps, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Input, Label, cn, ZLoader } from "@store-builder/ui";
-import { IconArrowLeft, IconEye, IconEyeOff } from "@/components/icons";
+import { IconArrowLeft, IconEye, IconEyeOff, IconLayout, IconPhone, IconWallet } from "@/components/icons";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { ZimosLogo } from "@/components/ZimosLogo";
-import { useT, type Messages } from "@/i18n/LocaleContext";
+import { useLocale, useT, type Messages } from "@/i18n/LocaleContext";
+import { MARKETING_URL } from "@/lib/legalLinks";
 
 /**
  * The one composition of every screen outside the dashboard: sign in, sign up,
@@ -19,13 +20,36 @@ import { useT, type Messages } from "@/i18n/LocaleContext";
  * to do, fields with the label above and the error under, links a thumb can
  * hit, a line that says something is on its way.
  *
+ * Sign in and sign up are laid out with `side` (the owner, 2026-11-14): the
+ * same pieces stand straight on the paper in one half of the screen — a way
+ * back to the site and the language switch above them, the mark over the
+ * title — and the other half is a photograph of a shop (public/photos) with
+ * what ZIMOS does in three lines. Below 1024px the photograph steps aside.
+ * The layout is `.auth-split` in theme/auth.css.
+ *
  * Nothing here knows about accounts: the pages keep their own calls,
  * redirects and tokens.
  */
 
 const STRINGS = {
-  en: { show: "Show password", hide: "Hide password" },
-  ar: { show: "إظهار كلمة المرور", hide: "إخفاء كلمة المرور" },
+  en: {
+    show: "Show password",
+    hide: "Hide password",
+    home: "Home page",
+    sideTitle: "Your store, from the first product to the profit",
+    sideTemplates: "Build your store from a ready template",
+    sideConfirm: "Confirm your orders before they ship",
+    sideProfit: "See the real profit of every order",
+  },
+  ar: {
+    show: "إظهار كلمة المرور",
+    hide: "إخفاء كلمة المرور",
+    home: "الصفحة الرئيسية",
+    sideTitle: "متجرك، من أول منتج إلى صافي الربح",
+    sideTemplates: "ابنِ متجرك من قالب جاهز",
+    sideConfirm: "أكِّد طلباتك قبل الشحن",
+    sideProfit: "اعرف الربح الحقيقي لكل طلب",
+  },
 } satisfies Messages;
 
 const WIDTH = {
@@ -38,12 +62,86 @@ export function AuthShell({
   children,
   size = "sm",
   className,
+  side = false,
 }: {
   children: ReactNode;
   size?: keyof typeof WIDTH;
   /** A card wider than the three sizes (the sign-up form's two columns). */
   className?: string;
+  /** Sign in and sign up: the form in one half of the screen, a photograph of a shop in the other. */
+  side?: boolean;
 }) {
+  const t = useT(STRINGS);
+  const { locale } = useLocale();
+
+  if (side) {
+    return (
+      <div className="auth-glass" data-split="">
+        <div className="auth-split">
+          <div className="auth-split__form">
+            <div className="auth-split__top">
+              <a href={`${MARKETING_URL}/${locale === "ar" ? "ar" : "en"}`} className="auth-split__home">
+                <IconArrowLeft className="size-4 shrink-0 rtl:rotate-180" aria-hidden />
+                {t.home}
+              </a>
+              {/* The language can be chosen before signing in, not only in Settings. */}
+              <div data-slot="auth-corner">
+                <LanguageSwitch className="h-11" />
+              </div>
+            </div>
+            <div className="auth-split__body">
+              <header>
+                <ZimosLogo height={34} />
+              </header>
+              <main className="auth-glass-stage">
+                <div data-slot="auth-card" className={cn("w-full min-w-0", WIDTH[size], className)}>
+                  {children}
+                </div>
+              </main>
+            </div>
+          </div>
+
+          <aside className="auth-split__panel">
+            <div className="auth-split__photo">
+              <img
+                src="/photos/store-racks-1080.webp"
+                srcSet="/photos/store-racks-720.webp 720w, /photos/store-racks-1080.webp 1080w"
+                sizes="(min-width: 64rem) 44vw, 1px"
+                width={1080}
+                height={1350}
+                alt=""
+                decoding="async"
+              />
+              <div className="auth-split__words">
+                <p className="auth-split__title">{t.sideTitle}</p>
+                <ul>
+                  <li>
+                    <span aria-hidden>
+                      <IconLayout />
+                    </span>
+                    {t.sideTemplates}
+                  </li>
+                  <li>
+                    <span aria-hidden>
+                      <IconPhone />
+                    </span>
+                    {t.sideConfirm}
+                  </li>
+                  <li>
+                    <span aria-hidden>
+                      <IconWallet />
+                    </span>
+                    {t.sideProfit}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="auth-glass">
       <header className="absolute inset-x-0 top-0 z-10 flex h-16 items-center justify-center px-4">

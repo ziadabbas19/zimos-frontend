@@ -59,7 +59,7 @@ export function AuthCallbackPage() {
 
   if (challenge && !hasTokens) {
     return (
-      <AuthShell>
+      <AuthShell side>
         <TwoFactorStep
           challenge={challenge}
           onBack={() => navigate("/login", { replace: true })}
@@ -73,7 +73,7 @@ export function AuthCallbackPage() {
   }
 
   return (
-    <AuthShell>
+    <AuthShell side>
       {failed ? (
         <GoogleCallbackError code={searchParams.get("error")} />
       ) : (

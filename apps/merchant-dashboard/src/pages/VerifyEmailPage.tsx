@@ -82,7 +82,7 @@ export function VerifyEmailPage() {
   const errorMessage = token ? (apiErrorMessage === true ? t.failed : apiErrorMessage) : t.badLink;
 
   return (
-    <AuthShell>
+    <AuthShell side>
       {state === "verifying" ? (
         <>
           <AuthHeading title={t.title} center />
