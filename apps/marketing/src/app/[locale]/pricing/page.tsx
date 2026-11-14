@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { Faq } from "@/components/faq";
-import { PlanCards, PricesComingSoon } from "@/components/plan-cards";
+import { LivePlans } from "@/components/live-plans";
+import { PricesComingSoon } from "@/components/plan-cards";
 import { PaymentNote, payPerOrderQuestions } from "@/components/pricing";
 import { Service } from "@/components/service";
 import { SiteFooter } from "@/components/site-footer";
@@ -14,9 +15,10 @@ import { pageMetadata } from "@/lib/seo";
 
 type Params = { params: Promise<{ locale: string }> };
 
-// Prices come from the API: the page is rebuilt at most every 5 minutes, and
-// renders "coming soon" (not an error) when the API can't be reached.
-export const revalidate = 300;
+// Prices come from the API: the page is rebuilt at most every minute, the
+// browser reads them again on every visit (components/live-plans.tsx), and
+// it renders "coming soon" (not an error) when the API can't be reached.
+export const revalidate = 60;
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { locale } = await params;
@@ -36,7 +38,6 @@ export default async function PricingPage({ params }: Params) {
   if (!isLocale(locale)) notFound();
   const dict = getDictionary(locale);
   const offer = await getPublicOffer();
-  const plans = offer?.plans ?? [];
   const payPerOrder = offer?.payPerOrder ?? null;
 
   return (
@@ -55,20 +56,16 @@ export default async function PricingPage({ params }: Params) {
               </p>
             </div>
 
-            {plans.length > 0 || payPerOrder ? (
-              <div className="mt-10">
-                <PlanCards
-                  plans={plans}
-                  payPerOrder={payPerOrder}
-                  copy={dict.pricing}
-                  locale={locale}
-                  idPrefix="pricing-page"
-                  headingLevel={2}
-                />
-              </div>
-            ) : (
-              <PricesComingSoon copy={dict.pricing} />
-            )}
+            <div className="mt-10">
+              <LivePlans
+                initial={offer}
+                copy={dict.pricing}
+                locale={locale}
+                idPrefix="pricing-page"
+                headingLevel={2}
+                empty={<PricesComingSoon copy={dict.pricing} />}
+              />
+            </div>
             <PaymentNote copy={dict.pricing} locale={locale} />
           </div>
         </section>

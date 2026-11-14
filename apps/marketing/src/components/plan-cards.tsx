@@ -27,8 +27,8 @@ const WHEN_YEARLY_BLOCK = "hidden group-has-[.cycle-yearly:checked]/pricing:bloc
  * yearly price is less) and what the year comes to a month — both from the
  * plan's two prices, so a price changed in the console changes them too.
  *
- * `compact` (the home page) leaves out the limits and features; the pricing
- * page shows everything.
+ * `compact` leaves out the limits and features. The home page and the pricing
+ * page both show everything (components/live-plans.tsx keeps it current).
  *
  * `payPerOrder`, when the API sends that plan, is one more card, last: beside
  * the others while there are fewer than three, a wide one under them after.
@@ -58,6 +58,10 @@ export function PlanCards({
   const limit = (value: number | null) => (value === null ? copy.unlimited : formatNumber(value, locale));
   const showYearly = plans.some((plan) => plan.yearlyPrice > 0);
   const saves = yearlySaves(plans);
+  // The features the console switched on, in its order, each by the name this
+  // site gives it. A key the site has no name for yet (one added to the
+  // platform after this page) is left out rather than shown as a raw key.
+  const named = (features: readonly string[]) => features.filter((key): key is keyof Copy["features"] => key in copy.features);
   const cards = plans.length + (payPerOrder ? 1 : 0);
 
   return (
@@ -141,9 +145,12 @@ export function PlanCards({
                     ) : null}
                   </>
                 )}
-                <p className="mt-2 text-sm font-medium text-primary-dark dark:text-primary">
-                  {plan.trialDays > 0 ? copy.trial.replace("{days}", formatDays(plan.trialDays, locale)) : copy.noTrial}
-                </p>
+                {/* A trial is said only when the console gives a plan one: with none on offer, a line on every card saying so is noise. */}
+                {plan.trialDays > 0 ? (
+                  <p className="mt-2 text-sm font-medium text-primary-dark dark:text-primary">
+                    {copy.trial.replace("{days}", formatDays(plan.trialDays, locale))}
+                  </p>
+                ) : null}
               </div>
 
               {/* A free plan has one button, whichever cycle is chosen. */}
@@ -174,12 +181,12 @@ export function PlanCards({
                       </>
                     ) : null}
                   </dl>
-                  {plan.features.length > 0 ? (
+                  {named(plan.features).length > 0 ? (
                     <ul className="mt-6 space-y-3 border-t border-line pt-6">
-                      {plan.features.map((feature) => (
+                      {named(plan.features).map((feature) => (
                         <li key={feature} className="flex gap-3 text-sm text-ink-soft">
                           <CheckIcon width="1.1rem" height="1.1rem" className="mt-px shrink-0 text-primary" />
-                          <span className="leading-relaxed">{copy.features[feature] ?? feature}</span>
+                          <span className="leading-relaxed">{copy.features[feature]}</span>
                         </li>
                       ))}
                     </ul>

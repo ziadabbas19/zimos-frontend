@@ -133,14 +133,18 @@
   font-size: 14px;
   line-height: 28px;
 }
-/* The template's sofa leans over the footer's top edge. */
+/* The template's sofa leans over the footer's top edge. Only a little: in
+   the template the footer's own newsletter form sat under it, while here
+   any section can come before the footer (the blog's cards, a product
+   grid), and a deeper lean covered that section's last lines. It stays
+   above the link columns (which start 134px down). */
 .xs-footer[data-xs-look="02"]::before {
   content: "";
   position: absolute;
-  top: -120px;
+  top: -40px;
   inset-inline-end: max(15px, calc((100% - var(--xs-container)) / 2));
-  width: 380px;
-  height: 240px;
+  width: 260px;
+  height: 160px;
   background: url("/xs/02/sofa.png") no-repeat center bottom / contain;
   pointer-events: none;
 }

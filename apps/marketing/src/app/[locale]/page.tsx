@@ -34,10 +34,10 @@ import { homeJsonLd, jsonLdScript, pageMetadata } from "@/lib/seo";
  * WhatsApp button stays at the corner for whoever would rather ask first.
  */
 
-// Rebuilt at most every 5 minutes, as before the landing: the footer reads the
-// platform's details from the API (lib/platform-settings.ts), whose own
-// shorter window wins while they are on.
-export const revalidate = 300;
+// Rebuilt at most every minute: the plans and the footer's platform details
+// come from the API (lib/plans.ts, lib/platform-settings.ts). The browser
+// reads the plans again on every visit besides (components/live-plans.tsx).
+export const revalidate = 60;
 
 type Params = { params: Promise<{ locale: string }> };
 
