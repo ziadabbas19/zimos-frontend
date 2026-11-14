@@ -7,6 +7,7 @@ import { directionOf, isLocale, locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { I18nProvider } from "@/i18n/provider";
 import { ogImage } from "@/lib/og";
+import { SITE_NAME } from "@/lib/seo";
 import { SITE_URL } from "@/lib/urls";
 import { SiteAnalytics } from "@/components/site-analytics";
 import { Gtm } from "@/components/gtm";
@@ -34,26 +35,24 @@ export async function generateMetadata({
   const { meta } = getDictionary(locale);
   // Icons come from src/app/favicon.ico; the brand PNGs in public/brand are
   // rendered in-page by <ZimosLogo />.
+  //
+  // What every page shares. Each page sets its own title, description,
+  // canonical and language links, Open Graph and Twitter card
+  // (lib/seo.ts pageMetadata); a page that sets none of them — a 404, the
+  // hidden sign-up page — gets the home page's words, and no canonical that
+  // would point at another page.
   return {
     // Resolves every page's relative canonical and language links.
     metadataBase: new URL(SITE_URL),
     title: meta.title,
     description: meta.description,
-    applicationName: "ZIMOS",
-    alternates: {
-      canonical: `/${locale}`,
-      languages: { ar: "/ar", en: "/en" },
-    },
+    applicationName: SITE_NAME,
     openGraph: {
-      title: meta.title,
-      description: meta.description,
-      siteName: "ZIMOS",
+      siteName: SITE_NAME,
       locale: locale === "ar" ? "ar_EG" : "en_US",
       type: "website",
-      url: `/${locale}`,
       images: [ogImage(locale)],
     },
-    // Title and description come from each page's Open Graph tags.
     twitter: {
       card: "summary_large_image",
       images: [ogImage(locale).url],

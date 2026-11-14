@@ -9,8 +9,8 @@ import { Service } from "@/components/service";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { container } from "@/components/ui";
-import { ogImage } from "@/lib/og";
 import { getPublicOffer } from "@/lib/plans";
+import { pageMetadata } from "@/lib/seo";
 
 type Params = { params: Promise<{ locale: string }> };
 
@@ -22,18 +22,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   const { pricing } = getDictionary(locale);
-  return {
-    title: pricing.pageTitle,
-    description: pricing.pageDescription,
-    alternates: { canonical: `/${locale}/pricing`, languages: { ar: "/ar/pricing", en: "/en/pricing" } },
-    openGraph: {
-      title: pricing.pageTitle,
-      description: pricing.pageDescription,
-      type: "website",
-      url: `/${locale}/pricing`,
-      images: [ogImage(locale)],
-    },
-  };
+  return pageMetadata({ locale, path: "/pricing", title: pricing.pageTitle, description: pricing.pageDescription });
 }
 
 /**

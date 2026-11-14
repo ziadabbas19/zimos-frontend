@@ -3,9 +3,9 @@ import type { FeaturesCopy } from "./types";
 /** Translated from the Arabic list (ar.ts), item for item. */
 export const en: FeaturesCopy = {
   meta: {
-    title: "Features — ZIMOS",
+    title: "Features — Zimos",
     description:
-      "Every ZIMOS feature for merchants: products, orders and confirmation, shipping with every company, every payment method, fraud protection, marketing, store design and reports. Try it free for 7 days.",
+      "Every Zimos feature for merchants: products, orders and confirmation, shipping with every company, every payment method, fraud protection, marketing, store design and reports. Try it free for 7 days.",
   },
 
   hero: {
