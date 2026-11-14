@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ApiError,
   TwoFactorRequiredError,
@@ -57,7 +57,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [needsPlan, setNeedsPlan] = useState(false);
   const [confirmed, setConfirmed] = useState(true);
-  const [status, setStatus] = useState<AuthContextValue["status"]>("loading");
+  const [status, setStatusState] = useState<AuthContextValue["status"]>("loading");
+  // The status as last set, at once: the `online` listener below reads it, so it knows a page
+  // load has failed before React has drawn "unavailable" and run its effects.
+  const statusRef = useRef<AuthContextValue["status"]>("loading");
+  const setStatus = useCallback((next: AuthContextValue["status"]) => {
+    statusRef.current = next;
+    setStatusState(next);
+  }, []);
 
   const loadUser = async () => {
     if (!apiClient.isAuthenticated()) {
@@ -89,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setStatus("guest");
         return;
       }
-      setStatus((current) => (current === "authenticated" ? current : "unavailable"));
+      if (statusRef.current !== "authenticated") setStatus("unavailable");
     }
   };
 
@@ -116,13 +123,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Back online after a failed page load: try again by itself.
+  // Back online after a failed page load: try again by itself. Listening from the start, not
+  // only once "unavailable" is on screen: an effect added the listener a moment after the
+  // failure (after React had drawn it), and an `online` in between was lost, leaving the page
+  // on "try again".
   useEffect(() => {
-    if (status !== "unavailable") return;
-    const onOnline = () => void retry();
+    const onOnline = () => {
+      if (statusRef.current === "unavailable") void retry();
+    };
     window.addEventListener("online", onOnline);
     return () => window.removeEventListener("online", onOnline);
-  }, [status, retry]);
+  }, [retry]);
 
   // While unconfirmed: re-read on coming back to the tab, every minute while
   // it is in view, and at once when another tab confirms.
