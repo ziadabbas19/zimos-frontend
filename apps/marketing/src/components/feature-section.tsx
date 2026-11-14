@@ -1,21 +1,22 @@
 /* eslint-disable @next/next/no-img-element -- the captures are already sized and compressed for the page. */
 import type { Locale } from "@/i18n/config";
 import type { FeaturesCopy, FeatureSectionId, HomeCardId } from "@/content/features";
-import { ColorIcon, type ColorIconName } from "./color-icon";
+import { ColorIcon } from "./color-icon";
+import { Icon3D, type Icon3DName } from "./icon-3d";
 
-export const SECTION_ICON: Record<FeatureSectionId, ColorIconName> = {
+export const SECTION_ICON: Record<FeatureSectionId, Icon3DName> = {
   products: "package",
   orders: "receipt",
-  shipping: "delivery",
+  shipping: "truck",
   payments: "card",
   fraud: "shield",
-  customers: "gift",
+  customers: "crown",
   marketing: "megaphone",
-  store: "brush",
-  reports: "profit",
+  store: "store",
+  reports: "chart",
   notifications: "bell",
   team: "team",
-  developers: "code",
+  developers: "laptop",
 };
 
 /** The section of /features each home-page card opens. */
@@ -49,9 +50,7 @@ export function FeatureSection({ id, copy, locale }: { id: FeatureSectionId; cop
     <section id={id} className="ft-sec" aria-labelledby={`ft-${id}`} data-ft-section>
       <div className="lz-in ft-sec__in">
         <header className="ft-sec__head" data-ft-head>
-          <span className="lz-ico">
-            <ColorIcon name={SECTION_ICON[id]} size={28} />
-          </span>
+          <Icon3D name={SECTION_ICON[id]} size={56} className="ft-sec__pic" />
           <h2 id={`ft-${id}`}>{section.title}</h2>
           <p>{section.intro}</p>
         </header>

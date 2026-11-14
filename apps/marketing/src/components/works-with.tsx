@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- the platforms' own small marks, drawn as-is. */
 import type { Dictionary } from "@/i18n/dictionary";
-import { ColorIcon, type ColorIconName } from "./color-icon";
+import { Icon3D, type Icon3DName } from "./icon-3d";
 
 type Platform =
   | {
@@ -11,7 +11,7 @@ type Platform =
       tag?: "manual";
     }
   /** Words instead of brands: no shipping company or payment gateway is named on the site. */
-  | { icon: ColorIconName; label: "shippingCompanies" | "paymentGateways" };
+  | { icon: Icon3DName; label: "shippingCompanies" | "paymentGateways" };
 
 /**
  * Each platform with its own mark (public/integrations): Simple Icons (CC0)
@@ -21,7 +21,7 @@ type Platform =
  *
  * Shipping companies and payment gateways are named nowhere on the site
  * (the owner's marketing rules, 2026-10-28): the strip says "every shipping
- * company" and "payment gateways" with the site's own icons. InstaPay is a
+ * company" and "payment gateways" with the site's own pictures (icon-3d.tsx). InstaPay is a
  * manual transfer the customer sends proof of.
  */
 const PLATFORMS: Platform[] = [
@@ -30,7 +30,7 @@ const PLATFORMS: Platform[] = [
   { name: "TikTok", src: "tiktok.svg" },
   { name: "Snapchat", src: "snapchat.svg", kind: "full" },
   { name: "Google", src: "google.png" },
-  { icon: "delivery", label: "shippingCompanies" },
+  { icon: "truck", label: "shippingCompanies" },
   { icon: "card", label: "paymentGateways" },
   { name: "InstaPay", src: "instapay.png", kind: "word", tag: "manual" },
 ];
@@ -50,7 +50,7 @@ export function WorksWith({ copy }: { copy: Dictionary["integrations"] }) {
         return (
           <li key={`${platform.label}-${lap}`} aria-hidden={duplicate || undefined}>
             <span className="lz-logo">
-              <ColorIcon name={platform.icon} size={18} />
+              <Icon3D name={platform.icon} size={22} />
             </span>
             <span>{copy[platform.label]}</span>
           </li>

@@ -1,8 +1,8 @@
 import type { Dictionary } from "@/i18n/dictionary";
-import { ColorIcon, type ColorIconName } from "./color-icon";
+import { Icon3D, type Icon3DName } from "./icon-3d";
 
 /** What you buy, what it includes, how you pay, your data — in that order. */
-const POINT_ICON: ColorIconName[] = ["receipt", "store", "vault", "lock"];
+const POINT_ICON: Icon3DName[] = ["receipt", "store", "bank", "lock"];
 
 /**
  * What ZIMOS is and what is sold, in plain words: a SaaS platform for
@@ -26,9 +26,7 @@ export function Service({ copy, payPerOrder = false }: { copy: Dictionary["servi
           {copy.points.map((point, i) => {
             return (
               <article key={point.title}>
-                <span className="lz-ico">
-                  <ColorIcon name={POINT_ICON[i]} size={28} />
-                </span>
+                <Icon3D name={POINT_ICON[i]} size={52} />
                 <h3>{point.title}</h3>
                 <p>{payPerOrder && point.withPayPerOrder ? point.withPayPerOrder : point.body}</p>
               </article>

@@ -2,18 +2,13 @@ import Link from "next/link";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionary";
 import { getPublicOffer } from "@/lib/plans";
-import { ColorIcon, type ColorIconName } from "./color-icon";
+import { Icon3D, type Icon3DName } from "./icon-3d";
 import { Arrow } from "./duo-icons";
 import { PlanCards } from "./plan-cards";
 import { SectionLabel } from "./section-label";
 
 /** A clear subscription, build before you pay, your data, the payment — in that order. */
-const POINT_ICON: [ColorIconName, string][] = [
-  ["receipt", "blue"],
-  ["store", "green"],
-  ["lock", "violet"],
-  ["wallet", "teal"],
-];
+const POINT_ICON: Icon3DName[] = ["receipt", "tools", "lock", "bank"];
 
 /**
  * What it costs, on the home page itself: the plans on offer, read from the
@@ -57,9 +52,7 @@ export async function HomePricing({ copy, trust, locale }: { copy: Dictionary["p
         <div className="zx-points lz-r">
           {trust.points.map((point, i) => (
             <article key={point.title}>
-              <span className={`zx-tile zx-tile--${POINT_ICON[i][1]}`}>
-                <ColorIcon name={POINT_ICON[i][0]} size={22} fill />
-              </span>
+              <Icon3D name={POINT_ICON[i]} size={52} />
               <h3>{point.title}</h3>
               <p>
                 {point.body}

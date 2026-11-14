@@ -13,11 +13,11 @@
 :root {
   color-scheme: light;
 
-  --color-ink: #0c1424;
-  --color-ink-soft: #5a6274;
-  --color-paper: #f4f4ef;
+  --color-ink: #0d1b3e;
+  --color-ink-soft: #56627e;
+  --color-paper: #f5f8fd;
   --color-paper-raised: #ffffff;
-  --color-line: #e2e2da;
+  --color-line: #e3e9f3;
   /* Border for interactive controls (inputs, selects, textareas, checkboxes).
      WCAG 1.4.11 requires 3:1 for the visual boundary of a UI component;
      --color-line is a decorative hairline (~1.3:1) and fails that, so controls
@@ -47,7 +47,7 @@
   --primary-foreground: #ffffff;
   --secondary: var(--color-primary-soft);
   --secondary-foreground: var(--color-primary-dark);
-  --muted: #eaeae3;
+  --muted: #edf1f8;
   --muted-foreground: var(--color-ink-soft);
   --border: var(--color-line);
   --input: var(--color-line-strong);

@@ -354,8 +354,8 @@
   inset-block-start: calc(var(--ft-top) + var(--ft-bar) + 16px);
 }
 
-.ft-sec__head .lz-ico {
-  margin-block-end: 18px;
+.ft-sec__head .ft-sec__pic {
+  margin-block-end: 16px;
 }
 
 .ft-sec__head h2 {
@@ -463,8 +463,10 @@
     align-items: start;
   }
 
-  .ft-sec__head .lz-ico {
+  .ft-sec__head .ft-sec__pic {
     grid-row: span 2;
+    inline-size: 48px;
+    block-size: 48px;
     margin: 0;
   }
 

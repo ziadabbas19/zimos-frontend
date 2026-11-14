@@ -126,55 +126,6 @@ export interface Dictionary {
     paymentGateways: string;
   };
 
-  /**
-   * "Why ZIMOS": the three places selling with cash on delivery loses its
-   * profit, each as what goes wrong (`pain`) and what ZIMOS does about it,
-   * with a small drawing. The drawings' labels are generic interface words
-   * and their figures an example, said so on the card that has them.
-   */
-  benefits: {
-    kicker: string;
-    heading: string;
-    intro: string;
-    /** The small word before each card's `pain`. */
-    painLabel: string;
-    confirmation: {
-      pain: string;
-      title: string;
-      body: string;
-      nextCall: string;
-      attempt: string;
-      lastOutcome: string;
-      /** Confirmed, refused, no answer, later — in that order. */
-      outcomes: [string, string, string, string];
-    };
-    fraud: {
-      pain: string;
-      title: string;
-      body: string;
-      riskLabel: string;
-      /** Low, medium, high. */
-      levels: [string, string, string];
-      reasons: [string, string];
-    };
-    profit: {
-      pain: string;
-      title: string;
-      body: string;
-      /** Above the sum: it is one order, as an example. */
-      example: string;
-      /** Sale price first, then what comes off it. */
-      rows: [Amount, Amount, Amount, Amount, Amount];
-      net: Amount;
-      currency: string;
-    };
-    /** Before the row of the features page's other sections. */
-    alsoLabel: string;
-    /** The way in, and the way to /features. */
-    startCta: string;
-    cta: string;
-  };
-
   /** "From the ad to the profit": five steps, each with a drawing of its screen. */
   journey: {
     kicker: string;

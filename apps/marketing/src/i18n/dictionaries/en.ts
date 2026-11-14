@@ -79,7 +79,7 @@ export const en: Dictionary = {
       other: "Other",
     },
     names: {
-      "23": "Fashion and clothing",
+      "23": "Clothing store",
       "24": "Mother and baby",
       "13": "Smart watches",
       "02": "Furniture and decor",
@@ -116,48 +116,6 @@ export const en: Dictionary = {
     scrollHint: "Scroll inside the screen to see the whole page",
     cta: "Create your store",
     caption: "Real screenshots of ZIMOS stores — demo products and pictures.",
-  },
-
-  benefits: {
-    kicker: "Why ZIMOS",
-    heading: "Selling with cash on delivery loses its profit in three places.",
-    intro: "An order that ships and is refused, a fake order you pay to ship, and sales whose net you never see. ZIMOS was built to close those three gaps.",
-    painLabel: "The problem",
-    confirmation: {
-      pain: "Orders you ship, then the customer refuses at the door.",
-      title: "Confirm every order before it ships",
-      body: "Cash-on-delivery orders wait in one queue, and your agent records each call's outcome with one click, so only confirmed orders ship.",
-      nextCall: "Next call",
-      attempt: "Second attempt",
-      lastOutcome: "Last outcome: no answer",
-      outcomes: ["Confirmed", "Refused", "No answer", "Later"],
-    },
-    fraud: {
-      pain: "Fake orders and repeated numbers, and you pay to ship them.",
-      title: "Catch the suspect order before it costs you",
-      body: "A risk level on every order with its reasons, phone numbers verified by code, and a block list that stops it happening again.",
-      riskLabel: "Risk level",
-      levels: ["Low", "Medium", "High"],
-      reasons: ["Repeated number", "Unusual quantity"],
-    },
-    profit: {
-      pain: "Big sales at the end of the month, and a profit you can't put a number on.",
-      title: "Know your real profit on every order",
-      body: "The product's cost, shipping, ads and returns come off every delivered order, and you see what is actually left for you.",
-      example: "One order, as an example",
-      rows: [
-        { label: "Sale price", value: "900" },
-        { label: "Product cost", value: "−340" },
-        { label: "Shipping and collection", value: "−60" },
-        { label: "Ads", value: "−150" },
-        { label: "Its share of returns", value: "−40" },
-      ],
-      net: { label: "Net profit", value: "310" },
-      currency: "EGP",
-    },
-    alsoLabel: "And in the same platform",
-    startCta: "Create your store",
-    cta: "See every feature",
   },
 
   journey: {
@@ -317,7 +275,7 @@ export const en: Dictionary = {
       },
       {
         title: "Subscribe and publish",
-        body: "You subscribe once your store is ready; it goes live on a ZIMOS address or on your own domain, and orders reach you in the dashboard.",
+        body: "Once your store is ready, subscribe and publish it on a ZIMOS address or on your own domain, and orders reach you in the dashboard.",
       },
     ],
     cta: "Create your store",
@@ -348,7 +306,7 @@ export const en: Dictionary = {
   pricing: {
     kicker: "Pricing",
     heading: "A clear price from the start.",
-    intro: "Pick the plan that fits your store's size. Every price includes everything listed under the plan, with no cut of your sales.",
+    intro: "Pick the plan that fits your store's size, or pay per order. Every price includes everything listed under the plan.",
     pageTitle: "Pricing and Plans — Zimos",
     pageDescription:
       "Zimos plans and prices: a monthly or yearly subscription to the platform for building and running your online store, with the limits and features of each plan.",

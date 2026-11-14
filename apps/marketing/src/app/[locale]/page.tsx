@@ -6,6 +6,7 @@ import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { DashboardShow } from "@/components/dashboard-show";
 import { Faq } from "@/components/faq";
+import { FeatureGrid } from "@/components/feature-grid";
 import { FinalCta } from "@/components/final-cta";
 import { GrowthTools } from "@/components/growth-tools";
 import { Hero } from "@/components/hero";
@@ -17,7 +18,6 @@ import { SiteHeader } from "@/components/site-header";
 import { StartSteps } from "@/components/start-steps";
 import { StoreShowcase } from "@/components/store-showcase";
 import { WhatsAppFloat } from "@/components/whatsapp-float";
-import { WhyZimos } from "@/components/why-zimos";
 import { WorksWith } from "@/components/works-with";
 import { getPlatformSettings } from "@/lib/platform-settings";
 import { homeJsonLd, jsonLdScript, pageMetadata } from "@/lib/seo";
@@ -27,9 +27,8 @@ import { homeJsonLd, jsonLdScript, pageMetadata } from "@/lib/seo";
  * app/landing.css), in the order a merchant decides in (the owner,
  * 2026-11-14: the stores first, and a flow that sells). A night-blue stage of
  * real stores opens it, then the platforms strip and eight numbered sections:
- * the stores themselves, each one to open and look through; why ZIMOS, as
- * the three places cash on delivery loses its profit and what closes each;
- * three steps to a live store; an order's road from the ad to the profit;
+ * the stores themselves, each one to open and look through; what a merchant
+ * gets, as eight cards to the features page; three steps to a live store; an order's road from the ad to the profit;
  * real screens of the dashboard; the growth tools; what it costs, with the
  * plans read from the API; and the questions — then the closing band. A
  * WhatsApp button stays at the corner for whoever would rather ask first.
@@ -66,7 +65,7 @@ export default async function MarketingHome({ params }: Params) {
         <Hero copy={dict.hero} locale={locale} />
         <WorksWith copy={dict.integrations} />
         <StoreShowcase copy={dict.templates} locale={locale} />
-        <WhyZimos copy={dict.benefits} locale={locale} />
+        <FeatureGrid locale={locale} startCta={dict.finalCta.primaryCta} />
         <StartSteps copy={dict.start} />
         <OrderJourney copy={dict.journey} />
         <DashboardShow copy={dict.dashboard} locale={locale} />

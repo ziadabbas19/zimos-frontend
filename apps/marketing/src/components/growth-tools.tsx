@@ -1,23 +1,23 @@
 import Link from "next/link";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary, GrowthTool } from "@/i18n/dictionary";
-import { ColorIcon, type ColorIconName } from "./color-icon";
+import { Icon3D, type Icon3DName } from "./icon-3d";
 import { SectionLabel } from "./section-label";
 
-/** Each tool's icon and the colour of its tile. */
-const TOOL: Record<GrowthTool["id"], [ColorIconName, string]> = {
-  coupons: ["ticket", "blue"],
-  loyalty: ["crown", "amber"],
-  cart: ["cart", "green"],
-  bundles: ["stack", "violet"],
-  email: ["mail", "sky"],
-  recovery: ["recover", "rose"],
+/** Each tool's picture. */
+const TOOL: Record<GrowthTool["id"], Icon3DName> = {
+  coupons: "ticket",
+  loyalty: "crown",
+  cart: "cart",
+  bundles: "gift",
+  email: "mail",
+  recovery: "bell",
 };
 
 /**
  * The tools that bring sales and bring customers back: six cards, each with
- * its icon on a coloured tile and a few words of what it looks like to the
- * customer (the copy's `tag`), above its name and its line. What a plan
+ * its picture and a few words of what it looks like to the customer (the
+ * copy's `tag`), above its name and its line. What a plan
  * includes differs, so the line under them points at the pricing page. The
  * tile and its words are decoration (aria-hidden).
  */
@@ -34,21 +34,16 @@ export function GrowthTools({ copy, locale }: { copy: Dictionary["growth"]; loca
         </header>
 
         <ul className="zx-tools">
-          {copy.tools.map((tool) => {
-            const [icon, colour] = TOOL[tool.id];
-            return (
-              <li key={tool.id} className="zx-tool lz-r">
-                <div className="zx-tool__art" aria-hidden>
-                  <span className={`zx-tile zx-tile--xl zx-tile--${colour}`}>
-                    <ColorIcon name={icon} size={34} fill />
-                  </span>
-                  <span className="zx-tool__tag">{tool.tag}</span>
-                </div>
-                <h3>{tool.title}</h3>
-                <p>{tool.body}</p>
-              </li>
-            );
-          })}
+          {copy.tools.map((tool) => (
+            <li key={tool.id} className="zx-tool lz-r">
+              <div className="zx-tool__art" aria-hidden>
+                <Icon3D name={TOOL[tool.id]} size={80} />
+                <span className="zx-tool__tag">{tool.tag}</span>
+              </div>
+              <h3>{tool.title}</h3>
+              <p>{tool.body}</p>
+            </li>
+          ))}
         </ul>
 
         <p className="zx-cap lz-r">

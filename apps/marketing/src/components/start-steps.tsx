@@ -1,15 +1,11 @@
 import type { Dictionary } from "@/i18n/dictionary";
 import { REGISTER_URL } from "@/lib/urls";
-import { ColorIcon, type ColorIconName } from "./color-icon";
+import { Icon3D, type Icon3DName } from "./icon-3d";
 import { Arrow } from "./duo-icons";
 import { SectionLabel } from "./section-label";
 
 /** An account, the products and the brand, the store going live. */
-const STEP_ICON: [ColorIconName, string][] = [
-  ["store", "blue"],
-  ["brush", "violet"],
-  ["rocket", "green"],
-];
+const STEP_ICON: Icon3DName[] = ["memo", "palette", "rocket"];
 
 /** Three steps to a live store, each a card with its number large and faint behind it. */
 export function StartSteps({ copy }: { copy: Dictionary["start"] }) {
@@ -32,9 +28,7 @@ export function StartSteps({ copy }: { copy: Dictionary["start"] }) {
         <ol className="zx-steps">
           {copy.steps.map((step, i) => (
             <li key={step.title} className="zx-step lz-r">
-              <span className={`zx-tile zx-tile--lg zx-tile--${STEP_ICON[i][1]}`}>
-                <ColorIcon name={STEP_ICON[i][0]} size={28} fill />
-              </span>
+              <Icon3D name={STEP_ICON[i]} size={64} />
               <em aria-hidden>{i + 1}</em>
               <h3>{step.title}</h3>
               <p>{step.body}</p>

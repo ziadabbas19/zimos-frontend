@@ -24,8 +24,8 @@
   --lz-duo: #a3bcff;
   --lz-pin: #9db8ff;
   /* Buttons, the selected tab, the step tiles that ZIMOS runs. */
-  --lz-solid: #0c1424;
-  --lz-solid-hover: #165dff;
+  --lz-solid: #165dff;
+  --lz-solid-hover: #0b46cc;
   --lz-on-solid: #ffffff;
   /* The closing band and the dashboard frame. */
   --lz-deep: #070b14;
@@ -44,7 +44,7 @@
   --lz-ok-soft: var(--color-success-soft);
   --lz-ok-duo: #b5dcc4;
   /* Shadows: navy, as an rgb triplet. */
-  --lz-sh: 12 20 36;
+  --lz-sh: 13 27 62;
   --lz-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
   /* The blue wash at the top of the page, the tinted bands, the moving ground. */
   --lz-wash: #e6ecfa;
@@ -60,9 +60,9 @@
   --lz-accent-deep: #8fb1fa;
   --lz-duo: #2b4378;
   --lz-pin: #3b5ba0;
-  --lz-solid: #f1f4fa;
-  --lz-solid-hover: #8fb1fa;
-  --lz-on-solid: #090d16;
+  --lz-solid: #5b8df6;
+  --lz-solid-hover: #7aa3f8;
+  --lz-on-solid: #0b1220;
   --lz-deep: #070b14;
   --lz-deep-edge: #2c3a5c;
   --zx-warn: #ff8a8f;
@@ -132,6 +132,15 @@ body:has(main.lz-page) {
   background: linear-gradient(135deg, var(--lz-ic-a) 12%, var(--lz-ic-b) 92%);
   -webkit-mask: var(--ci) center / contain no-repeat;
   mask: var(--ci) center / contain no-repeat;
+}
+
+/* The illustrated icons (components/icon-3d.tsx): a soft shadow under each, as if it stood on the page. */
+.i3d {
+  display: block;
+  flex: none;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 12px rgb(var(--lz-sh) / 0.16));
+  user-select: none;
 }
 
 /* In the colour of the words around it (the header's switches). */
@@ -1331,16 +1340,10 @@ html {
     padding: 18px;
   }
 
-  .lz-trust article .lz-ico {
+  .lz-trust article .i3d {
     grid-row: span 2;
-    inline-size: 46px;
-    block-size: 46px;
-    border-radius: 14px;
-  }
-
-  .lz-trust article .lz-ico .ph {
-    inline-size: 24px;
-    block-size: 24px;
+    inline-size: 44px;
+    block-size: 44px;
   }
 
   .lz-trust article h3 {
@@ -1442,7 +1445,7 @@ html {
     transform 0.7s var(--lz-ease);
 }
 
-.lz-on :is(.zx-bento, .zx-tools, .zx-steps) > .lz-r.in {
+.lz-on :is(.zx-feats__grid, .zx-tools, .zx-steps) > .lz-r.in {
   transition-delay: calc(var(--d, 0) * 70ms);
 }
 

@@ -310,67 +310,6 @@
   translate: -50% 0;
 }
 
-/* An icon on a coloured tile: a white glyph (the fill weight) on two tones
-   of one colour. */
-.zx-tile {
-  --a: #165dff;
-  --b: #3aa0ff;
-  display: grid;
-  flex: none;
-  place-items: center;
-  inline-size: 46px;
-  block-size: 46px;
-  border-radius: 14px;
-  background: linear-gradient(140deg, var(--a), var(--b));
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.3),
-    0 12px 22px -12px var(--a);
-  --lz-ic-a: #fff;
-  --lz-ic-b: #fff;
-}
-
-.zx-tile--lg {
-  inline-size: 60px;
-  block-size: 60px;
-  border-radius: 18px;
-}
-
-.zx-tile--xl {
-  inline-size: 76px;
-  block-size: 76px;
-  border-radius: 22px;
-}
-
-.zx-tile--violet {
-  --a: #6a4dff;
-  --b: #9a7bff;
-}
-
-.zx-tile--green {
-  --a: #0f9d62;
-  --b: #3ed598;
-}
-
-.zx-tile--amber {
-  --a: #e2700f;
-  --b: #f7a531;
-}
-
-.zx-tile--rose {
-  --a: #e11d74;
-  --b: #ff5d8f;
-}
-
-.zx-tile--teal {
-  --a: #0e8f9c;
-  --b: #3fd0c9;
-}
-
-.zx-tile--sky {
-  --a: #0a84ff;
-  --b: #5ac8fa;
-}
-
 /* The round arrows and the counter beside a section's title. */
 .zx-pager {
   display: flex;
@@ -442,6 +381,9 @@
 }
 
 .zx-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   min-block-size: 44px;
   padding: 0 20px;
   border: 1px solid color-mix(in srgb, var(--lz-ink) 16%, transparent);
@@ -754,7 +696,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding-block: 10px;
+  padding-block: 8px;
   padding-inline: 10px 18px;
   border: 1px solid rgb(255 255 255 / 0.16);
   border-radius: 16px;
@@ -780,29 +722,6 @@
   font-size: 12.5px;
   line-height: 1.5;
   color: rgb(255 255 255 / 0.66);
-}
-
-.zx-float__ico {
-  display: grid;
-  flex: none;
-  place-items: center;
-  inline-size: 40px;
-  block-size: 40px;
-  border-radius: 12px;
-  --lz-ic-a: #fff;
-  --lz-ic-b: #fff;
-}
-
-.zx-float__ico--amber {
-  background: linear-gradient(140deg, #f7a531, #e2700f);
-}
-
-.zx-float__ico--green {
-  background: linear-gradient(140deg, #2fc57c, #0f9a5a);
-}
-
-.zx-float__ico--blue {
-  background: linear-gradient(140deg, #3d8bff, #165dff);
 }
 
 .zx-float--a {
@@ -858,7 +777,6 @@
 }
 
 .zx-kind small {
-  margin-inline-start: 8px;
   font-size: 12px;
   font-weight: 600;
   opacity: 0.6;
@@ -1025,16 +943,9 @@
 }
 
 /* ══ The drawings: a sum, the confirmation queue, an order's risk ═══ */
-.zx-bento {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 18px;
-}
 
 /* The drawings share one ground: the page's paper, set into the white card. */
-.zx-sum,
-.zx-queue,
-.zx-risk {
+.zx-sum {
   display: grid;
   gap: 14px;
   padding: 20px;
@@ -1043,8 +954,7 @@
   background: var(--lz-paper);
 }
 
-.zx-sum small,
-.zx-risk small {
+.zx-sum small {
   font-size: 12.5px;
   font-weight: 600;
   color: var(--lz-ink);
@@ -1115,98 +1025,6 @@
   opacity: 0.85;
 }
 
-/* The confirmation queue: the next call, and its four outcomes. */
-.zx-queue__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--lz-text);
-}
-
-.zx-queue__head em {
-  font-size: 16px;
-  font-style: normal;
-  font-weight: 700;
-  color: var(--lz-ink);
-}
-
-.zx-queue__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 8px;
-}
-
-.zx-queue__meta span,
-.zx-risk__why span {
-  padding: 4px 10px;
-  border: 1px solid var(--lz-line);
-  border-radius: 999px;
-  background: var(--lz-card);
-  font-size: 12px;
-  color: var(--lz-text);
-}
-
-.zx-queue__acts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.zx-queue__acts span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-block-size: 36px;
-  border: 1px solid var(--lz-line);
-  border-radius: 10px;
-  background: var(--lz-card);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--lz-ink);
-}
-
-.zx-queue__acts .is-go {
-  border-color: transparent;
-  background: var(--lz-ok);
-  color: #fff;
-}
-
-/* An order's risk: three levels, the high one lit, and why. */
-.zx-risk__meter {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-}
-
-.zx-risk__meter span {
-  padding-block-start: 10px;
-  border-block-start: 5px solid color-mix(in srgb, var(--lz-ink) 10%, transparent);
-  font-size: 12.5px;
-  text-align: center;
-  color: var(--lz-text);
-}
-
-.zx-risk__meter .is-on {
-  border-color: var(--zx-warn);
-  font-weight: 700;
-  color: var(--zx-warn);
-}
-
-.zx-risk__why {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.zx-risk__why span {
-  border-color: transparent;
-  background: var(--zx-warn-soft);
-  color: var(--zx-warn);
-}
-
 /* A shipment's road: its code, then three stops, two of them behind it. */
 .zx-ship__code {
   display: flex;
@@ -1254,65 +1072,6 @@
 
 .zx-order__lines u:last-child {
   inline-size: 62%;
-}
-
-/* The rest of the features page, as a row of links, then the way in and the way to the whole page. */
-.zx-more {
-  display: grid;
-  gap: 24px;
-  margin-block-start: 30px;
-}
-
-.zx-more__also {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 14px;
-}
-
-.zx-more__also > span {
-  font-size: 14.5px;
-  font-weight: 600;
-  color: var(--lz-text);
-}
-
-.zx-more ul {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.zx-more ul a {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-block-size: 42px;
-  padding: 0 15px;
-  border: 1px solid var(--lz-line);
-  border-radius: 999px;
-  background: var(--lz-card);
-  font-size: 14.5px;
-  font-weight: 500;
-  text-decoration: none;
-  color: var(--lz-ink);
-  transition:
-    border-color 0.2s,
-    color 0.2s;
-}
-
-.zx-more ul a:hover {
-  border-color: var(--lz-accent);
-  color: var(--lz-accent);
-}
-
-.zx-more__acts {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px 26px;
 }
 
 /* ══ Night panels ════════════════════════════════════════════════════
@@ -2019,10 +1778,6 @@
 
 /* ══ Narrower screens ════════════════════════════════════════════════ */
 @media (max-width: 1080px) {
-  .zx-bento {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .zx-tools {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2109,12 +1864,6 @@
     font-size: 11px;
   }
 
-  .zx-float__ico {
-    inline-size: 32px;
-    block-size: 32px;
-    border-radius: 10px;
-  }
-
   .zx-float--a {
     inset-block-start: 96px;
     left: 8px;
@@ -2131,7 +1880,6 @@
 }
 
 @media (max-width: 700px) {
-  .zx-bento,
   .zx-tools {
     grid-template-columns: minmax(0, 1fr);
     gap: 14px;
@@ -2139,14 +1887,6 @@
 
   .zx-points {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .zx-more {
-    justify-content: center;
-  }
-
-  .zx-more ul {
-    justify-content: center;
   }
 }
 
@@ -2325,76 +2065,6 @@
 }
 
 /* ══ Why ZIMOS — what goes wrong, and what closes it ═════════════════ */
-.zx-pains {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.zx-pain {
-  display: flex;
-  flex-direction: column;
-  padding: 28px 28px 26px;
-  border: 1px solid var(--lz-line);
-  border-radius: 26px;
-  background: var(--lz-card);
-  color: inherit;
-  text-decoration: none;
-  transition:
-    translate 0.35s var(--lz-ease),
-    box-shadow 0.35s var(--lz-ease),
-    border-color 0.2s;
-}
-
-.zx-pain:hover {
-  translate: 0 -4px;
-  border-color: color-mix(in srgb, var(--lz-accent) 42%, var(--lz-line));
-  box-shadow: 0 30px 60px -38px rgb(var(--lz-sh) / 0.5);
-}
-
-/* What goes wrong today, said first and in the warning colour. */
-.zx-pain__was {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  margin: 0 0 18px;
-  padding-block-end: 18px;
-  border-block-end: 1px dashed var(--zx-rule);
-  font-size: 15px;
-  line-height: 1.7;
-  color: var(--lz-text);
-}
-
-.zx-pain__was b {
-  padding: 3px 11px;
-  border-radius: 999px;
-  background: var(--zx-warn-soft);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--zx-warn);
-}
-
-.zx-pain h3 {
-  margin: 0 0 8px;
-  font-family: var(--font-display);
-  font-size: 21px;
-  font-weight: 600;
-  line-height: 1.45;
-  color: var(--lz-ink);
-}
-
-.zx-pain > h3 + p {
-  margin: 0 0 24px;
-  font-size: 15.5px;
-  line-height: 1.8;
-  color: var(--lz-text);
-}
-
-/* The drawing stands at the card's foot, whatever the words above it take. */
-.zx-pain > :last-child {
-  margin-block-start: auto;
-}
 
 /* ══ A store's card: its tag and the way to look through it ══════════ */
 
@@ -2642,10 +2312,6 @@
 }
 
 @media (max-width: 1080px) {
-  .zx-pains {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .zx-points {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 26px 28px;
@@ -2653,10 +2319,6 @@
 }
 
 @media (max-width: 600px) {
-  .zx-pain {
-    padding: 24px 22px 22px;
-  }
-
   .zx-points {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -2679,7 +2341,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .zx-pain,
   .zx-wa {
     transition: none;
   }
@@ -2731,6 +2392,136 @@
 @media (prefers-reduced-motion: reduce) {
   .zx-shop__open,
   .zx-shop__shot img {
+    transition: none;
+  }
+}
+
+/* ══ What a merchant gets — eight cards, each a picture ══════════════ */
+.zx-feats__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.zx-feat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+  padding: 26px 24px 24px;
+  border: 1px solid var(--lz-line);
+  border-radius: 24px;
+  background: var(--lz-card);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    translate 0.35s var(--lz-ease),
+    box-shadow 0.35s var(--lz-ease),
+    border-color 0.2s;
+}
+
+.zx-feat:hover {
+  translate: 0 -4px;
+  border-color: color-mix(in srgb, var(--lz-accent) 40%, var(--lz-line));
+  box-shadow: 0 28px 54px -36px rgb(var(--lz-sh) / 0.5);
+}
+
+.zx-feat .i3d {
+  margin-block-end: 18px;
+  transition: scale 0.35s var(--lz-ease);
+}
+
+.zx-feat:hover .i3d {
+  scale: 1.08;
+}
+
+.zx-feat h3 {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--lz-ink);
+}
+
+.zx-feat p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--lz-text);
+}
+
+/* The arrow at the card's top corner, opposite the picture. */
+.zx-feat__go {
+  position: absolute;
+  inset-block-start: 26px;
+  inset-inline-end: 24px;
+  color: var(--lz-text);
+}
+
+.zx-feat:hover .zx-feat__go {
+  color: var(--lz-accent);
+}
+
+.zx-feats__acts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px 14px;
+  margin-block-start: clamp(30px, 3.6vw, 46px);
+}
+
+/* The growth tools, the steps and the reassurances: the picture first. */
+.zx-tool__art .i3d {
+  filter: drop-shadow(0 16px 18px rgb(var(--lz-sh) / 0.2));
+}
+
+.zx-step .i3d {
+  margin-block-end: 4px;
+}
+
+.zx-points .i3d {
+  margin-block-end: 2px;
+}
+
+@media (max-width: 1080px) {
+  .zx-feats__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .zx-feats__grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  /* A phone: the picture beside the words. */
+  .zx-feat {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 16px;
+    padding: 20px 20px 20px;
+  }
+
+  .zx-feat .i3d {
+    grid-row: span 2;
+    inline-size: 52px;
+    block-size: 52px;
+    margin: 0;
+  }
+
+  .zx-feat__go {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zx-feat,
+  .zx-feat .i3d {
     transition: none;
   }
 }

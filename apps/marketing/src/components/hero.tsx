@@ -5,7 +5,7 @@ import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionary";
 import { REGISTER_URL } from "@/lib/urls";
 import { HERO_LOOKS, HERO_PHONES, galleryShot } from "@/lib/store-shots";
-import { ColorIcon } from "./color-icon";
+import { Icon3D } from "./icon-3d";
 import { Arrow, Check } from "./duo-icons";
 
 const turn = (i: number) => ({ "--k": i }) as CSSProperties;
@@ -112,27 +112,21 @@ export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Local
 
         <div className="zx-floats" aria-hidden>
           <div className="zx-float zx-float--a">
-            <span className="zx-float__ico zx-float__ico--amber">
-              <ColorIcon name="receipt" size={20} fill />
-            </span>
+            <Icon3D name="package" size={40} />
             <span>
               <b>{chips.order.title}</b>
               <small>{chips.order.detail}</small>
             </span>
           </div>
           <div className="zx-float zx-float--b">
-            <span className="zx-float__ico zx-float__ico--green">
-              <ColorIcon name="verified" size={20} fill />
-            </span>
+            <Icon3D name="check" size={40} />
             <span>
               <b>{chips.confirmed.title}</b>
               <small>{chips.confirmed.detail}</small>
             </span>
           </div>
           <div className="zx-float zx-float--c">
-            <span className="zx-float__ico zx-float__ico--blue">
-              <ColorIcon name="wallet" size={20} fill />
-            </span>
+            <Icon3D name="money" size={40} />
             <span>
               <b>{chips.delivered.title}</b>
               <small>{chips.delivered.detail}</small>

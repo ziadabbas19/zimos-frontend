@@ -17,6 +17,7 @@ type Params = { params: Promise<{ locale: string }> };
  */
 const RESOURCES = [
   { name: "Phosphor Icons", href: "https://phosphoricons.com", licence: "MIT" },
+  { name: "Fluent Emoji (Microsoft)", href: "https://github.com/microsoft/fluentui-emoji", licence: "MIT" },
   { name: "Unsplash", href: "https://unsplash.com/license", licence: "Unsplash License" },
   { name: "Fraunces", href: "https://fonts.google.com/specimen/Fraunces", licence: "SIL Open Font License 1.1" },
   { name: "Plus Jakarta Sans", href: "https://fonts.google.com/specimen/Plus+Jakarta+Sans", licence: "SIL Open Font License 1.1" },

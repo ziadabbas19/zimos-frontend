@@ -47,7 +47,7 @@ export function LandingMotion() {
     const html = document.documentElement;
     html.classList.add("lz-on");
     // Each grid's cards come in one after the other, a row at a time.
-    document.querySelectorAll<HTMLElement>(".zx-bento, .zx-tools, .zx-steps").forEach((grid) => {
+    document.querySelectorAll<HTMLElement>(".zx-feats__grid, .zx-tools, .zx-steps").forEach((grid) => {
       grid.querySelectorAll<HTMLElement>(":scope > .lz-r").forEach((el, i) => {
         el.style.setProperty("--d", String(i % 3));
       });
