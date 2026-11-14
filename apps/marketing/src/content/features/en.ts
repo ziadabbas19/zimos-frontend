@@ -5,14 +5,14 @@ export const en: FeaturesCopy = {
   meta: {
     title: "Features — Zimos",
     description:
-      "Every Zimos feature for merchants: products, orders and confirmation, shipping with every company, every payment method, fraud protection, marketing, store design and reports. Try it free for 7 days.",
+      "Every Zimos feature for merchants: products, orders and confirmation, shipping with every company, every payment method, fraud protection, marketing, store design and reports.",
   },
 
   hero: {
     kicker: "Features",
     heading: "Everything your store needs, in one place",
     body: "From your first product to your last report. ZIMOS supports every payment method and works with every shipping company.",
-    cta: "Start your 7-day free trial",
+    cta: "Create your store",
   },
 
   bar: {
@@ -396,8 +396,8 @@ export const en: FeaturesCopy = {
 
   cta: {
     heading: "Open your store in under 5 minutes",
-    body: "Try ZIMOS free for 7 days, with every payment method and every shipping company.",
-    primaryCta: "Start your 7-day free trial",
+    body: "Build your first store, and subscribe when it is ready to publish — with every payment method and every shipping company.",
+    primaryCta: "Create your store",
     secondaryCta: "I have an account — sign in",
   },
 

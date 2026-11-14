@@ -52,7 +52,7 @@ const endless = [...new Set(rules(css).filter((rule) => /animation:[^;]*\binfini
 describe("the landing's endless animations", () => {
   it("are found (the stage's lights, cards and crossfade, the strip, the closing band…)", () => {
     expect(endless).toEqual(
-      expect.arrayContaining([".zx-glow", ".zx-float", ".zx-cycle img", ".lz-marquee__track", ".lz-fx__orb", ".lz-fx__wave", ".lz-end__phone"]),
+      expect.arrayContaining([".zx-glow", ".zx-float", ".zx-cycle img", ".lz-marquee__track", ".lz-fx__orb", ".lz-fx__wave"]),
     );
   });
 

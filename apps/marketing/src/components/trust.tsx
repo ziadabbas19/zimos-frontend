@@ -5,8 +5,13 @@ import { ColorIcon, type ColorIconName } from "./color-icon";
 import { Arrow } from "./duo-icons";
 import { SectionLabel } from "./section-label";
 
-/** A clear subscription, start free, your data, the payment — in that order. */
-const POINT_ICON: ColorIconName[] = ["receipt", "gift", "lock", "vault"];
+/** A clear subscription, build before you pay, your data, the payment — in that order. */
+const POINT_ICON: [ColorIconName, string][] = [
+  ["receipt", "blue"],
+  ["store", "green"],
+  ["lock", "violet"],
+  ["wallet", "teal"],
+];
 
 /**
  * "What should reassure you": what ZIMOS sells and what it doesn't, what a
@@ -36,8 +41,8 @@ export function Trust({ copy, locale }: { copy: Dictionary["trust"]; locale: Loc
         <div className="zx-points lz-r">
           {copy.points.map((point, i) => (
             <article key={point.title}>
-              <span className="zx-points__ico">
-                <ColorIcon name={POINT_ICON[i]} size={22} />
+              <span className={`zx-tile zx-tile--${POINT_ICON[i][1]}`}>
+                <ColorIcon name={POINT_ICON[i][0]} size={22} fill />
               </span>
               <h3>{point.title}</h3>
               <p>

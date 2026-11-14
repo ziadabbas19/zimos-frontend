@@ -85,21 +85,30 @@ describe("the features copy", () => {
   });
 
   // No number that reads as a plan's limit (products, roles, sections…): the
-  // page does not tell plans apart. Only the trial's days, the five minutes,
-  // the redirect codes and GA4's name carry digits.
+  // page does not tell plans apart. Only the five minutes, the redirect codes
+  // and GA4's name carry digits.
   it.each([
     ["ar", ar],
     ["en", en],
   ])("shows no number but the allowed ones (%s)", (_, copy) => {
-    const allowed = /7 أيام|7-day|7 days|5 دقايق|5 minutes|301\/302|GA4/g;
+    const allowed = /5 دقايق|5 minutes|301\/302|GA4/g;
     const found = strings(copy).filter((text) => /[0-9٠-٩]/.test(text.replace(allowed, "")));
     expect(found).toEqual([]);
   });
 
-  it("states the trial and the five minutes from the owner's rules", () => {
-    expect(ar.hero.cta).toBe("ابدأ تجربتك المجانية 7 أيام");
+  it("states the five minutes from the owner's rules", () => {
     expect(ar.cta.heading).toBe("افتح متجرك في أقل من 5 دقايق");
     expect(ar.home.cta).toBe("شاهد كل المميزات");
+  });
+
+  // The 7-day free trial is gone (the owner, 2026-11-14): a merchant builds
+  // the store first and subscribes when it is ready to publish.
+  it.each([
+    ["ar", ar],
+    ["en", en],
+  ])("promises no free trial (%s)", (_, copy) => {
+    const trial = /تجرب\S* مجاني|مجان\S* 7|free trial|free for \d+ days|\d+-day/i;
+    expect(strings(copy).filter((text) => trial.test(text))).toEqual([]);
   });
 });
 

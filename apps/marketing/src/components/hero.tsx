@@ -20,14 +20,14 @@ const NOTHING = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAA
 
 /**
  * The page's opening: a night-blue stage that reaches up behind the floating
- * header. The words stand in the middle — a pill, the title in two colours,
- * one paragraph, the two ways in — and under them real stores rise from the
- * stage's lower edge: a computer frame crossfading from one store to the
- * next, with four stores on phones fanned out on both sides. Three cards
- * float over them with what happens to an order. On a phone screen the
- * computer frame steps aside and three phones take the stage. The cards and
- * the phones are decoration (aria-hidden); the first picture's alt says what
- * they are.
+ * header, over a photograph of a shop (public/photos, darkened so the words
+ * read). The words stand in the middle — a pill, the title in two colours,
+ * one paragraph, the two ways in — and under them real stores on real
+ * devices: a laptop crossfading from one store to the next, and a store on a
+ * phone at each side of it. Three cards float over them with what happens to
+ * an order. On a phone screen the laptop steps aside and three phones take
+ * the stage. The cards and the phones are decoration (aria-hidden); the
+ * first picture's alt says what they are.
  */
 export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Locale }) {
   const { chips } = copy;
@@ -38,6 +38,7 @@ export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Local
   return (
     <section className="zx-hero" aria-labelledby="zx-h1" data-section="hero">
       <div className="zx-hero__bg" aria-hidden>
+        <i className="zx-hero__photo" />
         <i className="zx-glow zx-glow--a" />
         <i className="zx-glow zx-glow--b" />
         <i className="zx-hero__grid" />
@@ -87,14 +88,9 @@ export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Local
           ))}
         </div>
 
-        <figure className="zx-browser zx-stage__frame">
-          <div className="zx-browser__bar" aria-hidden>
-            <i />
-            <i />
-            <i />
-            <span className="ltr">{copy.frameLabel}</span>
-          </div>
-          <div className="zx-cycle">
+        <figure className="zx-laptop zx-stage__frame">
+          <div className="zx-laptop__lid">
+            <div className="zx-cycle">
             {HERO_LOOKS.map((look, i) => (
               <picture key={look}>
                 <source media={FRAME_HIDDEN} srcSet={NOTHING} />
@@ -109,13 +105,15 @@ export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Local
                 />
               </picture>
             ))}
+            </div>
           </div>
+          <div className="zx-laptop__base" aria-hidden />
         </figure>
 
         <div className="zx-floats" aria-hidden>
           <div className="zx-float zx-float--a">
             <span className="zx-float__ico zx-float__ico--amber">
-              <ColorIcon name="receipt" size={20} />
+              <ColorIcon name="receipt" size={20} fill />
             </span>
             <span>
               <b>{chips.order.title}</b>
@@ -124,7 +122,7 @@ export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Local
           </div>
           <div className="zx-float zx-float--b">
             <span className="zx-float__ico zx-float__ico--green">
-              <ColorIcon name="verified" size={20} />
+              <ColorIcon name="verified" size={20} fill />
             </span>
             <span>
               <b>{chips.confirmed.title}</b>
@@ -133,7 +131,7 @@ export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Local
           </div>
           <div className="zx-float zx-float--c">
             <span className="zx-float__ico zx-float__ico--blue">
-              <ColorIcon name="profit" size={20} />
+              <ColorIcon name="wallet" size={20} fill />
             </span>
             <span>
               <b>{chips.delivered.title}</b>

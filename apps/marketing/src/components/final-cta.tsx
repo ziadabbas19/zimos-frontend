@@ -1,33 +1,36 @@
-/* eslint-disable @next/next/no-img-element -- the captures are already sized and compressed for the page. */
+/* eslint-disable @next/next/no-img-element -- the photograph is already sized and compressed for the page. */
 import type { Dictionary } from "@/i18n/dictionary";
-import { END_LOOKS, STORE_SHOTS } from "@/lib/store-shots";
 import { LOGIN_URL, REGISTER_URL } from "@/lib/urls";
 import { Backdrop } from "./backdrop";
 import { Arrow } from "./duo-icons";
 
 /**
- * The navy closing band: the last push, the way in and the way back for
- * those who already have an account. Its ground moves like the hero's
- * (components/backdrop.tsx), and on the plain side three real stores stand
- * on phones, gently bobbing — decoration only. Without `phones` (the
- * features page, which shows no store and so no design credits) the words
- * stand in the middle.
+ * The night-blue closing band: the last push, the way in and the way back
+ * for those who already have an account, the words in the middle. On the
+ * home page (`photo`) it stands over a photograph of an order being handed
+ * over (public/photos), darkened so the words read; elsewhere (the features
+ * page) over the moving ground of components/backdrop.tsx.
  */
-export function FinalCta({ copy, phones = true }: { copy: Dictionary["finalCta"]; phones?: boolean }) {
+export function FinalCta({ copy, photo = false }: { copy: Dictionary["finalCta"]; photo?: boolean }) {
   return (
     <section className="lz-sec" aria-labelledby="final-cta-heading" data-section="final-cta">
       <div className="lz-in">
-        <div className={phones ? "lz-end lz-r" : "lz-end lz-end--plain lz-r"}>
-          <Backdrop id="lz-wave-end" />
-          {phones ? (
-            <div className="lz-end__phones" aria-hidden>
-              {END_LOOKS.map((look) => (
-                <span key={look} className="lz-end__phone">
-                  <img src={STORE_SHOTS[look].phone} width={390} height={1600} alt="" loading="lazy" decoding="async" />
-                </span>
-              ))}
-            </div>
-          ) : null}
+        <div className={photo ? "lz-end lz-end--photo lz-r" : "lz-end lz-r"}>
+          {photo ? (
+            <img
+              className="lz-end__photo"
+              src="/photos/parcel-handover-1600.webp"
+              srcSet="/photos/parcel-handover-800.webp 800w, /photos/parcel-handover-1600.webp 1600w"
+              sizes="(min-width: 1280px) 1216px, 100vw"
+              width={1600}
+              height={800}
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <Backdrop id="lz-wave-end" />
+          )}
           <div className="lz-end__copy">
             <h2 id="final-cta-heading">{copy.heading}</h2>
             <p>{copy.body}</p>

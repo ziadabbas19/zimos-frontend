@@ -134,6 +134,11 @@ body:has(main.lz-page) {
   mask: var(--ci) center / contain no-repeat;
 }
 
+/* In the colour of the words around it (the header's switches). */
+.ci--ink {
+  background: currentColor;
+}
+
 :root {
   --lz-ic-a: #0a3cff;
   --lz-ic-b: #0a9cff;
@@ -245,8 +250,12 @@ html {
 .lz-top__end {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   flex: none;
+}
+
+.lz-top__end .lz-top__login {
+  margin-inline-start: 4px;
 }
 
 .lz-top__login,
@@ -416,95 +425,36 @@ html {
   text-decoration: none;
 }
 
-/* The language and the theme, side by side at the bottom corner of the
-   screen. Only the two buttons take clicks, not the gap between them. */
-.lz-corner {
-  position: fixed;
-  z-index: 60;
-  inset-block-end: 18px;
-  inset-inline-start: 18px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  pointer-events: none;
-}
-
-.lz-corner > * {
-  pointer-events: auto;
-}
-
-/* The footer is on screen (it has both switches): the corner steps aside
-   rather than cover the footer's links. */
-.lz-corner {
-  transition:
-    opacity 0.2s ease,
-    visibility 0.2s;
-}
-
-.lz-corner.is-away {
-  opacity: 0;
-  visibility: hidden;
-}
-
-.lz-corner.is-away > * {
-  pointer-events: none;
-}
-
+/* The language, in the bar: the translate mark and two letters at most. */
 .lz-lang-pill {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-block-size: 44px;
-  padding: 0 16px;
-  border-radius: 999px;
+  justify-content: center;
+  gap: 6px;
+  flex: none;
+  min-inline-size: 44px;
+  block-size: 44px;
+  padding: 0 13px;
   border: 1px solid var(--lz-line);
+  border-radius: 999px;
   background: var(--lz-card);
   color: var(--lz-ink);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
+  line-height: 1;
   text-decoration: none;
-  box-shadow: 0 12px 30px -14px rgb(var(--lz-sh) / 0.4);
   transition:
     border-color 0.2s,
     color 0.2s;
 }
 
-.lz-lang-pill:hover {
-  border-color: var(--lz-pin);
-  color: var(--lz-accent);
+.lz-lang-pill:hover,
+.lz-top__theme:hover {
+  border-color: color-mix(in srgb, var(--lz-ink) 45%, transparent);
 }
 
 .lz-lang-pill:focus-visible {
-  outline: 2px solid var(--lz-accent);
-  outline-offset: 3px;
-}
-
-/* The light/dark switch beside it: the pill's height, frame and shadow. */
-.lz-corner__theme {
-  display: inline-grid;
-  place-items: center;
-  flex: none;
-  inline-size: 44px;
-  block-size: 44px;
-  padding: 0;
-  border-radius: 50%;
-  border: 1px solid var(--lz-line);
-  background: var(--lz-card);
-  color: var(--lz-ink);
-  box-shadow: 0 12px 30px -14px rgb(var(--lz-sh) / 0.4);
-  cursor: pointer;
-  transition:
-    border-color 0.2s,
-    color 0.2s;
-}
-
-.lz-corner__theme:hover {
-  border-color: var(--lz-pin);
-  color: var(--lz-accent);
-}
-
-.lz-corner__theme:focus-visible {
   outline: 2px solid var(--lz-accent);
   outline-offset: 3px;
 }
@@ -568,8 +518,18 @@ html {
     block-size: 40px;
   }
 
-  /* On a phone the language and the theme sit in the sheet. */
-  .lz-corner {
+  /* On a phone the theme switch waits in the sheet; the language stays in the bar, as its two letters. */
+  .lz-top__theme {
+    display: none;
+  }
+
+  .lz-lang-pill {
+    min-inline-size: 40px;
+    block-size: 40px;
+    padding: 0 10px;
+  }
+
+  .lz-lang-pill .ci {
     display: none;
   }
 }
@@ -773,16 +733,6 @@ html {
 [dir="rtl"] .lz-btn:hover .lz-arrow,
 [dir="rtl"] .lz-link:hover .lz-arrow {
   transform: scaleX(-1) translateX(3px);
-}
-
-@keyframes lz-bob {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
 }
 
 @media (min-width: 901px) and (max-width: 1180px) {
@@ -1139,19 +1089,21 @@ html {
   }
 }
 
-/* ══ The closing band ════════════════════════════════════════════════ */
+/* ══ The closing band ════════════════════════════════════════════════
+   A night-blue panel, the words in its middle. */
 .lz-end {
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  min-block-size: 380px;
   display: flex;
   align-items: center;
-  padding: clamp(34px, 6vw, 84px);
+  justify-content: center;
+  padding: clamp(40px, 7vw, 104px) clamp(22px, 6vw, 84px);
   border-radius: 30px;
   color: #fff;
+  text-align: center;
   background:
-    radial-gradient(56% 70% at 30% 0%, rgb(30 84 226 / 0.5), transparent 72%),
+    radial-gradient(56% 70% at 50% 0%, rgb(30 84 226 / 0.5), transparent 72%),
     var(--zx-night);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
 }
@@ -1159,7 +1111,7 @@ html {
 .lz-end__copy {
   position: relative;
   z-index: 2;
-  max-inline-size: 34rem;
+  max-inline-size: 42rem;
 }
 
 .lz-end h2 {
@@ -1178,9 +1130,13 @@ html {
 
 .lz-end p {
   margin: 0 0 28px;
-  font-size: 16.5px;
+  font-size: 17px;
   line-height: 1.85;
-  color: rgb(255 255 255 / 0.78);
+  color: rgb(255 255 255 / 0.82);
+}
+
+.lz-end .lz-ctas {
+  justify-content: center;
 }
 
 .lz-btn--light {
@@ -1217,112 +1173,39 @@ html {
   inset-block-end: 18%;
 }
 
-/* Three stores on phones rising from the bottom edge, on the plain side.
-   Placed with translate/rotate/scale so the bob (a transform) adds to it. */
-.lz-end__phones {
-  position: absolute;
-  z-index: 1;
-  inset-block-end: -70px;
-  inset-inline-end: 5%;
-  inline-size: 380px;
-  block-size: 100%;
+/* The home page's band: a photograph under the night blue, dark enough for the words. */
+.lz-end--photo {
+  min-block-size: clamp(380px, 38vw, 520px);
 }
 
-.lz-end__phone {
+.lz-end__photo {
   position: absolute;
-  inset-block-end: 0;
-  left: 50%;
-  inline-size: 150px;
-  padding: 6px;
-  border-radius: 28px;
-  background: #050b18;
-  box-shadow:
-    0 0 0 1px rgb(255 255 255 / 0.1),
-    0 34px 60px -24px rgb(0 0 0 / 0.7);
-  animation: lz-bob 7s ease-in-out infinite;
-}
-
-.lz-end__phone img {
-  display: block;
+  inset: 0;
+  z-index: -2;
   inline-size: 100%;
-  block-size: auto;
-  aspect-ratio: 390 / 844;
+  block-size: 100%;
   object-fit: cover;
-  object-position: top center;
-  border-radius: 22px;
 }
 
-.lz-end__phone:nth-child(1) {
-  translate: -126% 0;
-  rotate: -8deg;
-  scale: 0.86;
-  animation-delay: -2s;
-}
-
-.lz-end__phone:nth-child(2) {
-  translate: 26% 0;
-  rotate: 8deg;
-  scale: 0.86;
-  animation-delay: -4.5s;
-}
-
-.lz-end__phone:nth-child(3) {
-  z-index: 1;
-  translate: -50% -30px;
-}
-
-@media (max-width: 900px) {
-  .lz-end {
-    flex-direction: column;
-    align-items: flex-start;
-    min-block-size: 0;
-  }
-
-  .lz-end {
-    padding-block-end: 0;
-  }
-
-  .lz-end__phones {
-    position: relative;
-    inset: auto;
-    order: 2;
-    align-self: center;
-    inline-size: min(100%, 380px);
-    block-size: 250px;
-    margin-block-start: 30px;
-  }
-
-  .lz-end__phone {
-    inset-block-end: -80px;
-  }
+.lz-end--photo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(60% 80% at 50% 0%, rgb(22 93 255 / 0.38), transparent 70%),
+    linear-gradient(180deg, rgb(5 9 18 / 0.74), rgb(5 9 18 / 0.9));
 }
 
 @media (max-width: 600px) {
   .lz-end {
-    padding: 30px 22px;
+    padding: 44px 22px;
     border-radius: 24px;
   }
 
   .lz-end p {
     font-size: 15.5px;
     margin-block-end: 22px;
-  }
-
-  .lz-end__copy {
-    inline-size: 100%;
-  }
-
-  .lz-end__phones {
-    block-size: 210px;
-  }
-
-  .lz-end__phone {
-    inline-size: 124px;
-    border-radius: 24px;
-  }
-
-  .lz-end__phone img {
-    border-radius: 18px;
   }
 
   .lz-end .lz-ctas {
@@ -1336,29 +1219,6 @@ html {
 
   .lz-end .lz-link {
     margin-inline: auto;
-  }
-}
-
-/* Without the phones (the features page): the words in the middle. After
-   the rules above, so it wins at every width. */
-.lz-end--plain {
-  justify-content: center;
-  min-block-size: 0;
-  text-align: center;
-}
-
-.lz-end--plain .lz-end__copy {
-  max-inline-size: 40rem;
-}
-
-.lz-end--plain .lz-ctas {
-  justify-content: center;
-}
-
-@media (max-width: 900px) {
-  .lz-end--plain {
-    align-items: center;
-    padding-block-end: clamp(30px, 6vw, 80px);
   }
 }
 
@@ -1603,7 +1463,6 @@ html {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lz-end__phone,
   .lz-fx__orb,
   .lz-fx__wave,
   .lz-marquee__track {
@@ -1666,8 +1525,7 @@ html {
 
   html:not(.lz-loaded) .lz-home .lz-fx__orb,
   html:not(.lz-loaded) .lz-home .lz-fx__wave,
-  html:not(.lz-loaded) .lz-home .lz-marquee__track,
-  html:not(.lz-loaded) .lz-home .lz-end__phone {
+  html:not(.lz-loaded) .lz-home .lz-marquee__track {
     animation-play-state: paused;
   }
 }

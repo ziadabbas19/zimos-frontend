@@ -49,9 +49,9 @@ export function deskShot(look: string, locale: string): string {
  * copied from the storefront's XS_CREDITS (apps/storefront/src/lib/xsShell.ts;
  * store-shots.test.ts keeps the two equal), with a link to the licence where
  * it has one. Written on the credits page (app/[locale]/credits), linked from
- * every page's footer, it covers every imported look on the site: the hero,
- * the order's journey and the closing band show gallery looks only. ZIMOS's
- * own looks (OWN_LOOKS) have none.
+ * every page's footer, it covers every imported look on the site: the hero
+ * and the order's journey show gallery looks only. ZIMOS's own looks
+ * (OWN_LOOKS) have none.
  */
 export const SHOT_CREDITS: Record<string, { name: string; author: string; href: string; licence: string; licenceHref?: string }> = {
   "04": { name: "Ashion", author: "Colorlib", href: "https://colorlib.com", licence: "CC BY 3.0", licenceHref: "https://creativecommons.org/licenses/by/3.0/" },
@@ -63,14 +63,15 @@ export const SHOT_CREDITS: Record<string, { name: string; author: string; href: 
 /** The stores the hero's computer frame cycles through, one after the other. */
 export const HERO_LOOKS = ["23", "13", "08"] as const;
 
-/** The phones fanned out on both sides of the hero's frame, from the outside in. */
-export const HERO_PHONES = ["04", "13", "08", "10"] as const;
+/**
+ * The phones beside the hero's laptop: the first on its left, the last on
+ * its right. The middle one shows on a phone screen only, where the laptop
+ * steps aside and the three stand as a fan.
+ */
+export const HERO_PHONES = ["04", "13", "08"] as const;
 
 /** The store gallery, best first. */
 export const GALLERY_LOOKS = LOOKS;
 
 /** The store whose picture stands in the order's journey (the ad, and the page it opens). */
 export const JOURNEY_LOOK = "13";
-
-/** Three stores on phones in the closing band, the middle one in front. */
-export const END_LOOKS = ["04", "10", "13"] as const;

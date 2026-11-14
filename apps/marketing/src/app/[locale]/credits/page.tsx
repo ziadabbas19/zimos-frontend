@@ -12,10 +12,12 @@ type Params = { params: Promise<{ locale: string }> };
 
 /**
  * The site's other free resources: the icons (components/duo-icons.tsx,
- * components/color-icon.tsx) and the fonts (app/fonts.ts).
+ * components/color-icon.tsx), the fonts (app/fonts.ts) and the photographs
+ * (public/photos: behind the home page's opening and its closing band).
  */
 const RESOURCES = [
   { name: "Phosphor Icons", href: "https://phosphoricons.com", licence: "MIT" },
+  { name: "Unsplash", href: "https://unsplash.com/license", licence: "Unsplash License" },
   { name: "Fraunces", href: "https://fonts.google.com/specimen/Fraunces", licence: "SIL Open Font License 1.1" },
   { name: "Plus Jakarta Sans", href: "https://fonts.google.com/specimen/Plus+Jakarta+Sans", licence: "SIL Open Font License 1.1" },
   { name: "Alexandria", href: "https://fonts.google.com/specimen/Alexandria", licence: "SIL Open Font License 1.1" },

@@ -3,7 +3,7 @@
 import { useCallback, useSyncExternalStore, type MouseEvent } from "react";
 import { animateThemeChange } from "@store-builder/ui/theme-reveal";
 import { useI18n } from "@/i18n/provider";
-import { Moon, Sun } from "./duo-icons";
+import { ColorIcon } from "./color-icon";
 
 type Theme = "light" | "dark";
 
@@ -91,7 +91,9 @@ export function ThemeToggle({ className = "lz-top__icon" }: { className?: string
 
   return (
     <button type="button" onClick={onClick} aria-label={label} title={label} className={className}>
-      <span suppressHydrationWarning>{theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}</span>
+      <span suppressHydrationWarning>
+        <ColorIcon name={theme === "dark" ? "sun" : "moon"} size={20} ink />
+      </span>
     </button>
   );
 }

@@ -67,6 +67,18 @@ describe("the home page's words", () => {
     }
   });
 
+  // The 7-day free trial is gone (the owner, 2026-11-14): the home page says
+  // what the dashboard does — build the store, subscribe when it is ready to
+  // publish. What a plan itself offers is written from the API on /pricing.
+  it.each([
+    ["ar", ar],
+    ["en", en],
+  ])("promise no free trial on the home page (%s)", (_, dict) => {
+    const home = [dict.nav, dict.hero, dict.idea, dict.templates, dict.benefits, dict.journey, dict.growth, dict.dashboard, dict.start, dict.trust, dict.faq, dict.finalCta];
+    const trial = /تجرب\S* مجاني|free trial|\b7 أيام|7[- ]days?\b/i;
+    expect(strings(home).filter((text) => trial.test(text))).toEqual([]);
+  });
+
   it("describe the platform as a complete store in 5 minutes", () => {
     expect(ar.meta.description).toContain("منصة لإنشاء متجر إلكتروني كامل في 5 دقائق");
     expect(en.meta.description).toContain("build a complete online store in 5 minutes");

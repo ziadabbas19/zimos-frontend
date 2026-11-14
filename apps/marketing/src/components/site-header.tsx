@@ -14,14 +14,14 @@ import { ThemeToggle, restoreTheme } from "./theme-toggle";
 import { ZimosLogo } from "./zimos-logo";
 
 /**
- * The bar on every page: a white card floating a little below the top of the
- * window (owner, 2026-10-22, after lightfunnels.com) — logo, the section links
- * in the middle, sign in outlined and the way in in the brand blue. It keeps
- * floating as the page scrolls, with a deeper shadow. The language switch
- * and the theme switch wait side by side at the bottom corner of the screen
- * (the footer has both too). Below 1081px the links, the language and the
- * theme move into a sheet that opens inside the card, from the menu button,
- * and closes on a choice, Esc, a click outside, or the screen growing back.
+ * The bar on every page: a white pill floating a little below the top of the
+ * window — logo, the section links in the middle, then the language switch
+ * and the theme switch as two small round buttons (the owner, 2026-11-14:
+ * in the header, short), sign in, and the way in. It keeps floating as the
+ * page scrolls, with a deeper shadow. Below 1081px the links move into a
+ * sheet that opens inside the pill, from the menu button, and closes on a
+ * choice, Esc, a click outside, or the screen growing back; on a phone the
+ * theme switch waits there too, and the language keeps its place in the bar.
  *
  * The logo goes to the top of the home page: on the home page it scrolls
  * up; from another page it opens the home page at its top. The page this
@@ -35,7 +35,6 @@ export function SiteHeader() {
   const home = `/${locale}`;
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [footerShown, setFooterShown] = useState(false);
   const bar = useRef<HTMLElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
   const sheetId = useId();
@@ -68,17 +67,6 @@ export function SiteHeader() {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  // From 601px to 1080px the footer's row wraps under the corner buttons,
-  // which would cover its links. The footer has both switches, so while it
-  // is on screen the corner steps aside.
-  useEffect(() => {
-    const foot = document.querySelector("footer");
-    if (!foot || !("IntersectionObserver" in window)) return;
-    const io = new IntersectionObserver(([entry]) => setFooterShown(entry.isIntersecting));
-    io.observe(foot);
-    return () => io.disconnect();
   }, []);
 
   useEffect(() => {
@@ -138,6 +126,8 @@ export function SiteHeader() {
             </nav>
 
             <div className="lz-top__end">
+              <LocalePill />
+              <ThemeToggle className="lz-top__icon lz-top__theme" />
               <a href={LOGIN_URL} className="lz-top__login">
                 {nav.signIn}
               </a>
@@ -185,10 +175,6 @@ export function SiteHeader() {
           </div>
         </div>
       </header>
-      <div className={`lz-corner${footerShown ? " is-away" : ""}`}>
-        <LocalePill />
-        <ThemeToggle className="lz-corner__theme" />
-      </div>
     </>
   );
 }

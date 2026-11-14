@@ -1,82 +1,25 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary, GrowthTool } from "@/i18n/dictionary";
-import { ColorIcon } from "./color-icon";
-import { Check } from "./duo-icons";
+import { ColorIcon, type ColorIconName } from "./color-icon";
 import { SectionLabel } from "./section-label";
 
-/** Each tool's drawing, around the few words the copy gives it (`tag`). */
-const DRAWING: Record<GrowthTool["id"], (tag: string) => ReactNode> = {
-  // A coupon with its torn edge and its code.
-  coupons: (tag) => (
-    <div className="zx-g zx-g--coupon">
-      <b>{tag}</b>
-      <i />
-      <em className="ltr">WELCOME20</em>
-    </div>
-  ),
-  // A ring three quarters full around the points.
-  loyalty: (tag) => (
-    <div className="zx-g zx-g--ring">
-      <span>
-        <b>{tag}</b>
-      </span>
-      <em className="ltr">VIP</em>
-    </div>
-  ),
-  // The cart's bar on its way to the reward.
-  cart: (tag) => (
-    <div className="zx-g zx-g--bar">
-      <span>
-        <ColorIcon name="delivery" size={18} />
-        {tag}
-      </span>
-      <i />
-    </div>
-  ),
-  // Three products as one.
-  bundles: (tag) => (
-    <div className="zx-g zx-g--stack">
-      <i />
-      <i />
-      <i />
-      <b>{tag}</b>
-    </div>
-  ),
-  // A message, its subject first.
-  email: (tag) => (
-    <div className="zx-g zx-g--mail">
-      <span>
-        <ColorIcon name="send" size={16} />
-        <b>{tag}</b>
-      </span>
-      <u />
-      <u />
-      <i />
-    </div>
-  ),
-  // The reminder that brings the order back.
-  recovery: (tag) => (
-    <div className="zx-g zx-g--back">
-      <i>
-        <ColorIcon name="package" size={22} />
-      </i>
-      <span>
-        {tag}
-        <em>
-          <Check size={11} />
-        </em>
-      </span>
-    </div>
-  ),
+/** Each tool's icon and the colour of its tile. */
+const TOOL: Record<GrowthTool["id"], [ColorIconName, string]> = {
+  coupons: ["ticket", "blue"],
+  loyalty: ["crown", "amber"],
+  cart: ["cart", "green"],
+  bundles: ["stack", "violet"],
+  email: ["mail", "sky"],
+  recovery: ["recover", "rose"],
 };
 
 /**
  * The tools that bring sales and bring customers back: six cards, each with
- * a small drawing above its name and its line. What a plan includes differs,
- * so the line under them points at the pricing page. The drawings are
- * decoration (aria-hidden).
+ * its icon on a coloured tile and a few words of what it looks like to the
+ * customer (the copy's `tag`), above its name and its line. What a plan
+ * includes differs, so the line under them points at the pricing page. The
+ * tile and its words are decoration (aria-hidden).
  */
 export function GrowthTools({ copy, locale }: { copy: Dictionary["growth"]; locale: Locale }) {
   return (
@@ -91,15 +34,21 @@ export function GrowthTools({ copy, locale }: { copy: Dictionary["growth"]; loca
         </header>
 
         <ul className="zx-tools">
-          {copy.tools.map((tool) => (
-            <li key={tool.id} className="zx-tool lz-r">
-              <div className="zx-tool__art" aria-hidden>
-                {DRAWING[tool.id](tool.tag)}
-              </div>
-              <h3>{tool.title}</h3>
-              <p>{tool.body}</p>
-            </li>
-          ))}
+          {copy.tools.map((tool) => {
+            const [icon, colour] = TOOL[tool.id];
+            return (
+              <li key={tool.id} className="zx-tool lz-r">
+                <div className="zx-tool__art" aria-hidden>
+                  <span className={`zx-tile zx-tile--xl zx-tile--${colour}`}>
+                    <ColorIcon name={icon} size={34} fill />
+                  </span>
+                  <span className="zx-tool__tag">{tool.tag}</span>
+                </div>
+                <h3>{tool.title}</h3>
+                <p>{tool.body}</p>
+              </li>
+            );
+          })}
         </ul>
 
         <p className="zx-cap lz-r">

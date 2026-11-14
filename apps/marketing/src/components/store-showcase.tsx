@@ -16,9 +16,9 @@ const two = (n: number) => String(n).padStart(2, "0");
  * store in the middle stands at full size and the ones beside it wait,
  * smaller and dimmed. The kinds of store above the row, the two arrows and a
  * swipe all move it — the row is a native scroller that snaps to its cards,
- * so it also works with no script. Each card is the store's home page in a
- * browser frame — pointing at it scrolls the page — with the same store on a
- * phone at its corner where there is a phone capture.
+ * so it also works with no script. Each card is the store's home page on a
+ * laptop — pointing at it scrolls the page — with the same store on a phone
+ * standing beside it where there is a phone capture.
  */
 export function StoreShowcase({ copy, locale }: { copy: Dictionary["templates"]; locale: Locale }) {
   const [active, setActive] = useState(0);
@@ -102,14 +102,10 @@ export function StoreShowcase({ copy, locale }: { copy: Dictionary["templates"];
               data-i={i}
               className={i === active ? "zx-store is-active" : "zx-store"}
             >
-              <div className="zx-store__media">
-                <div className="zx-browser zx-browser--paper">
-                  <div className="zx-browser__bar" aria-hidden>
-                    <i />
-                    <i />
-                    <i />
-                  </div>
-                  <div className="zx-store__shot">
+              <div className={phone ? "zx-store__media" : "zx-store__media zx-store__media--solo"}>
+                <div className="zx-laptop">
+                  <div className="zx-laptop__lid">
+                    <div className="zx-store__shot">
                     <img
                       src={deskShot(look, locale)}
                       width={960}
@@ -118,7 +114,9 @@ export function StoreShowcase({ copy, locale }: { copy: Dictionary["templates"];
                       loading="lazy"
                       decoding="async"
                     />
+                    </div>
                   </div>
+                  <div className="zx-laptop__base" aria-hidden />
                 </div>
                 {/* The name is under the card, so the phone needs no alt of its own. */}
                 {phone ? (

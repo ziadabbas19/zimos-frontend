@@ -74,7 +74,7 @@ export default async function MarketingHome({ params }: Params) {
         <StartSteps copy={dict.start} />
         <Trust copy={dict.trust} locale={locale} />
         <Faq copy={dict.faq} locale={locale} n="09" />
-        <FinalCta copy={dict.finalCta} />
+        <FinalCta copy={dict.finalCta} photo />
       </main>
       <SiteFooter copy={dict.footer} brand={dict.brand} locale={locale} />
       <LandingMotion />

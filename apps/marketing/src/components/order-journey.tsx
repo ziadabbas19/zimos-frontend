@@ -85,7 +85,7 @@ export function OrderJourney({ copy, locale }: { copy: Dictionary["journey"]; lo
               <div className="zx-mock zx-mphone" hidden={step !== 0}>
                 <div className="zx-ad__head">
                   <i>
-                    <ColorIcon name="store" size={16} />
+                    <ColorIcon name="store" size={16} fill />
                   </i>
                   <span>
                     <b>{demo.storeName}</b>
@@ -136,7 +136,7 @@ export function OrderJourney({ copy, locale }: { copy: Dictionary["journey"]; lo
               <div className="zx-mock zx-mcard" hidden={step !== 2}>
                 <div className="zx-mcard__head">
                   <span>
-                    <ColorIcon name="phone" size={16} />
+                    <ColorIcon name="call" size={16} fill />
                     {demo.queue}
                   </span>
                   <em className="zx-mpill zx-mpill--ok">{demo.risk}</em>
@@ -166,7 +166,7 @@ export function OrderJourney({ copy, locale }: { copy: Dictionary["journey"]; lo
               <div className="zx-mock zx-mcard" hidden={step !== 3}>
                 <div className="zx-mcard__head">
                   <span>
-                    <ColorIcon name="delivery" size={16} />
+                    <ColorIcon name="truck" size={16} fill />
                     {demo.shipment}
                   </span>
                   <em className="zx-mpill">{demo.orderNumber}</em>
@@ -189,7 +189,7 @@ export function OrderJourney({ copy, locale }: { copy: Dictionary["journey"]; lo
               <div className="zx-mock zx-mcard" hidden={step !== 4}>
                 <div className="zx-mcard__head">
                   <span>
-                    <ColorIcon name="profit" size={16} />
+                    <ColorIcon name="wallet" size={16} fill />
                     {demo.profitTitle}
                   </span>
                   <em className="zx-mpill">{demo.orderNumber}</em>

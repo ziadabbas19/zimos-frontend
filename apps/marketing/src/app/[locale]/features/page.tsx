@@ -73,7 +73,7 @@ export default async function FeaturesPage({ params }: Params) {
           </div>
         </div>
 
-        <FinalCta copy={copy.cta} phones={false} />
+        <FinalCta copy={copy.cta} />
       </main>
       <SiteFooter copy={dict.footer} brand={dict.brand} locale={locale} />
     </>

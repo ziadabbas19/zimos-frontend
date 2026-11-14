@@ -3,7 +3,11 @@ import { ColorIcon, type ColorIconName } from "./color-icon";
 import { SectionLabel } from "./section-label";
 
 /** What the merchant juggles today: the ad, the call, the parcel. */
-const MARKS: ColorIconName[] = ["megaphone", "phone", "delivery"];
+const MARKS: [ColorIconName, string][] = [
+  ["megaphone", "amber"],
+  ["call", "green"],
+  ["truck", "blue"],
+];
 
 /**
  * "The idea", said once in large type: what selling online takes today, in
@@ -18,9 +22,9 @@ export function Idea({ copy }: { copy: Dictionary["idea"] }) {
         <h2 className="zx-statement lz-r" id="zx-idea">
           <span className="zx-statement__dim">{copy.problem}</span>{" "}
           <span className="zx-statement__marks" aria-hidden>
-            {MARKS.map((name) => (
-              <i key={name}>
-                <ColorIcon name={name} size={20} />
+            {MARKS.map(([name, colour]) => (
+              <i key={name} className={`zx-tile zx-tile--${colour}`}>
+                <ColorIcon name={name} size={20} fill />
               </i>
             ))}
           </span>{" "}

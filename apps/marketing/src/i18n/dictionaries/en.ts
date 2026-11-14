@@ -35,7 +35,7 @@ export const en: Dictionary = {
     openMenu: "Open menu",
     closeMenu: "Close menu",
     signIn: "Sign in",
-    startFree: "Start free",
+    startFree: "Get started",
   },
 
   hero: {
@@ -43,10 +43,9 @@ export const en: Dictionary = {
     lines: ["Your store, live in minutes."],
     accent: "Your profit, in plain numbers.",
     body: "Build your online store from a ready template, take your orders and confirm them before they ship, send them with any shipping company, then see what each order really earned once every cost is off.",
-    primaryCta: "Start your free trial",
+    primaryCta: "Create your store",
     secondaryCta: "See the stores",
-    ticks: ["7-day free trial", "No card needed", "Arabic and English"],
-    frameLabel: "yourstore.zimos.co",
+    ticks: ["Subscribe when you publish", "Ready store templates", "Arabic and English"],
     imageAlt: "Stores built on ZIMOS from its templates, on a computer and on a phone",
     chips: {
       order: { title: "New order", detail: "In the confirmation queue" },
@@ -64,7 +63,7 @@ export const en: Dictionary = {
       "ZIMOS brings all of it into one platform: a store you build in minutes, orders you confirm before they ship, and real profit you can see day by day.",
     stats: [
       { value: "5", label: "minutes to build a complete store and publish it" },
-      { value: "7", label: "days of free trial, with no card" },
+      { value: "12", label: "areas of tools in one platform, from products to reports" },
       { value: "6", label: "ready roles for your team, each with its own permissions" },
       { value: "2", label: "languages for the store and the dashboard: Arabic and English" },
     ],
@@ -311,18 +310,18 @@ export const en: Dictionary = {
     steps: [
       {
         title: "Create your account",
-        body: "Sign up free, with no card, then pick the template that fits your brand.",
+        body: "Sign up in minutes, then pick your plan and the template that fits your brand.",
       },
       {
         title: "Add your products and your brand",
         body: "Add your products one by one or import them from a file, then put in your logo and colours.",
       },
       {
-        title: "Publish and take orders",
-        body: "Your store goes live on a ZIMOS address or on your own domain, and orders reach you in the dashboard.",
+        title: "Subscribe and publish",
+        body: "You subscribe once your store is ready; it goes live on a ZIMOS address or on your own domain, and orders reach you in the dashboard.",
       },
     ],
-    cta: "Start your free trial",
+    cta: "Create your store",
   },
 
   trust: {
@@ -336,8 +335,8 @@ export const en: Dictionary = {
         body: "One monthly or yearly price for the platform, and everything your plan includes is written under it before you pay.",
       },
       {
-        title: "Start free, no card",
-        body: "Create your account, pick a template and add your products before you pay anything.",
+        title: "Build your store before you pay",
+        body: "Create your account, pick a template and add your products. You subscribe when your store is ready to publish.",
       },
       {
         title: "Your data stays yours",
@@ -358,7 +357,7 @@ export const en: Dictionary = {
     intro: "A monthly or yearly subscription to the ZIMOS platform. Every price includes everything listed under the plan.",
     pageTitle: "Pricing and Plans — Zimos",
     pageDescription:
-      "Zimos plans and prices: a monthly or yearly subscription to the platform for building and running your online store, with the free trial, limits and features of each plan.",
+      "Zimos plans and prices: a monthly or yearly subscription to the platform for building and running your online store, with the limits and features of each plan.",
     pageHeading: "Plans and prices",
     pageIntro:
       "ZIMOS is a SaaS platform for building online stores. You subscribe to the platform monthly or yearly, on the plan that fits your store.",
@@ -480,7 +479,7 @@ export const en: Dictionary = {
     intro: "The ZIMOS website uses free designs, icons and fonts. Our thanks to the people who made them — here they are with their licenses.",
     templatesHeading: "Store designs",
     templatesLead: "The store designs on this site are adapted from free templates:",
-    resourcesHeading: "Icons and fonts",
+    resourcesHeading: "Icons, photographs and fonts",
   },
 
   faq: {
@@ -543,8 +542,8 @@ export const en: Dictionary = {
 
   finalCta: {
     heading: "Ready for your first order?",
-    body: "Create your account free, with no card. Pick a template, add your first product and publish your store today.",
-    primaryCta: "Start your free trial",
+    body: "Create your account, pick a template and add your first product. You subscribe when your store is ready to publish.",
+    primaryCta: "Create your store",
     secondaryCta: "I have an account — sign in",
   },
 

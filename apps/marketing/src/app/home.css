@@ -218,23 +218,10 @@
   translate: -22px 0;
 }
 
-.zx-browser--paper {
-  border-color: var(--lz-line);
-  background: var(--lz-card);
-  box-shadow: 0 40px 80px -44px rgb(var(--lz-sh) / 0.5);
-}
-
-.zx-browser--paper .zx-browser__bar {
-  border-color: var(--lz-line);
-  background: color-mix(in srgb, var(--lz-ink) 4%, var(--lz-card));
-}
-
-.zx-browser--paper .zx-browser__bar i {
-  background: color-mix(in srgb, var(--lz-ink) 18%, transparent);
-}
-
-/* A phone: a dark bezel around a tall capture shown from its top. */
+/* A phone: a dark bezel around a tall capture shown from its top, with the
+   small island a phone's camera sits in. */
 .zx-phone {
+  position: relative;
   display: block;
   padding: 6px;
   border-radius: 30px;
@@ -242,6 +229,20 @@
   box-shadow:
     0 0 0 1px rgb(255 255 255 / 0.16),
     0 34px 70px -24px rgb(0 0 0 / 0.8);
+}
+
+.zx-phone::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 3.4%;
+  left: 50%;
+  z-index: 1;
+  inline-size: 30%;
+  block-size: 2.7%;
+  min-block-size: 5px;
+  border-radius: 999px;
+  background: #05080f;
+  translate: -50% 0;
 }
 
 .zx-phone img {
@@ -252,6 +253,122 @@
   object-fit: cover;
   object-position: top center;
   border-radius: 24px;
+}
+
+/* A laptop: the lid with its dark bezel and camera, then the base it stands
+   on, a little wider than the lid, with the notch a thumb opens it by. */
+.zx-laptop {
+  margin: 0;
+}
+
+.zx-laptop__lid {
+  position: relative;
+  padding: 2.5% 2.5% 2.9%;
+  border-radius: clamp(10px, 1.5vw, 22px) clamp(10px, 1.5vw, 22px) 3px 3px;
+  background: #0a0d14;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.16),
+    inset 0 0 0 3px #1a1f2a,
+    0 40px 90px -34px rgb(0 0 0 / 0.75);
+}
+
+.zx-laptop__lid::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 1.2%;
+  left: 50%;
+  inline-size: 5px;
+  block-size: 5px;
+  border-radius: 50%;
+  background: #2b3242;
+  translate: -50% 0;
+}
+
+.zx-laptop__lid > * {
+  overflow: hidden;
+  border-radius: 3px;
+}
+
+.zx-laptop__base {
+  position: relative;
+  block-size: clamp(8px, 1.1vw, 15px);
+  margin-inline: -6.5%;
+  border-radius: 2px 2px 16px 16px / 2px 2px 100% 100%;
+  background: linear-gradient(180deg, #e6e9ee 0%, #bfc4ce 42%, #7f8695 100%);
+  box-shadow: 0 20px 30px -14px rgb(0 0 0 / 0.6);
+}
+
+.zx-laptop__base::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  left: 50%;
+  inline-size: 14%;
+  block-size: 40%;
+  border-radius: 0 0 8px 8px;
+  background: #9aa1ae;
+  translate: -50% 0;
+}
+
+/* An icon on a coloured tile: a white glyph (the fill weight) on two tones
+   of one colour. */
+.zx-tile {
+  --a: #165dff;
+  --b: #3aa0ff;
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 46px;
+  block-size: 46px;
+  border-radius: 14px;
+  background: linear-gradient(140deg, var(--a), var(--b));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.3),
+    0 12px 22px -12px var(--a);
+  --lz-ic-a: #fff;
+  --lz-ic-b: #fff;
+}
+
+.zx-tile--lg {
+  inline-size: 60px;
+  block-size: 60px;
+  border-radius: 18px;
+}
+
+.zx-tile--xl {
+  inline-size: 76px;
+  block-size: 76px;
+  border-radius: 22px;
+}
+
+.zx-tile--violet {
+  --a: #6a4dff;
+  --b: #9a7bff;
+}
+
+.zx-tile--green {
+  --a: #0f9d62;
+  --b: #3ed598;
+}
+
+.zx-tile--amber {
+  --a: #e2700f;
+  --b: #f7a531;
+}
+
+.zx-tile--rose {
+  --a: #e11d74;
+  --b: #ff5d8f;
+}
+
+.zx-tile--teal {
+  --a: #0e8f9c;
+  --b: #3fd0c9;
+}
+
+.zx-tile--sky {
+  --a: #0a84ff;
+  --b: #5ac8fa;
 }
 
 /* The round arrows and the counter beside a section's title. */
@@ -394,11 +511,24 @@
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
+  background: #050912;
+}
+
+/* A shop, under the night blue: dark enough that the words read, light
+   enough that it is a place. */
+.zx-hero__photo {
+  position: absolute;
+  inset: 0;
+  background: url("/photos/store-interior-1920.webp") center 36% / cover no-repeat;
+}
+
+.zx-hero__photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
   background:
-    radial-gradient(60% 46% at 50% 0%, rgb(30 84 226 / 0.6), transparent 72%),
-    radial-gradient(38% 40% at 88% 34%, rgb(0 174 255 / 0.2), transparent 70%),
-    radial-gradient(42% 44% at 8% 46%, rgb(74 92 255 / 0.22), transparent 70%),
-    linear-gradient(180deg, #050912 0%, #081126 58%, #0a1832 100%);
+    radial-gradient(62% 46% at 50% 0%, rgb(30 84 226 / 0.6), transparent 72%),
+    linear-gradient(180deg, rgb(5 9 18 / 0.76) 0%, rgb(6 12 30 / 0.84) 52%, rgb(7 11 20 / 0.97) 100%);
 }
 
 .zx-glow {
@@ -551,20 +681,19 @@
 }
 
 /* The stores. Everything is placed from the middle of the stage, in shares
-   of the computer frame's width (`--bw`), so the whole picture scales as one.
-   The stage is shorter than the frame: the panel's lower edge cuts the
-   frame and the phones, as if they rose from behind it. */
+   of the laptop's width (`--bw`), so the whole picture scales as one. The
+   laptop and the phones stand on one line: the stage's lower edge. */
 .zx-stage {
-  --bw: min(760px, 54vw);
+  --bw: min(720px, 50vw);
   position: relative;
   z-index: 1;
-  block-size: calc(var(--bw) * 0.57);
-  margin-block-start: clamp(48px, 6vw, 84px);
+  block-size: calc(var(--bw) * 0.7);
+  margin-block: clamp(52px, 6vw, 88px) clamp(26px, 3vw, 40px);
 }
 
 .zx-stage__frame {
   position: absolute;
-  inset-block-start: 0;
+  inset-block-end: 0;
   left: 50%;
   z-index: 2;
   inline-size: var(--bw);
@@ -611,33 +740,23 @@
 
 .zx-fan .zx-phone {
   position: absolute;
-  inset-block-start: 0;
+  inset-block-end: 0;
   left: 50%;
-  inline-size: calc(var(--bw) * 0.235);
+  z-index: 3;
+  inline-size: calc(var(--bw) * 0.205);
 }
 
 .zx-fan .zx-phone:nth-child(1) {
-  z-index: 1;
-  translate: calc(-50% - var(--bw) * 0.79) calc(var(--bw) * 0.2);
-  rotate: -10deg;
+  translate: calc(-50% - var(--bw) * 0.59) 0;
 }
 
+/* The middle phone is the laptop's place on a phone screen. */
 .zx-fan .zx-phone:nth-child(2) {
-  z-index: 3;
-  translate: calc(-50% - var(--bw) * 0.57) calc(var(--bw) * 0.1);
-  rotate: -5deg;
+  display: none;
 }
 
 .zx-fan .zx-phone:nth-child(3) {
-  z-index: 3;
-  translate: calc(-50% + var(--bw) * 0.57) calc(var(--bw) * 0.1);
-  rotate: 5deg;
-}
-
-.zx-fan .zx-phone:nth-child(4) {
-  z-index: 1;
-  translate: calc(-50% + var(--bw) * 0.79) calc(var(--bw) * 0.2);
-  rotate: 10deg;
+  translate: calc(-50% + var(--bw) * 0.59) 0;
 }
 
 /* What happens to an order, as three cards floating over the stores. */
@@ -705,19 +824,19 @@
 }
 
 .zx-float--a {
-  inset-block-start: calc(var(--bw) * -0.045);
-  left: calc(50% - var(--bw) * 0.62);
+  inset-block-start: calc(var(--bw) * -0.03);
+  left: calc(50% - var(--bw) * 0.66);
 }
 
 .zx-float--b {
-  inset-block-start: calc(var(--bw) * 0.035);
-  right: calc(50% - var(--bw) * 0.66);
+  inset-block-start: calc(var(--bw) * 0.1);
+  right: calc(50% - var(--bw) * 0.9);
   animation-delay: -2s;
 }
 
 .zx-float--c {
-  inset-block-start: calc(var(--bw) * 0.36);
-  left: calc(50% - var(--bw) * 0.96);
+  inset-block-start: calc(var(--bw) * 0.14);
+  left: calc(50% - var(--bw) * 0.94);
   animation-delay: -4s;
 }
 
@@ -731,27 +850,13 @@
   }
 }
 
-/* The stores sink into the panel's lower edge, and the caption stands on it. */
-.zx-hero::after {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  inset-block-end: 0;
-  z-index: 5;
-  block-size: 150px;
-  background: linear-gradient(180deg, transparent, rgb(7 11 20 / 0.94) 74%);
-  pointer-events: none;
-}
-
 .zx-hero__cap {
-  position: absolute;
-  inset-inline: 0;
-  inset-block-end: 16px;
-  z-index: 6;
+  position: relative;
+  z-index: 2;
   margin: 0;
-  padding-inline: 20px;
+  padding: 0 20px 22px;
   font-size: 12.5px;
-  color: rgb(255 255 255 / 0.62);
+  color: rgb(255 255 255 / 0.6);
 }
 
 /* The strip of platforms, straight under the stage, and the questions: no rule across the page. */
@@ -792,20 +897,21 @@
   vertical-align: middle;
 }
 
-.zx-statement__marks i {
-  display: grid;
-  place-items: center;
-  inline-size: 1.2em;
-  block-size: 1.2em;
-  border-radius: 50%;
-  background: var(--lz-card);
-  box-shadow:
-    0 0 0 1px var(--lz-line),
-    0 8px 16px -10px rgb(var(--lz-sh) / 0.5);
+/* Sized by the title's own type, whatever it is. */
+.zx-statement__marks .zx-tile {
+  inline-size: 1.12em;
+  block-size: 1.12em;
+  border-radius: 0.32em;
+  box-shadow: 0 0 0 0.07em var(--lz-bg);
 }
 
-.zx-statement__marks i + i {
-  margin-inline-start: -0.3em;
+.zx-statement__marks .zx-tile .ci {
+  inline-size: 0.6em !important;
+  block-size: 0.6em !important;
+}
+
+.zx-statement__marks .zx-tile + .zx-tile {
+  margin-inline-start: -0.22em;
 }
 
 .zx-stats {
@@ -881,11 +987,34 @@
   scale: 1;
 }
 
+/* The devices' ground: room for the phone at the end side, none wasted without it. */
 .zx-store__media {
   position: relative;
+  padding-block: 6% 5.5%;
+  padding-inline: 8% 17%;
+  border: 1px solid var(--lz-line);
+  border-radius: 30px;
+  background:
+    radial-gradient(90% 80% at 50% 0%, var(--lz-soft), transparent 72%),
+    var(--lz-card);
 }
 
-/* The page's top fills the frame; pointing at it runs the page down to its end. */
+.zx-store__media--solo {
+  padding-inline: 12.5%;
+}
+
+.zx-store__media .zx-laptop__lid {
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.16),
+    inset 0 0 0 3px #1a1f2a,
+    0 40px 70px -40px rgb(var(--lz-sh) / 0.7);
+}
+
+.zx-store__media .zx-laptop__base {
+  box-shadow: 0 22px 30px -16px rgb(var(--lz-sh) / 0.55);
+}
+
+/* The page's top fills the screen; pointing at it runs the page down to its end. */
 .zx-store__shot {
   aspect-ratio: 16 / 10;
   overflow: hidden;
@@ -906,19 +1035,19 @@
 
 .zx-store__phone {
   position: absolute;
-  inset-block-end: -18px;
-  inset-inline-end: 4%;
-  inline-size: clamp(84px, 17%, 152px);
-  padding: 5px;
-  border-radius: 26px;
+  inset-block-end: 5.5%;
+  inset-inline-end: 5.5%;
+  inline-size: 17.5%;
+  padding: 0.7%;
+  border-radius: clamp(14px, 2.4vw, 28px);
   box-shadow:
     0 0 0 1px rgb(255 255 255 / 0.16),
-    0 30px 50px -22px rgb(0 0 0 / 0.6);
+    0 30px 50px -22px rgb(var(--lz-sh) / 0.75);
 }
 
 .zx-store__phone img {
-  aspect-ratio: 390 / 760;
-  border-radius: 21px;
+  aspect-ratio: 390 / 800;
+  border-radius: clamp(11px, 2vw, 23px);
 }
 
 .zx-store__meta {
@@ -926,7 +1055,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-block-start: 34px;
+  margin-block-start: 22px;
   padding-inline: 4px;
 }
 
@@ -1426,8 +1555,7 @@
 }
 
 .zx-edit__box u,
-.zx-order__lines u,
-.zx-g--mail u {
+.zx-order__lines u {
   display: block;
   block-size: 7px;
   border-radius: 7px;
@@ -2038,8 +2166,11 @@
 }
 
 .zx-tool__art {
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
   block-size: 196px;
   margin-block-end: 24px;
   overflow: hidden;
@@ -2048,6 +2179,19 @@
   background:
     radial-gradient(120% 90% at 50% 0%, var(--lz-soft), transparent 72%),
     var(--lz-paper);
+}
+
+/* What the tool looks like to the customer, in a few words. */
+.zx-tool__tag {
+  padding: 7px 15px;
+  border: 1px solid var(--lz-line);
+  border-radius: 999px;
+  background: var(--lz-card);
+  box-shadow: 0 12px 22px -18px rgb(var(--lz-sh) / 0.6);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--lz-ink);
 }
 
 .zx-tool h3 {
@@ -2064,222 +2208,6 @@
   font-size: 15.5px;
   line-height: 1.8;
   color: var(--lz-text);
-}
-
-/* The six drawings. Each is a small white piece on the art's ground. */
-.zx-g--coupon,
-.zx-g--bar,
-.zx-g--mail,
-.zx-g--back > i,
-.zx-g--stack i {
-  border: 1px solid var(--lz-line);
-  background: var(--lz-card);
-  box-shadow: 0 16px 30px -20px rgb(var(--lz-sh) / 0.55);
-}
-
-.zx-g--coupon {
-  display: flex;
-  align-items: center;
-  border-radius: 14px;
-  rotate: -4deg;
-}
-
-.zx-g--coupon b {
-  padding: 16px 20px;
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--lz-accent);
-}
-
-.zx-g--coupon i {
-  align-self: stretch;
-  border-inline-start: 2px dashed color-mix(in srgb, var(--lz-ink) 16%, transparent);
-}
-
-.zx-g--coupon em {
-  padding: 16px 18px;
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 13px;
-  font-style: normal;
-  letter-spacing: 0.08em;
-  color: var(--lz-ink);
-}
-
-.zx-g--ring {
-  position: relative;
-  display: grid;
-  place-items: center;
-}
-
-.zx-g--ring > span {
-  display: grid;
-  place-items: center;
-  inline-size: 128px;
-  block-size: 128px;
-  border-radius: 50%;
-  background: conic-gradient(var(--lz-accent) 0 74%, color-mix(in srgb, var(--lz-ink) 9%, transparent) 0);
-}
-
-.zx-g--ring b {
-  display: grid;
-  place-items: center;
-  inline-size: 104px;
-  block-size: 104px;
-  border-radius: 50%;
-  background: var(--lz-card);
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--lz-ink);
-}
-
-.zx-g--ring em {
-  position: absolute;
-  inset-block-start: -2px;
-  inset-inline-end: -22px;
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: #f5b83d;
-  font-size: 11px;
-  font-style: normal;
-  font-weight: 800;
-  color: #3b2a00;
-}
-
-.zx-g--bar,
-.zx-g--mail {
-  display: grid;
-  gap: 12px;
-  inline-size: 80%;
-  padding: 16px;
-  border-radius: 14px;
-}
-
-.zx-g--bar span,
-.zx-g--mail span {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.5;
-  color: var(--lz-ink);
-}
-
-.zx-g--bar i {
-  position: relative;
-  block-size: 8px;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--lz-ink) 9%, transparent);
-}
-
-.zx-g--bar i::after {
-  content: "";
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  inline-size: 72%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--lz-ic-a), var(--lz-ic-b));
-}
-
-.zx-g--stack {
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  padding-inline-start: 14px;
-}
-
-.zx-g--stack i {
-  inline-size: 60px;
-  block-size: 76px;
-  margin-inline-start: -14px;
-  border-radius: 12px;
-}
-
-.zx-g--stack i:nth-child(1) {
-  rotate: -8deg;
-  background: linear-gradient(160deg, #dbe7ff, #a9c5ff);
-}
-
-.zx-g--stack i:nth-child(2) {
-  z-index: 1;
-  translate: 0 -8px;
-  background: linear-gradient(160deg, #d6f4ff, #8fdcff);
-}
-
-.zx-g--stack i:nth-child(3) {
-  rotate: 8deg;
-  background: linear-gradient(160deg, #e8e4ff, #b9adff);
-}
-
-.zx-g--stack b {
-  position: absolute;
-  inset-block-end: -16px;
-  left: 50%;
-  z-index: 2;
-  padding: 5px 13px;
-  border-radius: 999px;
-  background: var(--lz-solid);
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-  color: var(--lz-on-solid);
-  translate: -50% 0;
-}
-
-.zx-g--mail {
-  gap: 9px;
-}
-
-.zx-g--mail u:nth-of-type(2) {
-  inline-size: 70%;
-}
-
-.zx-g--mail i {
-  justify-self: start;
-  inline-size: 76px;
-  block-size: 24px;
-  margin-block-start: 3px;
-  border-radius: 7px;
-  background: var(--lz-accent);
-}
-
-.zx-g--back {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.zx-g--back > i {
-  display: grid;
-  flex: none;
-  place-items: center;
-  inline-size: 56px;
-  block-size: 56px;
-  border-radius: 16px;
-}
-
-.zx-g--back span {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 11px 16px;
-  border-radius: 16px;
-  border-end-start-radius: 4px;
-  background: var(--color-primary);
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--primary-foreground);
-}
-
-.zx-g--back em {
-  display: grid;
-  place-items: center;
-  inline-size: 18px;
-  block-size: 18px;
-  border-radius: 50%;
-  background: rgb(255 255 255 / 0.26);
 }
 
 /* ══ 6) The dashboard ════════════════════════════════════════════════ */
@@ -2355,33 +2283,6 @@
   background: var(--lz-card);
 }
 
-.zx-step__ico {
-  display: grid;
-  place-items: center;
-  inline-size: 60px;
-  block-size: 60px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, var(--a), var(--b));
-  box-shadow: 0 16px 28px -16px var(--a);
-  --lz-ic-a: #fff;
-  --lz-ic-b: #fff;
-}
-
-.zx-step:nth-child(1) {
-  --a: #165dff;
-  --b: #3aa0ff;
-}
-
-.zx-step:nth-child(2) {
-  --a: #6a4dff;
-  --b: #9a7bff;
-}
-
-.zx-step:nth-child(3) {
-  --a: #0f9d62;
-  --b: #3ed598;
-}
-
 /* The step's number, large and faint in the card's corner. */
 .zx-step em {
   position: absolute;
@@ -2436,15 +2337,6 @@
 .zx-points article {
   padding-block: 26px;
   border-block-start: 1px solid var(--zx-rule);
-}
-
-.zx-points__ico {
-  display: grid;
-  place-items: center;
-  inline-size: 46px;
-  block-size: 46px;
-  border-radius: 14px;
-  background: var(--lz-soft);
 }
 
 .zx-points h3 {
@@ -2515,21 +2407,27 @@
   }
 }
 
-/* The computer frame steps aside: three phones take the stage, the two
+/* The laptop steps aside: three phones take the stage as a fan, the two
    cards over their shoulders. */
 @media (max-width: 760px) {
+  .zx-hero__photo {
+    background-image: url("/photos/store-interior-960.webp");
+  }
+
   .zx-stage {
     --bw: 0px;
-    block-size: 318px;
+    block-size: 330px;
+    margin-block-end: 0;
+    overflow: hidden;
   }
 
   .zx-stage__frame,
-  .zx-fan .zx-phone:nth-child(4),
   .zx-float--c {
     display: none;
   }
 
   .zx-fan .zx-phone {
+    inset-block: 0 auto;
     inline-size: 154px;
     border-radius: 26px;
   }
@@ -2539,13 +2437,14 @@
   }
 
   .zx-fan .zx-phone:nth-child(1) {
+    z-index: 1;
     translate: calc(-50% - 112px) 44px;
     rotate: -8deg;
   }
 
   .zx-fan .zx-phone:nth-child(2) {
+    display: block;
     translate: -50% 0;
-    rotate: 0deg;
   }
 
   .zx-fan .zx-phone:nth-child(3) {
@@ -2583,6 +2482,10 @@
   .zx-float--b {
     inset-block-start: 186px;
     right: 8px;
+  }
+
+  .zx-hero__cap {
+    padding-block: 14px 18px;
   }
 }
 
@@ -2696,21 +2599,15 @@
   .zx-store__meta {
     flex-direction: column;
     gap: 10px;
-    margin-block-start: 28px;
+    margin-block-start: 18px;
   }
 
   .zx-store__meta b {
     font-size: 18px;
   }
 
-  .zx-store__phone {
-    inset-block-end: -14px;
-    border-radius: 18px;
-    padding: 3px;
-  }
-
-  .zx-store__phone img {
-    border-radius: 15px;
+  .zx-store__media {
+    border-radius: 22px;
   }
 
   .zx-jstage {
@@ -2767,7 +2664,7 @@
 /* ══ Big screens: wider and larger type, not a column in the middle ══ */
 @media (min-width: 1680px) {
   .zx-stage {
-    --bw: min(860px, 54vw);
+    --bw: min(840px, 50vw);
   }
 
   .zx-rail {

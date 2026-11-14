@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { createElement } from "react";
 import type { MouseEvent, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -144,65 +144,47 @@ describe("the phone sheet's AR | EN", () => {
   });
 });
 
-describe("the bottom corner", () => {
-  it("holds the language switch and the light/dark switch, side by side", () => {
+describe("the header's two switches", () => {
+  it("holds the language switch and the light/dark switch, side by side in the bar", () => {
     pathname = "/en/pricing";
     const { container } = renderHeader();
-    const corner = container.querySelector(".lz-corner");
-    const [first, second] = Array.from(corner?.children ?? []);
+    const end = container.querySelector(".lz-top__end");
+    const [first, second] = Array.from(end?.children ?? []);
     expect(first?.matches("a.lz-lang-pill")).toBe(true);
     expect(first?.getAttribute("href")).toBe("/ar/pricing");
-    expect(second?.matches("button.lz-corner__theme")).toBe(true);
+    expect(second?.matches("button.lz-top__theme")).toBe(true);
     expect(second?.getAttribute("aria-label")).toBe(dict.nav.switchToDark);
+    // Nothing floats at the corner of the screen any more.
+    expect(container.querySelector(".lz-corner")).toBeNull();
+  });
+
+  it("says the other language in two letters at most, and its name to a screen reader", () => {
+    pathname = "/en/pricing";
+    const { container } = renderHeader();
+    const pill = container.querySelector<HTMLAnchorElement>(".lz-top__end a.lz-lang-pill")!;
+    expect(pill.textContent!.trim().length).toBeLessThanOrEqual(2);
+    expect(pill.getAttribute("aria-label")).toContain(dict.nav.switchLanguage);
   });
 
   it("the language switch opens the other language without Next's scroll, keeping the place for it", () => {
     pathname = "/en/pricing";
     const { container } = renderHeader();
-    const pill = container.querySelector<HTMLAnchorElement>(".lz-corner a.lz-lang-pill")!;
+    const pill = container.querySelector<HTMLAnchorElement>(".lz-top__end a.lz-lang-pill")!;
     expect(pill.getAttribute("data-scroll")).toBe("false");
     fireEvent.click(pill);
     expect(followed).toEqual(["/ar/pricing"]);
     expect(JSON.parse(sessionStorage.getItem("lz-place") ?? "null")).toMatchObject({ to: "/ar/pricing" });
   });
 
-  it("steps aside while the footer, which has both switches, is on screen", () => {
-    let report: (entries: Array<{ isIntersecting: boolean }>) => void = () => {};
-    const observed: Element[] = [];
-    vi.stubGlobal(
-      "IntersectionObserver",
-      class {
-        constructor(callback: typeof report) {
-          report = callback;
-        }
-        observe(el: Element) {
-          observed.push(el);
-        }
-        disconnect() {}
-      },
-    );
-    const foot = document.body.appendChild(document.createElement("footer"));
-    pathname = "/en";
-    const { container } = renderHeader();
-    const corner = container.querySelector(".lz-corner")!;
-    expect(observed).toEqual([foot]);
-    expect(corner.classList.contains("is-away")).toBe(false);
-    act(() => report([{ isIntersecting: true }]));
-    expect(corner.classList.contains("is-away")).toBe(true);
-    act(() => report([{ isIntersecting: false }]));
-    expect(corner.classList.contains("is-away")).toBe(false);
-    foot.remove();
-  });
-
   it("switching the theme there moves nothing", () => {
     pathname = "/en";
     const { container } = renderHeader();
     const scrollBy = vi.spyOn(window, "scrollBy").mockImplementation(() => {});
-    fireEvent.click(container.querySelector("button.lz-corner__theme")!);
+    fireEvent.click(container.querySelector("button.lz-top__theme")!);
     expect(document.documentElement.classList.contains("dark")).toBe(true);
     expect(window.scrollTo).not.toHaveBeenCalled();
     expect(scrollBy).not.toHaveBeenCalled();
-    fireEvent.click(container.querySelector("button.lz-corner__theme")!);
+    fireEvent.click(container.querySelector("button.lz-top__theme")!);
     expect(document.documentElement.classList.contains("dark")).toBe(false);
   });
 });

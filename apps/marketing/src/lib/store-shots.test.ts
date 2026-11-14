@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { XS_CREDITS } from "../../../storefront/src/lib/xsShell";
 import { getDictionary } from "@/i18n/dictionaries";
 import { locales } from "@/i18n/config";
-import { END_LOOKS, GALLERY_LOOKS, HERO_LOOKS, HERO_PHONES, JOURNEY_LOOK, OWN_LOOKS, SHOT_CREDITS, STORE_SHOTS, deskShot } from "./store-shots";
+import { GALLERY_LOOKS, HERO_LOOKS, HERO_PHONES, JOURNEY_LOOK, OWN_LOOKS, SHOT_CREDITS, STORE_SHOTS, deskShot } from "./store-shots";
 
 /**
  * A capture on the site is of an imported design whose licence asks for a
@@ -16,14 +16,15 @@ import { END_LOOKS, GALLERY_LOOKS, HERO_LOOKS, HERO_PHONES, JOURNEY_LOOK, OWN_LO
  * and 07 and 11, whose pictures' licence is unclear, are shown nowhere (the
  * owner, 2026-10-23).
  */
-const SHOWN = [...GALLERY_LOOKS, ...HERO_LOOKS, ...HERO_PHONES, JOURNEY_LOOK, ...END_LOOKS];
+const SHOWN = [...GALLERY_LOOKS, ...HERO_LOOKS, ...HERO_PHONES, JOURNEY_LOOK];
 const IMPORTED = GALLERY_LOOKS.filter((look) => !OWN_LOOKS.includes(look));
 const WITHHELD = ["07", "11"];
 const PUBLIC = join(dirname(fileURLToPath(import.meta.url)), "../../public");
 
 describe("store shots", () => {
-  it("keeps three stores in the hero and at least four in the gallery", () => {
+  it("keeps three stores on the hero's laptop, three on its phones, and at least four in the gallery", () => {
     expect(HERO_LOOKS).toHaveLength(3);
+    expect(HERO_PHONES).toHaveLength(3);
     expect(GALLERY_LOOKS.length).toBeGreaterThanOrEqual(4);
   });
 
@@ -45,7 +46,7 @@ describe("store shots", () => {
   });
 
   it("puts on a phone only the looks that have a phone capture", () => {
-    for (const look of [...HERO_PHONES, ...END_LOOKS]) expect(STORE_SHOTS[look].phone, `look ${look}`).toBeTruthy();
+    for (const look of HERO_PHONES) expect(STORE_SHOTS[look].phone, `look ${look}`).toBeTruthy();
   });
 
   it("shows a look in Arabic where it has an Arabic capture, in English otherwise", () => {

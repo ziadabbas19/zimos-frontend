@@ -5,7 +5,11 @@ import { Arrow } from "./duo-icons";
 import { SectionLabel } from "./section-label";
 
 /** An account, the products and the brand, the store going live. */
-const STEP_ICON: ColorIconName[] = ["apps", "brush", "send"];
+const STEP_ICON: [ColorIconName, string][] = [
+  ["store", "blue"],
+  ["brush", "violet"],
+  ["rocket", "green"],
+];
 
 /** Three steps to a live store, each a card with its number large and faint behind it. */
 export function StartSteps({ copy }: { copy: Dictionary["start"] }) {
@@ -28,8 +32,8 @@ export function StartSteps({ copy }: { copy: Dictionary["start"] }) {
         <ol className="zx-steps">
           {copy.steps.map((step, i) => (
             <li key={step.title} className="zx-step lz-r">
-              <span className="zx-step__ico">
-                <ColorIcon name={STEP_ICON[i]} size={26} />
+              <span className={`zx-tile zx-tile--lg zx-tile--${STEP_ICON[i][1]}`}>
+                <ColorIcon name={STEP_ICON[i][0]} size={28} fill />
               </span>
               <em aria-hidden>{i + 1}</em>
               <h3>{step.title}</h3>

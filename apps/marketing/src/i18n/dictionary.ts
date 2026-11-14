@@ -71,8 +71,6 @@ export interface Dictionary {
     secondaryCta: string;
     /** Under the buttons, each with a tick. */
     ticks: [string, string, string];
-    /** In the address pill of the browser frame. */
-    frameLabel: string;
     imageAlt: string;
     /** The cards floating over the stores — illustration, generic labels. */
     chips: {
