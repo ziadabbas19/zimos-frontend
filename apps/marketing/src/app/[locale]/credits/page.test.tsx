@@ -51,6 +51,6 @@ describe("the credits page", () => {
     expect(screen.queryByText(/CC BY/)).toBeNull();
     for (const [, name] of DESIGNS) expect(screen.queryByText(new RegExp(`${name} by`))).toBeNull();
     expect(screen.getByText(dict.templates.caption)).toBeTruthy();
-    expect(screen.getByText(dict.templates.ownBadge)).toBeTruthy();
+    expect(screen.getAllByText(dict.templates.ownBadge).length).toBeGreaterThan(0);
   });
 });

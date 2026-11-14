@@ -92,15 +92,15 @@ export function SiteHeader() {
     };
   }, [open]);
 
-  // Sections of the home page, and the pricing page: whole addresses, so
-  // they work from every page, not only the home page. The features page is
-  // reached from the home page's features and from the footer.
+  // Sections of the home page, as whole addresses, so they work from every
+  // page, not only the home page. The features page and the whole pricing
+  // page are reached from their sections there, and from the footer.
   const sections = [
     { href: `/${locale}#templates`, label: nav.templates },
     { href: `/${locale}#benefits`, label: nav.benefits },
     { href: `/${locale}#how`, label: nav.howItWorks },
     { href: `/${locale}#growth`, label: nav.growth },
-    { href: `/${locale}/pricing`, label: nav.pricing },
+    { href: `/${locale}#pricing`, label: nav.pricing },
     { href: `/${locale}#faq`, label: nav.faq },
   ];
 

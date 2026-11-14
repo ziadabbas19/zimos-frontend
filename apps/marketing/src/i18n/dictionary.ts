@@ -81,16 +81,6 @@ export interface Dictionary {
     caption: string;
   };
 
-  /** "( 01 ) The idea": the problem and the answer as one large statement, then four facts. */
-  idea: {
-    kicker: string;
-    /** What the merchant does today, in the muted ink. */
-    problem: string;
-    /** What ZIMOS does about it, in the full ink. */
-    answer: string;
-    stats: [Stat, Stat, Stat, Stat];
-  };
-
   /** Real stores built on the template library, in a row to move through. */
   templates: {
     kicker: string;
@@ -110,6 +100,14 @@ export interface Dictionary {
     next: string;
     /** On a computer: pointing at a card scrolls its picture. */
     hoverHint: string;
+    /** On each card: opens the store large, to look through (the viewer). */
+    view: string;
+    /** The viewer: its accessible name, its two devices, its close button, and the way in from it. */
+    viewerLabel: string;
+    onComputer: string;
+    onPhone: string;
+    close: string;
+    useTemplate: string;
     cta: string;
     caption: string;
   };
@@ -127,15 +125,38 @@ export interface Dictionary {
   };
 
   /**
-   * Six cards, each a feature with a small drawing of it. The drawings'
-   * labels are generic interface words and their figures an example, said so
-   * on the card that has them.
+   * "Why ZIMOS": the three places selling with cash on delivery loses its
+   * profit, each as what goes wrong (`pain`) and what ZIMOS does about it,
+   * with a small drawing. The drawings' labels are generic interface words
+   * and their figures an example, said so on the card that has them.
    */
   benefits: {
     kicker: string;
     heading: string;
     intro: string;
+    /** The small word before each card's `pain`. */
+    painLabel: string;
+    confirmation: {
+      pain: string;
+      title: string;
+      body: string;
+      nextCall: string;
+      attempt: string;
+      lastOutcome: string;
+      /** Confirmed, refused, no answer, later — in that order. */
+      outcomes: [string, string, string, string];
+    };
+    fraud: {
+      pain: string;
+      title: string;
+      body: string;
+      riskLabel: string;
+      /** Low, medium, high. */
+      levels: [string, string, string];
+      reasons: [string, string];
+    };
     profit: {
+      pain: string;
       title: string;
       body: string;
       /** Above the sum: it is one order, as an example. */
@@ -145,46 +166,10 @@ export interface Dictionary {
       net: Amount;
       currency: string;
     };
-    confirmation: {
-      title: string;
-      body: string;
-      nextCall: string;
-      attempt: string;
-      lastOutcome: string;
-      /** Confirmed, refused, no answer, later — in that order. */
-      outcomes: [string, string, string, string];
-    };
-    shipping: {
-      title: string;
-      body: string;
-      trackingLabel: string;
-      /** Booked, on its way, delivered. */
-      statuses: [string, string, string];
-    };
-    payments: {
-      title: string;
-      body: string;
-      methods: string[];
-    };
-    fraud: {
-      title: string;
-      body: string;
-      riskLabel: string;
-      /** Low, medium, high. */
-      levels: [string, string, string];
-      reasons: [string, string];
-    };
-    editor: {
-      title: string;
-      body: string;
-      /** The editor's toolbar, and its two buttons. */
-      tools: [string, string, string];
-      draft: string;
-      publish: string;
-      /** The words being edited in the drawing. */
-      sample: string;
-    };
-    /** To /features. */
+    /** Before the row of the features page's other sections. */
+    alsoLabel: string;
+    /** The way in, and the way to /features. */
+    startCta: string;
     cta: string;
   };
 
@@ -253,16 +238,11 @@ export interface Dictionary {
     cta: string;
   };
 
-  /** "What should reassure you": what is paid for, how, and whose data it is. */
+  /** Under the home page's plans: what is paid for, how, and whose data it is. */
   trust: {
-    kicker: string;
-    heading: string;
-    intro: string;
     points: [TrustPoint, TrustPoint, TrustPoint, TrustPoint];
     /** The link in the payment point. */
     refundLink: string;
-    /** To /pricing. */
-    pricingCta: string;
   };
 
   /** Plans and prices come from the API (GET /plans/public); these are the words around them. */
@@ -421,12 +401,6 @@ export interface Dictionary {
 export interface Chip {
   title: string;
   detail: string;
-}
-
-/** A fact: a figure, and what it counts. */
-export interface Stat {
-  value: string;
-  label: string;
 }
 
 /** A line of a sum: what it is, and its figure as written ("−310"). */

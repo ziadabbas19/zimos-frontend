@@ -74,7 +74,7 @@ describe("the home page's words", () => {
     ["ar", ar],
     ["en", en],
   ])("promise no free trial on the home page (%s)", (_, dict) => {
-    const home = [dict.nav, dict.hero, dict.idea, dict.templates, dict.benefits, dict.journey, dict.growth, dict.dashboard, dict.start, dict.trust, dict.faq, dict.finalCta];
+    const home = [dict.nav, dict.hero, dict.templates, dict.benefits, dict.journey, dict.growth, dict.dashboard, dict.start, dict.trust, dict.faq, dict.finalCta];
     const trial = /تجرب\S* مجاني|free trial|\b7 أيام|7[- ]days?\b/i;
     expect(strings(home).filter((text) => trial.test(text))).toEqual([]);
   });

@@ -18,7 +18,7 @@ export function StartSteps({ copy }: { copy: Dictionary["start"] }) {
       <div className="lz-in">
         <header className="zx-head zx-head--split lz-r">
           <div>
-            <SectionLabel n="07" text={copy.kicker} />
+            <SectionLabel n="03" text={copy.kicker} />
             <h2 className="zx-h2" id="zx-start">
               {copy.heading}
             </h2>

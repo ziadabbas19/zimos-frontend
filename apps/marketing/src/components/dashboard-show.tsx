@@ -41,7 +41,7 @@ export function DashboardShow({ copy, locale }: { copy: Dictionary["dashboard"];
         <div className="lz-in">
           <header className="zx-head zx-head--split lz-r">
             <div>
-              <SectionLabel n="06" text={copy.kicker} />
+              <SectionLabel n="05" text={copy.kicker} />
               <h2 className="zx-h2" id="zx-show">
                 {copy.heading}
               </h2>

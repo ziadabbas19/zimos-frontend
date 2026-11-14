@@ -7,10 +7,11 @@
  * the demo store's shared catalogue shows the same clothes in every template,
  * so the captures stop there.
  *
- * Look 23 (Atelier) is ZIMOS's own design, so it asks for no credit, and it
- * is the one store shown in Arabic: its two captures are the template
- * library's own pictures of it (apps/storefront/public/template-art, 1280x800
- * shrunk to 960x600), one per language. It has no phone capture.
+ * Looks 23 (Atelier) and 24 (Cradle) are the template library's own designs,
+ * so they ask for no credit, and they are the stores shown in Arabic: their
+ * captures are the library's own pictures of them
+ * (apps/storefront/public/template-art, 1280x800 shrunk to 960x600), one per
+ * language. They have no phone capture.
  *
  * Looks 07 (Fruitables) and 11 (Swanky) are not shown anywhere: the licence
  * of the pictures inside them is unclear (the owner, 2026-10-23). Their
@@ -19,9 +20,9 @@
 const IMPORTED = ["13", "08", "04", "10"] as const;
 
 /** ZIMOS's own templates among the looks shown: no credit, a capture in each language. */
-export const OWN_LOOKS: readonly string[] = ["23"];
+export const OWN_LOOKS: readonly string[] = ["23", "24"];
 
-const LOOKS = ["23", ...IMPORTED] as const;
+const LOOKS = ["23", "24", ...IMPORTED] as const;
 
 export interface StoreShot {
   desk: string;
@@ -36,6 +37,7 @@ export const STORE_SHOTS: Record<string, StoreShot> = {
     IMPORTED.map((look) => [look, { desk: `/stores/look-${look}-desk.webp`, phone: `/stores/look-${look}-phone.webp` }]),
   ),
   "23": { desk: "/stores/look-23-desk.webp", deskAr: "/stores/look-23-desk-ar.webp" },
+  "24": { desk: "/stores/look-24-desk.webp", deskAr: "/stores/look-24-desk-ar.webp" },
 };
 
 /** A look's computer capture in the page's language, the English one when it has no other. */

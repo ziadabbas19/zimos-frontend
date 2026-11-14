@@ -6,24 +6,34 @@ import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionary";
 import { REGISTER_URL } from "@/lib/urls";
 import { GALLERY_LOOKS, OWN_LOOKS, STORE_SHOTS, deskShot } from "@/lib/store-shots";
-import { Arrow } from "./duo-icons";
+import { ColorIcon } from "./color-icon";
+import { Arrow, X } from "./duo-icons";
 import { SectionLabel } from "./section-label";
 
 const two = (n: number) => String(n).padStart(2, "0");
 
+type Device = "desk" | "phone";
+
 /**
- * Stores built from the template library, as a row to move through: the
- * store in the middle stands at full size and the ones beside it wait,
- * smaller and dimmed. The kinds of store above the row, the two arrows and a
- * swipe all move it — the row is a native scroller that snaps to its cards,
- * so it also works with no script. Each card is the store's home page on a
- * laptop — pointing at it scrolls the page — with the same store on a phone
- * standing beside it where there is a phone capture.
+ * The stores, first thing under the page's opening: what a visitor came to
+ * see. A row to move through — the store in the middle stands at full size on
+ * a laptop, with the same store on a phone beside it where there is a phone
+ * capture, and the ones beside it wait, smaller and dimmed. The kinds of
+ * store above the row, the two arrows and a swipe all move it: the row is a
+ * native scroller that snaps to its cards, so it also works with no script.
+ *
+ * "View the store" on a card opens the viewer: the store alone, large, on
+ * the device the visitor picks, its page there to scroll through as far as
+ * the capture goes — and the way in from it. It is a native <dialog>, so Esc
+ * and the page behind it are the browser's own.
  */
 export function StoreShowcase({ copy, locale }: { copy: Dictionary["templates"]; locale: Locale }) {
   const [active, setActive] = useState(0);
+  const [viewing, setViewing] = useState<string | null>(null);
+  const [device, setDevice] = useState<Device>("desk");
   const rail = useRef<HTMLUListElement>(null);
   const cards = useRef<(HTMLLIElement | null)[]>([]);
+  const viewer = useRef<HTMLDialogElement>(null);
   const count = GALLERY_LOOKS.length;
 
   // The card crossing the middle of the row is the active one.
@@ -55,12 +65,23 @@ export function StoreShowcase({ copy, locale }: { copy: Dictionary["templates"];
     root.scrollBy({ left: delta, behavior: calm ? "auto" : "smooth" });
   };
 
+  const open = (look: string) => {
+    setViewing(look);
+    setDevice("desk");
+    viewer.current?.showModal?.();
+  };
+  const close = () => viewer.current?.close?.();
+
+  const label = (look: string) => copy.templateLabel.replace("{n}", look);
+  const shown = viewing ? STORE_SHOTS[viewing] : null;
+  const onPhone = device === "phone" && Boolean(shown?.phone);
+
   return (
     <section className="zx-sec zx-stores" id="templates" aria-labelledby="zx-stores">
       <div className="lz-in">
         <header className="zx-head zx-head--split lz-r">
           <div>
-            <SectionLabel n="02" text={copy.kicker} />
+            <SectionLabel n="01" text={copy.kicker} />
             <h2 className="zx-h2" id="zx-stores">
               {copy.heading}
             </h2>
@@ -91,7 +112,6 @@ export function StoreShowcase({ copy, locale }: { copy: Dictionary["templates"];
       <ul className="zx-rail" ref={rail}>
         {GALLERY_LOOKS.map((look, i) => {
           const own = OWN_LOOKS.includes(look);
-          const label = copy.templateLabel.replace("{n}", look);
           const phone = STORE_SHOTS[look].phone;
           return (
             <li
@@ -106,14 +126,14 @@ export function StoreShowcase({ copy, locale }: { copy: Dictionary["templates"];
                 <div className="zx-laptop">
                   <div className="zx-laptop__lid">
                     <div className="zx-store__shot">
-                    <img
-                      src={deskShot(look, locale)}
-                      width={960}
-                      height={own ? 600 : 900}
-                      alt={`${copy.categories[look]} — ${label}`}
-                      loading="lazy"
-                      decoding="async"
-                    />
+                      <img
+                        src={deskShot(look, locale)}
+                        width={960}
+                        height={own ? 600 : 900}
+                        alt={`${copy.categories[look]} — ${label(look)}`}
+                        loading="lazy"
+                        decoding="async"
+                      />
                     </div>
                   </div>
                   <div className="zx-laptop__base" aria-hidden />
@@ -130,7 +150,13 @@ export function StoreShowcase({ copy, locale }: { copy: Dictionary["templates"];
                   <b>{copy.categories[look]}</b>
                   <span>{copy.blurbs[look]}</span>
                 </p>
-                <span className={own ? "zx-tag zx-tag--own" : "zx-tag"}>{own ? copy.ownBadge : label}</span>
+                <div className="zx-store__acts">
+                  <span className={own ? "zx-tag zx-tag--own" : "zx-tag"}>{own ? copy.ownBadge : label(look)}</span>
+                  <button type="button" className="zx-btn zx-btn--ink zx-btn--sm" tabIndex={i === active ? 0 : -1} onClick={() => open(look)}>
+                    {copy.view}
+                    <Arrow size={16} className="lz-arrow" />
+                  </button>
+                </div>
               </div>
             </li>
           );
@@ -139,13 +165,69 @@ export function StoreShowcase({ copy, locale }: { copy: Dictionary["templates"];
 
       <div className="lz-in zx-stores__foot lz-r">
         <p className="zx-stores__hint">{copy.hoverHint}</p>
-        <a className="zx-btn zx-btn--ink" href={REGISTER_URL}>
+        <a className="zx-btn zx-btn--line" href={REGISTER_URL}>
           {copy.cta}
           <Arrow size={18} className="lz-arrow" />
         </a>
         <p className="zx-cap">{copy.caption}</p>
         {/* The designs' credits are on the credits page, linked from every page's footer. */}
       </div>
+
+      <dialog ref={viewer} className="zx-viewer" aria-label={copy.viewerLabel} onClose={() => setViewing(null)} onClick={(event) => event.target === viewer.current && close()}>
+        {viewing && shown ? (
+          <div className="zx-viewer__in">
+            <header className="zx-viewer__bar">
+              <p>
+                <b>{copy.categories[viewing]}</b>
+                <span>{OWN_LOOKS.includes(viewing) ? copy.ownBadge : label(viewing)}</span>
+              </p>
+              {shown.phone ? (
+                <div className="zx-viewer__devices" role="group" aria-label={copy.viewerLabel}>
+                  <button type="button" aria-pressed={!onPhone} onClick={() => setDevice("desk")}>
+                    <ColorIcon name="laptop" size={18} ink />
+                    {copy.onComputer}
+                  </button>
+                  <button type="button" aria-pressed={onPhone} onClick={() => setDevice("phone")}>
+                    <ColorIcon name="phone" size={18} ink />
+                    {copy.onPhone}
+                  </button>
+                </div>
+              ) : null}
+              <a className="zx-btn zx-btn--volt zx-btn--sm" href={REGISTER_URL}>
+                {copy.useTemplate}
+              </a>
+              <button type="button" className="zx-round zx-viewer__close" aria-label={copy.close} onClick={close}>
+                <X size={18} />
+              </button>
+            </header>
+            <div className={onPhone ? "zx-viewer__stage is-phone" : "zx-viewer__stage"}>
+              {onPhone ? (
+                <div className="zx-phone zx-viewer__phone">
+                  <div className="zx-viewer__scroll">
+                    <img src={shown.phone} width={390} height={1600} alt={`${copy.categories[viewing]} — ${copy.onPhone}`} decoding="async" />
+                  </div>
+                </div>
+              ) : (
+                <div className="zx-laptop zx-viewer__laptop">
+                  <div className="zx-laptop__lid">
+                    <div className="zx-viewer__scroll">
+                      <img
+                        src={deskShot(viewing, locale)}
+                        width={960}
+                        height={OWN_LOOKS.includes(viewing) ? 600 : 900}
+                        alt={`${copy.categories[viewing]} — ${copy.onComputer}`}
+                        decoding="async"
+                      />
+                    </div>
+                  </div>
+                  <div className="zx-laptop__base" aria-hidden />
+                </div>
+              )}
+            </div>
+            <p className="zx-viewer__cap">{copy.caption}</p>
+          </div>
+        ) : null}
+      </dialog>
     </section>
   );
 }

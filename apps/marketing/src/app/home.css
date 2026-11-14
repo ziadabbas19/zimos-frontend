@@ -488,7 +488,7 @@
   color: var(--lz-accent-deep);
 }
 
-/* ══ 0) The stage ════════════════════════════════════════════════════
+/* ══ The stage ═══════════════════════════════════════════════════════
    A night-blue panel with rounded corners that reaches up behind the
    floating header (the negative margin is the header's height, less the
    panel's own distance from the top of the page). */
@@ -869,85 +869,7 @@
   border: 0;
 }
 
-/* ══ 1) The idea ═════════════════════════════════════════════════════ */
-.zx-statement {
-  margin: 0;
-  max-inline-size: 64rem;
-  font-family: var(--font-display);
-  font-size: clamp(24px, 3.5vw, 46px);
-  font-weight: 500;
-  line-height: 1.34;
-  letter-spacing: -0.02em;
-  color: var(--lz-ink);
-  text-wrap: pretty;
-}
-
-[dir="rtl"] .zx-statement {
-  line-height: 1.66;
-  letter-spacing: 0;
-}
-
-.zx-statement__dim {
-  color: color-mix(in srgb, var(--lz-ink) 44%, transparent);
-}
-
-.zx-statement__marks {
-  display: inline-flex;
-  margin-inline: 0.2em;
-  vertical-align: middle;
-}
-
-/* Sized by the title's own type, whatever it is. */
-.zx-statement__marks .zx-tile {
-  inline-size: 1.12em;
-  block-size: 1.12em;
-  border-radius: 0.32em;
-  box-shadow: 0 0 0 0.07em var(--lz-bg);
-}
-
-.zx-statement__marks .zx-tile .ci {
-  inline-size: 0.6em !important;
-  block-size: 0.6em !important;
-}
-
-.zx-statement__marks .zx-tile + .zx-tile {
-  margin-inline-start: -0.22em;
-}
-
-.zx-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0 28px;
-  list-style: none;
-  margin: clamp(48px, 6vw, 86px) 0 0;
-  padding: 0;
-}
-
-.zx-stats li {
-  padding-block-start: 22px;
-  border-block-start: 1px solid var(--zx-rule);
-}
-
-.zx-stats b {
-  display: block;
-  font-family: var(--font-display);
-  font-size: clamp(50px, 6vw, 86px);
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: -0.04em;
-  color: var(--lz-ink);
-}
-
-.zx-stats span {
-  display: block;
-  max-inline-size: 16rem;
-  margin-block-start: 14px;
-  font-size: 15.5px;
-  line-height: 1.7;
-  color: var(--lz-text);
-}
-
-/* ══ 2) The stores ═══════════════════════════════════════════════════
+/* ══ The stores ══════════════════════════════════════════════════════
    A row that scrolls sideways and snaps to its cards, edge to edge of the
    page; its padding puts the first and the last card in the middle too. */
 .zx-stores .zx-kinds {
@@ -1099,98 +1021,23 @@
   }
 }
 
-/* ══ 3) Features — six cards, each with its drawing ══════════════════ */
+/* ══ The drawings: a sum, the confirmation queue, an order's risk ═══ */
 .zx-bento {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 18px;
 }
 
-.zx-card {
-  grid-column: span 4;
-  display: flex;
-  flex-direction: column;
-  padding: 30px 30px 28px;
-  border: 1px solid var(--lz-line);
-  border-radius: 26px;
-  background: var(--lz-card);
-  color: inherit;
-  text-decoration: none;
-  transition:
-    translate 0.35s var(--lz-ease),
-    box-shadow 0.35s var(--lz-ease),
-    border-color 0.2s;
-}
-
-.zx-card:hover {
-  translate: 0 -4px;
-  border-color: color-mix(in srgb, var(--lz-accent) 42%, var(--lz-line));
-  box-shadow: 0 30px 60px -38px rgb(var(--lz-sh) / 0.5);
-}
-
-.zx-card h3 {
-  margin: 0 0 8px;
-  font-family: var(--font-display);
-  font-size: 21px;
-  font-weight: 600;
-  line-height: 1.45;
-  color: var(--lz-ink);
-}
-
-.zx-card p {
-  margin: 0;
-  font-size: 15.5px;
-  line-height: 1.8;
-  color: var(--lz-text);
-}
-
-/* The drawing stands at the card's foot, whatever the words above it take. */
-.zx-card > :last-child {
-  margin-block-start: auto;
-}
-
-.zx-card--profit {
-  grid-row: span 2;
-}
-
-/* The tall card's sum takes all the room under its words. */
-.zx-card--profit > .zx-sum {
-  flex: 1 1 auto;
-  align-content: space-between;
-  margin-block-start: 0;
-  padding: 24px;
-}
-
-.zx-card--wide {
-  grid-column: span 12;
-  flex-direction: row;
-  align-items: center;
-  gap: clamp(24px, 4vw, 56px);
-}
-
-.zx-card--wide > div:first-child {
-  flex: 1 1 0;
-}
-
-.zx-card--wide > :last-child {
-  margin-block-start: 0;
-}
-
 /* The drawings share one ground: the page's paper, set into the white card. */
 .zx-sum,
 .zx-queue,
-.zx-risk,
-.zx-road {
+.zx-risk {
   display: grid;
   gap: 14px;
   padding: 20px;
   border: 1px solid var(--lz-line);
   border-radius: 18px;
   background: var(--lz-paper);
-}
-
-.zx-card > h3 + p {
-  margin-block-end: 26px;
 }
 
 .zx-sum small,
@@ -1358,7 +1205,6 @@
 }
 
 /* A shipment's road: its code, then three stops, two of them behind it. */
-.zx-road__code,
 .zx-ship__code {
   display: flex;
   align-items: center;
@@ -1368,7 +1214,6 @@
   color: var(--lz-text);
 }
 
-.zx-road__code em,
 .zx-ship__code b {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 14px;
@@ -1378,24 +1223,6 @@
   color: var(--lz-ink);
 }
 
-.zx-road ol {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.zx-road li {
-  position: relative;
-  display: grid;
-  justify-items: center;
-  gap: 8px;
-  font-size: 12.5px;
-  color: var(--lz-text);
-}
-
-.zx-road li i,
 .zx-ship__road li i {
   z-index: 1;
   display: grid;
@@ -1409,152 +1236,11 @@
   color: #fff;
 }
 
-.zx-road li.is-next i,
 .zx-ship__road li.is-next i {
   border: 2px dashed color-mix(in srgb, var(--lz-ink) 32%, transparent);
   background: var(--lz-paper);
 }
 
-/* The line from the stop before it. */
-.zx-road li + li::before {
-  content: "";
-  position: absolute;
-  inset-block-start: 11px;
-  inset-inline-end: 50%;
-  inline-size: 100%;
-  block-size: 2px;
-  background: var(--lz-ok);
-}
-
-.zx-road li.is-next::before {
-  background: color-mix(in srgb, var(--lz-ink) 16%, transparent);
-}
-
-.zx-pays {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.zx-pays li {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 14px;
-  border: 1px solid var(--lz-line);
-  border-radius: 999px;
-  background: var(--lz-paper);
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--lz-ink);
-}
-
-.zx-pays svg {
-  color: var(--lz-ok);
-}
-
-/* The editor: its bar, and a line of the store selected to type in. */
-.zx-edit {
-  flex: 1.25 1 0;
-  overflow: hidden;
-  border: 1px solid var(--lz-line);
-  border-radius: 18px;
-  background: var(--lz-paper);
-}
-
-.zx-edit__bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 14px;
-  border-block-end: 1px solid var(--lz-line);
-  background: var(--lz-card);
-  font-size: 12.5px;
-}
-
-.zx-edit__bar span {
-  padding: 6px 12px;
-  border-radius: 8px;
-  color: var(--lz-text);
-}
-
-.zx-edit__bar .is-on {
-  background: var(--lz-soft);
-  font-weight: 600;
-  color: var(--lz-accent-deep);
-}
-
-.zx-edit__bar em {
-  margin-inline-start: auto;
-  font-style: normal;
-  color: var(--lz-text);
-}
-
-.zx-edit__bar strong {
-  padding: 6px 14px;
-  border-radius: 8px;
-  background: var(--lz-solid);
-  font-weight: 600;
-  color: var(--lz-on-solid);
-}
-
-.zx-edit__canvas {
-  display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-  align-items: center;
-  gap: 20px;
-  padding: 24px;
-}
-
-.zx-edit__img {
-  aspect-ratio: 4 / 3;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #cfe0ff, #8fb6ff 58%, #62d4ff);
-}
-
-.zx-edit__box {
-  position: relative;
-  display: grid;
-  gap: 10px;
-  padding: 14px;
-  border: 1.5px solid var(--lz-accent);
-  border-radius: 6px;
-}
-
-/* Two of the selection's handles, at opposite corners. */
-.zx-edit__box::before,
-.zx-edit__box::after {
-  content: "";
-  position: absolute;
-  inline-size: 9px;
-  block-size: 9px;
-  border: 1.5px solid var(--lz-accent);
-  border-radius: 2px;
-  background: var(--lz-card);
-}
-
-.zx-edit__box::before {
-  inset-block-start: -6px;
-  inset-inline-start: -6px;
-}
-
-.zx-edit__box::after {
-  inset-block-end: -6px;
-  inset-inline-end: -6px;
-}
-
-.zx-edit__box b {
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 600;
-  line-height: 1.5;
-  color: var(--lz-ink);
-}
-
-.zx-edit__box u,
 .zx-order__lines u {
   display: block;
   block-size: 7px;
@@ -1563,19 +1249,28 @@
   text-decoration: none;
 }
 
-.zx-edit__box u:last-child,
 .zx-order__lines u:last-child {
   inline-size: 62%;
 }
 
-/* The rest of the features page, as a row of links, and the way to it. */
+/* The rest of the features page, as a row of links, then the way in and the way to the whole page. */
 .zx-more {
+  display: grid;
+  gap: 24px;
+  margin-block-start: 30px;
+}
+
+.zx-more__also {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 20px 28px;
-  margin-block-start: 30px;
+  gap: 10px 14px;
+}
+
+.zx-more__also > span {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--lz-text);
 }
 
 .zx-more ul {
@@ -1608,6 +1303,13 @@
 .zx-more ul a:hover {
   border-color: var(--lz-accent);
   color: var(--lz-accent);
+}
+
+.zx-more__acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 26px;
 }
 
 /* ══ Night panels ════════════════════════════════════════════════════
@@ -1665,7 +1367,7 @@
   color: rgb(255 255 255 / 0.55);
 }
 
-/* ══ 4) The order's journey ══════════════════════════════════════════ */
+/* ══ The order's journey ═════════════════════════════════════════════ */
 .zx-journey {
   display: grid;
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
@@ -2148,7 +1850,7 @@
   background: rgb(255 255 255 / 0.2);
 }
 
-/* ══ 5) Growth tools ═════════════════════════════════════════════════ */
+/* ══ Growth tools ════════════════════════════════════════════════════ */
 .zx-tools {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2210,7 +1912,7 @@
   color: var(--lz-text);
 }
 
-/* ══ 6) The dashboard ════════════════════════════════════════════════ */
+/* ══ The dashboard ═══════════════════════════════════════════════════ */
 .zx-kinds--night .zx-kind:hover {
   border-color: rgb(255 255 255 / 0.5);
 }
@@ -2264,7 +1966,7 @@
   color: var(--zx-volt);
 }
 
-/* ══ 7) Getting started ══════════════════════════════════════════════ */
+/* ══ Getting started ═════════════════════════════════════════════════ */
 .zx-steps {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2312,68 +2014,10 @@
   color: var(--lz-text);
 }
 
-/* ══ 8) What should reassure you ═════════════════════════════════════ */
-.zx-trust__in {
-  display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-  align-items: start;
-  gap: clamp(28px, 5vw, 80px);
-}
-
-.zx-trust .zx-head {
-  margin: 0;
-}
-
-.zx-trust .zx-btn {
-  margin-block-start: 30px;
-}
-
-.zx-points {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 32px;
-}
-
-.zx-points article {
-  padding-block: 26px;
-  border-block-start: 1px solid var(--zx-rule);
-}
-
-.zx-points h3 {
-  margin: 16px 0 6px;
-  font-family: var(--font-display);
-  font-size: 19px;
-  font-weight: 600;
-  line-height: 1.5;
-  color: var(--lz-ink);
-}
-
-.zx-points p {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.8;
-  color: var(--lz-text);
-}
-
-.zx-points a {
-  color: var(--lz-accent);
-  text-underline-offset: 3px;
-}
-
 /* ══ Narrower screens ════════════════════════════════════════════════ */
 @media (max-width: 1080px) {
   .zx-bento {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .zx-card,
-  .zx-card--profit {
-    grid-column: auto;
-    grid-row: auto;
-  }
-
-  .zx-card--wide {
-    grid-column: 1 / -1;
   }
 
   .zx-tools {
@@ -2386,8 +2030,7 @@
 }
 
 @media (max-width: 960px) {
-  .zx-journey,
-  .zx-trust__in {
+  .zx-journey {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -2399,11 +2042,6 @@
 
   .zx-steps {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .zx-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 34px 24px;
   }
 }
 
@@ -2494,19 +2132,6 @@
   .zx-tools {
     grid-template-columns: minmax(0, 1fr);
     gap: 14px;
-  }
-
-  .zx-card {
-    padding: 24px 22px 22px;
-  }
-
-  .zx-card--wide {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .zx-edit {
-    flex: none;
   }
 
   .zx-points {
@@ -2650,15 +2275,6 @@
   .zx-step em {
     font-size: 96px;
   }
-
-  .zx-edit__canvas {
-    gap: 14px;
-    padding: 18px;
-  }
-
-  .zx-edit__box b {
-    font-size: 14.5px;
-  }
 }
 
 /* ══ Big screens: wider and larger type, not a column in the middle ══ */
@@ -2671,7 +2287,6 @@
     --card: min(82vw, 1040px);
   }
 
-  .zx-card p,
   .zx-tool p,
   .zx-step p,
   .zx-points p {
@@ -2690,7 +2305,6 @@
   }
 
   .zx-btn,
-  .zx-card,
   .zx-store,
   .zx-store__shot img {
     transition: none;
@@ -2728,5 +2342,352 @@
   html:not(.lz-loaded) .lz-home .zx-cycle img,
   html:not(.lz-loaded) .lz-home .zx-float {
     animation-play-state: paused;
+  }
+}
+
+/* ══ Why ZIMOS — what goes wrong, and what closes it ═════════════════ */
+.zx-pains {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.zx-pain {
+  display: flex;
+  flex-direction: column;
+  padding: 28px 28px 26px;
+  border: 1px solid var(--lz-line);
+  border-radius: 26px;
+  background: var(--lz-card);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    translate 0.35s var(--lz-ease),
+    box-shadow 0.35s var(--lz-ease),
+    border-color 0.2s;
+}
+
+.zx-pain:hover {
+  translate: 0 -4px;
+  border-color: color-mix(in srgb, var(--lz-accent) 42%, var(--lz-line));
+  box-shadow: 0 30px 60px -38px rgb(var(--lz-sh) / 0.5);
+}
+
+/* What goes wrong today, said first and in the warning colour. */
+.zx-pain__was {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding-block-end: 18px;
+  border-block-end: 1px dashed var(--zx-rule);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--lz-text);
+}
+
+.zx-pain__was b {
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: var(--zx-warn-soft);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--zx-warn);
+}
+
+.zx-pain h3 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--lz-ink);
+}
+
+.zx-pain > h3 + p {
+  margin: 0 0 24px;
+  font-size: 15.5px;
+  line-height: 1.8;
+  color: var(--lz-text);
+}
+
+/* The drawing stands at the card's foot, whatever the words above it take. */
+.zx-pain > :last-child {
+  margin-block-start: auto;
+}
+
+/* ══ A store's card: its tag and the way to look through it ══════════ */
+.zx-store__acts {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+}
+
+.zx-btn--sm {
+  min-block-size: 44px;
+  padding: 0 20px;
+  font-size: 14.5px;
+}
+
+/* ══ The viewer — one store, large, on the device you pick ═══════════ */
+.zx-viewer {
+  inline-size: min(1180px, calc(100vw - 24px));
+  max-inline-size: none;
+  max-block-size: calc(100dvh - 24px);
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 26px;
+  background: var(--zx-night);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.1),
+    0 40px 120px -20px #000;
+  color: #fff;
+}
+
+.zx-viewer::backdrop {
+  background: rgb(4 8 16 / 0.74);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.zx-viewer__in {
+  display: flex;
+  flex-direction: column;
+  max-block-size: calc(100dvh - 24px);
+}
+
+.zx-viewer__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 14px 16px;
+  border-block-end: 1px solid rgb(255 255 255 / 0.1);
+}
+
+.zx-viewer__bar p {
+  display: grid;
+  margin: 0;
+  margin-inline-end: auto;
+  text-align: start;
+}
+
+.zx-viewer__bar p b {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.zx-viewer__bar p span {
+  font-size: 12.5px;
+  color: rgb(255 255 255 / 0.6);
+}
+
+.zx-viewer__devices {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.08);
+}
+
+.zx-viewer__devices button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-block-size: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: rgb(255 255 255 / 0.76);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.zx-viewer__devices button[aria-pressed="true"] {
+  background: #fff;
+  color: #0c1424;
+}
+
+.zx-viewer__close {
+  inline-size: 44px;
+  block-size: 44px;
+  border-color: rgb(255 255 255 / 0.26);
+  color: #fff;
+}
+
+.zx-viewer__close:hover {
+  border-color: #fff;
+}
+
+.zx-viewer__stage {
+  display: grid;
+  flex: 1;
+  min-block-size: 0;
+  place-items: center;
+  padding: clamp(14px, 3vw, 34px);
+  overflow: auto;
+  background: radial-gradient(60% 60% at 50% 0%, rgb(30 84 226 / 0.36), transparent 70%);
+}
+
+.zx-viewer__laptop {
+  inline-size: min(100%, 980px);
+}
+
+/* The store's page inside the screen: there to scroll through, as far as the capture goes. */
+.zx-viewer .zx-viewer__scroll {
+  max-block-size: min(60dvh, 620px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #fff;
+  scrollbar-width: thin;
+}
+
+.zx-viewer__scroll img {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}
+
+.zx-viewer__phone {
+  inline-size: min(100%, 340px);
+  padding: 8px;
+  border-radius: 40px;
+}
+
+.zx-viewer__phone .zx-viewer__scroll {
+  max-block-size: min(64dvh, 660px);
+  border-radius: 32px;
+}
+
+.zx-viewer__phone img {
+  aspect-ratio: auto;
+  object-fit: fill;
+  border-radius: 0;
+}
+
+.zx-viewer__cap {
+  margin: 0;
+  padding: 10px 16px 14px;
+  font-size: 12px;
+  text-align: center;
+  color: rgb(255 255 255 / 0.55);
+}
+
+/* ══ What it costs — the plans, then what should reassure you ════════ */
+.zx-pricing__plans {
+  margin-block-end: 26px;
+}
+
+.zx-pricing__all {
+  margin: 0 0 clamp(40px, 5vw, 68px);
+  text-align: center;
+}
+
+.zx-points {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0 28px;
+}
+
+.zx-points article {
+  padding-block: 26px 0;
+  border-block-start: 1px solid var(--zx-rule);
+}
+
+.zx-points h3 {
+  margin: 16px 0 6px;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--lz-ink);
+}
+
+.zx-points p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--lz-text);
+}
+
+.zx-points a {
+  color: var(--lz-accent);
+  text-underline-offset: 3px;
+}
+
+/* ══ WhatsApp, at the corner ═════════════════════════════════════════ */
+.zx-wa {
+  position: fixed;
+  inset-block-end: 18px;
+  inset-inline-start: 18px;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  inline-size: 56px;
+  block-size: 56px;
+  border-radius: 50%;
+  background: #25d366;
+  box-shadow: 0 14px 30px -10px rgb(37 211 102 / 0.7);
+  color: #fff;
+  transition: translate 0.25s var(--lz-ease);
+}
+
+.zx-wa:hover {
+  translate: 0 -3px;
+}
+
+@media (max-width: 1080px) {
+  .zx-pains {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .zx-points {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 26px 28px;
+  }
+}
+
+@media (max-width: 600px) {
+  .zx-pain {
+    padding: 24px 22px 22px;
+  }
+
+  .zx-points {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .zx-store__acts {
+    inline-size: 100%;
+    justify-content: space-between;
+  }
+
+  .zx-viewer {
+    border-radius: 20px;
+  }
+
+  .zx-viewer__bar .zx-btn {
+    order: 3;
+    flex: 1 1 100%;
+  }
+
+  .zx-wa {
+    inline-size: 50px;
+    block-size: 50px;
+    inset-block-end: 14px;
+    inset-inline-start: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zx-pain,
+  .zx-wa {
+    transition: none;
   }
 }

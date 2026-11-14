@@ -26,7 +26,7 @@ export function GrowthTools({ copy, locale }: { copy: Dictionary["growth"]; loca
     <section className="zx-sec zx-growth" id="growth" aria-labelledby="zx-growth">
       <div className="lz-in">
         <header className="zx-head zx-head--center lz-r">
-          <SectionLabel n="05" text={copy.kicker} />
+          <SectionLabel n="06" text={copy.kicker} />
           <h2 className="zx-h2" id="zx-growth">
             {copy.heading}
           </h2>

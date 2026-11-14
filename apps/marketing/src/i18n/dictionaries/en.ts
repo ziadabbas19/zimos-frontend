@@ -40,9 +40,9 @@ export const en: Dictionary = {
 
   hero: {
     badge: "One platform for selling with cash on delivery",
-    lines: ["Your store, live in minutes."],
-    accent: "Your profit, in plain numbers.",
-    body: "Build your online store from a ready template, take your orders and confirm them before they ship, send them with any shipping company, then see what each order really earned once every cost is off.",
+    lines: ["Sell with cash on delivery."],
+    accent: "Know your real profit on every order.",
+    body: "Build your store from a ready template in minutes, confirm your orders before they ship, send them with any shipping company, and see your net profit once every cost is off.",
     primaryCta: "Create your store",
     secondaryCta: "See the stores",
     ticks: ["Subscribe when you publish", "Ready store templates", "Arabic and English"],
@@ -55,20 +55,6 @@ export const en: Dictionary = {
     caption: "Real screenshots of ZIMOS stores — demo products and pictures.",
   },
 
-  idea: {
-    kicker: "The idea",
-    problem:
-      "You advertise your product, take the orders, confirm them by phone, ship them with more than one company, then work out your profit across scattered spreadsheets.",
-    answer:
-      "ZIMOS brings all of it into one platform: a store you build in minutes, orders you confirm before they ship, and real profit you can see day by day.",
-    stats: [
-      { value: "5", label: "minutes to build a complete store and publish it" },
-      { value: "12", label: "areas of tools in one platform, from products to reports" },
-      { value: "6", label: "ready roles for your team, each with its own permissions" },
-      { value: "2", label: "languages for the store and the dashboard: Arabic and English" },
-    ],
-  },
-
   integrations: {
     label: "Connects with",
     note: "Trademarks and logos belong to their owners.",
@@ -78,13 +64,14 @@ export const en: Dictionary = {
   },
 
   templates: {
-    kicker: "Store templates",
-    heading: "Pick your store's look, then make it yours.",
+    kicker: "Stores",
+    heading: "See your store before you build it.",
     intro:
       "Stores built on ZIMOS from its template library — each with its own phone layout, and every section, word, colour and picture yours to change in the editor.",
     templateLabel: "Template {n}",
     categories: {
       "23": "Fashion and clothing",
+      "24": "Mother and baby",
       "13": "Smart watches",
       "08": "Shoes and sportswear",
       "04": "Fashion and beauty",
@@ -92,6 +79,7 @@ export const en: Dictionary = {
     },
     blurbs: {
       "23": "A storefront that hangs every piece on a clothing rail, each with its price tag.",
+      "24": "A cheerful storefront that puts cash on delivery and exchange up front.",
       "13": "Wide room for the hero product, and calm colours that bring out its detail.",
       "08": "Strong colours and bold lines that suit sports products.",
       "04": "A neat grid of sections that shows your collections side by side.",
@@ -102,17 +90,42 @@ export const en: Dictionary = {
     previous: "Previous store",
     next: "Next store",
     hoverHint: "Point at a store to see its whole home page",
+    view: "View the store",
+    viewerLabel: "Store preview",
+    onComputer: "Computer",
+    onPhone: "Phone",
+    close: "Close the preview",
+    useTemplate: "Start with this template",
     cta: "Pick your template",
     caption: "Real screenshots of ZIMOS stores — demo products and pictures.",
   },
 
   benefits: {
-    kicker: "Features",
-    heading: "Everything your store needs, in one place.",
-    intro: "No scattered spreadsheets, no tools to wire together yourself, no end-of-month sums.",
+    kicker: "Why ZIMOS",
+    heading: "Selling with cash on delivery loses its profit in three places.",
+    intro: "An order that ships and is refused, a fake order you pay to ship, and sales whose net you never see. ZIMOS was built to close those three gaps.",
+    painLabel: "The problem",
+    confirmation: {
+      pain: "Orders you ship, then the customer refuses at the door.",
+      title: "Confirm every order before it ships",
+      body: "Cash-on-delivery orders wait in one queue, and your agent records each call's outcome with one click, so only confirmed orders ship.",
+      nextCall: "Next call",
+      attempt: "Second attempt",
+      lastOutcome: "Last outcome: no answer",
+      outcomes: ["Confirmed", "Refused", "No answer", "Later"],
+    },
+    fraud: {
+      pain: "Fake orders and repeated numbers, and you pay to ship them.",
+      title: "Catch the suspect order before it costs you",
+      body: "A risk level on every order with its reasons, phone numbers verified by code, and a block list that stops it happening again.",
+      riskLabel: "Risk level",
+      levels: ["Low", "Medium", "High"],
+      reasons: ["Repeated number", "Unusual quantity"],
+    },
     profit: {
-      title: "Your real profit on every order",
-      body: "Not sales alone: the product's cost, shipping, ads and returns come off, and you see what is actually left for you.",
+      pain: "Big sales at the end of the month, and a profit you can't put a number on.",
+      title: "Know your real profit on every order",
+      body: "The product's cost, shipping, ads and returns come off every delivered order, and you see what is actually left for you.",
       example: "One order, as an example",
       rows: [
         { label: "Sale price", value: "900" },
@@ -124,40 +137,8 @@ export const en: Dictionary = {
       net: { label: "Net profit", value: "310" },
       currency: "EGP",
     },
-    confirmation: {
-      title: "A confirmation queue for your team",
-      body: "Cash-on-delivery orders wait in one queue, and your agent records each call's outcome with one click.",
-      nextCall: "Next call",
-      attempt: "Second attempt",
-      lastOutcome: "Last outcome: no answer",
-      outcomes: ["Confirmed", "Refused", "No answer", "Later"],
-    },
-    shipping: {
-      title: "Shipping with every company",
-      body: "Connected directly or by hand with a tracking code, a shipping rate per governorate, and the cash the courier collected reconciled.",
-      trackingLabel: "Tracking code",
-      statuses: ["Booked", "On its way", "Delivered"],
-    },
-    payments: {
-      title: "Every payment method in one store",
-      body: "Your customer picks the method that suits them, and every order shows a clear payment status.",
-      methods: ["Cash on delivery", "InstaPay", "Mobile wallets", "Cards", "Gift cards", "Store credit"],
-    },
-    fraud: {
-      title: "Protection from fake orders",
-      body: "A risk level on every order with its reasons, phone numbers verified by code, and a block list.",
-      riskLabel: "Risk level",
-      levels: ["Low", "Medium", "High"],
-      reasons: ["Repeated number", "Unusual quantity"],
-    },
-    editor: {
-      title: "A visual editor for your store",
-      body: "You edit the real store as you look at it: one click selects, two clicks type. Each device has its own layout, and every change is a draft until you publish.",
-      tools: ["Text", "Image", "Colour"],
-      draft: "Draft",
-      publish: "Publish",
-      sample: "The new season's collection",
-    },
+    alsoLabel: "And in the same platform",
+    startCta: "Create your store",
     cta: "See every feature",
   },
 
@@ -306,7 +287,7 @@ export const en: Dictionary = {
 
   start: {
     kicker: "Getting started",
-    heading: "Start in three steps.",
+    heading: "Your store is live in three steps.",
     steps: [
       {
         title: "Create your account",
@@ -325,10 +306,6 @@ export const en: Dictionary = {
   },
 
   trust: {
-    kicker: "What should reassure you",
-    heading: "Your store and your data are yours, and the price is clear up front.",
-    intro:
-      "ZIMOS is a platform you subscribe to, monthly or yearly. We don't sell products or take part in your sales — you sell to your customers, and we give you the tools.",
     points: [
       {
         title: "A clear subscription",
@@ -348,13 +325,12 @@ export const en: Dictionary = {
       },
     ],
     refundLink: "refund policy",
-    pricingCta: "See plans and prices",
   },
 
   pricing: {
     kicker: "Pricing",
-    heading: "Simple plans for your store",
-    intro: "A monthly or yearly subscription to the ZIMOS platform. Every price includes everything listed under the plan.",
+    heading: "A clear price from the start.",
+    intro: "Pick the plan that fits your store's size. Every price includes everything listed under the plan, with no cut of your sales.",
     pageTitle: "Pricing and Plans — Zimos",
     pageDescription:
       "Zimos plans and prices: a monthly or yearly subscription to the platform for building and running your online store, with the limits and features of each plan.",
