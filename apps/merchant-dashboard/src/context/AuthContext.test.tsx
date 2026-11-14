@@ -126,6 +126,24 @@ describe("a 429, a 5xx or no network keeps the session", () => {
 
     await waitFor(() => expect(status()).toBe("authenticated"));
   });
+
+  it("coming back online the moment the read failed, before the page shows it, still tries again", async () => {
+    // Back online a few microtasks after the read failed: the provider has taken the failure
+    // in, but React draws "unavailable" (and runs its effects) only in a later task.
+    const failed = Promise.reject(new TypeError("Failed to fetch"));
+    let shownWhenOnline: string | null = null;
+    void failed.catch(async () => {
+      for (let i = 0; i < 10; i++) await null;
+      shownWhenOnline = status();
+      window.dispatchEvent(new Event("online"));
+    });
+    api.meDetails.mockReturnValueOnce(failed).mockResolvedValueOnce(me);
+    renderProvider();
+
+    await waitFor(() => expect(status()).toBe("authenticated"));
+    expect(shownWhenOnline).toBe("loading");
+    expect(api.meDetails).toHaveBeenCalledTimes(2);
+  });
 });
 
 it("signing out ends the session here even when the server can't be told", async () => {

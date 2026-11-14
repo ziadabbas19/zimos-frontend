@@ -18,6 +18,7 @@
     "./fonts": "./src/fonts/index.ts",
     "./font-picker": "./src/font-picker/index.ts",
     "./styles.css": "./src/styles.css",
+    "./fonts.css": "./src/fonts.css",
     "./theme/*": "./src/theme/*"
   },
   "peerDependencies": {
@@ -26,6 +27,9 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource/plus-jakarta-sans": "^5.3.0",
+    "@fontsource/tajawal": "^5.3.0",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.2.6",
     "lucide-react": "^1.40.0"

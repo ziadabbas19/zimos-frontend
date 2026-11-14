@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { createRequire } from "node:module";
 
 /**
  * The console is drawn with the merchant dashboard's theme: one copy of the
@@ -18,16 +19,23 @@ const dashboardPage = read("../../merchant-dashboard/index.html");
 const entry = read("./index.css");
 const dashboardEntry = read("../../merchant-dashboard/src/index.css");
 
-/** The stylesheets a main.tsx loads from the shared theme, in the order it loads them. */
-const sharedLayers = (source) => [...source.matchAll(/^import '(@store-builder\/ui\/(?:styles\.css|theme\/[^']+))'/gm)].map((m) => m[1]);
+/** The stylesheets a main.tsx loads from the shared theme (and the shared fonts), in the order it loads them. */
+const sharedLayers = (source) => [...source.matchAll(/^import '(@store-builder\/ui\/(?:styles\.css|fonts\.css|theme\/[^']+))'/gm)].map((m) => m[1]);
 /** Every stylesheet it loads, the app's own included. */
 const layers = (source) => [...source.matchAll(/^import '([^']+\.css)'/gm)].map((m) => m[1]);
 const script = (page) => /<script>([\s\S]*?)<\/script>/.exec(page)?.[1];
 
+/** The one stylesheet both apps take Tajawal, Plus Jakarta Sans and Fraunces from, as their main.tsx names it. */
+const FONTS_LAYER = "@store-builder/ui/fonts.css";
+const sharedFonts = read("../../../packages/ui/src/fonts.css");
+const uiPackage = JSON.parse(read("../../../packages/ui/package.json"));
+/** Resolves a name the way the build does from that file: from packages/ui. */
+const resolveFromUi = createRequire(new URL("../../../packages/ui/package.json", import.meta.url)).resolve;
+
 /**
  * The font families an app loads, each with its weights ({ tajawal: [400, 500, 700], … }),
- * however it loads them: a Google Fonts stylesheet in its index.html, or the files served
- * with the app that the src/fonts.css its main.tsx imports declares (fontsource, the same
+ * from the fonts stylesheets its main.tsx imports: the shared @store-builder/ui/fonts.css, or a
+ * src/fonts.css of its own. Each declares files served with the app (fontsource, the same
  * Google files). A family is named the way fontsource names its package: "Plus Jakarta
  * Sans" is plus-jakarta-sans.
  */
@@ -37,25 +45,20 @@ const loadedFonts = (app) => {
     const key = family.toLowerCase().replaceAll(" ", "-");
     fonts[key] = [...new Set([...(fonts[key] ?? []), weight])].sort((a, b) => a - b);
   };
-  const href = /href="(https:\/\/fonts\.googleapis\.com\/css2[^"]+)"/.exec(read(`../../${app}/index.html`))?.[1];
-  for (const family of href ? new URL(href).searchParams.getAll("family") : []) {
-    // "Fraunces:opsz,wght@9..144,500;9..144,600" is Fraunces 500 and 600; a family with no axes is 400.
-    const [name, spec = "wght@400"] = family.split(":");
-    const [axes, tuples] = spec.split("@");
-    const at = axes.split(",").indexOf("wght");
-    for (const tuple of tuples.split(";")) add(name, Number(tuple.split(",")[at]));
-  }
-  if (/^import '\.\/fonts\.css'$/m.test(read(`../../${app}/src/main.tsx`))) {
-    const css = read(`../../${app}/src/fonts.css`);
+  const main = read(`../../${app}/src/main.tsx`);
+  const sheets = [];
+  if (main.split("\n").includes(`import '${FONTS_LAYER}'`)) sheets.push(["packages/ui/src/fonts.css", sharedFonts]);
+  if (/^import '\.\/fonts\.css'$/m.test(main)) sheets.push([`${app}/src/fonts.css`, read(`../../${app}/src/fonts.css`)]);
+  for (const [where, css] of sheets) {
     for (const [, path] of css.matchAll(/^@import "([^"]+)";/gm)) {
       const [, slug, weight] = /^@fontsource\/([a-z0-9-]+)\/(\d+)\.css$/.exec(path) ?? [];
-      assert.ok(slug, `${app}/src/fonts.css imports ${path}: teach loadedFonts what it holds`);
+      assert.ok(slug, `${where} imports ${path}: teach loadedFonts what it holds`);
       add(slug, Number(weight));
     }
     for (const [, rule] of css.matchAll(/@font-face\s*\{([^}]*)\}/g)) {
       const family = /font-family:\s*"([^"]+)"/.exec(rule)?.[1];
       const [, from, to = from] = /font-weight:\s*(\d+)(?:\s+(\d+))?/.exec(rule) ?? [];
-      assert.ok(family && from, `an @font-face of ${app}/src/fonts.css without a family or a weight`);
+      assert.ok(family && from, `an @font-face of ${where} without a family or a weight`);
       // A variable font's range ("500 700") holds every weight between.
       for (let weight = Number(from); weight <= Number(to); weight += 100) add(family, weight);
     }
@@ -114,11 +117,43 @@ describe("the look before first paint", () => {
 });
 
 describe("the console's fonts", () => {
-  // The same families at the same weights, wherever each app takes them from: the
-  // dashboard serves them with the app (src/fonts.css), the console still links Google Fonts.
+  // Both apps serve them with the app, from one file in packages/ui; neither links Google Fonts.
+  it("come from the shared @store-builder/ui/fonts.css, as the dashboard's do", () => {
+    assert.ok(adminMain.split("\n").includes(`import '${FONTS_LAYER}'`), `the console's main.tsx does not import ${FONTS_LAYER}`);
+    assert.ok(dashboardMain.split("\n").includes(`import '${FONTS_LAYER}'`), `the dashboard's main.tsx does not import ${FONTS_LAYER}`);
+    // The package's exports name it, and it is the file read here.
+    const fromConsole = createRequire(new URL("../package.json", import.meta.url)).resolve(FONTS_LAYER);
+    assert.equal(realpathSync(fromConsole), realpathSync(new URL("../../../packages/ui/src/fonts.css", import.meta.url)));
+  });
+
   it("are the dashboard's, family for family and weight for weight (Tajawal draws the Arabic)", () => {
     const fonts = loadedFonts("platform-admin");
     assert.ok(fonts.tajawal, "no Tajawal: every Arabic word would fall back to a system font");
     assert.deepEqual(fonts, loadedFonts("merchant-dashboard"));
+    // What the Google Fonts link of both apps asked for, before they were served with the apps.
+    assert.deepEqual(fonts, { tajawal: [400, 500, 700], "plus-jakarta-sans": [400, 500, 600, 700], fraunces: [500, 600, 700] });
+  });
+
+  it("take nothing from Google: no stylesheet, no preconnect, no font file", () => {
+    for (const app of ["platform-admin", "merchant-dashboard"]) {
+      assert.doesNotMatch(read(`../../${app}/index.html`), /fonts\.(googleapis|gstatic)\.com/, `${app}/index.html`);
+    }
+    assert.doesNotMatch(sharedFonts, /url\(\s*["']?(https?:)?\/\//, "fonts.css loads a file from another origin");
+  });
+
+  it("name only packages @store-builder/ui depends on, and files those packages have", () => {
+    const names = [...sharedFonts.matchAll(/^@import "([^"]+)";/gm), ...sharedFonts.matchAll(/url\("([^"]+)"\)/g)].map((m) => m[1]);
+    assert.ok(names.length >= 10, `only ${names.length} imports and files in fonts.css`);
+    for (const name of names) {
+      const pkg = /^@[^/]+\/[^/]+/.exec(name)?.[0];
+      assert.ok(pkg && uiPackage.dependencies?.[pkg], `${name}: ${pkg} is not a dependency of @store-builder/ui`);
+      assert.doesNotThrow(() => resolveFromUi(name), `${name} does not resolve from packages/ui`);
+    }
+  });
+
+  it("are built as files of their own, not written into the stylesheet, in both apps", () => {
+    const inlineRule = (app) => /assetsInlineLimit:\s*([^\n]+)/.exec(read(`../../${app}/vite.config.ts`))?.[1];
+    assert.ok(inlineRule("platform-admin"), "the console's vite.config.ts sets no assetsInlineLimit");
+    assert.equal(inlineRule("platform-admin"), inlineRule("merchant-dashboard"));
   });
 });

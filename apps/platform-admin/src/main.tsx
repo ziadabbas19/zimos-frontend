@@ -2,6 +2,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import '@store-builder/ui/styles.css'
 import './index.css'
+// Tajawal, Plus Jakarta Sans and Fraunces, served with the app (they came from Google Fonts):
+// the dashboard's own file.
+import '@store-builder/ui/fonts.css'
 // The merchant dashboard's theme, in the dashboard's own order (its main.tsx):
 // token values first, then the looks, then the glass material of the shell and
 // of the shared parts. theme.test.mjs holds the two lists together.

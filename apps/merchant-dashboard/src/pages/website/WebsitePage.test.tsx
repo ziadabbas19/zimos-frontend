@@ -297,6 +297,12 @@ describe("WebsitePage template previews while scrolling", () => {
   const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
   /** The box a card's live preview is drawn in (TemplateLivePreview's root), by the card's name. */
   const previewBox = (name: string) => screen.getByRole("button", { name: `Preview ${name}` }).closest("li")!.querySelector<HTMLElement>('[class*="aspect-"] > div')!;
+  /** The cards whose preview box is watched for scrolling, by name: a card's observer exists once its effect has run. */
+  const watchedCards = () =>
+    FakeIntersectionObserver.instances
+      .flatMap((observer) => [...observer.elements])
+      .map((box) => box.closest("li")?.querySelector("button")?.textContent)
+      .sort();
 
   it("starts only a little before a card scrolls in", async () => {
     api.listWebsiteTemplates.mockResolvedValue([template("perf_margin", "Perf Margin", "general")]);
@@ -330,6 +336,12 @@ describe("WebsitePage template previews while scrolling", () => {
       template("perf_mid", "Perf Mid", "general"),
       template("perf_near", "Perf Near", "general"),
     ]);
+    // The queue ranks the cards that wait for a slot together. Each card settles on its own timer,
+    // and timers started a millisecond apart fire in different turns of the event loop: the first
+    // card would then ask for a slot alone, and take it. So the templates come back together, once
+    // all three cards have asked for theirs.
+    let templatesBack!: () => void;
+    api.getWebsiteTemplate.mockReturnValue(new Promise<WebsiteTemplateDetail>((resolve) => (templatesBack = () => resolve(homeDetail))));
     // Where each card is on a 768px-tall screen: Far well below it, Near in its middle.
     const centres: Record<string, number> = { "Perf Far": 1500, "Perf Mid": 650, "Perf Near": 384 };
     const rect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
@@ -338,9 +350,13 @@ describe("WebsitePage template previews while scrolling", () => {
       return { top: centre - 100, bottom: centre + 100, left: 0, right: 200, width: 200, height: 200, x: 0, y: centre - 100, toJSON: () => ({}) } as DOMRect;
     });
     renderWithProviders(<WebsitePage />, { route: "/website" });
-    await screen.findByRole("button", { name: "Preview Perf Far" });
+    // The three cards on the page and watched for scrolling, before they scroll in: a card on
+    // the page whose effect has not run yet would not be told.
+    await waitFor(() => expect(watchedCards()).toEqual(["Perf Far", "Perf Mid", "Perf Near"]));
 
     act(() => FakeIntersectionObserver.scrollAllIntoView());
+    await waitFor(() => expect(api.getWebsiteTemplate).toHaveBeenCalledTimes(3));
+    await act(async () => templatesBack());
     await waitFor(() => expect(document.querySelectorAll("iframe")).toHaveLength(MAX_LOADING_PREVIEWS));
     const loading = Array.from(document.querySelectorAll("iframe")).map((frame) => frame.closest("li")!.querySelector("button")!.textContent);
     expect(loading.sort()).toEqual(["Perf Mid", "Perf Near"]);

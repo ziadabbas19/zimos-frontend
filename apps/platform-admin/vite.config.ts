@@ -12,6 +12,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    // As in the merchant dashboard: a font file is never written into the
+    // stylesheet as data. The small .woff fallbacks of the shared
+    // @store-builder/ui/fonts.css (for browsers without woff2) would otherwise make the
+    // render-blocking CSS heavier for nobody.
+    assetsInlineLimit: (file) => (/\.(woff2?|ttf|otf)$/.test(file) ? false : undefined),
+  },
   server: {
     port: 5174,
     // Proxy API calls to the backend so the browser talks same-origin — the
