@@ -10,10 +10,12 @@ import { en } from "./dictionaries/en";
 /**
  * The home page and the site's translation files (i18n/dictionaries) under
  * the owner's marketing rules (2026-10-29): no shipping company or payment
- * gateway by name (InstaPay and wallets may be named), the platform not
- * described as cash on delivery in its title or description, and nothing
- * that is not built (AI, a WhatsApp bot). The features page's own words
- * have content/features/features.test.ts.
+ * gateway by name (InstaPay and wallets may be named), and nothing that is
+ * not built (AI, a WhatsApp bot). Since 2026-11-14 the home page's title and
+ * description name the platform and say what it is — an online store builder
+ * for selling with cash on delivery — so Google tells "Zimos" apart from
+ * other things of that name; until then they kept cash on delivery out. The
+ * features page's own words have content/features/features.test.ts.
  */
 
 /** Every string in the copy, wherever it sits. */
@@ -58,8 +60,11 @@ describe("the home page's words", () => {
   it.each([
     ["ar", ar],
     ["en", en],
-  ])("do not describe the platform as cash on delivery in its title and description (%s)", (_, dict) => {
-    expect(hits([dict.meta.title, dict.meta.description], [/الدفع عند الاستلام|cash.on.delivery/i])).toEqual([]);
+  ])("name Zimos and say cash on delivery in its title and description (%s)", (_, dict) => {
+    for (const text of [dict.meta.title, dict.meta.description]) {
+      expect(text).toMatch(/^Zimos /);
+      expect(text).toMatch(/دفع عند الاستلام|cash on delivery/i);
+    }
   });
 
   it("describe the platform as a complete store in 5 minutes", () => {

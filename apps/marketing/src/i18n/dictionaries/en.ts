@@ -2,9 +2,9 @@ import type { Dictionary } from "../dictionary";
 
 export const en: Dictionary = {
   meta: {
-    title: "ZIMOS — Build. Sell. Grow.",
+    title: "Zimos — Online Store Builder for Cash on Delivery",
     description:
-      "ZIMOS is the platform to build a complete online store in 5 minutes: ready-made store templates, every payment method, order confirmation before shipping, shipping with every company, and the real profit of each delivered order — on one screen.",
+      "Zimos lets you build a complete online store in 5 minutes and sell with cash on delivery: orders confirmed before shipping, every shipping company, real profit per order.",
   },
 
   brand: {
@@ -213,9 +213,9 @@ export const en: Dictionary = {
     kicker: "Pricing",
     heading: "Simple plans for your store",
     intro: "A monthly or yearly subscription to the ZIMOS platform. Every price includes everything listed under the plan.",
-    pageTitle: "Pricing — ZIMOS",
+    pageTitle: "Pricing and Plans — Zimos",
     pageDescription:
-      "ZIMOS plans and prices: a monthly or yearly subscription to the platform for building and running your online store, with the free trial, limits and features of each plan.",
+      "Zimos plans and prices: a monthly or yearly subscription to the platform for building and running your online store, with the free trial, limits and features of each plan.",
     pageHeading: "Plans and prices",
     pageIntro:
       "ZIMOS is a SaaS platform for building online stores. You subscribe to the platform monthly or yearly, on the plan that fits your store.",
@@ -333,7 +333,7 @@ export const en: Dictionary = {
 
   credits: {
     title: "Credits and licenses",
-    description: "The free templates, icons and fonts the ZIMOS website uses, and their licenses.",
+    description: "The free templates, icons and fonts the Zimos website uses, and their licenses.",
     intro: "The ZIMOS website uses free designs, icons and fonts. Our thanks to the people who made them — here they are with their licenses.",
     templatesHeading: "Store designs",
     templatesLead: "The store designs on this site are adapted from free templates:",
