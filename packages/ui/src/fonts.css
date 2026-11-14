@@ -1,10 +1,15 @@
 /*
- * The three families index.html used to fetch from Google Fonts, served with
- * the app instead: the same font files (fontsource takes them from Google
- * Fonts), the same weights, the same family names the themes ask for, and
- * font-display: swap as before. A file is only downloaded once text uses it.
+ * The three families the merchant dashboard's and the platform console's
+ * index.html used to fetch from Google Fonts, served with each app instead:
+ * the same font files (fontsource takes them from Google Fonts), the same
+ * weights, the same family names the themes ask for, and font-display: swap
+ * as before. A file is only downloaded once text uses it. Both main.tsx
+ * import this one file, right after their index.css (the console's
+ * theme.test.mjs holds the two lists of layers together). It is not one of
+ * the theme/ layers: those are colours and shapes only, with no font file
+ * (the dashboard's src/theme/theme.test.ts).
  *
- *   Tajawal            every Arabic word of the dashboard (after Inter, which
+ *   Tajawal            every Arabic word of both apps (after Inter, which
  *                      has no Arabic), 400 / 500 / 700
  *   Plus Jakarta Sans  the store looks' Latin text in the website editor,
  *                      400 to 700
@@ -13,6 +18,9 @@
  *                      served it (fontsource names its variable file
  *                      "Fraunces Variable", so it is declared here under the
  *                      name the looks use)
+ *
+ * The packages are dependencies of @store-builder/ui, so the imports below
+ * resolve from here whichever app is built.
  */
 @import "@fontsource/tajawal/400.css";
 @import "@fontsource/tajawal/500.css";

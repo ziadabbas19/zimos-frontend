@@ -12,7 +12,7 @@ export default defineConfig({
   },
   build: {
     // A font file is never written into the stylesheet as data: the small
-    // .woff fallbacks of src/fonts.css (for browsers without woff2) would
+    // .woff fallbacks of the shared @store-builder/ui/fonts.css (for browsers without woff2) would
     // otherwise make the render-blocking CSS heavier for nobody.
     assetsInlineLimit: (file) => (/\.(woff2?|ttf|otf)$/.test(file) ? false : undefined),
     rolldownOptions: {
