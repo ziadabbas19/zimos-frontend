@@ -2,10 +2,9 @@
 
 /* eslint-disable @next/next/no-img-element -- the captures are already sized and compressed for the page. */
 import { useId, useState } from "react";
-import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionary";
 import { shareOf } from "@/lib/amounts";
-import { JOURNEY_LOOK, deskShot } from "@/lib/store-shots";
+import { JOURNEY_SHOT } from "@/lib/store-shots";
 import { ColorIcon } from "./color-icon";
 import { Check } from "./duo-icons";
 
@@ -24,12 +23,12 @@ const two = (n: number) => String(n).padStart(2, "0");
  * step stops the play there. Each step is a button that opens its own
  * paragraph; the drawings are decoration, and the words say the same.
  */
-export function OrderJourney({ copy, locale }: { copy: Dictionary["journey"]; locale: Locale }) {
+export function OrderJourney({ copy }: { copy: Dictionary["journey"] }) {
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(true);
   const baseId = useId();
   const { steps, demo } = copy;
-  const shot = deskShot(JOURNEY_LOOK, locale);
+  const shot = JOURNEY_SHOT;
 
   const pick = (to: number) => {
     setPlaying(false);

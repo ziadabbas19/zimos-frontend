@@ -64,7 +64,7 @@ export default async function CreditsPage({ params }: Params) {
               </h2>
               <p className="mt-3 leading-relaxed text-pretty text-ink-soft">{credits.templatesLead}</p>
               <ul className="mt-3 grid gap-2 leading-relaxed text-ink-soft">
-                {GALLERY_LOOKS.filter((look) => SHOT_CREDITS[look]).map((look) => {
+                {[...GALLERY_LOOKS].filter((look) => SHOT_CREDITS[look]).sort().map((look) => {
                   const { name, author, href, licence, licenceHref } = SHOT_CREDITS[look];
                   return (
                     <li key={look}>

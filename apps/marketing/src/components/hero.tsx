@@ -4,7 +4,7 @@ import { preload } from "react-dom";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionary";
 import { REGISTER_URL } from "@/lib/urls";
-import { HERO_LOOKS, HERO_PHONES, STORE_SHOTS, deskShot } from "@/lib/store-shots";
+import { HERO_LOOKS, HERO_PHONES, galleryShot } from "@/lib/store-shots";
 import { ColorIcon } from "./color-icon";
 import { Arrow, Check } from "./duo-icons";
 
@@ -33,7 +33,7 @@ export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Local
   const { chips } = copy;
   // The first capture is the page's largest picture on a computer: fetched
   // early there, and not at all on a phone.
-  preload(deskShot(HERO_LOOKS[0], locale), { as: "image", fetchPriority: "high", media: "(min-width: 761px)" });
+  preload(galleryShot(HERO_LOOKS[0], locale, "desk", "card"), { as: "image", fetchPriority: "high", media: "(min-width: 761px)" });
 
   return (
     <section className="zx-hero" aria-labelledby="zx-h1" data-section="hero">
@@ -83,7 +83,7 @@ export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Local
         <div className="zx-fan" aria-hidden>
           {HERO_PHONES.map((look) => (
             <span key={look} className="zx-phone">
-              <img src={STORE_SHOTS[look].phone} width={390} height={1600} alt="" decoding="async" />
+              <img src={galleryShot(look, locale, "phone", "card")} width={300} height={600} alt="" decoding="async" />
             </span>
           ))}
         </div>
@@ -95,7 +95,7 @@ export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Local
               <picture key={look}>
                 <source media={FRAME_HIDDEN} srcSet={NOTHING} />
                 <img
-                  src={deskShot(look, locale)}
+                  src={galleryShot(look, locale, "desk", "card")}
                   width={960}
                   height={600}
                   alt={i === 0 ? copy.imageAlt : ""}

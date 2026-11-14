@@ -1,4 +1,5 @@
 import type { PlanFeatureKey } from "@/lib/plans";
+import type { StoreKind } from "@/lib/store-shots";
 
 /**
  * The shape every locale dictionary must satisfy.
@@ -81,33 +82,34 @@ export interface Dictionary {
     caption: string;
   };
 
-  /** Real stores built on the template library, in a row to move through. */
+  /** The stores: every template of the library as a whole store, to open and look through. */
   templates: {
     kicker: string;
     heading: string;
     intro: string;
-    /** "Template {n}" under each card. */
+    /** "Template {n}" beside an imported store's kind (and on the credits page). */
     templateLabel: string;
-    /** Category of each look shown (lib/store-shots.ts), by look number ("01" …). */
-    categories: Record<string, string>;
-    /** One line about each look shown, by look number. */
-    blurbs: Record<string, string>;
+    /** The kinds the gallery filters by (lib/store-shots.ts STORE_KINDS), and "all". */
+    kinds: Record<StoreKind | "all", string>;
+    /** What each store sells, by look number ("01" …): its name on its card. */
+    names: Record<string, string>;
     /** On a look ZIMOS designed itself (lib/store-shots.ts OWN_LOOKS). */
     ownBadge: string;
-    /** Accessible names: the row of categories, and the two arrows. */
+    /** Accessible name of the row of kinds. */
     pickLabel: string;
-    previous: string;
-    next: string;
-    /** On a computer: pointing at a card scrolls its picture. */
-    hoverHint: string;
     /** On each card: opens the store large, to look through (the viewer). */
     view: string;
-    /** The viewer: its accessible name, its two devices, its close button, and the way in from it. */
+    /** "Show all {n} stores". */
+    showAll: string;
+    /** The viewer: its accessible name, its two devices, its arrows, its close button, the way in from it, and how to look through the page. */
     viewerLabel: string;
     onComputer: string;
     onPhone: string;
+    previous: string;
+    next: string;
     close: string;
     useTemplate: string;
+    scrollHint: string;
     cta: string;
     caption: string;
   };

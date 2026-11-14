@@ -470,24 +470,6 @@
   color: var(--lz-on-solid);
 }
 
-.zx-tag {
-  flex: none;
-  padding: 6px 12px;
-  border: 1px solid var(--lz-line);
-  border-radius: 999px;
-  background: var(--lz-card);
-  font-size: 12.5px;
-  font-weight: 500;
-  white-space: nowrap;
-  color: var(--lz-text);
-}
-
-.zx-tag--own {
-  border-color: color-mix(in srgb, var(--lz-accent) 35%, transparent);
-  background: var(--lz-soft);
-  color: var(--lz-accent-deep);
-}
-
 /* ══ The stage ═══════════════════════════════════════════════════════
    A night-blue panel with rounded corners that reaches up behind the
    floating header (the negative margin is the header's height, less the
@@ -870,155 +852,176 @@
 }
 
 /* ══ The stores ══════════════════════════════════════════════════════
-   A row that scrolls sideways and snaps to its cards, edge to edge of the
-   page; its padding puts the first and the last card in the middle too. */
-.zx-stores .zx-kinds {
-  margin-block-end: 0;
+   A grid of whole stores, each on a laptop with its phone beside it. */
+.zx-kinds--center {
+  justify-content: center;
 }
 
-.zx-rail {
-  --card: min(82vw, 900px);
-  display: flex;
-  gap: clamp(14px, 2.2vw, 34px);
+.zx-kind small {
+  margin-inline-start: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.6;
+}
+
+.zx-shops {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
   list-style: none;
   margin: 0;
-  padding-block: clamp(28px, 3.6vw, 48px) 34px;
-  padding-inline: calc((100% - var(--card)) / 2);
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
+  padding: 0;
 }
 
-.zx-rail::-webkit-scrollbar {
+.zx-shop[hidden] {
   display: none;
 }
 
-.zx-store {
-  flex: 0 0 var(--card);
-  scroll-snap-align: center;
-  opacity: 0.42;
-  scale: 0.92;
-  transition:
-    opacity 0.45s ease,
-    scale 0.55s var(--lz-ease);
-}
-
-.zx-store.is-active {
-  opacity: 1;
-  scale: 1;
-}
-
-/* The devices' ground: room for the phone at the end side, none wasted without it. */
-.zx-store__media {
-  position: relative;
-  padding-block: 6% 5.5%;
-  padding-inline: 8% 17%;
+.zx-shop__open {
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
   border: 1px solid var(--lz-line);
-  border-radius: 30px;
-  background:
-    radial-gradient(90% 80% at 50% 0%, var(--lz-soft), transparent 72%),
-    var(--lz-card);
+  border-radius: 26px;
+  background: var(--lz-card);
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+  transition:
+    translate 0.35s var(--lz-ease),
+    box-shadow 0.35s var(--lz-ease),
+    border-color 0.2s;
 }
 
-.zx-store__media--solo {
-  padding-inline: 12.5%;
+.zx-shop__open:hover {
+  translate: 0 -4px;
+  border-color: color-mix(in srgb, var(--lz-accent) 46%, var(--lz-line));
+  box-shadow: 0 34px 64px -40px rgb(var(--lz-sh) / 0.55);
 }
 
-.zx-store__media .zx-laptop__lid {
+/* The devices' ground: room for the phone at the end side. */
+.zx-shop__media {
+  position: relative;
+  display: block;
+  padding-block: 8% 7%;
+  padding-inline: 8% 17%;
+  background: radial-gradient(90% 90% at 50% 0%, var(--lz-soft), transparent 74%), var(--lz-paper);
+}
+
+.zx-shop__media .zx-laptop,
+.zx-shop__media .zx-laptop__lid,
+.zx-shop__media .zx-laptop__base,
+.zx-shop__shot {
+  display: block;
+}
+
+.zx-shop__media .zx-laptop__lid {
+  border-radius: 12px 12px 3px 3px;
   box-shadow:
     inset 0 0 0 1px rgb(255 255 255 / 0.16),
-    inset 0 0 0 3px #1a1f2a,
-    0 40px 70px -40px rgb(var(--lz-sh) / 0.7);
+    inset 0 0 0 2px #1a1f2a,
+    0 30px 50px -34px rgb(var(--lz-sh) / 0.7);
 }
 
-.zx-store__media .zx-laptop__base {
-  box-shadow: 0 22px 30px -16px rgb(var(--lz-sh) / 0.55);
+.zx-shop__media .zx-laptop__base {
+  block-size: 8px;
+  box-shadow: 0 16px 22px -12px rgb(var(--lz-sh) / 0.5);
 }
 
-/* The page's top fills the screen; pointing at it runs the page down to its end. */
-.zx-store__shot {
+/* The top of the store's page; pointing at the card slides it up a little, as a first look. */
+.zx-shop__shot {
   aspect-ratio: 16 / 10;
   overflow: hidden;
   background: #fff;
-  container-type: size;
 }
 
-.zx-store__shot img {
+.zx-shop__shot img {
   display: block;
   inline-size: 100%;
-  block-size: auto;
-  transition: transform 4.5s ease-in-out;
+  block-size: 100%;
+  object-fit: cover;
+  object-position: top center;
+  transition: scale 0.6s var(--lz-ease);
+  transform-origin: top center;
 }
 
-.zx-store.is-active .zx-store__shot:hover img {
-  transform: translateY(calc(100cqh - 100%));
+.zx-shop__open:hover .zx-shop__shot img {
+  scale: 1.04;
 }
 
-.zx-store__phone {
+.zx-shop__phone {
   position: absolute;
-  inset-block-end: 5.5%;
-  inset-inline-end: 5.5%;
-  inline-size: 17.5%;
-  padding: 0.7%;
-  border-radius: clamp(14px, 2.4vw, 28px);
+  inset-block-end: 7%;
+  inset-inline-end: 6%;
+  inline-size: 20%;
+  padding: 1%;
+  border-radius: 16px;
   box-shadow:
     0 0 0 1px rgb(255 255 255 / 0.16),
-    0 30px 50px -22px rgb(var(--lz-sh) / 0.75);
+    0 24px 36px -18px rgb(var(--lz-sh) / 0.75);
 }
 
-.zx-store__phone img {
-  aspect-ratio: 390 / 800;
-  border-radius: clamp(11px, 2vw, 23px);
+.zx-shop__phone img {
+  aspect-ratio: 1 / 2;
+  border-radius: 12px;
 }
 
-.zx-store__meta {
+.zx-shop__meta {
   display: flex;
-  align-items: flex-start;
+  flex: 1;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin-block-start: 22px;
-  padding-inline: 4px;
+  gap: 14px;
+  padding: 18px 22px 20px;
+  border-block-start: 1px solid var(--lz-line);
 }
 
-.zx-store__meta p {
+.zx-shop__name {
   display: grid;
-  gap: 4px;
-  margin: 0;
+  gap: 2px;
+  min-inline-size: 0;
 }
 
-.zx-store__meta b {
+.zx-shop__name b {
   font-family: var(--font-display);
-  font-size: 21px;
+  font-size: 18px;
   font-weight: 600;
   line-height: 1.5;
   color: var(--lz-ink);
 }
 
-.zx-store__meta p span {
-  font-size: 15px;
-  line-height: 1.7;
+.zx-shop__name small {
+  font-size: 13px;
+  line-height: 1.6;
   color: var(--lz-text);
+}
+
+.zx-shop__go {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--lz-solid);
+  color: var(--lz-on-solid);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.zx-shop__open:hover .zx-shop__go {
+  background: var(--lz-solid-hover);
 }
 
 .zx-stores__foot {
   display: grid;
   justify-items: center;
   gap: 16px;
+  margin-block-start: clamp(28px, 3.4vw, 44px);
   text-align: center;
-}
-
-.zx-stores__hint {
-  margin: 0;
-  font-size: 14px;
-  color: var(--lz-text);
-}
-
-/* Nothing to point with: no hint about pointing. */
-@media (hover: none) {
-  .zx-stores__hint {
-    display: none;
-  }
 }
 
 /* ══ The drawings: a sum, the confirmation queue, an order's risk ═══ */
@@ -2217,24 +2220,6 @@
     flex: none;
   }
 
-  .zx-rail {
-    --card: 84vw;
-  }
-
-  .zx-store__meta {
-    flex-direction: column;
-    gap: 10px;
-    margin-block-start: 18px;
-  }
-
-  .zx-store__meta b {
-    font-size: 18px;
-  }
-
-  .zx-store__media {
-    border-radius: 22px;
-  }
-
   .zx-jstage {
     min-block-size: 0;
     padding: 26px 16px;
@@ -2283,10 +2268,6 @@
     --bw: min(840px, 50vw);
   }
 
-  .zx-rail {
-    --card: min(82vw, 1040px);
-  }
-
   .zx-tool p,
   .zx-step p,
   .zx-points p {
@@ -2304,9 +2285,7 @@
     animation: none;
   }
 
-  .zx-btn,
-  .zx-store,
-  .zx-store__shot img {
+  .zx-btn {
     transition: none;
   }
 }
@@ -2418,12 +2397,6 @@
 }
 
 /* ══ A store's card: its tag and the way to look through it ══════════ */
-.zx-store__acts {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 10px;
-}
 
 .zx-btn--sm {
   min-block-size: 44px;
@@ -2536,8 +2509,33 @@
   background: radial-gradient(60% 60% at 50% 0%, rgb(30 84 226 / 0.36), transparent 70%);
 }
 
+/* The device between the two arrows to the stores beside it. */
+.zx-viewer__stage {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: clamp(8px, 1.6vw, 22px);
+}
+
+.zx-viewer__step {
+  border-color: rgb(255 255 255 / 0.26);
+  color: #fff;
+}
+
+.zx-viewer__step:hover {
+  border-color: #fff;
+}
+
 .zx-viewer__laptop {
   inline-size: min(100%, 980px);
+  justify-self: center;
+}
+
+.zx-viewer__phone {
+  justify-self: center;
+}
+
+.zx-viewer__scroll:focus-visible {
+  outline: 2px solid var(--zx-volt);
+  outline-offset: -2px;
 }
 
 /* The store's page inside the screen: there to scroll through, as far as the capture goes. */
@@ -2663,11 +2661,6 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .zx-store__acts {
-    inline-size: 100%;
-    justify-content: space-between;
-  }
-
   .zx-viewer {
     border-radius: 20px;
   }
@@ -2688,6 +2681,56 @@
 @media (prefers-reduced-motion: reduce) {
   .zx-pain,
   .zx-wa {
+    transition: none;
+  }
+}
+
+@media (max-width: 1080px) {
+  .zx-shops {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .zx-shops {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  /* The kinds in one row that scrolls, not a wrapped block. */
+  .zx-stores .zx-kinds {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    margin-inline: -20px;
+    padding-inline: 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .zx-stores .zx-kinds::-webkit-scrollbar {
+    display: none;
+  }
+
+  .zx-kind {
+    flex: none;
+  }
+
+  .zx-viewer__step {
+    display: none;
+  }
+
+  .zx-viewer__stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .zx-viewer__devices span:not(.ci) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zx-shop__open,
+  .zx-shop__shot img {
     transition: none;
   }
 }

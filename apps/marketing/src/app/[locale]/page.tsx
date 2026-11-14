@@ -68,7 +68,7 @@ export default async function MarketingHome({ params }: Params) {
         <StoreShowcase copy={dict.templates} locale={locale} />
         <WhyZimos copy={dict.benefits} locale={locale} />
         <StartSteps copy={dict.start} />
-        <OrderJourney copy={dict.journey} locale={locale} />
+        <OrderJourney copy={dict.journey} />
         <DashboardShow copy={dict.dashboard} locale={locale} />
         <GrowthTools copy={dict.growth} locale={locale} />
         <HomePricing copy={dict.pricing} trust={dict.trust} locale={locale} />
