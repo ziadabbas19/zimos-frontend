@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode, useCallback } from "react";
-import { flushSync } from "react-dom";
+import { createPortal, flushSync } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   parseMoney,
@@ -10,6 +10,10 @@ import {
   type StorefrontProductDetail,
 } from "@store-builder/api-client";
 import { useCart } from "@/lib/CartProvider";
+import { STICKY_BAR_CLASS, useCartSheet, useQuickOrderSlot } from "@/lib/cartSheet";
+import { barTiers, rewardsLocale, useCartRewardsConfig } from "@/lib/cartRewards";
+import { CartRewardsBar } from "@store-builder/ui/cart-rewards";
+import { RewardDiscountRow } from "../cart/RewardRows";
 import { storeHref } from "@/lib/storeHref";
 import { createStorefrontApiClient } from "@/lib/apiClient";
 import { useShippingQuote } from "@/lib/useShippingQuote";
@@ -304,13 +308,11 @@ export function ProductLanding({
   const coupon = useCouponPreview(client, workspaceId, formOptionsOf(fields).allow_discount_codes ? linkCoupon : "", autosaveLines);
   // Priced fields the shopper filled in, on every unit of the line they ride on (as the server charges them).
   const fieldsExtra = (customFieldsDelta(product.customFields, custom.toInput()) + menu.deltaPerUnit) * (mainLine?.quantity ?? 0);
-  const total =
-    pricing.total +
-    fieldsExtra +
-    (bumpOn && bump ? bump.priceAmount : 0) +
-    productBumpsAmount +
-    shipping.amount -
-    discountOff(shipping.extras, coupon);
+  // The items as the order prices them, before shipping and discounts: what the rewards bar measures.
+  const itemsSubtotal = pricing.total + fieldsExtra + (bumpOn && bump ? bump.priceAmount : 0) + productBumpsAmount;
+  // The store's cart reward these lines reach (the quote's, priced by the server as the order is; 0 without rewards).
+  const rewardOff = shipping.rewards && shipping.rewards.applied && !shipping.rewards.applied.freeShipping ? shipping.rewards.discountAmount : 0;
+  const total = itemsSubtotal + shipping.amount - discountOff(shipping.extras, coupon) - rewardOff;
 
   // The product's view and the start of its order form, for the store's pixels and analytics
   // (SPEC §13.2), once each per page view; ids as the product feed gives them (lib/contentId).
@@ -482,15 +484,39 @@ export function ProductLanding({
   }
 
   // --- sticky mobile bar ---------------------------------------------------
-  const formRef = useRef<HTMLElement>(null);
+  // The form's element, watched wherever it is drawn (on the page, or in the cart sheet).
+  const formRef = useRef<HTMLElement | null>(null);
+  const [formEl, setFormEl] = useState<HTMLElement | null>(null);
+  const setForm = useCallback((el: HTMLElement | null) => {
+    formRef.current = el;
+    setFormEl(el);
+  }, []);
   const [formVisible, setFormVisible] = useState(false);
   useEffect(() => {
-    const el = formRef.current;
-    if (!el || typeof IntersectionObserver === "undefined") return;
+    if (!formEl || typeof IntersectionObserver === "undefined") return;
     const io = new IntersectionObserver(([entry]) => setFormVisible(entry.isIntersecting), { threshold: 0.05 });
-    io.observe(el);
+    io.observe(formEl);
     return () => io.disconnect();
-  }, []);
+  }, [formEl]);
+
+  // --- "Order now" in the cart sheet (Store settings → Cart behavior → quick order, lib/cartSheet) ---
+  // On, the button opens the sheet on this product: its totals, the rewards bar
+  // and this very form, drawn into the sheet. Without the form on this page,
+  // the product goes into the cart and the cart sheet opens instead of the cart page.
+  const sheetControls = useCartSheet(cart.openDrawer);
+  const quickInSheet = sheetControls.opensOn("quickOrder");
+  const quickSlot = useQuickOrderSlot();
+  const formInSheet = Boolean(quickSlot) && cart.sheetView === "quick" && ps.inline_checkout;
+  const rewardsConfig = useCartRewardsConfig(workspaceId);
+  function orderNow() {
+    if (!ps.inline_checkout) return void buyNow();
+    if (quickInSheet) {
+      onFormStart();
+      cart.openQuickOrder();
+      return;
+    }
+    scrollToForm();
+  }
 
   // --- buy now without the inline form --------------------------------------
   const [buying, setBuying] = useState(false);
@@ -510,7 +536,13 @@ export function ProductLanding({
         hasMenu ? menu.toInput() : undefined
       );
       for (const line of bundleExtraLines) await cart.addItem(line.variantId, undefined, line.quantity);
-      // skip_cart: straight to the checkout; otherwise the cart, to review first.
+      // skip_cart: straight to the checkout; otherwise the cart, to review first —
+      // the cart sheet, in place, when the merchant has "Order now" open it.
+      if (!ps.skip_cart && quickInSheet) {
+        setBuying(false);
+        cart.openDrawer();
+        return;
+      }
       router.push(storeHref(basePath, ps.skip_cart ? "/checkout" : "/cart"));
     } catch (err) {
       if (!custom.showServerProblems(err)) {
@@ -527,6 +559,149 @@ export function ProductLanding({
       document.getElementById(fieldId(FORM_PREFIX, "fullName"))?.focus({ preventScroll: true });
     }, 450);
   }
+
+  const orderForm = ps.inline_checkout ? (
+      <section
+        ref={setForm}
+        id="order-form"
+        aria-labelledby="order-form-title"
+        className={formInSheet ? "zt-pdp-order" : `zt-pdp-order ${card} scroll-mt-24 border-2 border-primary/25 p-5 sm:p-6`}
+      >
+        <h2 id="order-form-title" className="flex items-center gap-2 text-lg font-bold text-ink">
+          <CashIcon className="text-primary" />
+          {t.form.title}
+        </h2>
+        <p className="mt-1 text-sm text-ink-soft">{t.form.subtitle}</p>
+
+        <form onSubmit={handleSubmit} onFocusCapture={onFormStart} noValidate className="mt-5 space-y-5">
+          <OrderFormFields
+            idPrefix={FORM_PREFIX}
+            values={values}
+            errors={errors}
+            onChange={onFieldChange}
+            fields={fields}
+            pickup={storePickup}
+            zones={storeZones}
+          />
+          {EMAIL_CAMPAIGNS_ENABLED && quickBoxShown && (
+            <MarketingConsentField
+              checked={marketingOptIn}
+              onChange={setMarketingOptIn}
+              storeName={store?.name ?? ""}
+              locale={locale}
+              className=""
+              {...signupCopy(signup, locale)}
+            />
+          )}
+          {!pickingUp && !storeZones && <ShippingOptionPicker choice={shippingChoice} idPrefix={FORM_PREFIX} />}
+
+          <dl className="space-y-2 rounded-xl bg-paper p-4 text-sm ">
+            <div className="flex justify-between gap-3">
+              <dt className="text-ink-soft">
+                {product.name} × {bundleChoice ? bundleChoice.quantity : tier ? tier.quantity : quantity}
+              </dt>
+              <dd className="shrink-0 text-ink">{money(pricing.full)}</dd>
+            </div>
+            {fieldsExtra > 0 && (
+              <div className="flex justify-between gap-3">
+                <dt className="text-ink-soft">{t.custom.extras}</dt>
+                <dd className="shrink-0 text-ink">{money(fieldsExtra)}</dd>
+              </div>
+            )}
+            {pricing.saving > 0 && (
+              <div className="flex justify-between gap-3 text-success">
+                <dt>{t.checkout.bundleSaving}</dt>
+                <dd className="shrink-0">−{money(pricing.saving)}</dd>
+              </div>
+            )}
+            {bumpOn && bump && (
+              <div className="flex justify-between gap-3">
+                <dt className="text-ink-soft">{bump.name}</dt>
+                <dd className="shrink-0 text-ink">{money(bump.priceAmount)}</dd>
+              </div>
+            )}
+            {productBumps.selected.map((b) => (
+              <div key={b.offerId} className="flex justify-between gap-3">
+                <dt className="text-ink-soft">{b.name}</dt>
+                <dd className="shrink-0 text-ink">{money(b.priceAmount)}</dd>
+              </div>
+            ))}
+            <DiscountRows extras={shipping.extras} coupon={coupon} />
+            <RewardDiscountRow rewards={shipping.rewards} />
+            <div className="flex justify-between gap-3">
+              <dt className="text-ink-soft">{t.checkout.shippingFee}</dt>
+              <dd className="shrink-0 text-ink">
+                <ShippingFee line={shipping.line} />
+              </dd>
+            </div>
+            <div className="flex justify-between gap-3 border-t border-line pt-2 text-base font-bold text-ink">
+              <dt>{t.form.total}</dt>
+              <dd className="shrink-0">{money(total)}</dd>
+            </div>
+          </dl>
+
+          <MinimumOrderNotice extras={shipping.extras} />
+
+          {bump && <OrderBumpCard bump={bump} checked={bumpOn} onChange={setBumpOn} idPrefix={FORM_PREFIX} />}
+          <ProductBumpCards state={productBumps} idPrefix={FORM_PREFIX} />
+
+          {(payment.methods.length > 1 || manualMethods.length > 0) && (
+            <PaymentMethodPicker
+              methods={payment.methods}
+              value={manualChosen ? (methodId as string) : method.id}
+              onChange={setMethodId}
+              idPrefix={FORM_PREFIX}
+              manualMethods={manualMethods}
+            >
+              <ProofFields value={proof} onChange={setProof} errors={proofErrs} idPrefix={`${FORM_PREFIX}-proof`} />
+              <p className="text-xs text-ink-soft">{manualText.laterHint}</p>
+            </PaymentMethodPicker>
+          )}
+
+          <div role="alert" aria-live="assertive" className="empty:hidden">
+            {formError && (
+              <p className="rounded-xl bg-danger-soft px-4 py-3 text-sm font-medium text-danger">{formError}</p>
+            )}
+          </div>
+
+          <button type="submit" disabled={submitting || !available || holiday.paused} className={btnPrimaryLg}>
+            {redirecting
+              ? t.payment.redirecting
+              : submitting
+                ? t.form.submitting
+                : `${method.method === "cod" || manualChosen ? t.form.submit : t.payment.payNow} — ${money(total)}`}
+          </button>
+          {method.method === "cod" && !manualChosen && (
+            <p className="flex items-center justify-center gap-1.5 text-center text-xs text-ink-soft">
+              <CashIcon size={16} />
+              {t.checkout.codHint}
+            </p>
+          )}
+        </form>
+      </section>
+  ) : null;
+
+  // In the cart sheet: the rewards bar on top (a store with cart rewards on), kept in view while the form scrolls, then the form.
+  const rewardTiers = rewardsConfig ? barTiers(rewardsConfig, shipping.rewards) : [];
+  const quickSheetContent = (
+    <>
+      {rewardTiers.length > 0 && (
+        <div data-rewards-sticky="" className={STICKY_BAR_CLASS}>
+          <CartRewardsBar
+            tiers={rewardTiers}
+            subtotal={itemsSubtotal}
+            applied={shipping.rewards?.applied ?? null}
+            notes={shipping.rewards?.notes ?? []}
+            locale={rewardsLocale(locale)}
+            formatMoney={(n) => money(n)}
+            appearance={rewardsConfig?.appearance}
+            speed={sheetControls.sheet.speed}
+          />
+        </div>
+      )}
+      {orderForm}
+    </>
+  );
 
   return (
     <div className="zt-pdp-info flex min-w-0 flex-col gap-6">
@@ -666,7 +841,7 @@ export function ProductLanding({
       <div className="zt-pdp-buy grid gap-3 sm:grid-cols-2">
         <button
           type="button"
-          onClick={ps.inline_checkout ? scrollToForm : () => void buyNow()}
+          onClick={orderNow}
           disabled={!available || buying || holiday.paused}
           className={`${btnPrimary} w-full`}
         >
@@ -700,126 +875,8 @@ export function ProductLanding({
         </div>
       ) : null}
 
-      {/* Inline quick order form */}
-      {ps.inline_checkout && (
-      <section
-        ref={formRef}
-        id="order-form"
-        aria-labelledby="order-form-title"
-        className={`zt-pdp-order ${card} scroll-mt-24 border-2 border-primary/25 p-5 sm:p-6`}
-      >
-        <h2 id="order-form-title" className="flex items-center gap-2 text-lg font-bold text-ink">
-          <CashIcon className="text-primary" />
-          {t.form.title}
-        </h2>
-        <p className="mt-1 text-sm text-ink-soft">{t.form.subtitle}</p>
-
-        <form onSubmit={handleSubmit} onFocusCapture={onFormStart} noValidate className="mt-5 space-y-5">
-          <OrderFormFields
-            idPrefix={FORM_PREFIX}
-            values={values}
-            errors={errors}
-            onChange={onFieldChange}
-            fields={fields}
-            pickup={storePickup}
-            zones={storeZones}
-          />
-          {EMAIL_CAMPAIGNS_ENABLED && quickBoxShown && (
-            <MarketingConsentField
-              checked={marketingOptIn}
-              onChange={setMarketingOptIn}
-              storeName={store?.name ?? ""}
-              locale={locale}
-              className=""
-              {...signupCopy(signup, locale)}
-            />
-          )}
-          {!pickingUp && !storeZones && <ShippingOptionPicker choice={shippingChoice} idPrefix={FORM_PREFIX} />}
-
-          <dl className="space-y-2 rounded-xl bg-paper p-4 text-sm ">
-            <div className="flex justify-between gap-3">
-              <dt className="text-ink-soft">
-                {product.name} × {bundleChoice ? bundleChoice.quantity : tier ? tier.quantity : quantity}
-              </dt>
-              <dd className="shrink-0 text-ink">{money(pricing.full)}</dd>
-            </div>
-            {fieldsExtra > 0 && (
-              <div className="flex justify-between gap-3">
-                <dt className="text-ink-soft">{t.custom.extras}</dt>
-                <dd className="shrink-0 text-ink">{money(fieldsExtra)}</dd>
-              </div>
-            )}
-            {pricing.saving > 0 && (
-              <div className="flex justify-between gap-3 text-success">
-                <dt>{t.checkout.bundleSaving}</dt>
-                <dd className="shrink-0">−{money(pricing.saving)}</dd>
-              </div>
-            )}
-            {bumpOn && bump && (
-              <div className="flex justify-between gap-3">
-                <dt className="text-ink-soft">{bump.name}</dt>
-                <dd className="shrink-0 text-ink">{money(bump.priceAmount)}</dd>
-              </div>
-            )}
-            {productBumps.selected.map((b) => (
-              <div key={b.offerId} className="flex justify-between gap-3">
-                <dt className="text-ink-soft">{b.name}</dt>
-                <dd className="shrink-0 text-ink">{money(b.priceAmount)}</dd>
-              </div>
-            ))}
-            <DiscountRows extras={shipping.extras} coupon={coupon} />
-            <div className="flex justify-between gap-3">
-              <dt className="text-ink-soft">{t.checkout.shippingFee}</dt>
-              <dd className="shrink-0 text-ink">
-                <ShippingFee line={shipping.line} />
-              </dd>
-            </div>
-            <div className="flex justify-between gap-3 border-t border-line pt-2 text-base font-bold text-ink">
-              <dt>{t.form.total}</dt>
-              <dd className="shrink-0">{money(total)}</dd>
-            </div>
-          </dl>
-
-          <MinimumOrderNotice extras={shipping.extras} />
-
-          {bump && <OrderBumpCard bump={bump} checked={bumpOn} onChange={setBumpOn} idPrefix={FORM_PREFIX} />}
-          <ProductBumpCards state={productBumps} idPrefix={FORM_PREFIX} />
-
-          {(payment.methods.length > 1 || manualMethods.length > 0) && (
-            <PaymentMethodPicker
-              methods={payment.methods}
-              value={manualChosen ? (methodId as string) : method.id}
-              onChange={setMethodId}
-              idPrefix={FORM_PREFIX}
-              manualMethods={manualMethods}
-            >
-              <ProofFields value={proof} onChange={setProof} errors={proofErrs} idPrefix={`${FORM_PREFIX}-proof`} />
-              <p className="text-xs text-ink-soft">{manualText.laterHint}</p>
-            </PaymentMethodPicker>
-          )}
-
-          <div role="alert" aria-live="assertive" className="empty:hidden">
-            {formError && (
-              <p className="rounded-xl bg-danger-soft px-4 py-3 text-sm font-medium text-danger">{formError}</p>
-            )}
-          </div>
-
-          <button type="submit" disabled={submitting || !available || holiday.paused} className={btnPrimaryLg}>
-            {redirecting
-              ? t.payment.redirecting
-              : submitting
-                ? t.form.submitting
-                : `${method.method === "cod" || manualChosen ? t.form.submit : t.payment.payNow} — ${money(total)}`}
-          </button>
-          {method.method === "cod" && !manualChosen && (
-            <p className="flex items-center justify-center gap-1.5 text-center text-xs text-ink-soft">
-              <CashIcon size={16} />
-              {t.checkout.codHint}
-            </p>
-          )}
-        </form>
-      </section>
-      )}
+      {/* Inline quick order form: on the page, or in the cart sheet while it shows this product's quick order. */}
+      {orderForm && (formInSheet && quickSlot ? createPortal(quickSheetContent, quickSlot) : orderForm)}
 
       {/* Sticky mobile bar: clears the home indicator, and steps aside while the form is on screen. Off when the product page says so. */}
       {ps.sticky_buy_button && (
@@ -831,7 +888,7 @@ export function ProductLanding({
           </div>
           <button
             type="button"
-            onClick={ps.inline_checkout ? scrollToForm : () => void buyNow()}
+            onClick={orderNow}
             disabled={!available || buying || holiday.paused}
             tabIndex={formVisible ? -1 : 0}
             className={`${btnPrimary} flex-1`}

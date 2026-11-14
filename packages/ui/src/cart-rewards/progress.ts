@@ -17,6 +17,8 @@ export interface RewardTier {
   type: RewardKind;
   value: number | null;
   label: RewardText;
+  /** The icon on its marker (icons.tsx); absent or unknown: by its kind. */
+  icon?: string | null;
 }
 
 /** Lowest threshold first; tiers on the same threshold keep their order. */

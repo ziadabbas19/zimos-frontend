@@ -98,6 +98,9 @@ export function useDialog<T extends HTMLElement>({
  *
  *   present — render the layer (mounted / display) at all
  *   shown   — the open position (drives the transform)
+ *
+ * A `duration` of 0 (a store whose cart moves at no speed) draws it open and
+ * takes it away in the same render: no starting position, nothing to wait for.
  */
 export function useSheetPresence(open: boolean, duration = 320): { present: boolean; shown: boolean } {
   const [shown, setShown] = useState(false);
@@ -131,6 +134,7 @@ export function useSheetPresence(open: boolean, duration = 320): { present: bool
     };
   }, [open, duration]);
 
+  if (duration <= 0) return { present: open, shown: open };
   return { present: open || shown || closing, shown };
 }
 

@@ -60,7 +60,7 @@ vi.mock("@/lib/track", () => ({ track: vi.fn() }));
 
 const { default: CartPage } = await import("@/app/store/[workspaceId]/cart/page");
 const { default: CheckoutPage } = await import("@/app/store/[workspaceId]/checkout/page");
-const { CartDrawer } = await import("@/components/CartDrawer");
+const { CartSheet } = await import("@/components/cart/CartSheet");
 
 const STORE: StoreInfo = {
   workspaceId: "ws1",
@@ -175,9 +175,9 @@ describe("a combo line in the cart", () => {
     expect(screen.getAllByRole("button", { name: getDictionary("ar").cart.remove })).toHaveLength(2);
   });
 
-  it("reads the same in the cart drawer", () => {
+  it("reads the same in the cart sheet", () => {
     state.cart = cartOf([COMBO_LINE, GONE_LINE]);
-    renderIn(<CartDrawer />);
+    renderIn(<CartSheet config={null} />);
     const drawer = screen.getByRole("dialog");
     expect(within(drawer).getByText("Summer set")).toBeTruthy();
     expect(within(drawer).getByText("Shirt × 1 · XL")).toBeTruthy();

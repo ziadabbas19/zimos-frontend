@@ -93,7 +93,7 @@ export interface CartContextValue {
   /** Drop the local cart + token, e.g. right after a successful checkout. */
   clearCart: () => void;
   /**
-   * The slide-over cart drawer (components/CartDrawer). Its open/closed state
+   * The cart sheet (components/cart/CartSheet). Its open/closed state
    * lives here — next to the one cart it shows — so "add to cart" anywhere in
    * the store can open it without a second context. Nothing about the cart's
    * contents is duplicated: the drawer reads `cart` like every other consumer.
@@ -101,6 +101,14 @@ export interface CartContextValue {
   isDrawerOpen: boolean;
   openDrawer: () => void;
   closeDrawer: () => void;
+  /**
+   * What the open sheet shows (components/cart/CartSheet): the cart, or a
+   * product page's quick order — that product, its totals and the quick order
+   * form, which the page draws into the sheet (lib/cartSheet). openDrawer
+   * shows the cart; openQuickOrder the quick order.
+   */
+  sheetView: "cart" | "quick";
+  openQuickOrder: () => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -128,7 +136,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [adding, setAdding] = useState(0);
   const [isDrawerOpen, setDrawerOpen] = useState(false);
-  const openDrawer = useCallback(() => setDrawerOpen(true), []);
+  const [sheetView, setSheetView] = useState<"cart" | "quick">("cart");
+  const openDrawer = useCallback(() => {
+    setSheetView("cart");
+    setDrawerOpen(true);
+  }, []);
+  const openQuickOrder = useCallback(() => {
+    setSheetView("quick");
+    setDrawerOpen(true);
+  }, []);
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
 
   // Resolve the cart once per workspace: reuse a saved token when it still
@@ -291,8 +307,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       isDrawerOpen,
       openDrawer,
       closeDrawer,
+      sheetView,
+      openQuickOrder,
     }),
-    [cart, isLoading, adding, itemCount, addItem, updateItem, removeItem, refreshCart, clearCart, isDrawerOpen, openDrawer, closeDrawer]
+    [cart, isLoading, adding, itemCount, addItem, updateItem, removeItem, refreshCart, clearCart, isDrawerOpen, openDrawer, closeDrawer, sheetView, openQuickOrder]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

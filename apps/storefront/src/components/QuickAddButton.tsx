@@ -2,6 +2,7 @@
 
 import { useState, type MouseEvent } from "react";
 import { useCart } from "@/lib/CartProvider";
+import { useCartSheet } from "@/lib/cartSheet";
 import { useStore } from "@/lib/StoreContext";
 import { CartGlyph, CheckIcon } from "./Icons";
 import { focusRing } from "./ui";
@@ -25,6 +26,7 @@ export function QuickAddButton({
   label: string;
 }) {
   const { addItem, openDrawer } = useCart();
+  const { afterAdd } = useCartSheet(openDrawer);
   const { t } = useStore();
   const [status, setStatus] = useState<"idle" | "loading" | "added" | "error">("idle");
 
@@ -37,7 +39,7 @@ export function QuickAddButton({
     try {
       await addItem(variantId, offerId, 1);
       setStatus("added");
-      openDrawer();
+      afterAdd();
       setTimeout(() => setStatus((s) => (s === "added" ? "idle" : s)), 1500);
     } catch {
       setStatus("error");

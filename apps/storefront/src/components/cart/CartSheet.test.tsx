@@ -113,7 +113,9 @@ beforeEach(() => {
 
 afterEach(() => cleanup());
 
-const sheet = () => render(<CartSheet config={CONFIG as never} />);
+// The trust lines are the store's own (Store settings → Cart behavior), not the rewards config's.
+const SETTINGS = { enabled: true, openOn: { addToCart: false, cartIcon: true, quickOrder: false }, presentation: "auto", speed: "fast", trustItems: CONFIG.trustItems } as const;
+const sheet = () => render(<CartSheet config={CONFIG as never} settings={SETTINGS as never} />);
 
 describe("the cart sheet", () => {
   it("a dialog with the title, the count, the server's reward, what was saved and the total", async () => {

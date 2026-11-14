@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { FILL_MS, customLookOf, iconColorOn, type BarAppearance, type BarLook, type CartSpeed } from "./appearance";
+import { RewardIcon } from "./icons";
+import { useReadableAccent } from "./readableAccent";
+import { rewardIconOf } from "./iconNames";
 import { pop, reducedMotion, useTweenedNumber } from "./motion";
 import { nextTier, reached, rewardsFill, sortedTiers, type RewardText, type RewardTier } from "./progress";
 
@@ -16,10 +20,20 @@ import { nextTier, reached, rewardsFill, sortedTiers, type RewardText, type Rewa
  * placed from the tiers and the subtotal the server priced.
  *
  * Motion is transform and opacity only: the fill is a scaleX from the start
- * edge (~350 ms), a dot pops (~180 ms) the moment it is reached, the amount
- * still to go glides to its new value. Under reduced motion all of it is at
- * once. The bar is a labelled progressbar whose text is the status line;
- * reaching a tier is announced politely.
+ * edge (~350 ms at the cart's "fast" speed, ~500 ms at "normal", none at
+ * "none"), a dot pops (~180 ms) the moment it is reached, the amount still to
+ * go glides to its new value. Under reduced motion all of it is at once. The
+ * bar is a labelled progressbar whose text is the status line; reaching a
+ * tier is announced politely.
+ *
+ * Its look: the store's theme (`appearance` absent or `inherit`: the store's
+ * accent for the fill, the theme's other colour tokens and the usual shapes,
+ * so a theme change, dark mode included, reaches it on its own; an accent too
+ * pale or too dark to read on the track and the card is shown as the nearest
+ * shade that is, readableAccent.ts), or the merchant's custom look
+ * (appearance.ts). Each
+ * reward shows its icon (icons.tsx). A reached marker is filled and an
+ * unreached one only outlined, so the state never rests on colour alone.
  */
 
 export type CartRewardsLocale = "ar" | "en";
@@ -80,34 +94,6 @@ export function cartRewardsStatus({ tiers, subtotal, applied, locale, formatMone
   return appliedLabel ? t.appliedAll(appliedLabel) : t.allReached;
 }
 
-function TierIcon({ type }: { type: RewardTier["type"] }) {
-  // Inline and decorative: the label under the dot says what it is.
-  if (type === "free_shipping") {
-    return (
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="rtl:-scale-x-100">
-        <path d="M3 6h11v9H3zM14 9h4l3 3v3h-7" />
-        <circle cx="7" cy="17" r="1.6" />
-        <circle cx="17" cy="17" r="1.6" />
-      </svg>
-    );
-  }
-  if (type === "percent") {
-    return (
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-        <path d="M18 6 6 18" />
-        <circle cx="7.5" cy="7.5" r="2" />
-        <circle cx="16.5" cy="16.5" r="2" />
-      </svg>
-    );
-  }
-  return (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M3 12V4h8l9 9-8 8z" />
-      <circle cx="7.5" cy="7.5" r="1.4" />
-    </svg>
-  );
-}
-
 export interface CartRewardsBarProps {
   tiers: readonly RewardTier[];
   /** The subtotal the server priced (after product and offer prices, bundles, combos). */
@@ -124,29 +110,43 @@ export interface CartRewardsBarProps {
   className?: string;
   /** Under the bar, after the notes (the dashboard puts nothing here; the store may). */
   footer?: ReactNode;
+  /** How it looks: absent or `inherit`, the store's theme (as it always looked). */
+  appearance?: BarAppearance | null;
+  /** The store's cart speed (Store settings → Cart behavior): how fast the fill glides; "none" moves nothing. */
+  speed?: CartSpeed;
 }
 
-export function CartRewardsBar({ tiers, subtotal, applied, notes = [], locale, formatMoney, loading = false, className = "", footer }: CartRewardsBarProps) {
+/** A marker's side in pixels, and its icon's. */
+const MARKER_PX = { sm: 22, md: 28, lg: 36 } as const;
+const ICON_PX = { sm: 12, md: 14, lg: 18 } as const;
+
+export function CartRewardsBar({ tiers, subtotal, applied, notes = [], locale, formatMoney, loading = false, className = "", footer, appearance = null, speed = "fast" }: CartRewardsBarProps) {
   const t = TEXT[locale];
   const list = sortedTiers(tiers);
   const titleId = useId();
   const fill = rewardsFill(list, subtotal);
   const next = nextTier(list, subtotal);
+  // null: the theme's look, drawn exactly as before.
+  const look: BarLook | null = customLookOf(appearance);
+  const still = speed === "none";
+  // The store's accent, or the nearest shade of it that reads on the track and the card (readableAccent.ts).
+  const [root, setRoot] = useState<HTMLElement | null>(null);
+  const accentFix = useReadableAccent(root, !look?.fillColor);
 
   // The fill grows from empty once the card is on screen, then follows the cart. Empty on the
   // first draw everywhere (the server's too), so a page drawn there and in the browser agree.
   const [shownFill, setShownFill] = useState(0);
   useEffect(() => {
     if (loading) return;
-    if (reducedMotion() || typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
+    if (still || reducedMotion() || typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
       setShownFill(fill);
       return;
     }
     const frame = window.requestAnimationFrame(() => setShownFill(fill));
     return () => window.cancelAnimationFrame(frame);
-  }, [fill, loading]);
+  }, [fill, loading, still]);
 
-  const remaining = useTweenedNumber(next ? next.remainingAmount : 0);
+  const remaining = useTweenedNumber(next ? next.remainingAmount : 0, still ? 0 : 350);
   const exact = cartRewardsStatus({ tiers: list, subtotal, applied, locale, formatMoney });
   const shown = cartRewardsStatus({ tiers: list, subtotal, applied, locale, formatMoney }, next ? remaining : undefined);
 
@@ -162,7 +162,7 @@ export function CartRewardsBar({ tiers, subtotal, applied, notes = [], locale, f
     wasReached.current = reachedNow;
     if (!before || before.length !== reachedNow.length) return;
     const newly = reachedNow.map((r, i) => r && !before[i]).map((r, i) => (r ? i : -1)).filter((i) => i >= 0);
-    for (const i of newly) pop(dots.current[i]);
+    if (!still && (!look || look.reachedPop)) for (const i of newly) pop(dots.current[i]);
     if (newly.length) setAnnouncement(t.unlocked(list[newly[newly.length - 1]].label[locale]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reachedKey, loading]);
@@ -171,11 +171,40 @@ export function CartRewardsBar({ tiers, subtotal, applied, notes = [], locale, f
 
   const knownNotes = (notes as readonly string[]).filter((n): n is CartRewardsNote => n in t.notes);
 
+  // ---- the custom look's parts (each falls back to today's when the store inherits).
+  const size = look ? look.markerSize : "md";
+  const markers = !look || look.marker !== "none";
+  // The track's inner edges, half a marker in from each end (in rem at the default size, as it always was).
+  const edge = size === "md" ? "0.875rem" : `${MARKER_PX[size] / 2}px`;
+  const edges = size === "md" ? "1.75rem" : `${MARKER_PX[size]}px`;
+  const trackHeight = look && look.shape === "thin" ? "h-1" : "h-2";
+  const round = look && look.corners === "square" ? "rounded-none" : "rounded-full";
+  const segmented = Boolean(look && look.shape === "segmented");
+  const trackStyle: CSSProperties | undefined = look?.trackColor ? { backgroundColor: look.trackColor } : undefined;
+  const fillColor = look?.fillColor ?? accentFix;
+  const fillStyle = (scale: number): CSSProperties => ({
+    transform: `scaleX(${scale})`,
+    ...(fillColor ? { backgroundColor: fillColor } : {}),
+    ...(speed !== "fast" ? { transitionDuration: `${FILL_MS[speed]}ms` } : {}),
+  });
+  // The curve is CART_EASE; in a class so reduced motion can take the transition away.
+  const fillClass = `absolute inset-0 origin-left ${round} ${fillColor ? "" : "bg-primary"} transition-transform duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform rtl:origin-right motion-reduce:transition-none`;
+  const markerShape = look && look.marker === "rounded_square" ? (size === "lg" ? "rounded-lg" : "rounded-md") : "rounded-full";
+  const markerSize = size === "md" ? "h-7 w-7" : size === "sm" ? "h-[22px] w-[22px]" : "h-9 w-9";
+  const markerTop = trackHeight === "h-1" ? "top-0.5" : "top-1";
+  const reachedMarker = (on: boolean): { className: string; style?: CSSProperties } => {
+    if (on && fillColor) return { className: "", style: { backgroundColor: fillColor, borderColor: fillColor, color: iconColorOn(fillColor) } };
+    return { className: on ? "border-primary bg-primary text-on-primary" : "border-line-strong bg-paper-raised text-ink-soft" };
+  };
+
   return (
-    <section aria-labelledby={titleId} className={`rounded-2xl border border-line bg-paper p-3.5 ${className}`}>
+    <section ref={setRoot} aria-labelledby={titleId} className={`rounded-2xl border border-line bg-paper p-3.5 ${className}`}>
       <h3 id={titleId} className="sr-only">
         {t.title}
       </h3>
+      {/* What the page draws the accent and the track with, read to keep the fill readable (readableAccent.ts). */}
+      <span hidden data-probe="accent" className="bg-primary" />
+      <span hidden data-probe="track" className="bg-line" />
       {loading ? (
         <div aria-busy="true" aria-label={t.loading} className="space-y-3">
           <span className="block h-4 w-4/5 animate-pulse rounded-md bg-line/70 motion-reduce:animate-none" />
@@ -184,11 +213,16 @@ export function CartRewardsBar({ tiers, subtotal, applied, notes = [], locale, f
         </div>
       ) : (
         <>
-          <p className="text-sm font-medium leading-snug text-ink" aria-hidden="true">
-            {shown}
-          </p>
+          {(!look || look.showMessage) && (
+            <p className={`text-sm font-medium leading-snug text-ink${look && look.messageAlign === "center" ? " text-center" : ""}`} aria-hidden="true">
+              {shown}
+            </p>
+          )}
 
-          <div className="relative mt-4 px-3.5 pb-1">
+          <div
+            className={`relative ${!look || look.showMessage ? "mt-4" : "mt-2"} ${size === "md" ? "px-3.5" : size === "sm" ? "px-[11px]" : "px-[18px]"} pb-1`}
+            data-bar-shape={look ? look.shape : undefined}
+          >
             <div
               role="progressbar"
               aria-label={t.progress}
@@ -196,40 +230,66 @@ export function CartRewardsBar({ tiers, subtotal, applied, notes = [], locale, f
               aria-valuemax={100}
               aria-valuenow={Math.round(fill * 100)}
               aria-valuetext={exact}
-              className="relative h-2 overflow-hidden rounded-full bg-line"
+              className={segmented ? `relative flex ${trackHeight} gap-[3px]` : `relative ${trackHeight} overflow-hidden ${round} ${look?.trackColor ? "" : "bg-line"}`}
+              style={segmented ? undefined : trackStyle}
             >
-              <div
-                // The curve is CART_EASE; in a class so reduced motion can take the transition away.
-                className="absolute inset-0 origin-left rounded-full bg-success transition-transform duration-[350ms] ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform rtl:origin-right motion-reduce:transition-none"
-                style={{ transform: `scaleX(${shownFill})` }}
-              />
+              {segmented ? (
+                // One segment per reward, each filling over the money between its two thresholds.
+                list.map((tier, i) => (
+                  <span key={`${tier.type}-${tier.thresholdAmount}-${i}`} data-segment="" className={`relative flex-1 overflow-hidden ${round} ${look?.trackColor ? "" : "bg-line"}`} style={trackStyle}>
+                    <span className={fillClass} style={fillStyle(Math.min(1, Math.max(0, shownFill * list.length - i)))} />
+                  </span>
+                ))
+              ) : (
+                <div className={fillClass} style={fillStyle(shownFill)} />
+              )}
             </div>
-            {list.map((tier, i) => {
-              const on = reachedNow[i];
-              return (
-                <span
-                  key={`${tier.type}-${tier.thresholdAmount}-${i}`}
-                  ref={(el) => {
-                    dots.current[i] = el;
-                  }}
-                  aria-hidden="true"
-                  className={`absolute top-1 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 transition-colors duration-200 rtl:translate-x-1/2 motion-reduce:transition-none ${
-                    on ? "border-success bg-success text-paper-raised" : "border-line-strong bg-paper-raised text-ink-soft"
-                  }`}
-                  // The dots sit on the inner track (inside its padding), at equal steps.
-                  style={{ insetInlineStart: `calc(0.875rem + (100% - 1.75rem) * ${(i + 1) / list.length})` }}
-                >
-                  <TierIcon type={tier.type} />
-                </span>
-              );
-            })}
+            {markers &&
+              list.map((tier, i) => {
+                const on = reachedNow[i];
+                const paint = reachedMarker(on);
+                return (
+                  <span
+                    key={`${tier.type}-${tier.thresholdAmount}-${i}`}
+                    ref={(el) => {
+                      dots.current[i] = el;
+                    }}
+                    aria-hidden="true"
+                    data-reached={on ? "" : undefined}
+                    className={`absolute ${markerTop} flex ${markerSize} -translate-x-1/2 -translate-y-1/2 items-center justify-center ${markerShape} border-2 transition-colors duration-200 rtl:translate-x-1/2 motion-reduce:transition-none ${paint.className}`}
+                    // The dots sit on the inner track (inside its padding), at equal steps.
+                    style={{ insetInlineStart: `calc(${edge} + (100% - ${edges}) * ${(i + 1) / list.length})`, ...paint.style }}
+                  >
+                    <RewardIcon name={rewardIconOf(tier)} size={ICON_PX[size]} />
+                  </span>
+                );
+              })}
           </div>
 
-          <ol className="mt-4 grid gap-1 text-[11px] leading-tight" style={{ gridTemplateColumns: `repeat(${list.length}, minmax(0, 1fr))` }}>
+          <ol className={`${markers ? "mt-4" : "mt-2.5"} grid gap-1 text-[11px] leading-tight`} style={{ gridTemplateColumns: `repeat(${list.length}, minmax(0, 1fr))` }}>
             {list.map((tier, i) => (
-              <li key={`${tier.type}-${tier.thresholdAmount}-${i}`} className={`min-w-0 text-end ${reachedNow[i] ? "text-ink" : "text-ink-soft"}`}>
-                <span className="block truncate font-semibold">{tier.label[locale]}</span>
-                <span className="block truncate tabular-nums">{formatMoney(tier.thresholdAmount)}</span>
+              <li
+                key={`${tier.type}-${tier.thresholdAmount}-${i}`}
+                ref={
+                  markers
+                    ? undefined
+                    : (el) => {
+                        dots.current[i] = el;
+                      }
+                }
+                data-reached={reachedNow[i] ? "" : undefined}
+                className={`min-w-0 text-end ${reachedNow[i] ? "text-ink" : "text-ink-soft"}`}
+              >
+                {markers ? (
+                  <span className="block truncate font-semibold">{tier.label[locale]}</span>
+                ) : (
+                  // No markers: the icon sits by the name, filled once reached.
+                  <span className="flex min-w-0 items-center justify-end gap-1 font-semibold">
+                    <RewardIcon name={rewardIconOf(tier)} size={12} filled={reachedNow[i]} className="shrink-0" />
+                    <span className="truncate">{tier.label[locale]}</span>
+                  </span>
+                )}
+                {(!look || look.showAmounts) && <span className="block truncate tabular-nums">{formatMoney(tier.thresholdAmount)}</span>}
               </li>
             ))}
           </ol>

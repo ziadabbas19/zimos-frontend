@@ -169,6 +169,8 @@ export interface WorkspaceSettings {
   default_item_weight_grams?: number | null;
   /** Read-only here — changed through POST /shipping/pricing-mode. Absent = "rates". */
   shipping_pricing_mode?: ShippingPricingMode;
+  /** How the store's cart opens (endpoints/cartSheet.ts); absent = the defaults. */
+  cart_sheet?: Partial<import("./endpoints/cartSheet").CartSheetSettings>;
   /**
    * Read-only here — changed through PATCH /shipping/settings. The merchant's
    * price per governorate code (rate pricing only); absent = the default rate.
@@ -328,6 +330,8 @@ export interface UpdateWorkspacePayload {
     funnel_offer_window_minutes?: number | null;
     /** Needs orders.manage on top of website.edit. `null` goes back to the built-in message. */
     confirmation_whatsapp_template?: string | null;
+    /** How the store's cart opens (endpoints/cartSheet.ts). Sent whole; `null` goes back to the defaults. */
+    cart_sheet?: import("./endpoints/cartSheet").CartSheetSettings | null;
   };
 }
 

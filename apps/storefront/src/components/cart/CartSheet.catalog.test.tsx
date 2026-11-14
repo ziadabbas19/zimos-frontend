@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, renderHook, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 
-// The drawer reads the catalogue only to name and picture its lines: not on
-// every page a visitor with an empty cart opens, but once the cart has a
-// line, the drawer opens or a line is on its way in. The cart and checkout
+// The cart sheet reads the catalogue only to name and picture its lines: not
+// on every page a visitor with an empty cart opens, but once the cart has a
+// line, the sheet opens or a line is on its way in. The cart and checkout
 // pages read the same catalogue at the same moment: one request between them.
 
 const listStorefrontProducts = vi.fn();
@@ -23,7 +23,7 @@ vi.mock("@/components/StoreRoute", () => ({
   useStoreBasePath: () => "/store/ws1",
 }));
 
-// Whatever else the open drawer asks for (shipping, holidays) fails quietly.
+// Whatever else the open sheet asks for (shipping, holidays) fails quietly.
 vi.mock("@/lib/apiClient", () => ({
   createStorefrontApiClient: () =>
     new Proxy(
@@ -50,7 +50,8 @@ vi.mock("@/lib/CartProvider", () => ({
   }),
 }));
 
-const { CartDrawer } = await import("./CartDrawer");
+const { CartSheet } = await import("./CartSheet");
+const Sheet = () => <CartSheet config={null} />;
 const { forgetCatalogs, useCatalog } = await import("@/lib/useCatalog");
 
 const coat = {
@@ -84,16 +85,16 @@ beforeEach(() => {
 
 afterEach(() => cleanup());
 
-describe("the cart drawer's catalogue", () => {
-  it("is not read on a page whose visitor has an empty cart and a closed drawer", async () => {
-    render(<CartDrawer />);
+describe("the cart sheet's catalogue", () => {
+  it("is not read on a page whose visitor has an empty cart and a closed sheet", async () => {
+    render(<Sheet />);
     await tick();
     expect(listStorefrontProducts).not.toHaveBeenCalled();
   });
 
-  it("is read once the cart has a line, and names it in the open drawer", async () => {
+  it("is read once the cart has a line, and names it in the open sheet", async () => {
     Object.assign(cartState, { cart: { currency: "EGP", items: [line], subtotal: 100000 }, itemCount: 1, isDrawerOpen: true });
-    render(<CartDrawer />);
+    render(<Sheet />);
     expect(await screen.findByText("Belted coat")).toBeTruthy();
     expect(listStorefrontProducts).toHaveBeenCalledTimes(1);
     expect(listStorefrontProducts).toHaveBeenCalledWith("ws1", { limit: 48 });
@@ -101,31 +102,31 @@ describe("the cart drawer's catalogue", () => {
 
   it("is read while a first line is being added, before the cart answers", async () => {
     cartState.isAdding = true;
-    render(<CartDrawer />);
+    render(<Sheet />);
     await waitFor(() => expect(listStorefrontProducts).toHaveBeenCalledTimes(1));
   });
 
-  it("is read when the drawer is opened on an empty cart", async () => {
+  it("is read when the sheet is opened on an empty cart", async () => {
     cartState.isDrawerOpen = true;
-    render(<CartDrawer />);
+    render(<Sheet />);
     await waitFor(() => expect(listStorefrontProducts).toHaveBeenCalledTimes(1));
   });
 
   it("stays read when the cart empties again: no second request", async () => {
     Object.assign(cartState, { cart: { currency: "EGP", items: [line], subtotal: 100000 }, itemCount: 1 });
-    const view = render(<CartDrawer />);
+    const view = render(<Sheet />);
     await waitFor(() => expect(listStorefrontProducts).toHaveBeenCalledTimes(1));
     Object.assign(cartState, { cart: { currency: "EGP", items: [], subtotal: 0 }, itemCount: 0 });
-    view.rerender(<CartDrawer />);
+    view.rerender(<Sheet />);
     Object.assign(cartState, { cart: { currency: "EGP", items: [line], subtotal: 100000 }, itemCount: 1 });
-    view.rerender(<CartDrawer />);
+    view.rerender(<Sheet />);
     await tick();
     expect(listStorefrontProducts).toHaveBeenCalledTimes(1);
   });
 });
 
 describe("useCatalog", () => {
-  it("is one request for two readers at the same moment (the drawer and the cart page)", async () => {
+  it("is one request for two readers at the same moment (the sheet and the cart page)", async () => {
     const a = renderHook(() => useCatalog("ws1"));
     const b = renderHook(() => useCatalog("ws1"));
     await waitFor(() => expect(a.result.current.loaded && b.result.current.loaded).toBe(true));

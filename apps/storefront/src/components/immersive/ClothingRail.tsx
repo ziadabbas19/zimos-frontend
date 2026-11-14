@@ -3,6 +3,7 @@
 import * as React from "react";
 import dynamic from "next/dynamic";
 import { useOptionalCart } from "@/lib/CartProvider";
+import { useCartSheet } from "@/lib/cartSheet";
 import type { BuyGroup, GarmentKind } from "@/lib/railGarment";
 import { ArtDefs, Defs, DrawnMask, Fabric, GarmentTop, Hanger, Photo, SideArt, SideHanger } from "./railParts";
 import { clamp, HOOK_TOP, mix, SIDE, VB_H, VB_W } from "./railGeometry";
@@ -170,6 +171,7 @@ export function ClothingRail({
   const count = items.length;
   // The cart where the rail stands on a store page; without one (a page drawn on its own) adding is simply not offered.
   const cart = useOptionalCart();
+  const sheet = useCartSheet(cart?.openDrawer);
   const sectionRef = React.useRef(null as HTMLElement | null);
   const stageRef = React.useRef(null as HTMLDivElement | null);
   const slots = React.useRef([] as (HTMLButtonElement | null)[]);
@@ -734,11 +736,12 @@ export function ClothingRail({
           onLift={(lift) => setLifted(lift ? openIndex : null)}
           onClose={(toCart) => {
             const index = openIndex;
-            // Added to the cart: the cart drawer opens and takes the focus instead of the hanger.
-            if (!toCart) returnFocus.current = index;
+            // Added to the cart: the cart sheet opens (when the merchant wants it to, lib/cartSheet) and takes the focus instead of the hanger.
+            const sheetOpens = toCart && sheet.opensOn("addToCart");
+            if (!sheetOpens) returnFocus.current = index;
             close();
             impulse(index, (index % 2 ? 1 : -1) * 44);
-            if (toCart) cart?.openDrawer();
+            if (toCart) sheet.afterAdd();
           }}
         />
       )}

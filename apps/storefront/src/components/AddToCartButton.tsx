@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { CustomizationInput } from "@store-builder/api-client";
 import { useCart } from "@/lib/CartProvider";
+import { useCartSheet } from "@/lib/cartSheet";
 import { useStore } from "@/lib/StoreContext";
 import { cartErrorMessage } from "@/lib/placeOrder";
 import { CartGlyph, CheckIcon } from "./Icons";
@@ -39,6 +40,7 @@ export function AddToCartButton({
   onAddError?: (err: unknown) => boolean;
 }) {
   const { addItem, openDrawer } = useCart();
+  const { afterAdd } = useCartSheet(openDrawer);
   const { t } = useStore();
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -53,10 +55,10 @@ export function AddToCartButton({
     try {
       await addItem(variantId, offerId, defaultQuantity, customizations, options);
       setStatus("added");
-      // The drawer is the confirmation: the line, the subtotal and the way to
-      // checkout, without leaving the page. The button still says "added"
-      // underneath for when the drawer is closed again.
-      openDrawer();
+      // The cart sheet opens when the merchant wants it to (Store settings → Cart behavior,
+      // lib/cartSheet); either way the button says "added" and the header's
+      // count moves, so the shopper knows without leaving the page.
+      afterAdd();
       setTimeout(() => setStatus((s) => (s === "added" ? "idle" : s)), 2000);
     } catch (err) {
       if (onAddError && onAddError(err)) {

@@ -10,6 +10,7 @@ import { TrackOrderNotes } from "@/components/TrackOrderNotes";
 import { TrackOrderProgress } from "@/components/TrackOrderProgress";
 import { btnPrimary, btnSecondary, card, skeleton } from "@/components/ui";
 import { useCart } from "@/lib/CartProvider";
+import { useCartSheet } from "@/lib/cartSheet";
 import { usePaymentMethodText } from "@/lib/paymentMethodText";
 import { addressSummary } from "@/lib/shopperAddress";
 import { isShopperSignedOutError, shopperErrorMessage } from "@/lib/shopperSession";
@@ -43,6 +44,7 @@ export function AccountOrder() {
   const a = t.account;
   const { api } = useAccount();
   const cart = useCart();
+  const { afterAdd, onCartLinkClick } = useCartSheet(cart.openDrawer);
   const payText = usePaymentMethodText();
   const [order, setOrder] = useState<ShopperOrder | null>(null);
   const [failure, setFailure] = useState<"missing" | "error" | null>(null);
@@ -87,7 +89,7 @@ export function AccountOrder() {
         }
       }
       setReorder({ status: "done", added, missing });
-      if (added.length > 0) cart.openDrawer();
+      if (added.length > 0) afterAdd();
     } catch (err) {
       if (!isShopperSignedOutError(err)) setReorder({ status: "error", message: shopperErrorMessage(err, a) });
     }
@@ -220,9 +222,10 @@ export function AccountOrder() {
                             {line.name}: {a.reasonLowStock(line.quantity)}
                           </p>
                         ))}
-                      <button type="button" onClick={cart.openDrawer} className={`${btnSecondary} mt-3`}>
+                      {/* The cart sheet when the merchant has the cart icon open it, else the cart page (lib/cartSheet). */}
+                      <StoreLink href="/cart" onClick={onCartLinkClick} className={`${btnSecondary} mt-3`}>
                         {t.shop.viewCart}
-                      </button>
+                      </StoreLink>
                     </div>
                   ) : (
                     <p className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">{a.reorderNothing}</p>

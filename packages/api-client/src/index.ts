@@ -53,6 +53,8 @@ export * from "./endpoints/reviews";
 export * from "./endpoints/combos";
 // Cart rewards: spend thresholds that unlock a discount or free shipping (cartRewards/, CART_REWARDS_ENABLED).
 export * from "./endpoints/cartRewards";
+// How every store's cart opens: the taps, bottom sheet / side drawer / popup, the speed (storefront/cartSheet.js).
+export * from "./endpoints/cartSheet";
 // Email campaigns: a store emails its customers who agreed to marketing (emailCampaigns/, EMAIL_CAMPAIGNS_ENABLED).
 export * from "./endpoints/emailCampaigns";
 // Where shoppers sign up for those emails: the merchant's places, and the footer and popup signup.
