@@ -24,6 +24,45 @@ const sharedLayers = (source) => [...source.matchAll(/^import '(@store-builder\/
 const layers = (source) => [...source.matchAll(/^import '([^']+\.css)'/gm)].map((m) => m[1]);
 const script = (page) => /<script>([\s\S]*?)<\/script>/.exec(page)?.[1];
 
+/**
+ * The font families an app loads, each with its weights ({ tajawal: [400, 500, 700], … }),
+ * however it loads them: a Google Fonts stylesheet in its index.html, or the files served
+ * with the app that the src/fonts.css its main.tsx imports declares (fontsource, the same
+ * Google files). A family is named the way fontsource names its package: "Plus Jakarta
+ * Sans" is plus-jakarta-sans.
+ */
+const loadedFonts = (app) => {
+  const fonts = {};
+  const add = (family, weight) => {
+    const key = family.toLowerCase().replaceAll(" ", "-");
+    fonts[key] = [...new Set([...(fonts[key] ?? []), weight])].sort((a, b) => a - b);
+  };
+  const href = /href="(https:\/\/fonts\.googleapis\.com\/css2[^"]+)"/.exec(read(`../../${app}/index.html`))?.[1];
+  for (const family of href ? new URL(href).searchParams.getAll("family") : []) {
+    // "Fraunces:opsz,wght@9..144,500;9..144,600" is Fraunces 500 and 600; a family with no axes is 400.
+    const [name, spec = "wght@400"] = family.split(":");
+    const [axes, tuples] = spec.split("@");
+    const at = axes.split(",").indexOf("wght");
+    for (const tuple of tuples.split(";")) add(name, Number(tuple.split(",")[at]));
+  }
+  if (/^import '\.\/fonts\.css'$/m.test(read(`../../${app}/src/main.tsx`))) {
+    const css = read(`../../${app}/src/fonts.css`);
+    for (const [, path] of css.matchAll(/^@import "([^"]+)";/gm)) {
+      const [, slug, weight] = /^@fontsource\/([a-z0-9-]+)\/(\d+)\.css$/.exec(path) ?? [];
+      assert.ok(slug, `${app}/src/fonts.css imports ${path}: teach loadedFonts what it holds`);
+      add(slug, Number(weight));
+    }
+    for (const [, rule] of css.matchAll(/@font-face\s*\{([^}]*)\}/g)) {
+      const family = /font-family:\s*"([^"]+)"/.exec(rule)?.[1];
+      const [, from, to = from] = /font-weight:\s*(\d+)(?:\s+(\d+))?/.exec(rule) ?? [];
+      assert.ok(family && from, `an @font-face of ${app}/src/fonts.css without a family or a weight`);
+      // A variable font's range ("500 700") holds every weight between.
+      for (let weight = Number(from); weight <= Number(to); weight += 100) add(family, weight);
+    }
+  }
+  return fonts;
+};
+
 describe("the console's theme is the merchant dashboard's", () => {
   it("loads the same shared layers, in the same order", () => {
     const shared = sharedLayers(adminMain);
@@ -72,10 +111,14 @@ describe("the look before first paint", () => {
     assert.ok(text.includes('e.setAttribute("data-glass", "off")'));
     assert.ok(text.includes("(prefers-color-scheme: dark)"));
   });
+});
 
-  it("loads the same fonts as the dashboard (Tajawal draws the Arabic)", () => {
-    const fonts = (page) => /href="(https:\/\/fonts\.googleapis\.com\/css2[^"]+)"/.exec(page)?.[1];
-    assert.ok(fonts(adminPage)?.includes("family=Tajawal"));
-    assert.equal(fonts(adminPage), fonts(dashboardPage));
+describe("the console's fonts", () => {
+  // The same families at the same weights, wherever each app takes them from: the
+  // dashboard serves them with the app (src/fonts.css), the console still links Google Fonts.
+  it("are the dashboard's, family for family and weight for weight (Tajawal draws the Arabic)", () => {
+    const fonts = loadedFonts("platform-admin");
+    assert.ok(fonts.tajawal, "no Tajawal: every Arabic word would fall back to a system font");
+    assert.deepEqual(fonts, loadedFonts("merchant-dashboard"));
   });
 });
