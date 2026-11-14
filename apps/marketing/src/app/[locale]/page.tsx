@@ -1,30 +1,38 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { socialLinksOf } from "@store-builder/ui/platform-info";
+import "../home.css";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
-import { Benefits } from "@/components/benefits";
 import { DashboardShow } from "@/components/dashboard-show";
 import { Faq } from "@/components/faq";
-import { FeaturesSummary } from "@/components/features-summary";
+import { FeatureBento } from "@/components/feature-bento";
 import { FinalCta } from "@/components/final-cta";
+import { GrowthTools } from "@/components/growth-tools";
 import { Hero } from "@/components/hero";
-import { Journey } from "@/components/journey";
+import { Idea } from "@/components/idea";
 import { LandingMotion } from "@/components/landing-motion";
+import { OrderJourney } from "@/components/order-journey";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { TemplatesGallery } from "@/components/templates-gallery";
+import { StartSteps } from "@/components/start-steps";
+import { StoreShowcase } from "@/components/store-showcase";
 import { Trust } from "@/components/trust";
 import { WorksWith } from "@/components/works-with";
 import { getPlatformSettings } from "@/lib/platform-settings";
 import { homeJsonLd, jsonLdScript, pageMetadata } from "@/lib/seo";
 
 /**
- * The landing (app/landing.css): real stores in the hero, the platforms
- * strip, the template gallery, benefits, eight of the features with the way
- * to /features, the five steps, the dashboard, what should reassure you, the
- * questions and the closing band — laid out like the Zemam landing. Plans
- * and prices live on /pricing.
+ * The landing (app/home.css, over the kit every page shares in
+ * app/landing.css). A night-blue stage of real stores opens it, then the
+ * platforms strip and nine numbered sections: the idea in one statement and
+ * four facts, the stores to move through, six features with a drawing each,
+ * an order's road from the ad to the profit, the growth tools, real screens
+ * of the dashboard, three steps to start, what should reassure you, and the
+ * questions — then the closing band. Laid out after the two references the
+ * owner gave (2026-11-14): the flow and the store gallery of a competing
+ * store builder, in the look of Net Profit's landing. Plans and prices live
+ * on /pricing.
  */
 
 // Rebuilt at most every 5 minutes, as before the landing: the footer reads the
@@ -55,15 +63,17 @@ export default async function MarketingHome({ params }: Params) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }} />
       <SiteHeader />
       <main id="main" className="lz-page lz-home">
-        <Hero copy={dict.hero} />
+        <Hero copy={dict.hero} locale={locale} />
         <WorksWith copy={dict.integrations} />
-        <TemplatesGallery copy={dict.templates} />
-        <Benefits copy={dict.benefits} />
-        <FeaturesSummary locale={locale} />
-        <Journey copy={dict.journey} />
+        <Idea copy={dict.idea} />
+        <StoreShowcase copy={dict.templates} locale={locale} />
+        <FeatureBento copy={dict.benefits} locale={locale} />
+        <OrderJourney copy={dict.journey} locale={locale} />
+        <GrowthTools copy={dict.growth} locale={locale} />
         <DashboardShow copy={dict.dashboard} locale={locale} />
+        <StartSteps copy={dict.start} />
         <Trust copy={dict.trust} locale={locale} />
-        <Faq copy={dict.faq} locale={locale} />
+        <Faq copy={dict.faq} locale={locale} n="09" />
         <FinalCta copy={dict.finalCta} />
       </main>
       <SiteFooter copy={dict.footer} brand={dict.brand} locale={locale} />

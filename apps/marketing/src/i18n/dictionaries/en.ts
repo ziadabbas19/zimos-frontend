@@ -21,9 +21,9 @@ export const en: Dictionary = {
     homeAria: "ZIMOS home",
     primaryLabel: "Main",
     templates: "Templates",
-    benefits: "Benefits",
-    howItWorks: "How it works",
-    features: "Features",
+    benefits: "Features",
+    howItWorks: "Order journey",
+    growth: "Growth tools",
     pricing: "Pricing",
     faq: "FAQ",
     switchLanguage: "العربية",
@@ -39,19 +39,35 @@ export const en: Dictionary = {
   },
 
   hero: {
-    lines: ["Build.", "Sell."],
-    accent: "Grow.",
-    body: "Start from a ready store template, put in your products and your brand, and publish in Arabic or English. Checkout, order confirmation, shipping and profit reports come built in.",
-    primaryCta: "Start free",
-    secondaryCta: "See the templates",
-    ticks: ["Ready store templates", "Change every word and picture", "No card to start"],
+    badge: "One platform for selling with cash on delivery",
+    lines: ["Your store, live in minutes."],
+    accent: "Your profit, in plain numbers.",
+    body: "Build your online store from a ready template, take your orders and confirm them before they ship, send them with any shipping company, then see what each order really earned once every cost is off.",
+    primaryCta: "Start your free trial",
+    secondaryCta: "See the stores",
+    ticks: ["7-day free trial", "No card needed", "Arabic and English"],
     frameLabel: "yourstore.zimos.co",
-    imageAlt: "A store built on ZIMOS from one of its templates, on a computer and on a phone",
+    imageAlt: "Stores built on ZIMOS from its templates, on a computer and on a phone",
     chips: {
-      template: { title: "Template applied", detail: "Every word editable" },
-      published: { title: "Store published", detail: "yourstore.zimos.co" },
-      order: { title: "Order confirmed", detail: "Ready to ship" },
+      order: { title: "New order", detail: "In the confirmation queue" },
+      confirmed: { title: "Order confirmed", detail: "Tracking code ready" },
+      delivered: { title: "Delivered", detail: "Counted in your profit" },
     },
+    caption: "Real screenshots of ZIMOS stores — demo products and pictures.",
+  },
+
+  idea: {
+    kicker: "The idea",
+    problem:
+      "You advertise your product, take the orders, confirm them by phone, ship them with more than one company, then work out your profit across scattered spreadsheets.",
+    answer:
+      "ZIMOS brings all of it into one platform: a store you build in minutes, orders you confirm before they ship, and real profit you can see day by day.",
+    stats: [
+      { value: "5", label: "minutes to build a complete store and publish it" },
+      { value: "7", label: "days of free trial, with no card" },
+      { value: "6", label: "ready roles for your team, each with its own permissions" },
+      { value: "2", label: "languages for the store and the dashboard: Arabic and English" },
+    ],
   },
 
   integrations: {
@@ -64,128 +80,254 @@ export const en: Dictionary = {
 
   templates: {
     kicker: "Store templates",
-    heading: "Ready store designs. Pick one and make it yours.",
-    intro: "Stores built on ZIMOS from its template library — each with its own phone layout, and every section, word, colour and picture yours to change.",
+    heading: "Pick your store's look, then make it yours.",
+    intro:
+      "Stores built on ZIMOS from its template library — each with its own phone layout, and every section, word, colour and picture yours to change in the editor.",
     templateLabel: "Template {n}",
     categories: {
+      "23": "Fashion and clothing",
       "13": "Smart watches",
       "08": "Shoes and sportswear",
       "04": "Fashion and beauty",
       "10": "Winter wear",
     },
+    blurbs: {
+      "23": "A storefront that hangs every piece on a clothing rail, each with its price tag.",
+      "13": "Wide room for the hero product, and calm colours that bring out its detail.",
+      "08": "Strong colours and bold lines that suit sports products.",
+      "04": "A neat grid of sections that shows your collections side by side.",
+      "10": "A seasonal front that puts your offers and discounts first.",
+    },
+    ownBadge: "Designed by ZIMOS",
+    pickLabel: "Pick a kind of store",
+    previous: "Previous store",
+    next: "Next store",
     hoverHint: "Point at a store to see its whole home page",
-    swipeHint: "Swipe to see more stores",
     cta: "Pick your template",
-    caption: "Real screenshots of the ZIMOS storefront — demo products and pictures.",
+    caption: "Real screenshots of ZIMOS stores — demo products and pictures.",
   },
 
   benefits: {
-    kicker: "What you gain",
-    heading: "Build the store. Everything after it comes with it.",
-    intro:
-      "Templates, an editor where everything is yours to change and a checkout that takes every payment method — plus order confirmation, shipping and real profit, connected in one platform.",
-    hero: {
-      title: "Your store, your way",
-      body: "Start from a template and change any section, word, colour or picture in the editor — drag, drop, copy and paste. No designer, no code.",
-      chips: ["Templates", "Editor", "Phone layout", "Arabic & English", "Your domain"],
-    },
-    items: [
-      {
-        id: "mobile",
-        title: "Right on every phone",
-        body: "Every template comes with its own phone layout, so the store your customer opens from an ad is fast and clean.",
-      },
-      {
-        id: "domain",
-        title: "On your own domain",
-        body: "Start on a ZIMOS address and go live right away, then connect a domain you own whenever you're ready.",
-      },
-      {
-        id: "funnels",
-        title: "Funnels that raise the order",
-        body: "Landing pages, order bumps at checkout and one-click upsells after purchase.",
-      },
-      {
-        id: "confirmation",
-        title: "Confirmed before it ships",
-        body: "Your team confirms orders from one queue before they ship — by call, and by WhatsApp message on the plans that include it — so you stop paying to ship orders nobody wants.",
-      },
-      {
-        id: "shipping",
-        title: "Delivered by your courier",
-        body: "Confirmed orders go to the shipping company you choose with a tracking code, connected directly or by hand, and the cash the courier collects is reconciled.",
-      },
-      {
-        id: "analytics",
-        title: "Your real profit, not a guess",
-        body: "Cost per delivered order, real ROAS and break-even — counted on what was delivered, not on what was ordered.",
-      },
-    ],
-    wide: {
-      title: "It runs on its own",
-      body: "Fake orders flagged, messages sent, statuses changed and work assigned as the order moves — no chasing, no copying.",
-      feed: [
-        { title: "New order", detail: "Checked for repeat and fake numbers" },
-        { title: "Order confirmed", detail: "Tracking code issued" },
-        { title: "Delivered", detail: "Status updated by the courier" },
+    kicker: "Features",
+    heading: "Everything your store needs, in one place.",
+    intro: "No scattered spreadsheets, no tools to wire together yourself, no end-of-month sums.",
+    profit: {
+      title: "Your real profit on every order",
+      body: "Not sales alone: the product's cost, shipping, ads and returns come off, and you see what is actually left for you.",
+      example: "One order, as an example",
+      rows: [
+        { label: "Sale price", value: "900" },
+        { label: "Product cost", value: "−340" },
+        { label: "Shipping and collection", value: "−60" },
+        { label: "Ads", value: "−150" },
+        { label: "Its share of returns", value: "−40" },
       ],
+      net: { label: "Net profit", value: "310" },
+      currency: "EGP",
     },
+    confirmation: {
+      title: "A confirmation queue for your team",
+      body: "Cash-on-delivery orders wait in one queue, and your agent records each call's outcome with one click.",
+      nextCall: "Next call",
+      attempt: "Second attempt",
+      lastOutcome: "Last outcome: no answer",
+      outcomes: ["Confirmed", "Refused", "No answer", "Later"],
+    },
+    shipping: {
+      title: "Shipping with every company",
+      body: "Connected directly or by hand with a tracking code, a shipping rate per governorate, and the cash the courier collected reconciled.",
+      trackingLabel: "Tracking code",
+      statuses: ["Booked", "On its way", "Delivered"],
+    },
+    payments: {
+      title: "Every payment method in one store",
+      body: "Your customer picks the method that suits them, and every order shows a clear payment status.",
+      methods: ["Cash on delivery", "InstaPay", "Mobile wallets", "Cards", "Gift cards", "Store credit"],
+    },
+    fraud: {
+      title: "Protection from fake orders",
+      body: "A risk level on every order with its reasons, phone numbers verified by code, and a block list.",
+      riskLabel: "Risk level",
+      levels: ["Low", "Medium", "High"],
+      reasons: ["Repeated number", "Unusual quantity"],
+    },
+    editor: {
+      title: "A visual editor for your store",
+      body: "You edit the real store as you look at it: one click selects, two clicks type. Each device has its own layout, and every change is a draft until you publish.",
+      tools: ["Text", "Image", "Colour"],
+      draft: "Draft",
+      publish: "Publish",
+      sample: "The new season's collection",
+    },
+    cta: "See every feature",
   },
 
   journey: {
-    kicker: "How it works",
-    heading: "From template to first order in five steps",
-    intro: "Three steps to build your store, then two for every order: confirm it, then ship it and see what it earned.",
-    by: { you: "On you", auto: "Automatic", zimos: "On ZIMOS" },
+    kicker: "Order journey",
+    heading: "From the ad to the profit, on one path.",
+    intro: "From the moment your customer sees the ad until the order's profit is in your account: every step happens inside ZIMOS, with who is responsible and what comes next.",
     steps: [
       {
-        id: "template",
-        by: "you",
-        title: "Pick a template",
-        body: "Choose the design that fits your brand from the template library.",
+        id: "ad",
+        label: "The ad",
+        title: "Your customer sees the ad",
+        body: "Connect your ad pixels to your store, and ZIMOS records where every order came from, so you know which ad brought it.",
       },
       {
-        id: "customize",
-        by: "you",
-        title: "Make it yours",
-        body: "Add your products, logo and colours, and change any word or picture.",
-      },
-      {
-        id: "publish",
-        by: "you",
-        title: "Publish",
-        body: "Your store goes live on a ZIMOS address or on your own domain.",
+        id: "page",
+        label: "Sales page",
+        title: "And orders from one page",
+        body: "A landing page for your product with a short order form, and an order bump at checkout that raises the order's value.",
       },
       {
         id: "confirm",
-        by: "you",
-        title: "Confirm orders",
-        body: "Your team confirms orders before they ship: by call, and by WhatsApp message on the plans that include it.",
+        label: "Confirmation",
+        title: "Your team confirms it before it ships",
+        body: "The order joins the confirmation queue with its risk level, and your agent records the call's outcome with one click.",
       },
       {
         id: "ship",
-        by: "zimos",
-        title: "Shipped and counted",
-        body: "Booked with your courier — by you, or automatically once it's confirmed — with a tracking code, and counted in your real profit.",
+        label: "Shipping",
+        title: "Then it ships with your courier",
+        body: "Book the confirmed order with the shipping company you choose, with a tracking code, and its status updates until delivery.",
+      },
+      {
+        id: "profit",
+        label: "Profit",
+        title: "And you see its real profit",
+        body: "Once delivered, the order is counted in your profit, after the product's cost, shipping and ads.",
       },
     ],
+    demo: {
+      sponsored: "Sponsored",
+      storeName: "Your store",
+      adText: "The watch everyone asks about. Order now and pay on delivery.",
+      shopNow: "Shop now",
+      product: "Smart watch",
+      price: "EGP 1,250",
+      fields: ["Name", "Phone number", "Address"],
+      bump: "Add a spare strap at half price",
+      orderNow: "Order now, pay on delivery",
+      queue: "Confirmation queue",
+      orderNumber: "Order 1042",
+      risk: "Low risk",
+      confirmed: "Confirmed",
+      refused: "Refused",
+      later: "Later",
+      shipment: "Shipment",
+      tracking: "Tracking code",
+      statuses: ["Booked", "On its way", "Delivered"],
+      profitTitle: "The order's profit",
+      rows: [
+        { label: "Sale price", value: "1,250" },
+        { label: "Product cost", value: "−520" },
+        { label: "Shipping", value: "−70" },
+        { label: "Ads", value: "−180" },
+      ],
+      net: { label: "Net profit", value: "480" },
+      currency: "EGP",
+    },
+    note: "An illustration with generic interface elements; the figures are an example.",
+  },
+
+  growth: {
+    kicker: "Growth tools",
+    heading: "Tools that raise your sales and bring customers back.",
+    intro: "Discounts, offers and loyalty you run from the same dashboard, with no outside add-ons.",
+    tools: [
+      {
+        id: "coupons",
+        title: "Discount codes",
+        body: "A percentage, an amount or free shipping, on terms you set: how long, which products, how many uses.",
+        tag: "20% off",
+      },
+      {
+        id: "loyalty",
+        title: "Loyalty points",
+        body: "Your customer earns points with every order and spends them on the next, with VIP levels that add more.",
+        tag: "320 points",
+      },
+      {
+        id: "cart",
+        title: "Cart rewards",
+        body: "A bar in the cart tells your customer how far they are from free shipping or the next discount.",
+        tag: "EGP 150 to free shipping",
+      },
+      {
+        id: "bundles",
+        title: "Bundles and extra offers",
+        body: "Product bundles at one price, an order bump at checkout, and an upsell after purchase.",
+        tag: "Bundle of 3",
+      },
+      {
+        id: "email",
+        title: "Email campaigns",
+        body: "Send your offers to your subscribed customers, all of them or a segment, with a ready editor and a preview before sending.",
+        tag: "Weekend offer",
+      },
+      {
+        id: "recovery",
+        title: "Lost-order recovery",
+        body: "See who left checkout before finishing their order, and turn them into an order or send a recovery message.",
+        tag: "Finish your order",
+      },
+    ],
+    note: "The tools you get depend on your plan; the details are on the",
+    pricingLink: "pricing page",
   },
 
   dashboard: {
     kicker: "Your dashboard",
-    heading: "One screen for the whole store",
-    intro: "Real screens of the dashboard you will run your store from every day: orders, confirmation, shipping and profit in one place.",
+    heading: "Real screens, not marketing pictures.",
+    intro: "This is the dashboard you will run your store from every day, exactly as you will see it.",
     tabs: [
-      { id: "home", label: "Home", alt: "The ZIMOS dashboard home: sales, orders, net profit, confirmation and delivery rates, and store visits" },
-      { id: "orders", label: "Orders", alt: "ZIMOS orders: every order with its stage, customer, place and products, with search and filters" },
-      { id: "profit", label: "Real profit", alt: "ZIMOS real profit: delivered revenue less the goods, both shipping legs, fees and ad spend, day by day" },
+      {
+        id: "home",
+        label: "Home",
+        blurb: "Sales, orders and net profit, with confirmation and delivery rates.",
+        alt: "The ZIMOS dashboard home: sales, orders, net profit, confirmation and delivery rates, and store visits",
+      },
+      {
+        id: "orders",
+        label: "Orders",
+        blurb: "Every order with its stage, customer and products, with search and filters.",
+        alt: "ZIMOS orders: every order with its stage, customer, place and products, with search and filters",
+      },
+      {
+        id: "profit",
+        label: "Real profit",
+        blurb: "Delivered revenue less every cost, day by day.",
+        alt: "ZIMOS real profit: delivered revenue less the goods, both shipping legs, fees and ad spend, day by day",
+      },
     ],
+    previous: "Previous screen",
+    next: "Next screen",
     caption: "Real screens of the ZIMOS dashboard — numbers from a demo store.",
+  },
+
+  start: {
+    kicker: "Getting started",
+    heading: "Start in three steps.",
+    steps: [
+      {
+        title: "Create your account",
+        body: "Sign up free, with no card, then pick the template that fits your brand.",
+      },
+      {
+        title: "Add your products and your brand",
+        body: "Add your products one by one or import them from a file, then put in your logo and colours.",
+      },
+      {
+        title: "Publish and take orders",
+        body: "Your store goes live on a ZIMOS address or on your own domain, and orders reach you in the dashboard.",
+      },
+    ],
+    cta: "Start your free trial",
   },
 
   trust: {
     kicker: "What should reassure you",
-    heading: "Your store and your data are yours, and the price is clear up front",
+    heading: "Your store and your data are yours, and the price is clear up front.",
     intro:
       "ZIMOS is a platform you subscribe to, monthly or yearly. We don't sell products or take part in your sales — you sell to your customers, and we give you the tools.",
     points: [
@@ -207,6 +349,7 @@ export const en: Dictionary = {
       },
     ],
     refundLink: "refund policy",
+    pricingCta: "See plans and prices",
   },
 
   pricing: {
@@ -342,9 +485,19 @@ export const en: Dictionary = {
 
   faq: {
     kicker: "Questions",
-    heading: "Before you start: straight answers",
+    heading: "Questions we hear before the start",
     contactLink: "Still unsure? Talk to us",
     items: [
+      {
+        question: "Do I need technical skills to build my store?",
+        answer:
+          "No. You start from a ready template and edit your store in a visual editor that shows every change as you make it — no code, no designer.",
+      },
+      {
+        question: "Does my store work in Arabic and English?",
+        answer:
+          "Yes. The store and the dashboard both work in Arabic and English, and your customer picks the language they browse in.",
+      },
       {
         question: "Can I change the template's design?",
         answer:
@@ -389,9 +542,9 @@ export const en: Dictionary = {
   },
 
   finalCta: {
-    heading: "Ready? Pick your store's look today.",
-    body: "Start free, with no card. Choose a template, add your first product and publish — then take your first order and judge it all for yourself.",
-    primaryCta: "Start free",
+    heading: "Ready for your first order?",
+    body: "Create your account free, with no card. Pick a template, add your first product and publish your store today.",
+    primaryCta: "Start your free trial",
     secondaryCta: "I have an account — sign in",
   },
 

@@ -16,8 +16,8 @@ Two locales, routed by the first path segment:
 - `en` — English, LTR
 
 All routes live under `src/app/[locale]/…`. `src/proxy.ts` redirects
-locale-less requests (`/`, `/pricing`, …) to a locale, preferring the
-visitor's `Accept-Language` and falling back to `ar`.
+locale-less requests (`/`, `/pricing`, …) to Arabic, whatever language the
+visitor's browser asks for; English is reached from the language switch.
 
 Copy lives in typed dictionaries at `src/i18n/dictionaries/{ar,en}.ts`
 (shape enforced by the `Dictionary` interface in `src/i18n/dictionary.ts`).
@@ -40,8 +40,8 @@ heading/body pairing is chosen by the `lang-*` class the root layout puts on
 
 | | Headings | Body |
 | --- | --- | --- |
-| `en` | Fraunces | Plus Jakarta Sans |
-| `ar` | Noto Kufi Arabic | IBM Plex Sans Arabic |
+| `en` | Fraunces (the landing's titles: Plus Jakarta Sans) | Plus Jakarta Sans |
+| `ar` | Alexandria | IBM Plex Sans Arabic |
 
 ## Scripts
 

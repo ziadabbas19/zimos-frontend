@@ -1,7 +1,7 @@
-import { Fraunces, Plus_Jakarta_Sans, Tajawal } from "next/font/google";
+import { Alexandria, Fraunces, IBM_Plex_Sans_Arabic, Plus_Jakarta_Sans } from "next/font/google";
 
 /**
- * All three families are declared on every route (the locale is only known
+ * All four families are declared on every route (the locale is only known
  * per-request, below the root layout). Each exposes a CSS variable; the root
  * layout puts every `.variable` class on <html> plus a `lang-*` class, and
  * `globals.css` maps `--font-heading` / `--font-body` to the right pair for
@@ -10,10 +10,10 @@ import { Fraunces, Plus_Jakarta_Sans, Tajawal } from "next/font/google";
  * A browser only downloads a family some text on the page uses, but a
  * preloaded one is downloaded whatever the page. next/font preloads per
  * layout, not per locale, and both locales share the root layout, so only
- * Tajawal — the Arabic pages' only family, Arabic being the default locale —
- * is preloaded. The English pair (about 94 KB) is fetched when an English page
- * asks for it (Fraunces only where a title is set in it: pricing, contact and
- * the policies), and an Arabic page no longer downloads it at all.
+ * the Arabic pair — Arabic being the default locale — is preloaded. The
+ * English pair (about 94 KB) is fetched when an English page asks for it
+ * (Fraunces only where a title is set in it: pricing, contact and the
+ * policies), and an Arabic page no longer downloads it at all.
  */
 
 // English headings — display serif.
@@ -33,19 +33,26 @@ export const plusJakarta = Plus_Jakarta_Sans({
   preload: false,
 });
 
-// Arabic headings and body (not a variable font — weights are explicit).
-// Tajawal has no 600, so `font-semibold` renders at 700; 800 is for the
-// landing's headings.
-export const tajawal = Tajawal({
+// Arabic headings: a geometric display face, one variable file for every
+// weight. It carries Latin too, so "ZIMOS" inside an Arabic title matches.
+export const alexandria = Alexandria({
   subsets: ["arabic"],
-  weight: ["400", "500", "700", "800"],
   display: "swap",
-  variable: "--font-tajawal",
+  variable: "--font-alexandria",
+});
+
+// Arabic body (not a variable font — weights are explicit).
+export const plexArabic = IBM_Plex_Sans_Arabic({
+  subsets: ["arabic"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-plex-arabic",
 });
 
 /** Space-separated `.variable` classes for every family. */
 export const fontVariables = [
   fraunces.variable,
   plusJakarta.variable,
-  tajawal.variable,
+  alexandria.variable,
+  plexArabic.variable,
 ].join(" ");

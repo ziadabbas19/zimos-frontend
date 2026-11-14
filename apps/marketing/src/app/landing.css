@@ -1,16 +1,18 @@
 /* ------------------------------------------------------------------ *
- * The landing page (`lz-*`), and the header and footer every page
- * shares. Laid out, sized and moving like the Zemam landing the owner
- * pointed at (2026-10-22) — white page, heavy sans headings, pill
- * buttons, duotone icons — in the ZIMOS colours and logo, and about what
- * ZIMOS sells: the store. Real storefront captures (public/stores) fill
- * the hero and the template gallery. Logical properties throughout, so one stylesheet serves
+ * The kit every page shares (`lz-*`): the header and the footer, the
+ * buttons, the section titles, the strip of platforms, the questions,
+ * the closing band, the reveal on scroll — and the pieces the features
+ * page still draws with (its hero, the cards). The home page's own
+ * sections are in home.css (`zx-*`). Since 2026-11-14 the look follows
+ * Net Profit's landing, the reference the owner gave: a warm paper page,
+ * near-black ink, pill buttons, night-blue panels — in the ZIMOS blues
+ * and logo. Logical properties throughout, so one stylesheet serves
  * Arabic and English; the colours come from the tokens in globals.css,
  * so `.dark` flips them.
  * ------------------------------------------------------------------ */
 
 :root {
-  --lz-bg: var(--color-paper-raised);
+  --lz-bg: var(--color-paper);
   --lz-card: var(--color-paper-raised);
   --lz-paper: var(--color-paper);
   --lz-line: var(--color-line);
@@ -22,20 +24,30 @@
   --lz-duo: #a3bcff;
   --lz-pin: #9db8ff;
   /* Buttons, the selected tab, the step tiles that ZIMOS runs. */
-  --lz-solid: #081f5c;
-  --lz-solid-hover: #133081;
+  --lz-solid: #0c1424;
+  --lz-solid-hover: #165dff;
   --lz-on-solid: #ffffff;
   /* The closing band and the dashboard frame. */
-  --lz-deep: #081f5c;
-  --lz-deep-edge: #2a3f7f;
+  --lz-deep: #070b14;
+  --lz-deep-edge: #1c2740;
+  /* The night-blue panels (the home page's stage, its two dark sections,
+     the closing band): the same in both themes. On them the accent is the
+     logo's light blue. */
+  --zx-night: #070b14;
+  --zx-volt: #6fdcff;
+  /* The hairline between a section's parts, a step darker than a card's edge. */
+  --zx-rule: color-mix(in srgb, var(--color-ink) 16%, transparent);
+  /* A warning inside a drawing (an order's high risk). */
+  --zx-warn: #c62b31;
+  --zx-warn-soft: #fdecec;
   --lz-ok: var(--color-success);
   --lz-ok-soft: var(--color-success-soft);
   --lz-ok-duo: #b5dcc4;
   /* Shadows: navy, as an rgb triplet. */
-  --lz-sh: 8 31 92;
+  --lz-sh: 12 20 36;
   --lz-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
   /* The blue wash at the top of the page, the tinted bands, the moving ground. */
-  --lz-wash: #e9f1ff;
+  --lz-wash: #e6ecfa;
   --lz-tint: var(--color-paper);
   --lz-orb-a: rgb(43 108 255 / 0.2);
   --lz-orb-b: rgb(0 170 255 / 0.16);
@@ -48,11 +60,13 @@
   --lz-accent-deep: #8fb1fa;
   --lz-duo: #2b4378;
   --lz-pin: #3b5ba0;
-  --lz-solid: #5b8df6;
-  --lz-solid-hover: #7aa3f8;
-  --lz-on-solid: #0b1220;
-  --lz-deep: #16233f;
+  --lz-solid: #f1f4fa;
+  --lz-solid-hover: #8fb1fa;
+  --lz-on-solid: #090d16;
+  --lz-deep: #070b14;
   --lz-deep-edge: #2c3a5c;
+  --zx-warn: #ff8a8f;
+  --zx-warn-soft: #3a1518;
   --lz-ok-duo: #1f4d36;
   --lz-sh: 0 0 0;
   --lz-wash: #15213b;
@@ -63,7 +77,7 @@
   --lz-dot: rgb(160 190 255 / 0.08);
 }
 
-/* The home page is white edge to edge, like the reference. */
+/* The page is the paper, edge to edge; the cards on it are white. */
 body:has(main.lz-page) {
   background: var(--lz-bg);
 }
@@ -77,8 +91,12 @@ body:has(main.lz-page) {
   }
 }
 
+/* Titles in the display face: Alexandria in Arabic, the body's grotesque in English. */
 .lz-page :is(h1, h2, h3),
-.lz-sec :is(h2, h3),
+.lz-sec :is(h2, h3) {
+  font-family: var(--font-display);
+}
+
 .lz-top,
 .lz-foot {
   font-family: var(--font-body);
@@ -126,28 +144,11 @@ body:has(main.lz-page) {
   --lz-ic-b: #5fd6ff;
 }
 
-.lz-step__n--run,
-.lz-track__marker {
-  --lz-ic-a: #ffffff;
-  --lz-ic-b: #9fe4ff;
-}
-
-.lz-float__ico--green,
-.lz-ico--ok {
-  --lz-ic-a: #0b7a45;
-  --lz-ic-b: #1fae6a;
-}
-
-.dark .lz-float__ico--green,
-.dark .lz-ico--ok {
-  --lz-ic-a: #4fd08d;
-  --lz-ic-b: #8be8b6;
-}
-
-/* ══ Header — a floating card ═══════════════════════════════════════
-   A white card a little below the top of the window, logo · links in the
-   middle · sign in outlined · the way in in the brand blue. The strip
-   around it lets clicks through to the page. */
+/* ══ Header — a floating pill ═══════════════════════════════════════
+   A white pill a little below the top of the window: logo · links in the
+   middle · sign in as plain words · the way in as an ink pill. On the home
+   page it floats over the night-blue stage. The strip around it lets
+   clicks through to the page. */
 html {
   scroll-padding-top: 112px;
 }
@@ -164,10 +165,12 @@ html {
   pointer-events: auto;
   max-inline-size: 76rem;
   margin-inline: auto;
-  background: var(--lz-card);
+  background: color-mix(in srgb, var(--lz-card) 94%, transparent);
   border: 1px solid var(--lz-line);
-  border-radius: 18px;
+  border-radius: 36px;
   box-shadow: 0 12px 32px -24px rgb(var(--lz-sh) / 0.4);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
   transition:
     background 0.3s ease,
     box-shadow 0.3s ease;
@@ -175,10 +178,13 @@ html {
 
 .lz-top.is-scrolled .lz-top__card,
 .lz-top.is-open .lz-top__card {
-  background: color-mix(in srgb, var(--lz-card) 94%, transparent);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
-  backdrop-filter: blur(18px) saturate(160%);
   box-shadow: 0 20px 44px -24px rgb(var(--lz-sh) / 0.55);
+}
+
+/* The sheet is open: the pill is a card. */
+.lz-top.is-open .lz-top__card {
+  border-radius: 26px;
+  background: var(--lz-card);
 }
 
 .lz-skip {
@@ -203,7 +209,7 @@ html {
   align-items: center;
   gap: 20px;
   padding-block: 12px;
-  padding-inline: 24px 14px;
+  padding-inline: 26px 12px;
 }
 
 .lz-top__brand {
@@ -219,12 +225,12 @@ html {
 }
 
 .lz-top__links a {
-  padding: 9px 16px;
-  border-radius: 10px;
-  color: var(--lz-ink);
+  padding: 9px 15px;
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--lz-ink) 78%, transparent);
   text-decoration: none;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 15.5px;
+  font-weight: 500;
   white-space: nowrap;
   transition:
     background 0.2s,
@@ -232,8 +238,8 @@ html {
 }
 
 .lz-top__links a:hover {
-  background: var(--lz-soft);
-  color: var(--lz-accent);
+  background: color-mix(in srgb, var(--lz-ink) 6%, transparent);
+  color: var(--lz-ink);
 }
 
 .lz-top__end {
@@ -249,9 +255,9 @@ html {
   align-items: center;
   justify-content: center;
   min-block-size: 44px;
-  padding: 0 20px;
-  border-radius: 10px;
-  font-size: 16px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font-size: 15.5px;
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
@@ -263,26 +269,23 @@ html {
 }
 
 .lz-top__login {
-  border: 1px solid color-mix(in srgb, var(--lz-ink) 24%, transparent);
+  padding-inline: 14px;
+  border: 1px solid transparent;
   color: var(--lz-ink);
-  background: var(--lz-card);
 }
 
 .lz-top__login:hover {
-  border-color: var(--lz-accent);
-  color: var(--lz-accent);
+  background: color-mix(in srgb, var(--lz-ink) 6%, transparent);
 }
 
 .lz-top__cta {
-  border: 1px solid var(--color-primary);
-  background: var(--color-primary);
-  color: var(--primary-foreground);
-  box-shadow: 0 10px 22px -14px color-mix(in srgb, var(--color-primary) 80%, transparent);
+  border: 1px solid transparent;
+  background: var(--lz-solid);
+  color: var(--lz-on-solid);
 }
 
 .lz-top__cta:hover {
-  background: color-mix(in srgb, var(--color-primary) 86%, #000);
-  border-color: color-mix(in srgb, var(--color-primary) 86%, #000);
+  background: var(--lz-solid-hover);
 }
 
 /* Square icon buttons: the theme switch (sheet and footer) and the phone menu. */
@@ -294,7 +297,7 @@ html {
   inline-size: 44px;
   block-size: 44px;
   padding: 0;
-  border-radius: 10px;
+  border-radius: 50%;
   border: 1px solid var(--lz-line);
   background: var(--lz-card);
   color: var(--lz-ink);
@@ -407,7 +410,7 @@ html {
   min-block-size: 48px;
   margin-block-start: 14px;
   border: 1px solid color-mix(in srgb, var(--lz-ink) 24%, transparent);
-  border-radius: 10px;
+  border-radius: 999px;
   color: var(--lz-ink);
   font-weight: 600;
   text-decoration: none;
@@ -453,7 +456,7 @@ html {
   gap: 8px;
   min-block-size: 44px;
   padding: 0 16px;
-  border-radius: 12px;
+  border-radius: 999px;
   border: 1px solid var(--lz-line);
   background: var(--lz-card);
   color: var(--lz-ink);
@@ -485,7 +488,7 @@ html {
   inline-size: 44px;
   block-size: 44px;
   padding: 0;
-  border-radius: 12px;
+  border-radius: 50%;
   border: 1px solid var(--lz-line);
   background: var(--lz-card);
   color: var(--lz-ink);
@@ -532,13 +535,17 @@ html {
   }
 
   .lz-top__card {
-    border-radius: 16px;
+    border-radius: 31px;
+  }
+
+  .lz-top.is-open .lz-top__card {
+    border-radius: 22px;
   }
 
   .lz-top__in {
     gap: 10px;
     padding-block: 10px;
-    padding-inline: 14px 10px;
+    padding-inline: 18px 10px;
   }
 
   .lz-top__brand .zimos-logo,
@@ -660,9 +667,10 @@ html {
   mask-image: radial-gradient(75% 65% at 50% 30%, #000 20%, transparent 78%);
 }
 
-/* ══ 1) Hero ═════════════════════════════════════════════════════════
+/* ══ A page's opening (the features page), and the buttons ══════════
    Its ground reaches up behind the floating header to the top of the page,
-   blue at the top and gone by the strip below. */
+   blue at the top and gone by the page below. The home page's own opening
+   is the night-blue stage in home.css. */
 .lz-hero {
   position: relative;
   isolation: isolate;
@@ -677,19 +685,10 @@ html {
   mask-image: linear-gradient(180deg, #000 72%, transparent);
 }
 
-.lz-hero__grid {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.2fr);
-  gap: clamp(36px, 5vw, 72px);
-  align-items: center;
-}
-
 .lz-h1 {
   margin: 0 0 20px;
   font-size: clamp(38px, 4.6vw, 62px);
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.06;
   letter-spacing: -0.035em;
   color: var(--lz-ink);
@@ -699,14 +698,6 @@ html {
 [dir="rtl"] .lz-h1 {
   line-height: 1.28;
   letter-spacing: -0.005em;
-}
-
-.lz-line {
-  display: block;
-}
-
-.lz-accent {
-  color: var(--lz-accent);
 }
 
 .lz-hero__body {
@@ -735,8 +726,8 @@ html {
   color: var(--lz-on-solid);
   text-decoration: none;
   font-weight: 600;
-  font-size: 15.5px;
-  box-shadow: 0 16px 32px -16px rgb(var(--lz-sh) / 0.7);
+  font-size: 16px;
+  box-shadow: 0 16px 32px -18px rgb(var(--lz-sh) / 0.7);
   transition:
     transform 0.3s var(--lz-ease),
     box-shadow 0.3s var(--lz-ease),
@@ -784,251 +775,6 @@ html {
   transform: scaleX(-1) translateX(3px);
 }
 
-.lz-ticks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 22px;
-  list-style: none;
-  margin: 28px 0 0;
-  padding: 0;
-  font-size: 14px;
-  color: var(--lz-text);
-}
-
-.lz-ticks li {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.lz-ticks svg {
-  color: var(--lz-ok);
-  --duo: var(--lz-ok-duo);
-}
-
-/* The real dashboard in a browser frame, and the floating cards. */
-.lz-hero__visual {
-  position: relative;
-  perspective: 1800px;
-}
-
-/* Two glass sheets behind the frame, stepping up and out like a stack of
-   stores, turned with it. */
-.lz-stack {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  transform: rotateY(-7deg) rotateX(3deg);
-  transition: transform 0.8s var(--lz-ease);
-}
-
-[dir="rtl"] .lz-stack {
-  transform: rotateY(7deg) rotateX(3deg);
-}
-
-.lz-hero__visual:hover .lz-stack {
-  transform: none;
-}
-
-.lz-stack i {
-  position: absolute;
-  inset: 0;
-  border-radius: 24px;
-  border: 1px solid color-mix(in srgb, var(--lz-accent) 16%, transparent);
-  background: linear-gradient(160deg, color-mix(in srgb, var(--lz-card) 85%, transparent), color-mix(in srgb, var(--lz-soft) 70%, transparent));
-  box-shadow: 0 30px 60px -44px rgb(var(--lz-sh) / 0.6);
-}
-
-.lz-stack i:first-child {
-  transform: translate(-46px, -40px) scale(0.92);
-  opacity: 0.55;
-}
-
-.lz-stack i:last-child {
-  transform: translate(-23px, -20px) scale(0.96);
-  opacity: 0.85;
-}
-
-.lz-frame {
-  position: relative;
-  z-index: 1;
-  margin: 0;
-  border-radius: 20px;
-  overflow: hidden;
-  background: var(--lz-card);
-  border: 1px solid var(--lz-line);
-  box-shadow:
-    0 2px 4px rgb(var(--lz-sh) / 0.06),
-    0 40px 80px -36px rgb(var(--lz-sh) / 0.55);
-  transform: rotateY(-7deg) rotateX(3deg);
-  transform-origin: 50% 50%;
-  transition: transform 0.8s var(--lz-ease);
-}
-
-[dir="rtl"] .lz-frame {
-  transform: rotateY(7deg) rotateX(3deg);
-}
-
-.lz-hero__visual:hover .lz-frame {
-  transform: none;
-}
-
-.lz-frame__bar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 14px;
-  background: var(--lz-paper);
-  border-block-end: 1px solid var(--lz-line);
-  direction: ltr;
-}
-
-.lz-frame__bar i {
-  inline-size: 10px;
-  block-size: 10px;
-  border-radius: 50%;
-  background: #e8a598;
-}
-
-.lz-frame__bar i:nth-child(2) {
-  background: #ebcb8b;
-}
-
-.lz-frame__bar i:nth-child(3) {
-  background: #a9cbb2;
-}
-
-.lz-frame__bar span {
-  margin-inline: auto;
-  padding: 3px 16px;
-  border-radius: 999px;
-  background: var(--lz-card);
-  border: 1px solid var(--lz-line);
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--lz-text);
-}
-
-.lz-frame img {
-  display: block;
-  inline-size: 100%;
-  block-size: auto;
-}
-
-.lz-float {
-  position: absolute;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--lz-card) 92%, transparent);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--lz-line);
-  box-shadow: 0 22px 40px -22px rgb(var(--lz-sh) / 0.55);
-  white-space: nowrap;
-  animation: lz-bob 6s ease-in-out infinite;
-}
-
-.lz-float b {
-  display: block;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--lz-ink);
-  line-height: 1.3;
-}
-
-.lz-float small {
-  display: block;
-  font-size: 12px;
-  color: var(--lz-text);
-  line-height: 1.3;
-}
-
-.lz-float__ico {
-  display: grid;
-  place-items: center;
-  inline-size: 38px;
-  block-size: 38px;
-  border-radius: 12px;
-  flex: none;
-}
-
-.lz-float__ico--blue {
-  background: var(--lz-soft);
-  color: var(--lz-solid);
-}
-
-.lz-float__ico--green {
-  background: var(--lz-ok-soft);
-  color: var(--lz-ok);
-  --duo: var(--lz-ok-duo);
-}
-
-.lz-float--order {
-  inset-block-start: 12%;
-  inset-inline-start: -34px;
-  animation-delay: -1s;
-}
-
-.lz-float--ship {
-  inset-block-start: -24px;
-  inset-inline-end: 14%;
-  animation-delay: -3s;
-}
-
-.lz-float--ok {
-  inset-block-end: -26px;
-  inset-inline-start: 14%;
-  animation-delay: -4.5s;
-}
-
-.lz-float--ok b {
-  color: var(--lz-ok);
-}
-
-/* On a computer the three stand in one column, the same width, beside the
-   frame on the side the phone is (where the stores show pictures, not their
-   headline), above the phone; they bob together. */
-.lz-floats {
-  position: absolute;
-  z-index: 4;
-  inset-block-start: -26px;
-  right: -46px;
-  display: grid;
-  gap: 10px;
-  animation: lz-bob 7s ease-in-out infinite;
-}
-
-.lz-floats .lz-float {
-  position: relative;
-  inset: auto;
-  padding-block: 9px;
-  padding-inline: 10px 16px;
-  animation: none;
-}
-
-.lz-floats .lz-float__ico {
-  inline-size: 36px;
-  block-size: 36px;
-  border-radius: 11px;
-}
-
-@media (max-width: 1180px) {
-  .lz-floats {
-    right: -14px;
-  }
-}
-
-@media (max-width: 900px) {
-  .lz-floats {
-    right: 12px;
-  }
-}
-
 @keyframes lz-bob {
   0%,
   100% {
@@ -1040,11 +786,6 @@ html {
 }
 
 @media (min-width: 901px) and (max-width: 1180px) {
-  .lz-hero__grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-    gap: 40px;
-  }
-
   .lz-h1 {
     font-size: clamp(34px, 4.3vw, 50px);
   }
@@ -1054,210 +795,9 @@ html {
   }
 }
 
-@media (max-width: 900px) {
-  .lz-hero__grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .lz-hero__copy {
-    max-inline-size: 40rem;
-  }
-
-  .lz-frame,
-  [dir="rtl"] .lz-frame {
-    transform: none;
-  }
-
-  .lz-float--order {
-    inset-inline-start: -8px;
-  }
-
-  .lz-float--ship {
-    inset-inline-end: 8%;
-  }
-}
-
-@media (max-width: 600px) {
-  .lz-float {
-    padding: 8px 10px;
-    gap: 8px;
-    border-radius: 14px;
-  }
-
-  .lz-float b {
-    font-size: 12.5px;
-  }
-
-  .lz-float small {
-    font-size: 11px;
-  }
-
-  .lz-float__ico {
-    inline-size: 30px;
-    block-size: 30px;
-    border-radius: 10px;
-  }
-
-  .lz-float--order {
-    inset-block-start: -18px;
-  }
-
-  .lz-float--ship {
-    display: none;
-  }
-
-  .lz-ticks {
-    font-size: 13px;
-  }
-}
-
-/* The stores: a tall home-page capture shown from the top, and the same
-   store on a phone. Several are stacked and take turns (`--k` = order). */
-.lz-cycle {
-  position: relative;
-  overflow: hidden;
-}
-
-.lz-cycle img {
-  position: absolute;
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
-  object-fit: cover;
-  object-position: top center;
-  opacity: 0;
-  animation: lz-cycle 15s ease-in-out infinite;
-  animation-delay: calc(var(--k) * 5s - 15s);
-}
-
-/* The computer frame's captures each sit in a <picture> (components/hero.tsx). */
-.lz-cycle > img:first-child,
-.lz-cycle > picture:first-child img {
-  opacity: 1;
-}
-
-@keyframes lz-cycle {
-  0%,
-  30% {
-    opacity: 1;
-  }
-  35%,
-  95% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
-.lz-frame__store {
-  aspect-ratio: 16 / 10;
-  background: var(--lz-paper);
-}
-
-/* The captures are left-to-right stores with their headline on the left,
-   so the phone sits on the physical right in both languages. */
-.lz-phone {
-  position: absolute;
-  z-index: 3;
-  inset-block-end: -56px;
-  right: -22px;
-  inline-size: 22%;
-  min-inline-size: 118px;
-  padding: 6px;
-  border-radius: 26px;
-  background: #0b1220;
-  box-shadow:
-    0 2px 4px rgb(var(--lz-sh) / 0.12),
-    0 30px 50px -24px rgb(var(--lz-sh) / 0.6);
-}
-
-.lz-phone::before {
-  content: "";
-  position: absolute;
-  z-index: 2;
-  inset-block-start: 10px;
-  inset-inline-start: 50%;
-  inline-size: 34%;
-  block-size: 9px;
-  margin-inline-start: -17%;
-  border-radius: 999px;
-  background: #0b1220;
-}
-
-.lz-phone__screen {
-  aspect-ratio: 390 / 844;
-  border-radius: 20px;
-  background: #fff;
-}
-
-@media (max-width: 600px) {
-  .lz-hero__visual {
-    display: grid;
-    justify-items: center;
-    padding-block: 14px 8px;
-  }
-
-  .lz-hero__visual .lz-frame {
-    display: none;
-  }
-
-  .lz-phone {
-    position: relative;
-    inset: auto;
-    right: auto;
-    inline-size: min(64%, 250px);
-    min-inline-size: 0;
-    padding: 7px;
-    border-radius: 36px;
-  }
-
-  .lz-phone::before {
-    inset-block-start: 15px;
-    block-size: 11px;
-  }
-
-  .lz-phone__screen {
-    border-radius: 29px;
-  }
-
-  /* Over the phone, not under it, each on its own as before the column. */
-  .lz-floats {
-    display: contents;
-  }
-
-  .lz-hero .lz-float {
-    position: absolute;
-    z-index: 4;
-    padding: 8px 10px;
-    animation: lz-bob 6s ease-in-out infinite;
-  }
-
-  .lz-floats .lz-float__ico {
-    inline-size: 30px;
-    block-size: 30px;
-    border-radius: 10px;
-  }
-
-  .lz-stack {
-    display: none;
-  }
-
-  .lz-hero .lz-float--order {
-    inset-block-start: 10%;
-    inset-inline-start: 0;
-  }
-
-  .lz-hero .lz-float--ok {
-    inset-block-end: 14%;
-    inset-inline-start: auto;
-    inset-inline-end: 0;
-  }
-}
-
-/* ══ 2) Connects with — scrolls by itself ════════════════════════════ */
+/* ══ Connects with — the strip that scrolls by itself ═══════════════ */
 .lz-strip {
-  border-block: 1px solid var(--lz-line);
+  border-block: 1px solid var(--zx-rule);
 }
 
 .lz-strip__in {
@@ -1401,45 +941,6 @@ html {
   border-block-start: 1px solid var(--lz-line);
 }
 
-/* Bands that alternate with the white ones (the templates, the steps, what
-   reassures you): pale blue, with the hero's two lights drifting in two
-   corners, behind the content. */
-.lz-sec--tint {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  background: var(--lz-tint);
-}
-
-.lz-sec--tint::before,
-.lz-sec--tint::after {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  border-radius: 50%;
-  pointer-events: none;
-  background: radial-gradient(closest-side, var(--c), transparent);
-  animation: lz-drift 24s ease-in-out infinite alternate;
-}
-
-.lz-sec--tint::before {
-  --c: var(--lz-orb-a);
-  inline-size: 680px;
-  block-size: 680px;
-  inset-block-start: -260px;
-  right: -240px;
-}
-
-.lz-sec--tint::after {
-  --c: var(--lz-orb-b);
-  inline-size: 600px;
-  block-size: 600px;
-  inset-block-end: -260px;
-  left: -220px;
-  animation-duration: 30s;
-  animation-delay: -9s;
-}
-
 .lz-head {
   max-inline-size: 46rem;
   margin-block-end: clamp(32px, 4vw, 56px);
@@ -1462,8 +963,7 @@ html {
 }
 
 .lz-eye::before,
-.lz-head--center .lz-eye::after,
-.lz-show__head .lz-eye::after {
+.lz-head--center .lz-eye::after {
   content: "";
   inline-size: 20px;
   block-size: 2px;
@@ -1473,10 +973,10 @@ html {
 
 .lz-h {
   margin: 0 0 14px;
-  font-size: clamp(28px, 3.6vw, 46px);
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.025em;
+  font-size: clamp(28px, 3.8vw, 50px);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
   color: var(--lz-ink);
   text-wrap: balance;
 }
@@ -1508,1018 +1008,7 @@ html {
     0 10px 20px -14px rgb(var(--lz-sh) / 0.4);
 }
 
-.lz-ico--ok {
-  color: var(--lz-ok);
-  --duo: var(--lz-ok-duo);
-  background: var(--lz-ok-soft);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lz-ok) 22%, transparent);
-}
-
-/* ══ 2b) Templates — real stores, scroll on hover ═════════════════════ */
-/* Four stores (lib/store-shots.ts): two by two, in a row narrower than the
-   page so the cards don't grow too large. */
-.lz-tpl {
-  display: grid;
-  gap: 28px 24px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  max-inline-size: 60rem;
-  list-style: none;
-  margin: 0 auto;
-  padding: 0;
-}
-
-.lz-tpl__card {
-  position: relative;
-  min-inline-size: 0;
-}
-
-.lz-tpl__media {
-  position: relative;
-}
-
-.lz-tpl__frame {
-  position: relative;
-  border-radius: 18px;
-  overflow: visible;
-  background: var(--lz-card);
-  border: 1px solid var(--lz-line);
-  box-shadow: 0 24px 50px -34px rgb(var(--lz-sh) / 0.55);
-  transition:
-    transform 0.4s var(--lz-ease),
-    box-shadow 0.4s var(--lz-ease),
-    border-color 0.3s;
-}
-
-.lz-tpl__frame .lz-frame__bar {
-  border-start-start-radius: 18px;
-  border-start-end-radius: 18px;
-  padding: 8px 12px;
-}
-
-.lz-tpl__frame .lz-frame__bar i {
-  inline-size: 8px;
-  block-size: 8px;
-}
-
-.lz-tpl__shot {
-  position: relative;
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  border-end-start-radius: 18px;
-  border-end-end-radius: 18px;
-  background: var(--lz-paper);
-}
-
-/* Pointing at the card runs the picture down to the end of the page. */
-.lz-tpl__shot img {
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline: 0;
-  inline-size: 100%;
-  block-size: auto;
-  transition:
-    inset-block-start 7s ease-in-out,
-    transform 7s ease-in-out;
-}
-
-.lz-tpl__card:hover .lz-tpl__frame {
-  transform: translateY(-4px);
-  border-color: var(--lz-pin);
-  box-shadow: 0 30px 60px -34px rgb(var(--lz-sh) / 0.6);
-}
-
-.lz-tpl__card:hover .lz-tpl__shot img {
-  inset-block-start: 100%;
-  transform: translateY(-100%);
-}
-
-.lz-tpl__phone {
-  position: absolute;
-  z-index: 2;
-  inset-block-end: -26px;
-  right: 10px;
-  inline-size: 19%;
-  padding: 4px;
-  border-radius: 14px;
-  background: #0b1220;
-  box-shadow: 0 16px 28px -14px rgb(var(--lz-sh) / 0.6);
-}
-
-.lz-tpl__screen {
-  position: relative;
-  aspect-ratio: 390 / 844;
-  overflow: hidden;
-  border-radius: 10px;
-  background: #fff;
-}
-
-.lz-tpl__screen img {
-  display: block;
-  inline-size: 100%;
-  block-size: auto;
-}
-
-.lz-tpl__meta {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 26px 4px 0;
-  font-size: 15px;
-  color: var(--lz-text);
-}
-
-.lz-tpl__meta b {
-  color: var(--lz-ink);
-  font-weight: 700;
-}
-
-.lz-tpl__meta span {
-  font-size: 13px;
-}
-
-.lz-tpl__hint--touch {
-  display: none;
-}
-
-.lz-tpl__hint {
-  margin: 34px 0 0;
-  text-align: center;
-  font-size: 14px;
-  color: var(--lz-text);
-}
-
-.lz-tpl__cta {
-  margin: 18px 0 0;
-  text-align: center;
-}
-
-.lz-tpl__cta .lz-btn {
-  display: inline-flex;
-}
-
-.lz-tpl__cap {
-  margin-block-start: 22px;
-}
-
-/* Phones: a row to swipe through, each card a phone showing the store as a
-   shopper sees it, its page scrolling slowly up and down by itself. */
-@media (max-width: 600px) {
-  .lz-tpl {
-    display: flex;
-    gap: 16px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    overscroll-behavior-x: contain;
-    margin-inline: -20px;
-    padding: 6px 20px 22px;
-    scrollbar-width: none;
-  }
-
-  .lz-tpl::-webkit-scrollbar {
-    display: none;
-  }
-
-  .lz-tpl__card {
-    flex: 0 0 68%;
-    scroll-snap-align: center;
-  }
-
-  .lz-tpl__frame {
-    display: none;
-  }
-
-  .lz-tpl__phone {
-    position: relative;
-    inset: auto;
-    right: auto;
-    inline-size: 100%;
-    padding: 7px;
-    border-radius: 34px;
-    box-shadow:
-      0 2px 4px rgb(var(--lz-sh) / 0.12),
-      0 26px 40px -24px rgb(var(--lz-sh) / 0.6);
-  }
-
-  .lz-tpl__phone::before {
-    content: "";
-    position: absolute;
-    z-index: 2;
-    inset-block-start: 14px;
-    inset-inline-start: 50%;
-    inline-size: 30%;
-    block-size: 10px;
-    margin-inline-start: -15%;
-    border-radius: 999px;
-    background: #0b1220;
-  }
-
-  .lz-tpl__screen {
-    border-radius: 27px;
-  }
-
-  /* 1600 tall in an 844 window: 47.25% of the picture is below the fold. */
-  .lz-tpl__screen img {
-    animation: lz-scroll-store 16s ease-in-out infinite alternate;
-  }
-
-  .lz-tpl__meta {
-    margin-block-start: 14px;
-  }
-
-  .lz-tpl__hint--pointer {
-    display: none;
-  }
-
-  .lz-tpl__hint--touch {
-    display: block;
-    margin-block-start: 10px;
-  }
-}
-
-@keyframes lz-scroll-store {
-  0%,
-  12% {
-    transform: translateY(0);
-  }
-  88%,
-  100% {
-    transform: translateY(-47.25%);
-  }
-}
-
-/* ══ 3) Benefits — bento ═════════════════════════════════════════════ */
-.lz-bento {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-auto-flow: dense;
-}
-
-.lz-card {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  padding: clamp(20px, 2.2vw, 28px);
-  border-radius: 22px;
-  background: var(--lz-card);
-  border: 1px solid var(--lz-line);
-  box-shadow: 0 1px 2px rgb(var(--lz-sh) / 0.04);
-  transition:
-    transform 0.4s var(--lz-ease),
-    box-shadow 0.4s var(--lz-ease),
-    border-color 0.3s;
-}
-
-.lz-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--lz-pin);
-  box-shadow: 0 22px 44px -26px rgb(var(--lz-sh) / 0.45);
-}
-
-.lz-card h3 {
-  margin: 18px 0 8px;
-  font-size: clamp(17px, 1.3vw, 19px);
-  font-weight: 700;
-  line-height: 1.4;
-  letter-spacing: 0;
-  color: var(--lz-ink);
-}
-
-.lz-card p {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.8;
-  color: var(--lz-text);
-}
-
-.lz-card--hero {
-  grid-column: span 2;
-  grid-row: span 2;
-  display: flex;
-  flex-direction: column;
-  background: var(--lz-paper);
-}
-
-.lz-card--hero h3 {
-  font-size: clamp(24px, 2.4vw, 32px);
-  letter-spacing: -0.02em;
-  margin-block-start: 22px;
-}
-
-[dir="rtl"] .lz-card--hero h3 {
-  letter-spacing: 0;
-}
-
-.lz-card--hero p {
-  font-size: 16px;
-  max-inline-size: 30rem;
-}
-
-/* Three real templates fanned out between the words and the chips; they
-   open a little wider when the card is pointed at. */
-.lz-fan {
-  position: relative;
-  flex: none;
-  block-size: clamp(150px, 13vw, 190px);
-  margin-block: auto;
-}
-
-.lz-fan span {
-  position: absolute;
-  inset-block-start: 10px;
-  left: 50%;
-  inline-size: 44%;
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-  border-radius: 12px;
-  background: var(--lz-card);
-  border: 1px solid var(--lz-line);
-  box-shadow: 0 22px 40px -24px rgb(var(--lz-sh) / 0.6);
-  transition: transform 0.6s var(--lz-ease);
-}
-
-.lz-fan img {
-  display: block;
-  inline-size: 100%;
-  block-size: 100%;
-  object-fit: cover;
-  object-position: top center;
-}
-
-.lz-fan span:nth-child(1) {
-  transform: translateX(-108%) rotate(-7deg) scale(0.86);
-}
-
-.lz-fan span:nth-child(2) {
-  transform: translateX(8%) rotate(7deg) scale(0.86);
-}
-
-.lz-fan span:nth-child(3) {
-  transform: translateX(-50%);
-}
-
-.lz-card--hero:hover .lz-fan span:nth-child(1) {
-  transform: translateX(-118%) rotate(-9deg) scale(0.88);
-}
-
-.lz-card--hero:hover .lz-fan span:nth-child(2) {
-  transform: translateX(18%) rotate(9deg) scale(0.88);
-}
-
-.lz-card--hero:hover .lz-fan span:nth-child(3) {
-  transform: translateX(-50%) translateY(-6px) scale(1.03);
-}
-
-.lz-card--wide {
-  grid-column: span 2;
-}
-
-.lz-card__split {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr);
-  gap: 20px;
-  align-items: center;
-}
-
-.lz-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  list-style: none;
-  margin: 0;
-  padding: 22px 0 0;
-}
-
-.lz-chips li {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding-block: 9px;
-  padding-inline: 14px 12px;
-  border-radius: 999px;
-  background: var(--lz-card);
-  border: 1px solid var(--lz-line);
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--lz-ink);
-  box-shadow: 0 6px 14px -12px rgb(var(--lz-sh) / 0.5);
-}
-
-.lz-chips li > svg {
-  color: var(--lz-accent);
-}
-
-.lz-done {
-  display: inline-grid;
-  place-items: center;
-  inline-size: 20px;
-  block-size: 20px;
-  border-radius: 50%;
-  background: var(--lz-ok);
-  color: #fff;
-}
-
-.lz-feed {
-  display: grid;
-  gap: 8px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.lz-feed li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: var(--lz-paper);
-  border: 1px solid var(--lz-line);
-}
-
-.lz-feed li > span:not(.lz-feed__ico) {
-  flex: 1;
-  min-inline-size: 0;
-}
-
-.lz-feed__ico {
-  display: grid;
-  place-items: center;
-  inline-size: 28px;
-  block-size: 28px;
-  border-radius: 8px;
-  background: var(--lz-card);
-  color: var(--lz-solid);
-  box-shadow: inset 0 0 0 1px var(--lz-line);
-}
-
-.lz-feed b {
-  display: block;
-  font-size: 13.5px;
-  color: var(--lz-ink);
-  line-height: 1.3;
-}
-
-.lz-feed small {
-  display: block;
-  font-size: 12px;
-  color: var(--lz-text);
-}
-
-.lz-feed em {
-  display: grid;
-  place-items: center;
-  inline-size: 22px;
-  block-size: 22px;
-  border-radius: 50%;
-  background: var(--lz-ok-soft);
-  color: var(--lz-ok);
-}
-
-.lz-on .lz-card--hero .lz-chips li,
-.lz-on .lz-feed li {
-  opacity: 0;
-  transform: translateY(8px);
-}
-
-.lz-on .lz-card--hero.in .lz-chips li,
-.lz-on .in .lz-feed li {
-  opacity: 1;
-  transform: none;
-  transition:
-    opacity 0.5s ease,
-    transform 0.5s var(--lz-ease);
-  transition-delay: calc(0.25s + var(--i) * 0.14s);
-}
-
-@media (max-width: 1080px) {
-  .lz-bento {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 680px) {
-  .lz-bento {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .lz-card--hero,
-  .lz-card--wide {
-    grid-column: auto;
-    grid-row: auto;
-  }
-
-  .lz-card__split {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-/* ══ 3b) The features in short — eight cards to /features ═══════════ */
-.lz-fsum {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.lz-fsum > li {
-  display: flex;
-}
-
-.lz-fsum__card {
-  display: flex;
-  flex-direction: column;
-  inline-size: 100%;
-  color: inherit;
-  text-decoration: none;
-}
-
-.lz-fsum__card .lz-ico {
-  inline-size: 48px;
-  block-size: 48px;
-  border-radius: 14px;
-}
-
-.lz-fsum__card h3 {
-  margin-block-start: 16px;
-}
-
-.lz-fsum__more {
-  display: flex;
-  justify-content: center;
-  margin-block-start: clamp(28px, 4vw, 44px);
-}
-
-@media (max-width: 1080px) {
-  .lz-fsum {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-/* A phone: one column, the icon beside the title, as in the benefits. */
-@media (max-width: 680px) {
-  .lz-fsum {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
-  }
-
-  .lz-fsum__card {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    column-gap: 14px;
-    align-items: start;
-    padding: 18px;
-  }
-
-  .lz-fsum__card .lz-ico {
-    grid-row: span 2;
-    inline-size: 46px;
-    block-size: 46px;
-  }
-
-  .lz-fsum__card h3 {
-    margin: 1px 0 4px;
-    font-size: 16.5px;
-  }
-
-  .lz-fsum__more .lz-btn {
-    flex: 1 1 100%;
-    justify-content: center;
-  }
-}
-
-/* ══ 4) How it works — the steps and the road ════════════════════════ */
-.lz-journey {
-  position: relative;
-  padding: clamp(22px, 3vw, 36px);
-  border-radius: 28px;
-  background: var(--lz-card);
-  border: 1px solid var(--lz-line);
-  box-shadow: 0 30px 60px -44px rgb(var(--lz-sh) / 0.5);
-}
-
-.lz-steps {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 18px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.lz-step__n {
-  position: relative;
-  display: grid;
-  place-items: center;
-  inline-size: 58px;
-  block-size: 58px;
-  border-radius: 18px;
-  background: var(--lz-soft);
-  color: var(--lz-solid);
-  border: 1px solid color-mix(in srgb, var(--lz-accent) 22%, transparent);
-}
-
-.lz-step__n em {
-  position: absolute;
-  inset-block-start: -8px;
-  inset-inline-end: -8px;
-  display: grid;
-  place-items: center;
-  inline-size: 22px;
-  block-size: 22px;
-  border-radius: 50%;
-  background: var(--lz-solid);
-  color: var(--lz-on-solid);
-  font-style: normal;
-  font-size: 11.5px;
-  font-weight: 700;
-}
-
-/* The steps ZIMOS runs: the brand navy in both themes, so the icon reads. */
-.lz-step__n--run {
-  background: var(--lz-deep);
-  color: #fff;
-  border-color: var(--lz-deep-edge);
-}
-
-.lz-step__n--run em {
-  background: var(--lz-accent);
-  color: #fff;
-}
-
-.lz-step__by {
-  display: inline-block;
-  margin: 16px 0 8px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 11.5px;
-  font-weight: 700;
-}
-
-.lz-step__by--you {
-  background: var(--color-accent-soft);
-  color: var(--color-accent-dark);
-}
-
-.lz-step__by--auto {
-  background: var(--lz-soft);
-  color: var(--lz-accent-deep);
-}
-
-.lz-step__by--zimos {
-  background: var(--lz-ok-soft);
-  color: var(--lz-ok);
-}
-
-.lz-steps h3 {
-  margin: 0 0 6px;
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1.4;
-  letter-spacing: 0;
-  color: var(--lz-ink);
-}
-
-.lz-steps p {
-  margin: 0;
-  font-size: 14.5px;
-  line-height: 1.8;
-  color: var(--lz-text);
-}
-
-.lz-track {
-  --mk: 44px;
-  position: relative;
-  block-size: 70px;
-  margin-block-start: 26px;
-}
-
-.lz-track__line {
-  position: absolute;
-  inset-inline: 0;
-  inset-block-end: 20px;
-  block-size: 8px;
-  border-radius: 999px;
-  background: var(--lz-soft);
-  overflow: hidden;
-}
-
-.lz-track__line i {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  inline-size: 10%;
-  border-radius: inherit;
-  background: var(--lz-accent);
-  animation: lz-fill 12s ease-in-out infinite;
-}
-
-.lz-track__pin {
-  position: absolute;
-  inset-block-end: 14px;
-  inset-inline-start: calc(var(--p) * 20% - 10% - 10px);
-  inline-size: 20px;
-  block-size: 20px;
-  border-radius: 50%;
-  background: var(--lz-card);
-  border: 3px solid var(--lz-pin);
-}
-
-.lz-track__marker {
-  position: absolute;
-  z-index: 1;
-  inset-block-end: 2px;
-  inset-inline-start: calc(10% - var(--mk) / 2);
-  display: grid;
-  place-items: center;
-  inline-size: var(--mk);
-  block-size: var(--mk);
-  border-radius: 14px;
-  background: var(--lz-deep);
-  border: 1px solid var(--lz-deep-edge);
-  box-shadow: 0 12px 22px -10px rgb(var(--lz-sh) / 0.6);
-  animation: lz-travel 12s ease-in-out infinite;
-}
-
-@keyframes lz-travel {
-  0%,
-  8% {
-    inset-inline-start: calc(10% - var(--mk) / 2);
-  }
-  20%,
-  28% {
-    inset-inline-start: calc(30% - var(--mk) / 2);
-  }
-  40%,
-  48% {
-    inset-inline-start: calc(50% - var(--mk) / 2);
-  }
-  60%,
-  68% {
-    inset-inline-start: calc(70% - var(--mk) / 2);
-  }
-  80%,
-  96% {
-    inset-inline-start: calc(90% - var(--mk) / 2);
-  }
-  100% {
-    inset-inline-start: calc(10% - var(--mk) / 2);
-  }
-}
-
-@keyframes lz-fill {
-  0%,
-  8% {
-    inline-size: 10%;
-  }
-  20%,
-  28% {
-    inline-size: 30%;
-  }
-  40%,
-  48% {
-    inline-size: 50%;
-  }
-  60%,
-  68% {
-    inline-size: 70%;
-  }
-  80%,
-  96% {
-    inline-size: 90%;
-  }
-  100% {
-    inline-size: 10%;
-  }
-}
-
-@media (max-width: 1000px) {
-  .lz-steps {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    row-gap: 30px;
-  }
-}
-
-/* Phones: a vertical timeline, icon beside the words, dashes between. */
-@media (max-width: 860px) {
-  .lz-journey {
-    padding: 20px 18px 14px;
-    border-radius: 22px;
-  }
-
-  .lz-steps {
-    grid-template-columns: minmax(0, 1fr);
-    row-gap: 0;
-  }
-
-  .lz-steps li {
-    position: relative;
-    display: grid;
-    grid-template-columns: 48px minmax(0, 1fr);
-    column-gap: 14px;
-    align-items: start;
-    padding-block-end: 22px;
-  }
-
-  .lz-steps li:last-child {
-    padding-block-end: 4px;
-  }
-
-  .lz-steps li::before {
-    content: "";
-    position: absolute;
-    inset-inline-start: 23px;
-    inset-block: 56px 6px;
-    border-inline-start: 2px dashed var(--lz-line);
-  }
-
-  .lz-steps li:last-child::before {
-    display: none;
-  }
-
-  .lz-step__n {
-    grid-row: span 3;
-    inline-size: 48px;
-    block-size: 48px;
-    border-radius: 15px;
-  }
-
-  .lz-step__n .ph {
-    inline-size: 24px;
-    block-size: 24px;
-  }
-
-  .lz-step__by {
-    justify-self: start;
-    margin: 2px 0 6px;
-  }
-
-  .lz-steps h3 {
-    font-size: 16.5px;
-    margin-block-end: 4px;
-  }
-
-  .lz-steps p {
-    font-size: 14px;
-    line-height: 1.75;
-  }
-
-  .lz-track {
-    margin-block-start: 14px;
-  }
-}
-
-/* ══ 5) The dashboard — a card that straightens as you scroll ════════ */
-.lz-show {
-  position: relative;
-  padding-block: clamp(70px, 9vw, 120px) clamp(40px, 6vw, 90px);
-  scroll-margin-block-start: 112px;
-  overflow: hidden;
-  border-block-start: 1px solid var(--lz-line);
-}
-
-.lz-show__head {
-  max-inline-size: 48rem;
-  margin: 0 auto;
-  padding-inline: 20px;
-  text-align: center;
-  will-change: transform;
-}
-
-.lz-tabs {
-  display: inline-flex;
-  gap: 4px;
-  margin-block-start: 26px;
-  padding: 5px;
-  border-radius: 999px;
-  background: var(--lz-card);
-  border: 1px solid var(--lz-line);
-  box-shadow: 0 10px 24px -18px rgb(var(--lz-sh) / 0.5);
-}
-
-.lz-tabs button {
-  padding: 9px 18px;
-  border: 0;
-  border-radius: 999px;
-  background: none;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--lz-text);
-  cursor: pointer;
-  transition:
-    background 0.2s,
-    color 0.2s;
-}
-
-.lz-tabs button:hover {
-  color: var(--lz-ink);
-}
-
-.lz-tabs button[aria-selected="true"] {
-  background: var(--lz-solid);
-  color: var(--lz-on-solid);
-}
-
-.lz-show__stage {
-  perspective: 1000px;
-  padding-inline: clamp(12px, 4vw, 40px);
-  margin-block-start: clamp(26px, 3.5vw, 44px);
-}
-
-.lz-show__card {
-  max-inline-size: 70rem;
-  margin: 0 auto;
-  padding: clamp(8px, 1.2vw, 14px);
-  border-radius: 30px;
-  background: var(--lz-deep);
-  border: 4px solid var(--lz-deep-edge);
-  transform-origin: 50% 0;
-  will-change: transform;
-  box-shadow:
-    0 9px 20px #0000004a,
-    0 37px 37px #00000042,
-    0 84px 50px #00000026,
-    0 149px 60px #0000000a;
-}
-
-.lz-show__screen {
-  position: relative;
-  border-radius: 20px;
-  overflow: hidden;
-  background: var(--lz-paper);
-  aspect-ratio: 16 / 10;
-}
-
-.lz-show__screen img {
-  position: absolute;
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
-  object-fit: cover;
-  object-position: top center;
-  animation: lz-fade 0.5s ease;
-}
-
-.lz-show__screen img[hidden] {
-  display: none;
-}
-
-@keyframes lz-fade {
-  from {
-    opacity: 0;
-    transform: scale(1.01);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.lz-show__cap {
-  margin: clamp(60px, 8vw, 110px) 0 0;
-  padding-inline: 20px;
-  text-align: center;
-  font-size: 12.5px;
-  color: var(--lz-text);
-}
-
-@media (max-width: 600px) {
-  .lz-show {
-    padding-block: 64px 44px;
-  }
-
-  .lz-tabs {
-    margin-block-start: 20px;
-  }
-
-  .lz-tabs button {
-    padding: 8px 12px;
-    font-size: 13px;
-  }
-
-  .lz-show__card {
-    border-radius: 18px;
-    border-width: 3px;
-    padding: 6px;
-    box-shadow:
-      0 2px 4px rgb(var(--lz-sh) / 0.12),
-      0 34px 50px -30px rgb(var(--lz-sh) / 0.6);
-  }
-
-  .lz-show__screen {
-    border-radius: 12px;
-  }
-
-  .lz-show__cap {
-    margin-block-start: 34px;
-  }
-}
-
-/* ══ 6) What should reassure you ═════════════════════════════════════ */
+/* ══ What the service is — four cards (the pricing page) ════════════ */
 .lz-trust {
   display: grid;
   gap: 16px;
@@ -2569,7 +1058,7 @@ html {
   }
 }
 
-/* ══ 7) Questions ════════════════════════════════════════════════════ */
+/* ══ Questions ═══════════════════════════════════════════════════════ */
 .lz-faqwrap {
   display: grid;
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
@@ -2579,34 +1068,25 @@ html {
 
 .lz-faq {
   display: grid;
-  gap: 10px;
+  border-block-end: 1px solid var(--zx-rule);
 }
 
 .lz-faq details {
-  border-radius: 16px;
-  background: var(--lz-card);
-  border: 1px solid var(--lz-line);
-  padding: 0 20px;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-}
-
-.lz-faq details[open] {
-  border-color: var(--lz-pin);
-  box-shadow: 0 14px 30px -24px rgb(var(--lz-sh) / 0.5);
+  border-block-start: 1px solid var(--zx-rule);
 }
 
 .lz-faq summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  padding-block: 18px;
+  gap: 18px;
+  padding-block: 24px;
   cursor: pointer;
   list-style: none;
-  font-weight: 600;
-  font-size: 15.5px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(16.5px, 1.5vw, 19.5px);
+  line-height: 1.6;
   color: var(--lz-ink);
 }
 
@@ -2618,25 +1098,33 @@ html {
   display: grid;
   place-items: center;
   flex: none;
-  inline-size: 30px;
-  block-size: 30px;
+  inline-size: 40px;
+  block-size: 40px;
   border-radius: 50%;
-  background: var(--lz-soft);
-  color: var(--lz-accent-deep);
+  border: 1px solid color-mix(in srgb, var(--lz-ink) 20%, transparent);
+  color: var(--lz-ink);
   transition:
     transform 0.25s var(--lz-ease),
-    background 0.2s;
+    background 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.lz-faq summary:hover i {
+  border-color: var(--lz-ink);
 }
 
 .lz-faq details[open] summary i {
   transform: rotate(45deg);
+  border-color: transparent;
   background: var(--lz-solid);
   color: var(--lz-on-solid);
 }
 
 .lz-faq p {
-  margin: 0 0 18px;
-  font-size: 15px;
+  max-inline-size: 44rem;
+  margin: -4px 0 26px;
+  font-size: 15.5px;
   line-height: 1.9;
   color: var(--lz-text);
 }
@@ -2651,7 +1139,7 @@ html {
   }
 }
 
-/* ══ 8) The closing band ═════════════════════════════════════════════ */
+/* ══ The closing band ════════════════════════════════════════════════ */
 .lz-end {
   position: relative;
   overflow: hidden;
@@ -2659,10 +1147,13 @@ html {
   min-block-size: 380px;
   display: flex;
   align-items: center;
-  padding: clamp(34px, 6vw, 80px);
-  border-radius: 32px;
+  padding: clamp(34px, 6vw, 84px);
+  border-radius: 30px;
   color: #fff;
-  background: var(--lz-deep);
+  background:
+    radial-gradient(56% 70% at 30% 0%, rgb(30 84 226 / 0.5), transparent 72%),
+    var(--zx-night);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
 }
 
 .lz-end__copy {
@@ -2673,10 +1164,10 @@ html {
 
 .lz-end h2 {
   margin: 0 0 12px;
-  font-size: clamp(28px, 3.6vw, 46px);
-  font-weight: 800;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+  font-size: clamp(30px, 4.2vw, 56px);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
   color: #fff;
 }
 
@@ -2693,14 +1184,16 @@ html {
 }
 
 .lz-btn--light {
-  background: #fff;
-  color: #081f5c;
-  box-shadow: 0 14px 30px -16px rgb(0 0 0 / 0.6);
+  background: linear-gradient(180deg, #97e8ff, #4fc4ff);
+  color: #04142e;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.3),
+    0 18px 40px -14px rgb(79 196 255 / 0.65);
 }
 
 .lz-btn--light:hover {
-  background: #eaf0ff;
-  color: #081f5c;
+  background: linear-gradient(180deg, #b4efff, #6fd0ff);
+  color: #04142e;
 }
 
 .lz-link--light {
@@ -2871,7 +1364,7 @@ html {
 
 /* ══ Footer ══════════════════════════════════════════════════════════ */
 .lz-foot {
-  border-block-start: 1px solid var(--lz-line);
+  border-block-start: 1px solid var(--zx-rule);
   background: var(--lz-bg);
   font-size: 14px;
   color: var(--lz-text);
@@ -2951,20 +1444,6 @@ html {
     margin-inline: auto;
   }
 
-  .lz-ticks {
-    gap: 8px 16px;
-    margin-block-start: 22px;
-  }
-
-  .lz-hero__visual {
-    margin-block-start: 8px;
-  }
-
-  /* The "new order" card sits over it on a phone. */
-  .lz-frame__bar span {
-    display: none;
-  }
-
   .lz-strip__in {
     padding-block: 18px;
   }
@@ -2982,13 +1461,8 @@ html {
   }
 }
 
-/* Benefits and trust: the icon beside the title, not above it. */
+/* The service's four cards: the icon beside the title, not above it. */
 @media (max-width: 680px) {
-  .lz-bento {
-    gap: 12px;
-  }
-
-  .lz-bento > .lz-card:not(.lz-card--hero):not(.lz-card--wide),
   .lz-trust article {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
@@ -2997,7 +1471,6 @@ html {
     padding: 18px;
   }
 
-  .lz-bento > .lz-card:not(.lz-card--hero):not(.lz-card--wide) .lz-ico,
   .lz-trust article .lz-ico {
     grid-row: span 2;
     inline-size: 46px;
@@ -3005,47 +1478,19 @@ html {
     border-radius: 14px;
   }
 
-  .lz-bento > .lz-card:not(.lz-card--hero):not(.lz-card--wide) .lz-ico .ph,
   .lz-trust article .lz-ico .ph {
     inline-size: 24px;
     block-size: 24px;
   }
 
-  .lz-bento > .lz-card:not(.lz-card--hero):not(.lz-card--wide) h3,
   .lz-trust article h3 {
     margin: 1px 0 4px;
     font-size: 16.5px;
   }
 
-  .lz-card p,
   .lz-trust p {
     font-size: 14.5px;
     line-height: 1.75;
-  }
-
-  .lz-card--hero,
-  .lz-card--wide {
-    padding: 20px;
-  }
-
-  .lz-card--hero h3 {
-    font-size: 24px;
-    margin-block-start: 16px;
-  }
-
-  .lz-card--hero p {
-    font-size: 15px;
-  }
-
-  .lz-chips {
-    gap: 8px;
-    padding-block-start: 20px;
-  }
-
-  .lz-chips li {
-    padding-block: 7px;
-    padding-inline: 12px 10px;
-    font-size: 13px;
   }
 
   .lz-trust {
@@ -3058,10 +1503,6 @@ html {
   .lz-in,
   .lz-top__card {
     max-inline-size: 86rem;
-  }
-
-  .lz-show__card {
-    max-inline-size: 78rem;
   }
 
   .lz-h1 {
@@ -3078,9 +1519,7 @@ html {
     font-size: 19px;
   }
 
-  .lz-card p,
   .lz-trust p,
-  .lz-steps p,
   .lz-faq p {
     font-size: 16px;
   }
@@ -3090,10 +1529,6 @@ html {
   .lz-in,
   .lz-top__card {
     max-inline-size: 100rem;
-  }
-
-  .lz-show__card {
-    max-inline-size: 90rem;
   }
 
   .lz-h1 {
@@ -3111,19 +1546,11 @@ html {
     font-size: 21px;
   }
 
-  .lz-card h3,
-  .lz-trust h3,
-  .lz-steps h3 {
+  .lz-trust h3 {
     font-size: 21px;
   }
 
-  .lz-card--hero h3 {
-    font-size: 36px;
-  }
-
-  .lz-card p,
   .lz-trust p,
-  .lz-steps p,
   .lz-faq p,
   .lz-faq summary {
     font-size: 18px;
@@ -3155,7 +1582,7 @@ html {
     transform 0.7s var(--lz-ease);
 }
 
-.lz-on .lz-bento .lz-r.in {
+.lz-on :is(.zx-bento, .zx-tools, .zx-steps) > .lz-r.in {
   transition-delay: calc(var(--d, 0) * 70ms);
 }
 
@@ -3169,37 +1596,17 @@ html {
   border-radius: 10px;
 }
 
+/* Round things keep their shape under the ring. */
+.lz-page :is(.zx-btn, .zx-kind, .zx-round):focus-visible,
+.lz-top :is(.lz-top__cta, .lz-top__login, .lz-top__links a):focus-visible {
+  border-radius: 999px;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .lz-float,
-  /* On a phone the hero's chips bob under a rule of their own (max-width: 600px): stopped here too. */
-  .lz-hero .lz-float,
-  .lz-floats,
   .lz-end__phone,
-  .lz-sec--tint::before,
-  .lz-sec--tint::after,
   .lz-fx__orb,
   .lz-fx__wave,
-  .lz-cycle img,
-  .lz-track__marker,
-  .lz-track__line i,
-  .lz-show__screen img,
   .lz-marquee__track {
-    animation: none;
-  }
-
-  .lz-track__marker {
-    inset-inline-start: calc(90% - var(--mk) / 2);
-  }
-
-  .lz-track__line i {
-    inline-size: 90%;
-  }
-
-  .lz-tpl__shot img {
-    transition: none;
-  }
-
-  .lz-tpl__screen img {
     animation: none;
   }
 
@@ -3214,37 +1621,14 @@ html {
     display: none;
   }
 
-  .lz-frame,
-  .lz-stack,
-  .lz-fan span,
   .lz-btn,
-  .lz-card,
   .lz-arrow {
     transition: none;
   }
 
-  .lz-on .lz-r,
-  .lz-on .lz-card--hero .lz-chips li,
-  .lz-on .lz-feed li {
+  .lz-on .lz-r {
     opacity: 1;
     transform: none;
-  }
-
-  .lz-show__card,
-  .lz-show__head {
-    transform: none !important;
-  }
-}
-
-/*
- * Asked for less motion or less transparency: the hero's chips drop the blur
- * behind them; their own ground is 92% opaque, so they read the same.
- * Everyone else is unchanged.
- */
-@media (prefers-reduced-motion: reduce), (prefers-reduced-transparency: reduce) {
-  .lz-float {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
   }
 }
 
@@ -3264,12 +1648,13 @@ html {
 }
 
 /*
- * On a phone. The lights and lines of the hero and of the closing band stand
- * still where they rest, on every page that has them, and the hero's chips sit
- * without the blur behind them. On the home page (`.lz-home`), everything else
- * that moves for good waits for the page to finish loading (`html.lz-loaded`,
- * set by components/landing-motion.tsx), held on its first frame until then,
- * so the first paint is the same. A computer is unchanged.
+ * On a phone. The lights and lines of a page's opening and of the closing
+ * band stand still where they rest, on every page that has them. On the home
+ * page (`.lz-home`), everything else that moves for good waits for the page
+ * to finish loading (`html.lz-loaded`, set by components/landing-motion.tsx),
+ * held on its first frame until then, so the first paint is the same. A
+ * computer is unchanged. The home page's own sections have the same rules in
+ * home.css.
  */
 @media (max-width: 600px) {
   .lz-hero .lz-fx__orb,
@@ -3279,23 +1664,9 @@ html {
     animation: none;
   }
 
-  .lz-hero .lz-float {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-
   html:not(.lz-loaded) .lz-home .lz-fx__orb,
   html:not(.lz-loaded) .lz-home .lz-fx__wave,
-  html:not(.lz-loaded) .lz-home .lz-float,
-  html:not(.lz-loaded) .lz-home .lz-floats,
-  html:not(.lz-loaded) .lz-home .lz-hero .lz-float,
-  html:not(.lz-loaded) .lz-home .lz-cycle img,
   html:not(.lz-loaded) .lz-home .lz-marquee__track,
-  html:not(.lz-loaded) .lz-home .lz-sec--tint::before,
-  html:not(.lz-loaded) .lz-home .lz-sec--tint::after,
-  html:not(.lz-loaded) .lz-home .lz-tpl__screen img,
-  html:not(.lz-loaded) .lz-home .lz-track__line i,
-  html:not(.lz-loaded) .lz-home .lz-track__marker,
   html:not(.lz-loaded) .lz-home .lz-end__phone {
     animation-play-state: paused;
   }

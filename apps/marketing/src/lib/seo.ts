@@ -29,8 +29,8 @@ export function titleOf(page: string): string {
 
 /**
  * A page's address in each language, and `x-default`: the same address with
- * no language, which proxy.ts sends on to the visitor's language (Arabic when
- * none matches) — the page Google advises for visitors who match neither.
+ * no language, which proxy.ts sends on to the Arabic page, the site's own
+ * language — the page Google advises for visitors who match neither.
  * `path` is "" for the home page, "/pricing" for the pricing page. The paths
  * are relative: the layout's `metadataBase` makes them absolute.
  */

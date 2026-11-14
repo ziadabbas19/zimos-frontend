@@ -13,11 +13,11 @@
 :root {
   color-scheme: light;
 
-  --color-ink: #081f5c;
-  --color-ink-soft: #56648c;
-  --color-paper: #f6f9ff;
+  --color-ink: #0c1424;
+  --color-ink-soft: #5a6274;
+  --color-paper: #f4f4ef;
   --color-paper-raised: #ffffff;
-  --color-line: #e3e8f2;
+  --color-line: #e2e2da;
   /* Border for interactive controls (inputs, selects, textareas, checkboxes).
      WCAG 1.4.11 requires 3:1 for the visual boundary of a UI component;
      --color-line is a decorative hairline (~1.3:1) and fails that, so controls
@@ -47,7 +47,7 @@
   --primary-foreground: #ffffff;
   --secondary: var(--color-primary-soft);
   --secondary-foreground: var(--color-primary-dark);
-  --muted: #e9eef6;
+  --muted: #eaeae3;
   --muted-foreground: var(--color-ink-soft);
   --border: var(--color-line);
   --input: var(--color-line-strong);
@@ -59,9 +59,9 @@
 
   --color-ink: #e7ecf5;
   --color-ink-soft: #a9b4c9;
-  --color-paper: #0b1220;
-  --color-paper-raised: #121b2e;
-  --color-line: #22304a;
+  --color-paper: #090d16;
+  --color-paper-raised: #111827;
+  --color-line: #222c40;
   --color-line-strong: #4f6a9d;
   --color-primary: #5b8df6;
   --color-primary-dark: #2563eb;
@@ -74,7 +74,7 @@
 
   /* The lifted dark primary is light, so text on it is dark. The other
      component tokens are palette references and follow the overrides above. */
-  --primary-foreground: #0b1220;
+  --primary-foreground: #090d16;
   --secondary-foreground: var(--color-primary);
   --muted: #1a2540;
 }
@@ -89,11 +89,14 @@
   --font-heading: var(--font-fraunces), ui-serif, Georgia, "Times New Roman", serif;
   --font-body: var(--font-plus-jakarta), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", sans-serif;
+  /* The landing's titles: the body's grotesque, not the serif. */
+  --font-display: var(--font-body);
 }
 
 .lang-ar {
-  --font-heading: var(--font-tajawal), "Tajawal", "Segoe UI", Tahoma, sans-serif;
-  --font-body: var(--font-tajawal), "Tajawal", "Segoe UI", Tahoma, sans-serif;
+  --font-heading: var(--font-alexandria), "Alexandria", "Segoe UI", Tahoma, sans-serif;
+  --font-body: var(--font-plex-arabic), "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  --font-display: var(--font-heading);
 }
 
 /* ------------------------------------------------------------------ *

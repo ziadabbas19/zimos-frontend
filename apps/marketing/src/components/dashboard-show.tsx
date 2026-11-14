@@ -1,49 +1,28 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useId, useRef, useState, type KeyboardEvent } from "react";
 import type { Locale } from "@/i18n/config";
-import type { Dictionary, ShotTab } from "@/i18n/dictionary";
+import type { Dictionary } from "@/i18n/dictionary";
+import { Arrow } from "./duo-icons";
+import { SectionLabel } from "./section-label";
+
+const two = (n: number) => String(n).padStart(2, "0");
 
 /**
- * Real screens of the dashboard (public/product, one set per language) in a
- * device frame, behind tabs. The frame starts tilted back 20° and straightens
- * as the section scrolls into view, while the heading drifts up — no library,
- * one transform per animation frame, off when motion is reduced.
+ * Real screens of the dashboard (public/product, one set per language) on
+ * the night-blue panel, one at a time in a browser frame: the screens' names
+ * are tabs, and a counter with two arrows moves through them too. Under the
+ * frame, the open screen's number, name and line.
  */
 export function DashboardShow({ copy, locale }: { copy: Dictionary["dashboard"]; locale: Locale }) {
-  const [shot, setShot] = useState<ShotTab["id"]>(copy.tabs[0].id);
-  const section = useRef<HTMLElement>(null);
-  const head = useRef<HTMLDivElement>(null);
-  const card = useRef<HTMLElement>(null);
+  const [at, setAt] = useState(0);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const baseId = useId();
+  const { tabs } = copy;
+  const count = tabs.length;
+  const open = tabs[at];
 
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let ticking = false;
-    const paint = () => {
-      ticking = false;
-      const box = section.current?.getBoundingClientRect();
-      if (!box || !card.current) return;
-      const vh = window.innerHeight || 800;
-      const p = Math.min(1, Math.max(0, (vh - box.top) / (vh * 0.85)));
-      const scale = window.innerWidth <= 768 ? 0.86 + 0.14 * p : 1.05 - 0.05 * p;
-      card.current.style.transform = `rotateX(${(20 * (1 - p)).toFixed(2)}deg) scale(${scale.toFixed(3)})`;
-      if (head.current) head.current.style.transform = `translateY(${(-36 * p).toFixed(1)}px)`;
-    };
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(paint);
-    };
-    paint();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, []);
+  const go = (to: number) => setAt((to + count) % count);
 
   // Arrow keys move between tabs (the tab list is one stop for Tab).
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -51,70 +30,99 @@ export function DashboardShow({ copy, locale }: { copy: Dictionary["dashboard"];
     if (!step) return;
     event.preventDefault();
     const dirStep = document.documentElement.dir === "rtl" ? -step : step;
-    const at = copy.tabs.findIndex((tab) => tab.id === shot);
-    const next = (at + dirStep + copy.tabs.length) % copy.tabs.length;
-    setShot(copy.tabs[next].id);
+    const next = (at + dirStep + count) % count;
+    setAt(next);
     tabRefs.current[next]?.focus();
   };
 
   return (
-    <section ref={section} className="lz-show" id="panel" aria-labelledby="lz-show" data-section="dashboard">
-      <div ref={head} className="lz-show__head">
-        <span className="lz-eye">{copy.kicker}</span>
-        <h2 className="lz-h" id="lz-show">
-          {copy.heading}
-        </h2>
-        <p className="lz-lede">{copy.intro}</p>
-        <div className="lz-tabs" role="tablist" aria-label={copy.heading} onKeyDown={onKeyDown}>
-          {copy.tabs.map((tab, i) => (
-            <button
-              key={tab.id}
-              ref={(el) => {
-                tabRefs.current[i] = el;
-              }}
-              type="button"
-              role="tab"
-              id={`${baseId}-tab-${tab.id}`}
-              aria-selected={tab.id === shot}
-              aria-controls={`${baseId}-panel`}
-              tabIndex={tab.id === shot ? 0 : -1}
-              onClick={() => setShot(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
+    <section className="zx-sec zx-sec--night" id="panel" aria-labelledby="zx-show" data-section="dashboard">
+      <div className="zx-night zx-night--plain">
+        <div className="lz-in">
+          <header className="zx-head zx-head--split lz-r">
+            <div>
+              <SectionLabel n="06" text={copy.kicker} />
+              <h2 className="zx-h2" id="zx-show">
+                {copy.heading}
+              </h2>
+              <p className="zx-lede">{copy.intro}</p>
+            </div>
+            <div className="zx-pager">
+              <span className="zx-pager__n ltr" aria-hidden>
+                <b>{two(at + 1)}</b> / {two(count)}
+              </span>
+              <button type="button" className="zx-round" aria-label={copy.previous} onClick={() => go(at - 1)}>
+                <Arrow size={18} className="zx-arr zx-arr--prev" />
+              </button>
+              <button type="button" className="zx-round zx-round--solid" aria-label={copy.next} onClick={() => go(at + 1)}>
+                <Arrow size={18} className="zx-arr zx-arr--next" />
+              </button>
+            </div>
+          </header>
 
-      <div className="lz-show__stage">
-        <figure ref={card} className="lz-show__card">
-          <div
-            className="lz-show__screen"
-            role="tabpanel"
-            id={`${baseId}-panel`}
-            aria-labelledby={`${baseId}-tab-${shot}`}
-          >
-            {copy.tabs.map((tab) => (
-              // A plain img: the captures are already sized and compressed for the page,
-              // 1440 wide, and the 2880 one only for a screen that draws them that sharp.
-              // `sizes` follows the card's widths in landing.css (.lz-show__card).
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+          <div className="zx-kinds zx-kinds--night lz-r" role="tablist" aria-label={copy.heading} onKeyDown={onKeyDown}>
+            {tabs.map((tab, i) => (
+              <button
                 key={tab.id}
-                src={`/product/${tab.id}-${locale}-1440.webp`}
-                srcSet={`/product/${tab.id}-${locale}-1440.webp 1440w, /product/${tab.id}-${locale}.webp 2880w`}
-                sizes="(min-width: 2200px) 1440px, (min-width: 1680px) 1248px, (min-width: 1120px) 1120px, 100vw"
-                width={1440}
-                height={900}
-                alt={tab.alt}
-                loading="lazy"
-                decoding="async"
-                hidden={tab.id !== shot}
-              />
+                ref={(el) => {
+                  tabRefs.current[i] = el;
+                }}
+                type="button"
+                role="tab"
+                className="zx-kind"
+                id={`${baseId}-tab-${tab.id}`}
+                aria-selected={i === at}
+                aria-controls={`${baseId}-panel`}
+                tabIndex={i === at ? 0 : -1}
+                onClick={() => setAt(i)}
+              >
+                {tab.label}
+              </button>
             ))}
           </div>
-        </figure>
-        <p className="lz-show__cap">{copy.caption}</p>
+
+          <figure className="zx-screen lz-r">
+            <div className="zx-browser zx-browser--night">
+              <div className="zx-browser__bar" aria-hidden>
+                <i />
+                <i />
+                <i />
+                <span className="ltr">app.zimos.co</span>
+              </div>
+              <div className="zx-screen__shot" role="tabpanel" id={`${baseId}-panel`} aria-labelledby={`${baseId}-tab-${open.id}`}>
+                {tabs.map((tab, i) => (
+                  // A plain img: the captures are already sized and compressed for the page,
+                  // 1440 wide, and the 2880 one only for a screen that draws them that sharp.
+                  // `sizes` follows the frame's widths in home.css (.zx-screen).
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={tab.id}
+                    src={`/product/${tab.id}-${locale}-1440.webp`}
+                    srcSet={`/product/${tab.id}-${locale}-1440.webp 1440w, /product/${tab.id}-${locale}.webp 2880w`}
+                    sizes="(min-width: 1680px) 1248px, (min-width: 1120px) 1100px, 100vw"
+                    width={1440}
+                    height={900}
+                    alt={tab.alt}
+                    loading="lazy"
+                    decoding="async"
+                    hidden={i !== at}
+                  />
+                ))}
+              </div>
+            </div>
+            <figcaption>
+              <span className="zx-screen__n ltr" aria-hidden>
+                {two(at + 1)}
+              </span>
+              <span>
+                <b>{open.label}</b>
+                {open.blurb}
+              </span>
+            </figcaption>
+          </figure>
+
+          <p className="zx-cap zx-cap--night">{copy.caption}</p>
+        </div>
       </div>
     </section>
   );

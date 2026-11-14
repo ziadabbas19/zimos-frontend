@@ -18,7 +18,12 @@ const RESOURCES = [
   { name: "Phosphor Icons", href: "https://phosphoricons.com", licence: "MIT" },
   { name: "Fraunces", href: "https://fonts.google.com/specimen/Fraunces", licence: "SIL Open Font License 1.1" },
   { name: "Plus Jakarta Sans", href: "https://fonts.google.com/specimen/Plus+Jakarta+Sans", licence: "SIL Open Font License 1.1" },
-  { name: "Tajawal", href: "https://fonts.google.com/specimen/Tajawal", licence: "SIL Open Font License 1.1" },
+  { name: "Alexandria", href: "https://fonts.google.com/specimen/Alexandria", licence: "SIL Open Font License 1.1" },
+  {
+    name: "IBM Plex Sans Arabic",
+    href: "https://fonts.google.com/specimen/IBM+Plex+Sans+Arabic",
+    licence: "SIL Open Font License 1.1",
+  },
 ];
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
@@ -32,7 +37,8 @@ const link = "text-primary underline underline-offset-2";
 
 /**
  * The credit each store design's licence asks for wherever it is shown
- * (lib/store-shots.ts SHOT_CREDITS, every look on the site), then the icons
+ * (lib/store-shots.ts SHOT_CREDITS, every imported look on the site; ZIMOS's
+ * own designs ask for none), then the icons
  * and fonts the site uses. Linked from every page's footer.
  */
 export default async function CreditsPage({ params }: Params) {
@@ -56,7 +62,7 @@ export default async function CreditsPage({ params }: Params) {
               </h2>
               <p className="mt-3 leading-relaxed text-pretty text-ink-soft">{credits.templatesLead}</p>
               <ul className="mt-3 grid gap-2 leading-relaxed text-ink-soft">
-                {GALLERY_LOOKS.map((look) => {
+                {GALLERY_LOOKS.filter((look) => SHOT_CREDITS[look]).map((look) => {
                   const { name, author, href, licence, licenceHref } = SHOT_CREDITS[look];
                   return (
                     <li key={look}>

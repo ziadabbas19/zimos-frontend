@@ -1,0 +1,2835 @@
+/* ------------------------------------------------------------------ *
+ * The home page's own sections (`zx-*`), over the kit every page shares
+ * (`lz-*`, landing.css: the header, the footer, the strip, the questions,
+ * the closing band, the reveal on scroll). Laid out after the two
+ * references the owner gave (2026-11-14): the flow and the store gallery
+ * of a competing store builder, in the look of Net Profit's landing — a
+ * warm paper page, near-black ink, night-blue panels with rounded
+ * corners, numbered section labels, large titles — in the ZIMOS blues.
+ * Logical properties wherever a side means start or end, so one
+ * stylesheet serves Arabic and English; the colours come from the tokens
+ * in globals.css and landing.css, so `.dark` flips them.
+ * ------------------------------------------------------------------ */
+
+/* ══ Kit ═════════════════════════════════════════════════════════════ */
+.zx-sec {
+  padding-block: clamp(68px, 8vw, 118px);
+  scroll-margin-block-start: 112px;
+}
+
+.zx-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 18px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--lz-text);
+}
+
+.zx-label b {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--lz-accent);
+}
+
+.zx-head {
+  max-inline-size: 50rem;
+  margin-block-end: clamp(34px, 4.4vw, 60px);
+}
+
+.zx-head--center {
+  margin-inline: auto;
+  text-align: center;
+}
+
+.zx-head--center .zx-label {
+  justify-content: center;
+}
+
+.zx-head--center .zx-lede {
+  margin-inline: auto;
+}
+
+.zx-head--split {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px 40px;
+  max-inline-size: none;
+}
+
+.zx-head--split > div:first-child {
+  max-inline-size: 46rem;
+}
+
+.zx-h2 {
+  margin: 0 0 16px;
+  font-family: var(--font-display);
+  font-size: clamp(30px, 4.4vw, 58px);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: var(--lz-ink);
+  text-wrap: balance;
+}
+
+[dir="rtl"] .zx-h2 {
+  line-height: 1.34;
+  letter-spacing: 0;
+}
+
+.zx-lede {
+  margin: 0;
+  max-inline-size: 42rem;
+  font-size: clamp(16px, 1.3vw, 19px);
+  line-height: 1.8;
+  color: var(--lz-text);
+  text-wrap: pretty;
+}
+
+.zx-cap {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--lz-text);
+  text-align: center;
+}
+
+.zx-cap a {
+  color: var(--lz-accent);
+  text-underline-offset: 3px;
+}
+
+/* Pill buttons. Lifted with `translate`, which the reveal's transform leaves alone. */
+.zx-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-block-size: 54px;
+  padding: 0 28px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    translate 0.3s var(--lz-ease),
+    box-shadow 0.3s var(--lz-ease),
+    background 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.zx-btn:hover {
+  translate: 0 -2px;
+}
+
+.zx-btn--ink {
+  background: var(--lz-solid);
+  color: var(--lz-on-solid);
+  box-shadow: 0 16px 32px -18px rgb(var(--lz-sh) / 0.7);
+}
+
+.zx-btn--ink:hover {
+  background: var(--lz-solid-hover);
+}
+
+.zx-btn--line {
+  border-color: color-mix(in srgb, var(--lz-ink) 22%, transparent);
+  background: var(--lz-card);
+  color: var(--lz-ink);
+}
+
+.zx-btn--line:hover {
+  border-color: var(--lz-accent);
+  color: var(--lz-accent);
+}
+
+/* On the night-blue grounds: the logo's light blue, and glass beside it. */
+.zx-btn--volt {
+  background: linear-gradient(180deg, #97e8ff, #4fc4ff);
+  color: #04142e;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.3),
+    0 18px 40px -14px rgb(79 196 255 / 0.65);
+}
+
+.zx-btn--volt:hover {
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.3),
+    0 24px 50px -14px rgb(79 196 255 / 0.85);
+}
+
+.zx-btn--glass {
+  border-color: rgb(255 255 255 / 0.22);
+  background: rgb(255 255 255 / 0.08);
+  color: #fff;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.zx-btn--glass:hover {
+  background: rgb(255 255 255 / 0.16);
+}
+
+/* A browser frame: the hero's store, the gallery's cards, the dashboard. */
+.zx-browser {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 18px;
+  background: #0e1524;
+  box-shadow:
+    0 0 0 6px rgb(255 255 255 / 0.04),
+    0 40px 90px -30px rgb(0 0 0 / 0.75);
+}
+
+.zx-browser__bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  block-size: 42px;
+  padding-inline: 16px;
+  border-block-end: 1px solid rgb(255 255 255 / 0.08);
+  background: rgb(255 255 255 / 0.06);
+  direction: ltr;
+}
+
+.zx-browser__bar i {
+  inline-size: 10px;
+  block-size: 10px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.24);
+}
+
+.zx-browser__bar span {
+  margin-inline: auto;
+  padding: 5px 16px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.07);
+  font-size: 12px;
+  color: rgb(255 255 255 / 0.72);
+  /* The three dots' width on the other side, so the address sits in the middle. */
+  translate: -22px 0;
+}
+
+.zx-browser--paper {
+  border-color: var(--lz-line);
+  background: var(--lz-card);
+  box-shadow: 0 40px 80px -44px rgb(var(--lz-sh) / 0.5);
+}
+
+.zx-browser--paper .zx-browser__bar {
+  border-color: var(--lz-line);
+  background: color-mix(in srgb, var(--lz-ink) 4%, var(--lz-card));
+}
+
+.zx-browser--paper .zx-browser__bar i {
+  background: color-mix(in srgb, var(--lz-ink) 18%, transparent);
+}
+
+/* A phone: a dark bezel around a tall capture shown from its top. */
+.zx-phone {
+  display: block;
+  padding: 6px;
+  border-radius: 30px;
+  background: #05080f;
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.16),
+    0 34px 70px -24px rgb(0 0 0 / 0.8);
+}
+
+.zx-phone img {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  aspect-ratio: 390 / 820;
+  object-fit: cover;
+  object-position: top center;
+  border-radius: 24px;
+}
+
+/* The round arrows and the counter beside a section's title. */
+.zx-pager {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+}
+
+.zx-pager__n {
+  padding-inline: 8px;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  color: var(--lz-text);
+}
+
+.zx-pager__n b {
+  font-weight: 600;
+  color: var(--lz-ink);
+}
+
+.zx-round {
+  display: grid;
+  place-items: center;
+  inline-size: 54px;
+  block-size: 54px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--lz-ink) 20%, transparent);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--lz-ink);
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.zx-round:hover {
+  border-color: var(--lz-ink);
+}
+
+.zx-round--solid {
+  border-color: transparent;
+  background: var(--lz-solid);
+  color: var(--lz-on-solid);
+}
+
+.zx-round--solid:hover {
+  border-color: transparent;
+  background: var(--lz-solid-hover);
+}
+
+/* The arrow glyph points right: back is its mirror, and Arabic swaps the two. */
+.zx-arr--prev,
+[dir="rtl"] .zx-arr--next {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .zx-arr--prev {
+  transform: none;
+}
+
+/* A row of choices: the kinds of store, the dashboard's screens. */
+.zx-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-block-end: clamp(26px, 3.4vw, 44px);
+}
+
+.zx-kind {
+  min-block-size: 44px;
+  padding: 0 20px;
+  border: 1px solid color-mix(in srgb, var(--lz-ink) 16%, transparent);
+  border-radius: 999px;
+  background: var(--lz-card);
+  color: var(--lz-ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.zx-kind:hover {
+  border-color: var(--lz-ink);
+}
+
+.zx-kind[aria-pressed="true"],
+.zx-kind[aria-selected="true"] {
+  border-color: transparent;
+  background: var(--lz-solid);
+  color: var(--lz-on-solid);
+}
+
+.zx-tag {
+  flex: none;
+  padding: 6px 12px;
+  border: 1px solid var(--lz-line);
+  border-radius: 999px;
+  background: var(--lz-card);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--lz-text);
+}
+
+.zx-tag--own {
+  border-color: color-mix(in srgb, var(--lz-accent) 35%, transparent);
+  background: var(--lz-soft);
+  color: var(--lz-accent-deep);
+}
+
+/* ══ 0) The stage ════════════════════════════════════════════════════
+   A night-blue panel with rounded corners that reaches up behind the
+   floating header (the negative margin is the header's height, less the
+   panel's own distance from the top of the page). */
+.zx-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin: -74px 12px 0;
+  padding-block-start: calc(74px + clamp(48px, 6.4vw, 92px));
+  border-radius: 30px;
+  background: var(--zx-night);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
+  color: #fff;
+  text-align: center;
+}
+
+.zx-hero__bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 46% at 50% 0%, rgb(30 84 226 / 0.6), transparent 72%),
+    radial-gradient(38% 40% at 88% 34%, rgb(0 174 255 / 0.2), transparent 70%),
+    radial-gradient(42% 44% at 8% 46%, rgb(74 92 255 / 0.22), transparent 70%),
+    linear-gradient(180deg, #050912 0%, #081126 58%, #0a1832 100%);
+}
+
+.zx-glow {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--c), transparent);
+  animation: zx-drift 22s ease-in-out infinite alternate;
+}
+
+.zx-glow--a {
+  --c: rgb(47 107 255 / 0.4);
+  inline-size: 780px;
+  block-size: 780px;
+  inset-block-start: -320px;
+  left: calc(50% - 390px);
+}
+
+.zx-glow--b {
+  --c: rgb(0 200 255 / 0.2);
+  inline-size: 640px;
+  block-size: 640px;
+  inset-block-end: -220px;
+  right: -180px;
+  animation-duration: 28s;
+  animation-delay: -10s;
+}
+
+@keyframes zx-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(-70px, 60px, 0) scale(1.14);
+  }
+}
+
+/* A fine grid, fading out from behind the title. */
+.zx-hero__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+  background-size: 58px 58px;
+  -webkit-mask-image: radial-gradient(70% 58% at 50% 32%, #000 8%, transparent 76%);
+  mask-image: radial-gradient(70% 58% at 50% 32%, #000 8%, transparent 76%);
+}
+
+.zx-hero__copy {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.zx-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 26px;
+  padding-block: 9px;
+  padding-inline: 14px 18px;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.08);
+  font-size: 15px;
+  font-weight: 500;
+  color: rgb(255 255 255 / 0.92);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.zx-pill i {
+  flex: none;
+  inline-size: 9px;
+  block-size: 9px;
+  border-radius: 50%;
+  background: var(--zx-volt);
+  box-shadow: 0 0 0 4px rgb(111 220 255 / 0.22);
+}
+
+.zx-h1 {
+  margin: 0 0 24px;
+  font-family: var(--font-display);
+  font-size: clamp(36px, 6.2vw, 86px);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  color: #fff;
+  text-wrap: balance;
+}
+
+[dir="rtl"] .zx-h1 {
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+
+.zx-h1__line {
+  display: block;
+}
+
+/* The second line in the logo's blues. The padding keeps the letters' tails
+   and dots inside the painted box; the margin gives the space back. */
+.zx-volt {
+  padding-block-end: 0.2em;
+  margin-block-end: -0.2em;
+  background: linear-gradient(90deg, #a6edff 0%, #5fbcff 52%, #86b4ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.zx-hero__body {
+  margin: 0 0 34px;
+  max-inline-size: 46rem;
+  font-size: clamp(16.5px, 1.45vw, 20px);
+  line-height: 1.85;
+  color: rgb(255 255 255 / 0.78);
+  text-wrap: pretty;
+}
+
+.zx-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px 14px;
+}
+
+.zx-ticks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 26px;
+  list-style: none;
+  margin: 28px 0 0;
+  padding: 0;
+  font-size: 14.5px;
+  color: rgb(255 255 255 / 0.72);
+}
+
+.zx-ticks li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zx-ticks svg {
+  color: var(--zx-volt);
+}
+
+/* The stores. Everything is placed from the middle of the stage, in shares
+   of the computer frame's width (`--bw`), so the whole picture scales as one.
+   The stage is shorter than the frame: the panel's lower edge cuts the
+   frame and the phones, as if they rose from behind it. */
+.zx-stage {
+  --bw: min(760px, 54vw);
+  position: relative;
+  z-index: 1;
+  block-size: calc(var(--bw) * 0.57);
+  margin-block-start: clamp(48px, 6vw, 84px);
+}
+
+.zx-stage__frame {
+  position: absolute;
+  inset-block-start: 0;
+  left: 50%;
+  z-index: 2;
+  inline-size: var(--bw);
+  translate: -50% 0;
+}
+
+.zx-cycle {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* One store after the other, crossfading; the first is there from the start. */
+.zx-cycle img {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  object-position: top center;
+  opacity: 0;
+  animation: zx-cycle 15s infinite;
+  animation-delay: calc(var(--k) * 5s - 0.8s);
+}
+
+.zx-cycle picture:first-child img {
+  opacity: 1;
+}
+
+@keyframes zx-cycle {
+  0% {
+    opacity: 0;
+  }
+  5%,
+  33.3% {
+    opacity: 1;
+  }
+  38.3%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.zx-fan .zx-phone {
+  position: absolute;
+  inset-block-start: 0;
+  left: 50%;
+  inline-size: calc(var(--bw) * 0.235);
+}
+
+.zx-fan .zx-phone:nth-child(1) {
+  z-index: 1;
+  translate: calc(-50% - var(--bw) * 0.79) calc(var(--bw) * 0.2);
+  rotate: -10deg;
+}
+
+.zx-fan .zx-phone:nth-child(2) {
+  z-index: 3;
+  translate: calc(-50% - var(--bw) * 0.57) calc(var(--bw) * 0.1);
+  rotate: -5deg;
+}
+
+.zx-fan .zx-phone:nth-child(3) {
+  z-index: 3;
+  translate: calc(-50% + var(--bw) * 0.57) calc(var(--bw) * 0.1);
+  rotate: 5deg;
+}
+
+.zx-fan .zx-phone:nth-child(4) {
+  z-index: 1;
+  translate: calc(-50% + var(--bw) * 0.79) calc(var(--bw) * 0.2);
+  rotate: 10deg;
+}
+
+/* What happens to an order, as three cards floating over the stores. */
+.zx-floats {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.zx-float {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-block: 10px;
+  padding-inline: 10px 18px;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 16px;
+  background: rgb(13 20 37 / 0.84);
+  box-shadow: 0 22px 44px -18px rgb(0 0 0 / 0.75);
+  text-align: start;
+  white-space: nowrap;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  animation: zx-bob 6s ease-in-out infinite;
+}
+
+.zx-float b {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #fff;
+}
+
+.zx-float small {
+  display: block;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: rgb(255 255 255 / 0.66);
+}
+
+.zx-float__ico {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  border-radius: 12px;
+  --lz-ic-a: #fff;
+  --lz-ic-b: #fff;
+}
+
+.zx-float__ico--amber {
+  background: linear-gradient(140deg, #f7a531, #e2700f);
+}
+
+.zx-float__ico--green {
+  background: linear-gradient(140deg, #2fc57c, #0f9a5a);
+}
+
+.zx-float__ico--blue {
+  background: linear-gradient(140deg, #3d8bff, #165dff);
+}
+
+.zx-float--a {
+  inset-block-start: calc(var(--bw) * -0.045);
+  left: calc(50% - var(--bw) * 0.62);
+}
+
+.zx-float--b {
+  inset-block-start: calc(var(--bw) * 0.035);
+  right: calc(50% - var(--bw) * 0.66);
+  animation-delay: -2s;
+}
+
+.zx-float--c {
+  inset-block-start: calc(var(--bw) * 0.36);
+  left: calc(50% - var(--bw) * 0.96);
+  animation-delay: -4s;
+}
+
+@keyframes zx-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+/* The stores sink into the panel's lower edge, and the caption stands on it. */
+.zx-hero::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  z-index: 5;
+  block-size: 150px;
+  background: linear-gradient(180deg, transparent, rgb(7 11 20 / 0.94) 74%);
+  pointer-events: none;
+}
+
+.zx-hero__cap {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 16px;
+  z-index: 6;
+  margin: 0;
+  padding-inline: 20px;
+  font-size: 12.5px;
+  color: rgb(255 255 255 / 0.62);
+}
+
+/* The strip of platforms, straight under the stage, and the questions: no rule across the page. */
+.lz-home .lz-strip {
+  border: 0;
+  padding-block-start: 14px;
+}
+
+.lz-home .lz-sec--line {
+  border: 0;
+}
+
+/* ══ 1) The idea ═════════════════════════════════════════════════════ */
+.zx-statement {
+  margin: 0;
+  max-inline-size: 64rem;
+  font-family: var(--font-display);
+  font-size: clamp(24px, 3.5vw, 46px);
+  font-weight: 500;
+  line-height: 1.34;
+  letter-spacing: -0.02em;
+  color: var(--lz-ink);
+  text-wrap: pretty;
+}
+
+[dir="rtl"] .zx-statement {
+  line-height: 1.66;
+  letter-spacing: 0;
+}
+
+.zx-statement__dim {
+  color: color-mix(in srgb, var(--lz-ink) 44%, transparent);
+}
+
+.zx-statement__marks {
+  display: inline-flex;
+  margin-inline: 0.2em;
+  vertical-align: middle;
+}
+
+.zx-statement__marks i {
+  display: grid;
+  place-items: center;
+  inline-size: 1.2em;
+  block-size: 1.2em;
+  border-radius: 50%;
+  background: var(--lz-card);
+  box-shadow:
+    0 0 0 1px var(--lz-line),
+    0 8px 16px -10px rgb(var(--lz-sh) / 0.5);
+}
+
+.zx-statement__marks i + i {
+  margin-inline-start: -0.3em;
+}
+
+.zx-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0 28px;
+  list-style: none;
+  margin: clamp(48px, 6vw, 86px) 0 0;
+  padding: 0;
+}
+
+.zx-stats li {
+  padding-block-start: 22px;
+  border-block-start: 1px solid var(--zx-rule);
+}
+
+.zx-stats b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(50px, 6vw, 86px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--lz-ink);
+}
+
+.zx-stats span {
+  display: block;
+  max-inline-size: 16rem;
+  margin-block-start: 14px;
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: var(--lz-text);
+}
+
+/* ══ 2) The stores ═══════════════════════════════════════════════════
+   A row that scrolls sideways and snaps to its cards, edge to edge of the
+   page; its padding puts the first and the last card in the middle too. */
+.zx-stores .zx-kinds {
+  margin-block-end: 0;
+}
+
+.zx-rail {
+  --card: min(82vw, 900px);
+  display: flex;
+  gap: clamp(14px, 2.2vw, 34px);
+  list-style: none;
+  margin: 0;
+  padding-block: clamp(28px, 3.6vw, 48px) 34px;
+  padding-inline: calc((100% - var(--card)) / 2);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.zx-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.zx-store {
+  flex: 0 0 var(--card);
+  scroll-snap-align: center;
+  opacity: 0.42;
+  scale: 0.92;
+  transition:
+    opacity 0.45s ease,
+    scale 0.55s var(--lz-ease);
+}
+
+.zx-store.is-active {
+  opacity: 1;
+  scale: 1;
+}
+
+.zx-store__media {
+  position: relative;
+}
+
+/* The page's top fills the frame; pointing at it runs the page down to its end. */
+.zx-store__shot {
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #fff;
+  container-type: size;
+}
+
+.zx-store__shot img {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  transition: transform 4.5s ease-in-out;
+}
+
+.zx-store.is-active .zx-store__shot:hover img {
+  transform: translateY(calc(100cqh - 100%));
+}
+
+.zx-store__phone {
+  position: absolute;
+  inset-block-end: -18px;
+  inset-inline-end: 4%;
+  inline-size: clamp(84px, 17%, 152px);
+  padding: 5px;
+  border-radius: 26px;
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.16),
+    0 30px 50px -22px rgb(0 0 0 / 0.6);
+}
+
+.zx-store__phone img {
+  aspect-ratio: 390 / 760;
+  border-radius: 21px;
+}
+
+.zx-store__meta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-block-start: 34px;
+  padding-inline: 4px;
+}
+
+.zx-store__meta p {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.zx-store__meta b {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--lz-ink);
+}
+
+.zx-store__meta p span {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--lz-text);
+}
+
+.zx-stores__foot {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.zx-stores__hint {
+  margin: 0;
+  font-size: 14px;
+  color: var(--lz-text);
+}
+
+/* Nothing to point with: no hint about pointing. */
+@media (hover: none) {
+  .zx-stores__hint {
+    display: none;
+  }
+}
+
+/* ══ 3) Features — six cards, each with its drawing ══════════════════ */
+.zx-bento {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.zx-card {
+  grid-column: span 4;
+  display: flex;
+  flex-direction: column;
+  padding: 30px 30px 28px;
+  border: 1px solid var(--lz-line);
+  border-radius: 26px;
+  background: var(--lz-card);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    translate 0.35s var(--lz-ease),
+    box-shadow 0.35s var(--lz-ease),
+    border-color 0.2s;
+}
+
+.zx-card:hover {
+  translate: 0 -4px;
+  border-color: color-mix(in srgb, var(--lz-accent) 42%, var(--lz-line));
+  box-shadow: 0 30px 60px -38px rgb(var(--lz-sh) / 0.5);
+}
+
+.zx-card h3 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--lz-ink);
+}
+
+.zx-card p {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.8;
+  color: var(--lz-text);
+}
+
+/* The drawing stands at the card's foot, whatever the words above it take. */
+.zx-card > :last-child {
+  margin-block-start: auto;
+}
+
+.zx-card--profit {
+  grid-row: span 2;
+}
+
+/* The tall card's sum takes all the room under its words. */
+.zx-card--profit > .zx-sum {
+  flex: 1 1 auto;
+  align-content: space-between;
+  margin-block-start: 0;
+  padding: 24px;
+}
+
+.zx-card--wide {
+  grid-column: span 12;
+  flex-direction: row;
+  align-items: center;
+  gap: clamp(24px, 4vw, 56px);
+}
+
+.zx-card--wide > div:first-child {
+  flex: 1 1 0;
+}
+
+.zx-card--wide > :last-child {
+  margin-block-start: 0;
+}
+
+/* The drawings share one ground: the page's paper, set into the white card. */
+.zx-sum,
+.zx-queue,
+.zx-risk,
+.zx-road {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--lz-line);
+  border-radius: 18px;
+  background: var(--lz-paper);
+}
+
+.zx-card > h3 + p {
+  margin-block-end: 26px;
+}
+
+.zx-sum small,
+.zx-risk small {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--lz-ink);
+}
+
+/* A sum: each line with its figure and a bar of its share of the sale price. */
+.zx-sum__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px 12px;
+  font-size: 14px;
+  color: var(--lz-text);
+}
+
+.zx-sum__row b {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--lz-ink);
+}
+
+.zx-sum__row i {
+  position: relative;
+  grid-column: 1 / -1;
+  block-size: 5px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--lz-ink) 8%, transparent);
+}
+
+.zx-sum__row i::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  inline-size: var(--w);
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--lz-ink) 32%, transparent);
+}
+
+.zx-sum__row.is-whole i::after {
+  background: var(--lz-ink);
+}
+
+.zx-sum__net {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-block-start: 16px;
+  border-block-start: 1px dashed color-mix(in srgb, var(--lz-ink) 18%, transparent);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--lz-ink);
+}
+
+.zx-sum__net b {
+  padding: 6px 14px;
+  border-radius: 12px;
+  background: var(--color-primary);
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--primary-foreground);
+}
+
+.zx-sum__net small {
+  font-size: 12px;
+  font-weight: 500;
+  color: inherit;
+  opacity: 0.85;
+}
+
+/* The confirmation queue: the next call, and its four outcomes. */
+.zx-queue__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lz-text);
+}
+
+.zx-queue__head em {
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--lz-ink);
+}
+
+.zx-queue__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+
+.zx-queue__meta span,
+.zx-risk__why span {
+  padding: 4px 10px;
+  border: 1px solid var(--lz-line);
+  border-radius: 999px;
+  background: var(--lz-card);
+  font-size: 12px;
+  color: var(--lz-text);
+}
+
+.zx-queue__acts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.zx-queue__acts span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-block-size: 36px;
+  border: 1px solid var(--lz-line);
+  border-radius: 10px;
+  background: var(--lz-card);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lz-ink);
+}
+
+.zx-queue__acts .is-go {
+  border-color: transparent;
+  background: var(--lz-ok);
+  color: #fff;
+}
+
+/* An order's risk: three levels, the high one lit, and why. */
+.zx-risk__meter {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.zx-risk__meter span {
+  padding-block-start: 10px;
+  border-block-start: 5px solid color-mix(in srgb, var(--lz-ink) 10%, transparent);
+  font-size: 12.5px;
+  text-align: center;
+  color: var(--lz-text);
+}
+
+.zx-risk__meter .is-on {
+  border-color: var(--zx-warn);
+  font-weight: 700;
+  color: var(--zx-warn);
+}
+
+.zx-risk__why {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.zx-risk__why span {
+  border-color: transparent;
+  background: var(--zx-warn-soft);
+  color: var(--zx-warn);
+}
+
+/* A shipment's road: its code, then three stops, two of them behind it. */
+.zx-road__code,
+.zx-ship__code {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--lz-text);
+}
+
+.zx-road__code em,
+.zx-ship__code b {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--lz-ink);
+}
+
+.zx-road ol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.zx-road li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--lz-text);
+}
+
+.zx-road li i,
+.zx-ship__road li i {
+  z-index: 1;
+  display: grid;
+  flex: none;
+  place-items: center;
+  box-sizing: border-box;
+  inline-size: 24px;
+  block-size: 24px;
+  border-radius: 50%;
+  background: var(--lz-ok);
+  color: #fff;
+}
+
+.zx-road li.is-next i,
+.zx-ship__road li.is-next i {
+  border: 2px dashed color-mix(in srgb, var(--lz-ink) 32%, transparent);
+  background: var(--lz-paper);
+}
+
+/* The line from the stop before it. */
+.zx-road li + li::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 11px;
+  inset-inline-end: 50%;
+  inline-size: 100%;
+  block-size: 2px;
+  background: var(--lz-ok);
+}
+
+.zx-road li.is-next::before {
+  background: color-mix(in srgb, var(--lz-ink) 16%, transparent);
+}
+
+.zx-pays {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.zx-pays li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border: 1px solid var(--lz-line);
+  border-radius: 999px;
+  background: var(--lz-paper);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--lz-ink);
+}
+
+.zx-pays svg {
+  color: var(--lz-ok);
+}
+
+/* The editor: its bar, and a line of the store selected to type in. */
+.zx-edit {
+  flex: 1.25 1 0;
+  overflow: hidden;
+  border: 1px solid var(--lz-line);
+  border-radius: 18px;
+  background: var(--lz-paper);
+}
+
+.zx-edit__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-block-end: 1px solid var(--lz-line);
+  background: var(--lz-card);
+  font-size: 12.5px;
+}
+
+.zx-edit__bar span {
+  padding: 6px 12px;
+  border-radius: 8px;
+  color: var(--lz-text);
+}
+
+.zx-edit__bar .is-on {
+  background: var(--lz-soft);
+  font-weight: 600;
+  color: var(--lz-accent-deep);
+}
+
+.zx-edit__bar em {
+  margin-inline-start: auto;
+  font-style: normal;
+  color: var(--lz-text);
+}
+
+.zx-edit__bar strong {
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: var(--lz-solid);
+  font-weight: 600;
+  color: var(--lz-on-solid);
+}
+
+.zx-edit__canvas {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+}
+
+.zx-edit__img {
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #cfe0ff, #8fb6ff 58%, #62d4ff);
+}
+
+.zx-edit__box {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1.5px solid var(--lz-accent);
+  border-radius: 6px;
+}
+
+/* Two of the selection's handles, at opposite corners. */
+.zx-edit__box::before,
+.zx-edit__box::after {
+  content: "";
+  position: absolute;
+  inline-size: 9px;
+  block-size: 9px;
+  border: 1.5px solid var(--lz-accent);
+  border-radius: 2px;
+  background: var(--lz-card);
+}
+
+.zx-edit__box::before {
+  inset-block-start: -6px;
+  inset-inline-start: -6px;
+}
+
+.zx-edit__box::after {
+  inset-block-end: -6px;
+  inset-inline-end: -6px;
+}
+
+.zx-edit__box b {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--lz-ink);
+}
+
+.zx-edit__box u,
+.zx-order__lines u,
+.zx-g--mail u {
+  display: block;
+  block-size: 7px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--lz-ink) 11%, transparent);
+  text-decoration: none;
+}
+
+.zx-edit__box u:last-child,
+.zx-order__lines u:last-child {
+  inline-size: 62%;
+}
+
+/* The rest of the features page, as a row of links, and the way to it. */
+.zx-more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px 28px;
+  margin-block-start: 30px;
+}
+
+.zx-more ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.zx-more ul a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 42px;
+  padding: 0 15px;
+  border: 1px solid var(--lz-line);
+  border-radius: 999px;
+  background: var(--lz-card);
+  font-size: 14.5px;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--lz-ink);
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.zx-more ul a:hover {
+  border-color: var(--lz-accent);
+  color: var(--lz-accent);
+}
+
+/* ══ Night panels ════════════════════════════════════════════════════
+   The same night blue as the stage, in both themes. Inside one the kit's
+   colours are light ones, so titles, labels, pills and arrows follow. */
+.zx-sec--night {
+  padding-block: 0;
+}
+
+.zx-night {
+  --lz-ink: #fff;
+  --lz-text: rgb(255 255 255 / 0.72);
+  --lz-line: rgb(255 255 255 / 0.12);
+  --lz-card: rgb(255 255 255 / 0.05);
+  --lz-paper: rgb(255 255 255 / 0.04);
+  --lz-accent: var(--zx-volt);
+  --lz-solid: #fff;
+  --lz-solid-hover: #cfeeff;
+  --lz-on-solid: #060a14;
+  --lz-ic-a: #a6edff;
+  --lz-ic-b: #5fbcff;
+  --lz-ok: #34c77b;
+  --color-primary: var(--zx-volt);
+  --primary-foreground: #04142e;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin-inline: 12px;
+  padding-block: clamp(72px, 9vw, 128px);
+  border-radius: 30px;
+  background: var(--zx-night);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
+  color: #fff;
+}
+
+.zx-night::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(52% 44% at 50% 0%, rgb(30 84 226 / 0.42), transparent 72%),
+    radial-gradient(36% 40% at 100% 100%, rgb(0 174 255 / 0.14), transparent 70%);
+  pointer-events: none;
+}
+
+.zx-night--plain::before {
+  background:
+    radial-gradient(46% 40% at 12% 0%, rgb(30 84 226 / 0.4), transparent 72%),
+    radial-gradient(40% 44% at 100% 60%, rgb(0 174 255 / 0.12), transparent 70%);
+}
+
+.zx-cap--night {
+  margin-block-start: 26px;
+  color: rgb(255 255 255 / 0.55);
+}
+
+/* ══ 4) The order's journey ══════════════════════════════════════════ */
+.zx-journey {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: clamp(28px, 5vw, 76px);
+}
+
+.zx-jsteps {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-block-end: 1px solid var(--lz-line);
+}
+
+.zx-jstep {
+  position: relative;
+  border-block-start: 1px solid var(--lz-line);
+}
+
+.zx-jstep button {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  inline-size: 100%;
+  padding: 20px 4px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.zx-jstep__n {
+  flex: none;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: rgb(255 255 255 / 0.42);
+  transition: color 0.2s;
+}
+
+.zx-jstep__words {
+  display: grid;
+  gap: 2px;
+}
+
+.zx-jstep__words small {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.5);
+  transition: color 0.2s;
+}
+
+.zx-jstep__words b {
+  font-family: var(--font-display);
+  font-size: clamp(19px, 2vw, 26px);
+  font-weight: 500;
+  line-height: 1.45;
+  color: rgb(255 255 255 / 0.56);
+  transition: color 0.2s;
+}
+
+.zx-jstep button:hover .zx-jstep__words b,
+.zx-jstep.is-open .zx-jstep__words b {
+  color: #fff;
+}
+
+.zx-jstep.is-open .zx-jstep__n,
+.zx-jstep.is-open .zx-jstep__words small {
+  color: var(--zx-volt);
+}
+
+.zx-jstep__body {
+  max-inline-size: 31rem;
+  margin: -6px 0 0;
+  padding-block-end: 24px;
+  /* Under the title, past the number and its gap. */
+  padding-inline-start: calc(4px + 1.25em + 20px);
+  font-size: 15.5px;
+  line-height: 1.8;
+  color: rgb(255 255 255 / 0.74);
+}
+
+/* The open step's top rule, filling until the next one opens. */
+.zx-jstep__line {
+  position: absolute;
+  inset-block-start: -1px;
+  inset-inline: 0;
+  block-size: 2px;
+  background: var(--zx-volt);
+  transform-origin: 0 50%;
+}
+
+[dir="rtl"] .zx-jstep__line {
+  transform-origin: 100% 50%;
+}
+
+.zx-jstep__line.is-playing {
+  animation: zx-fill 6.5s linear forwards;
+}
+
+@keyframes zx-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.zx-jstage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-block-size: 560px;
+  padding: 30px;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.09);
+  border-radius: 26px;
+  background: rgb(255 255 255 / 0.03);
+}
+
+.zx-jstage__glow {
+  position: absolute;
+  inline-size: 460px;
+  block-size: 460px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(63 141 255 / 0.36), transparent);
+}
+
+.zx-mock {
+  position: relative;
+  z-index: 1;
+  text-align: start;
+  animation: zx-rise 0.5s var(--lz-ease) both;
+}
+
+.zx-mock[hidden] {
+  display: none;
+}
+
+@keyframes zx-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+}
+
+/* A phone's screen, drawn light whatever the theme: it is a store's page. */
+.zx-mphone {
+  display: grid;
+  gap: 12px;
+  inline-size: min(100%, 300px);
+  padding: 18px 15px;
+  border-radius: 34px;
+  background: #fff;
+  box-shadow:
+    0 0 0 7px #05080f,
+    0 0 0 8px rgb(255 255 255 / 0.18),
+    0 40px 80px -30px #000;
+  color: #0c1424;
+}
+
+.zx-ad__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.zx-ad__head i {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 36px;
+  block-size: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0a3cff, #0a9cff);
+  --lz-ic-a: #fff;
+  --lz-ic-b: #fff;
+}
+
+.zx-ad__head span,
+.zx-ad__cta span {
+  display: grid;
+}
+
+.zx-ad__head b,
+.zx-ad__cta b {
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.zx-ad__head small,
+.zx-ad__cta small,
+.zx-page__top small {
+  font-size: 11.5px;
+  color: #6b7280;
+}
+
+.zx-ad__text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: #1f2937;
+}
+
+.zx-ad__media {
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #e8efff;
+}
+
+.zx-ad__media--short {
+  aspect-ratio: 16 / 9;
+}
+
+/* The capture's own picture of the product, not its menu: the picture is
+   drawn larger than its box and moved so the product fills it (the capture
+   is a left-to-right page, so the offsets are physical). */
+.zx-ad__media {
+  position: relative;
+}
+
+.zx-ad__media img {
+  position: absolute;
+  inset-block-start: -11%;
+  left: -52%;
+  inline-size: 171%;
+  max-inline-size: none;
+  block-size: auto;
+}
+
+.zx-ad__media--short img {
+  inset-block-start: -39%;
+  left: -48%;
+  inline-size: 150%;
+}
+
+.zx-ad__cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f1f3f6;
+}
+
+.zx-ad__cta em {
+  flex: none;
+  padding: 8px 14px;
+  border-radius: 9px;
+  background: #0c1424;
+  font-size: 12.5px;
+  font-style: normal;
+  font-weight: 600;
+  color: #fff;
+}
+
+.zx-page__top,
+.zx-page__title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.zx-page__top {
+  padding-block-end: 10px;
+  border-block-end: 1px solid #eceef2;
+  font-size: 14px;
+}
+
+.zx-page__title b {
+  font-size: 15.5px;
+}
+
+.zx-page__title em {
+  font-size: 14.5px;
+  font-style: normal;
+  font-weight: 700;
+  color: #165dff;
+}
+
+.zx-page__form {
+  display: grid;
+  gap: 7px;
+}
+
+.zx-page__form span {
+  display: flex;
+  align-items: center;
+  min-block-size: 34px;
+  padding-inline: 12px;
+  border: 1px solid #e2e5ea;
+  border-radius: 9px;
+  font-size: 12px;
+  color: #9097a3;
+}
+
+.zx-page__bump {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 1.5px dashed #f0b44c;
+  border-radius: 10px;
+  background: #fff8ea;
+  font-size: 12px;
+  font-weight: 600;
+  color: #7a5412;
+}
+
+.zx-page__bump i {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 16px;
+  block-size: 16px;
+  border-radius: 4px;
+  background: #e59a1a;
+  color: #fff;
+}
+
+.zx-page__go {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 42px;
+  border-radius: 11px;
+  background: #165dff;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* A card of the dashboard, on the night panel's glass. */
+.zx-mcard {
+  display: grid;
+  gap: 16px;
+  inline-size: min(100%, 410px);
+  padding: 22px;
+  border: 1px solid rgb(255 255 255 / 0.13);
+  border-radius: 22px;
+  background: rgb(15 23 41 / 0.92);
+  box-shadow: 0 40px 80px -30px #000;
+}
+
+.zx-mcard__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.zx-mcard__head span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zx-mpill {
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.08);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  white-space: nowrap;
+  color: rgb(255 255 255 / 0.8);
+}
+
+.zx-mpill--ok {
+  background: rgb(52 199 123 / 0.16);
+  color: #62e3a2;
+}
+
+.zx-order,
+.zx-ship__code {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.05);
+}
+
+.zx-order b {
+  display: block;
+  font-size: 15px;
+}
+
+.zx-order small {
+  display: block;
+  font-size: 12.5px;
+  color: rgb(255 255 255 / 0.62);
+}
+
+.zx-order em {
+  font-style: normal;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #fff;
+}
+
+.zx-order__lines {
+  display: grid;
+  gap: 8px;
+}
+
+.zx-order__acts {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 8px;
+}
+
+.zx-order__acts span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-block-size: 42px;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: 11px;
+  background: rgb(255 255 255 / 0.06);
+  font-size: 13px;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.86);
+}
+
+.zx-order__acts .is-go {
+  border-color: transparent;
+  background: linear-gradient(180deg, #97e8ff, #4fc4ff);
+  color: #04142e;
+}
+
+.zx-ship__road {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.zx-ship__road li {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-block: 10px;
+  font-size: 14px;
+  color: rgb(255 255 255 / 0.88);
+}
+
+.zx-ship__road li.is-next {
+  color: rgb(255 255 255 / 0.56);
+}
+
+.zx-ship__road li.is-next i {
+  background: transparent;
+}
+
+.zx-ship__road li + li::before {
+  content: "";
+  position: absolute;
+  inset-block-start: -10px;
+  inset-inline-start: 11px;
+  inline-size: 2px;
+  block-size: 20px;
+  background: var(--lz-ok);
+}
+
+.zx-ship__road li.is-next::before {
+  background: rgb(255 255 255 / 0.2);
+}
+
+/* ══ 5) Growth tools ═════════════════════════════════════════════════ */
+.zx-tools {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  list-style: none;
+  margin: 0 0 28px;
+  padding: 0;
+}
+
+.zx-tool {
+  padding: 14px 14px 30px;
+  border: 1px solid var(--lz-line);
+  border-radius: 26px;
+  background: var(--lz-card);
+}
+
+.zx-tool__art {
+  display: grid;
+  place-items: center;
+  block-size: 196px;
+  margin-block-end: 24px;
+  overflow: hidden;
+  border: 1px solid var(--lz-line);
+  border-radius: 16px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, var(--lz-soft), transparent 72%),
+    var(--lz-paper);
+}
+
+.zx-tool h3 {
+  margin: 0 14px 8px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--lz-ink);
+}
+
+.zx-tool p {
+  margin: 0 14px;
+  font-size: 15.5px;
+  line-height: 1.8;
+  color: var(--lz-text);
+}
+
+/* The six drawings. Each is a small white piece on the art's ground. */
+.zx-g--coupon,
+.zx-g--bar,
+.zx-g--mail,
+.zx-g--back > i,
+.zx-g--stack i {
+  border: 1px solid var(--lz-line);
+  background: var(--lz-card);
+  box-shadow: 0 16px 30px -20px rgb(var(--lz-sh) / 0.55);
+}
+
+.zx-g--coupon {
+  display: flex;
+  align-items: center;
+  border-radius: 14px;
+  rotate: -4deg;
+}
+
+.zx-g--coupon b {
+  padding: 16px 20px;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--lz-accent);
+}
+
+.zx-g--coupon i {
+  align-self: stretch;
+  border-inline-start: 2px dashed color-mix(in srgb, var(--lz-ink) 16%, transparent);
+}
+
+.zx-g--coupon em {
+  padding: 16px 18px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  font-style: normal;
+  letter-spacing: 0.08em;
+  color: var(--lz-ink);
+}
+
+.zx-g--ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.zx-g--ring > span {
+  display: grid;
+  place-items: center;
+  inline-size: 128px;
+  block-size: 128px;
+  border-radius: 50%;
+  background: conic-gradient(var(--lz-accent) 0 74%, color-mix(in srgb, var(--lz-ink) 9%, transparent) 0);
+}
+
+.zx-g--ring b {
+  display: grid;
+  place-items: center;
+  inline-size: 104px;
+  block-size: 104px;
+  border-radius: 50%;
+  background: var(--lz-card);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--lz-ink);
+}
+
+.zx-g--ring em {
+  position: absolute;
+  inset-block-start: -2px;
+  inset-inline-end: -22px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #f5b83d;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  color: #3b2a00;
+}
+
+.zx-g--bar,
+.zx-g--mail {
+  display: grid;
+  gap: 12px;
+  inline-size: 80%;
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.zx-g--bar span,
+.zx-g--mail span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--lz-ink);
+}
+
+.zx-g--bar i {
+  position: relative;
+  block-size: 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--lz-ink) 9%, transparent);
+}
+
+.zx-g--bar i::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 72%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--lz-ic-a), var(--lz-ic-b));
+}
+
+.zx-g--stack {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding-inline-start: 14px;
+}
+
+.zx-g--stack i {
+  inline-size: 60px;
+  block-size: 76px;
+  margin-inline-start: -14px;
+  border-radius: 12px;
+}
+
+.zx-g--stack i:nth-child(1) {
+  rotate: -8deg;
+  background: linear-gradient(160deg, #dbe7ff, #a9c5ff);
+}
+
+.zx-g--stack i:nth-child(2) {
+  z-index: 1;
+  translate: 0 -8px;
+  background: linear-gradient(160deg, #d6f4ff, #8fdcff);
+}
+
+.zx-g--stack i:nth-child(3) {
+  rotate: 8deg;
+  background: linear-gradient(160deg, #e8e4ff, #b9adff);
+}
+
+.zx-g--stack b {
+  position: absolute;
+  inset-block-end: -16px;
+  left: 50%;
+  z-index: 2;
+  padding: 5px 13px;
+  border-radius: 999px;
+  background: var(--lz-solid);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--lz-on-solid);
+  translate: -50% 0;
+}
+
+.zx-g--mail {
+  gap: 9px;
+}
+
+.zx-g--mail u:nth-of-type(2) {
+  inline-size: 70%;
+}
+
+.zx-g--mail i {
+  justify-self: start;
+  inline-size: 76px;
+  block-size: 24px;
+  margin-block-start: 3px;
+  border-radius: 7px;
+  background: var(--lz-accent);
+}
+
+.zx-g--back {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.zx-g--back > i {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 56px;
+  block-size: 56px;
+  border-radius: 16px;
+}
+
+.zx-g--back span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border-radius: 16px;
+  border-end-start-radius: 4px;
+  background: var(--color-primary);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--primary-foreground);
+}
+
+.zx-g--back em {
+  display: grid;
+  place-items: center;
+  inline-size: 18px;
+  block-size: 18px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.26);
+}
+
+/* ══ 6) The dashboard ════════════════════════════════════════════════ */
+.zx-kinds--night .zx-kind:hover {
+  border-color: rgb(255 255 255 / 0.5);
+}
+
+.zx-screen {
+  margin: 0;
+  padding: 14px 14px 0;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: 28px;
+  background: rgb(255 255 255 / 0.04);
+}
+
+.zx-screen .zx-browser {
+  box-shadow: 0 40px 90px -40px #000;
+}
+
+.zx-screen__shot img {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}
+
+.zx-screen__shot img[hidden] {
+  display: none;
+}
+
+.zx-screen figcaption {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 12px 22px;
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: rgb(255 255 255 / 0.72);
+}
+
+.zx-screen figcaption b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.zx-screen__n {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--zx-volt);
+}
+
+/* ══ 7) Getting started ══════════════════════════════════════════════ */
+.zx-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.zx-step {
+  position: relative;
+  overflow: hidden;
+  padding: 30px;
+  border: 1px solid var(--lz-line);
+  border-radius: 26px;
+  background: var(--lz-card);
+}
+
+.zx-step__ico {
+  display: grid;
+  place-items: center;
+  inline-size: 60px;
+  block-size: 60px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--a), var(--b));
+  box-shadow: 0 16px 28px -16px var(--a);
+  --lz-ic-a: #fff;
+  --lz-ic-b: #fff;
+}
+
+.zx-step:nth-child(1) {
+  --a: #165dff;
+  --b: #3aa0ff;
+}
+
+.zx-step:nth-child(2) {
+  --a: #6a4dff;
+  --b: #9a7bff;
+}
+
+.zx-step:nth-child(3) {
+  --a: #0f9d62;
+  --b: #3ed598;
+}
+
+/* The step's number, large and faint in the card's corner. */
+.zx-step em {
+  position: absolute;
+  inset-block-start: 4px;
+  inset-inline-end: 24px;
+  font-family: var(--font-display);
+  font-size: 124px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 1;
+  color: color-mix(in srgb, var(--lz-ink) 6%, transparent);
+}
+
+.zx-step h3 {
+  margin: 28px 0 8px;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--lz-ink);
+}
+
+.zx-step p {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.8;
+  color: var(--lz-text);
+}
+
+/* ══ 8) What should reassure you ═════════════════════════════════════ */
+.zx-trust__in {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  align-items: start;
+  gap: clamp(28px, 5vw, 80px);
+}
+
+.zx-trust .zx-head {
+  margin: 0;
+}
+
+.zx-trust .zx-btn {
+  margin-block-start: 30px;
+}
+
+.zx-points {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 32px;
+}
+
+.zx-points article {
+  padding-block: 26px;
+  border-block-start: 1px solid var(--zx-rule);
+}
+
+.zx-points__ico {
+  display: grid;
+  place-items: center;
+  inline-size: 46px;
+  block-size: 46px;
+  border-radius: 14px;
+  background: var(--lz-soft);
+}
+
+.zx-points h3 {
+  margin: 16px 0 6px;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--lz-ink);
+}
+
+.zx-points p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--lz-text);
+}
+
+.zx-points a {
+  color: var(--lz-accent);
+  text-underline-offset: 3px;
+}
+
+/* ══ Narrower screens ════════════════════════════════════════════════ */
+@media (max-width: 1080px) {
+  .zx-bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .zx-card,
+  .zx-card--profit {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .zx-card--wide {
+    grid-column: 1 / -1;
+  }
+
+  .zx-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .zx-float--c {
+    display: none;
+  }
+}
+
+@media (max-width: 960px) {
+  .zx-journey,
+  .zx-trust__in {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* One column: the drawing first, so it stays in sight above the steps that change it. */
+  .zx-jstage {
+    order: -1;
+    min-block-size: 500px;
+  }
+
+  .zx-steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .zx-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 34px 24px;
+  }
+}
+
+/* The computer frame steps aside: three phones take the stage, the two
+   cards over their shoulders. */
+@media (max-width: 760px) {
+  .zx-stage {
+    --bw: 0px;
+    block-size: 318px;
+  }
+
+  .zx-stage__frame,
+  .zx-fan .zx-phone:nth-child(4),
+  .zx-float--c {
+    display: none;
+  }
+
+  .zx-fan .zx-phone {
+    inline-size: 154px;
+    border-radius: 26px;
+  }
+
+  .zx-fan .zx-phone img {
+    border-radius: 20px;
+  }
+
+  .zx-fan .zx-phone:nth-child(1) {
+    translate: calc(-50% - 112px) 44px;
+    rotate: -8deg;
+  }
+
+  .zx-fan .zx-phone:nth-child(2) {
+    translate: -50% 0;
+    rotate: 0deg;
+  }
+
+  .zx-fan .zx-phone:nth-child(3) {
+    z-index: 1;
+    translate: calc(-50% + 112px) 44px;
+    rotate: 8deg;
+  }
+
+  .zx-float {
+    gap: 9px;
+    padding-block: 7px;
+    padding-inline: 7px 12px;
+    border-radius: 13px;
+  }
+
+  .zx-float b {
+    font-size: 12.5px;
+  }
+
+  .zx-float small {
+    font-size: 11px;
+  }
+
+  .zx-float__ico {
+    inline-size: 32px;
+    block-size: 32px;
+    border-radius: 10px;
+  }
+
+  .zx-float--a {
+    inset-block-start: 96px;
+    left: 8px;
+  }
+
+  .zx-float--b {
+    inset-block-start: 186px;
+    right: 8px;
+  }
+}
+
+@media (max-width: 700px) {
+  .zx-bento,
+  .zx-tools {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .zx-card {
+    padding: 24px 22px 22px;
+  }
+
+  .zx-card--wide {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .zx-edit {
+    flex: none;
+  }
+
+  .zx-points {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .zx-more {
+    justify-content: center;
+  }
+
+  .zx-more ul {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .zx-sec {
+    padding-block: 64px;
+  }
+
+  .zx-sec--night {
+    padding-block: 0;
+  }
+
+  .zx-hero {
+    margin: -64px 8px 0;
+    padding-block-start: calc(64px + 44px);
+    border-radius: 24px;
+  }
+
+  .zx-pill {
+    margin-block-end: 20px;
+    font-size: 13.5px;
+  }
+
+  .zx-hero__body {
+    margin-block-end: 26px;
+  }
+
+  .zx-ctas {
+    inline-size: 100%;
+  }
+
+  .zx-ctas .zx-btn {
+    flex: 1 1 100%;
+  }
+
+  .zx-ticks {
+    gap: 8px 18px;
+    margin-block-start: 22px;
+    font-size: 13.5px;
+  }
+
+  .zx-night {
+    margin-inline: 8px;
+    padding-block: 60px;
+    border-radius: 24px;
+  }
+
+  .zx-head--split {
+    align-items: flex-start;
+  }
+
+  .zx-round {
+    inline-size: 46px;
+    block-size: 46px;
+  }
+
+  /* The kinds of store in one row that scrolls, not a wrapped block. */
+  .zx-stores .zx-kinds {
+    flex-wrap: nowrap;
+    margin-inline: -20px;
+    padding-inline: 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .zx-stores .zx-kinds::-webkit-scrollbar {
+    display: none;
+  }
+
+  .zx-kind {
+    flex: none;
+  }
+
+  .zx-rail {
+    --card: 84vw;
+  }
+
+  .zx-store__meta {
+    flex-direction: column;
+    gap: 10px;
+    margin-block-start: 28px;
+  }
+
+  .zx-store__meta b {
+    font-size: 18px;
+  }
+
+  .zx-store__phone {
+    inset-block-end: -14px;
+    border-radius: 18px;
+    padding: 3px;
+  }
+
+  .zx-store__phone img {
+    border-radius: 15px;
+  }
+
+  .zx-jstage {
+    min-block-size: 0;
+    padding: 26px 16px;
+  }
+
+  .zx-jstep button {
+    gap: 14px;
+    padding-block: 16px;
+  }
+
+  .zx-jstep__body {
+    padding-inline-start: calc(4px + 1.25em + 14px);
+  }
+
+  .zx-screen {
+    padding: 8px 8px 0;
+    border-radius: 20px;
+  }
+
+  .zx-screen .zx-browser {
+    border-radius: 13px;
+  }
+
+  .zx-screen .zx-browser__bar {
+    block-size: 30px;
+  }
+
+  .zx-screen figcaption {
+    gap: 14px;
+    padding: 16px 8px 18px;
+    font-size: 14.5px;
+  }
+
+  .zx-step {
+    padding: 24px 22px;
+  }
+
+  .zx-step em {
+    font-size: 96px;
+  }
+
+  .zx-edit__canvas {
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .zx-edit__box b {
+    font-size: 14.5px;
+  }
+}
+
+/* ══ Big screens: wider and larger type, not a column in the middle ══ */
+@media (min-width: 1680px) {
+  .zx-stage {
+    --bw: min(860px, 54vw);
+  }
+
+  .zx-rail {
+    --card: min(82vw, 1040px);
+  }
+
+  .zx-card p,
+  .zx-tool p,
+  .zx-step p,
+  .zx-points p {
+    font-size: 16.5px;
+  }
+}
+
+/* ══ Less motion ═════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .zx-glow,
+  .zx-cycle img,
+  .zx-float,
+  .zx-mock,
+  .zx-jstep__line.is-playing {
+    animation: none;
+  }
+
+  .zx-btn,
+  .zx-card,
+  .zx-store,
+  .zx-store__shot img {
+    transition: none;
+  }
+}
+
+/* Asked for less motion or less transparency: the stage's cards and glass drop the blur behind them. */
+@media (prefers-reduced-motion: reduce), (prefers-reduced-transparency: reduce) {
+  .zx-float,
+  .zx-pill,
+  .zx-btn--glass {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/*
+ * On a phone the stage's lights stand still, its cards sit without the blur
+ * behind them, and what moves for good — the crossfade, the cards' bob —
+ * waits for the page to finish loading (`html.lz-loaded`, set by
+ * components/landing-motion.tsx), held on its first frame until then, so
+ * the first paint is the same. A computer is unchanged.
+ */
+@media (max-width: 600px) {
+  .zx-hero .zx-glow {
+    animation: none;
+  }
+
+  .zx-hero .zx-float {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  html:not(.lz-loaded) .lz-home .zx-glow,
+  html:not(.lz-loaded) .lz-home .zx-cycle img,
+  html:not(.lz-loaded) .lz-home .zx-float {
+    animation-play-state: paused;
+  }
+}

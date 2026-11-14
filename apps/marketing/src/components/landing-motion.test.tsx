@@ -7,13 +7,16 @@ import { afterEach, describe, expect, it } from "vitest";
 import { LandingMotion } from "./landing-motion";
 
 /**
- * The landing's endless animations (app/landing.css): each one stops under
- * reduced motion, and on a phone waits for the page to finish loading —
+ * The landing's endless animations (app/landing.css for the kit every page
+ * shares, app/home.css for the home page's own sections): each one stops
+ * under reduced motion, and on a phone waits for the page to finish loading —
  * components/landing-motion.tsx lets them go once `load` has fired.
  */
 
 // A path, not a URL: under jsdom `URL` is jsdom's, which node:fs does not take.
-const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../app/landing.css"), "utf8")
+const css = ["../app/landing.css", "../app/home.css"]
+  .map((file) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), file), "utf8"))
+  .join("\n")
   .replace(/\r\n/g, "\n")
   .replace(/\/\*[\s\S]*?\*\//g, "");
 
@@ -47,8 +50,10 @@ function media(query: string) {
 const endless = [...new Set(rules(css).filter((rule) => /animation:[^;]*\binfinite\b/.test(rule.body)).map((rule) => rule.selector))];
 
 describe("the landing's endless animations", () => {
-  it("are found (the hero's lights, chips and crossfade, the strip, the closing band…)", () => {
-    expect(endless).toEqual(expect.arrayContaining([".lz-fx__orb", ".lz-fx__wave", ".lz-hero .lz-float", ".lz-cycle img", ".lz-marquee__track"]));
+  it("are found (the stage's lights, cards and crossfade, the strip, the closing band…)", () => {
+    expect(endless).toEqual(
+      expect.arrayContaining([".zx-glow", ".zx-float", ".zx-cycle img", ".lz-marquee__track", ".lz-fx__orb", ".lz-fx__wave", ".lz-end__phone"]),
+    );
   });
 
   it("all stop for someone who asked for less motion", () => {
@@ -65,14 +70,15 @@ describe("the landing's endless animations", () => {
     expect(held).toEqual(expect.arrayContaining(endless));
   });
 
-  it("leave the lights and lines of the hero and the closing band still on a phone, and the hero's chips without the blur", () => {
+  it("leave the lights of the stage, and the lights and lines of the closing band, still on a phone, and the stage's cards without the blur", () => {
     const phone = rules(media("(max-width: 600px)"));
     const body = (selector: string) => phone.filter((rule) => rule.selector === selector).map((rule) => rule.body).join("");
+    expect(body(".zx-hero .zx-glow")).toMatch(/animation:\s*none/);
     expect(body(".lz-hero .lz-fx__orb")).toMatch(/animation:\s*none/);
     expect(body(".lz-hero .lz-fx__wave")).toMatch(/animation:\s*none/);
     expect(body(".lz-end .lz-fx__orb")).toMatch(/animation:\s*none/);
     expect(body(".lz-end .lz-fx__wave")).toMatch(/animation:\s*none/);
-    expect(body(".lz-hero .lz-float")).toMatch(/(^|[^-])backdrop-filter:\s*none/);
+    expect(body(".zx-hero .zx-float")).toMatch(/(^|[^-])backdrop-filter:\s*none/);
   });
 });
 

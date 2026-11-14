@@ -5,16 +5,19 @@ import { describe, expect, it } from "vitest";
 import { XS_CREDITS } from "../../../storefront/src/lib/xsShell";
 import { getDictionary } from "@/i18n/dictionaries";
 import { locales } from "@/i18n/config";
-import { END_LOOKS, FAN_LOOKS, GALLERY_LOOKS, HERO_LOOKS, SHOT_CREDITS, STORE_SHOTS } from "./store-shots";
+import { END_LOOKS, GALLERY_LOOKS, HERO_LOOKS, HERO_PHONES, JOURNEY_LOOK, OWN_LOOKS, SHOT_CREDITS, STORE_SHOTS, deskShot } from "./store-shots";
 
 /**
- * Every capture on the site is of an imported design whose licence asks for
- * a credit; the credits page writes SHOT_CREDITS, copied from the storefront's
- * XS_CREDITS, for the gallery's looks. So every look shown anywhere on the
- * page must be one of the gallery's, with its credit — and 07 and 11, whose
- * pictures' licence is unclear, are shown nowhere (the owner, 2026-10-23).
+ * A capture on the site is of an imported design whose licence asks for a
+ * credit, or of one of ZIMOS's own (OWN_LOOKS), which asks for none; the
+ * credits page writes SHOT_CREDITS, copied from the storefront's XS_CREDITS,
+ * for the gallery's imported looks. So every look shown anywhere on the page
+ * must be one of the gallery's, with its credit unless it is ZIMOS's own —
+ * and 07 and 11, whose pictures' licence is unclear, are shown nowhere (the
+ * owner, 2026-10-23).
  */
-const SHOWN = [...GALLERY_LOOKS, ...HERO_LOOKS, ...FAN_LOOKS, ...END_LOOKS];
+const SHOWN = [...GALLERY_LOOKS, ...HERO_LOOKS, ...HERO_PHONES, JOURNEY_LOOK, ...END_LOOKS];
+const IMPORTED = GALLERY_LOOKS.filter((look) => !OWN_LOOKS.includes(look));
 const WITHHELD = ["07", "11"];
 const PUBLIC = join(dirname(fileURLToPath(import.meta.url)), "../../public");
 
@@ -24,13 +27,33 @@ describe("store shots", () => {
     expect(GALLERY_LOOKS.length).toBeGreaterThanOrEqual(4);
   });
 
-  it("shows only gallery looks, each with its captures and its credit", () => {
+  it("shows only gallery looks, each with its captures, and its credit unless it is ZIMOS's own", () => {
     for (const look of SHOWN) {
       expect(GALLERY_LOOKS, `look ${look}`).toContain(look);
       expect(STORE_SHOTS[look], `look ${look}`).toBeDefined();
-      expect(SHOT_CREDITS[look], `look ${look}`).toBeDefined();
+      if (!OWN_LOOKS.includes(look)) expect(SHOT_CREDITS[look], `look ${look}`).toBeDefined();
     }
-    expect(Object.keys(SHOT_CREDITS).sort()).toEqual([...GALLERY_LOOKS].sort());
+    expect(Object.keys(SHOT_CREDITS).sort()).toEqual([...IMPORTED].sort());
+  });
+
+  it("counts as ZIMOS's own only the designs the storefront asks no credit for", () => {
+    expect(OWN_LOOKS.length).toBeGreaterThan(0);
+    for (const look of OWN_LOOKS) {
+      expect(XS_CREDITS[look], `look ${look}`).toBeNull();
+      expect(SHOT_CREDITS[look], `look ${look}`).toBeUndefined();
+    }
+  });
+
+  it("puts on a phone only the looks that have a phone capture", () => {
+    for (const look of [...HERO_PHONES, ...END_LOOKS]) expect(STORE_SHOTS[look].phone, `look ${look}`).toBeTruthy();
+  });
+
+  it("shows a look in Arabic where it has an Arabic capture, in English otherwise", () => {
+    for (const look of GALLERY_LOOKS) {
+      const { desk, deskAr } = STORE_SHOTS[look];
+      expect(deskShot(look, "en")).toBe(desk);
+      expect(deskShot(look, "ar")).toBe(deskAr ?? desk);
+    }
   });
 
   it("shows neither 07 nor 11", () => {
@@ -42,17 +65,20 @@ describe("store shots", () => {
   });
 
   it("has every capture it points at in public/stores", () => {
-    for (const { desk, phone } of Object.values(STORE_SHOTS)) {
-      for (const src of [desk, phone]) {
-        expect(existsSync(join(PUBLIC, src)), src).toBe(true);
+    for (const { desk, deskAr, phone } of Object.values(STORE_SHOTS)) {
+      for (const src of [desk, deskAr, phone]) {
+        if (src) expect(existsSync(join(PUBLIC, src)), src).toBe(true);
       }
     }
   });
 
-  it("names each gallery look's category in both languages", () => {
+  it("names each gallery look's category, and says a line about it, in both languages", () => {
     for (const locale of locales) {
-      const { categories } = getDictionary(locale).templates;
-      for (const look of GALLERY_LOOKS) expect(categories[look], `${locale} ${look}`).toBeTruthy();
+      const { categories, blurbs } = getDictionary(locale).templates;
+      for (const look of GALLERY_LOOKS) {
+        expect(categories[look], `${locale} ${look}`).toBeTruthy();
+        expect(blurbs[look], `${locale} ${look}`).toBeTruthy();
+      }
     }
   });
 });

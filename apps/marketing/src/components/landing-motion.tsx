@@ -3,11 +3,11 @@
 import { useEffect } from "react";
 
 /** The parts of the landing whose animations never end: held still while out of view (`.lz-offscreen`, landing.css). */
-const ENDLESS = ".lz-hero, .lz-sec, .lz-marquee, .lz-end";
+const ENDLESS = ".lz-hero, .lz-sec, .lz-marquee, .lz-end, .zx-hero, .zx-sec";
 
 /**
  * Reveal on scroll for the landing: every `.lz-r` fades up the first time it
- * enters the screen; bento cards stagger by column. The hiding rules only
+ * enters the screen; a grid's cards stagger by column. The hiding rules only
  * apply under `html.lz-on`, which is set here — so without the script, or
  * with reduced motion, everything is simply there.
  *
@@ -46,8 +46,11 @@ export function LandingMotion() {
 
     const html = document.documentElement;
     html.classList.add("lz-on");
-    document.querySelectorAll<HTMLElement>(".lz-bento .lz-r").forEach((el, i) => {
-      el.style.setProperty("--d", String(i % 4));
+    // Each grid's cards come in one after the other, a row at a time.
+    document.querySelectorAll<HTMLElement>(".zx-bento, .zx-tools, .zx-steps").forEach((grid) => {
+      grid.querySelectorAll<HTMLElement>(":scope > .lz-r").forEach((el, i) => {
+        el.style.setProperty("--d", String(i % 3));
+      });
     });
 
     const io = new IntersectionObserver(

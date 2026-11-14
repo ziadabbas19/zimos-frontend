@@ -4,8 +4,11 @@ import { defaultLocale, locales } from "@/i18n/config";
 
 /**
  * Every route lives under `/[locale]/…`. This redirects locale-less requests
- * (`/`, `/pricing`, deep links from elsewhere) to a locale-prefixed URL,
- * preferring the visitor's `Accept-Language` and falling back to Arabic.
+ * (`/`, `/pricing`, deep links from elsewhere) to the Arabic page: Arabic is
+ * the site's language, whatever language the visitor's browser asks for
+ * (the owner, 2026-11-14). English is one click away — the language switch
+ * in the header and the footer — and its addresses (`/en/…`) are served as
+ * they are, so a visitor who chose English stays in English.
  */
 
 /**
@@ -31,20 +34,6 @@ function isPassThrough(pathname: string): boolean {
   );
 }
 
-function pickLocale(request: NextRequest): string {
-  const header = request.headers.get("accept-language");
-  if (header) {
-    for (const part of header.split(",")) {
-      const tag = part.split(";")[0]?.trim().toLowerCase();
-      if (!tag) continue;
-      const base = tag.split("-")[0];
-      const match = locales.find((locale) => locale === base);
-      if (match) return match;
-    }
-  }
-  return defaultLocale;
-}
-
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (isPassThrough(pathname)) return NextResponse.next();
@@ -54,8 +43,7 @@ export function proxy(request: NextRequest) {
   );
   if (hasLocale) return NextResponse.next();
 
-  const locale = pickLocale(request);
   const url = request.nextUrl.clone();
-  url.pathname = `/${locale}${pathname === "/" ? "" : pathname}`;
+  url.pathname = `/${defaultLocale}${pathname === "/" ? "" : pathname}`;
   return NextResponse.redirect(url);
 }
