@@ -5,7 +5,7 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { container } from "@/components/ui";
-import { ogImage } from "@/lib/og";
+import { pageMetadata, titleOf } from "@/lib/seo";
 import { GALLERY_LOOKS, SHOT_CREDITS } from "@/lib/store-shots";
 
 type Params = { params: Promise<{ locale: string }> };
@@ -25,18 +25,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   const { credits } = getDictionary(locale);
-  return {
-    title: `${credits.title} — ZIMOS`,
-    description: credits.description,
-    alternates: { canonical: `/${locale}/credits`, languages: { ar: "/ar/credits", en: "/en/credits" } },
-    openGraph: {
-      title: `${credits.title} — ZIMOS`,
-      description: credits.description,
-      type: "article",
-      url: `/${locale}/credits`,
-      images: [ogImage(locale)],
-    },
-  };
+  return pageMetadata({ locale, path: "/credits", title: titleOf(credits.title), description: credits.description, type: "article" });
 }
 
 const link = "text-primary underline underline-offset-2";

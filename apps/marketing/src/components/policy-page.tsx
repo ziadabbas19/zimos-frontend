@@ -6,8 +6,8 @@ import { SocialLinks } from "@store-builder/ui/social-links";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { formatLongDate } from "@/lib/format";
-import { ogImage } from "@/lib/og";
 import { getPlatformSettings } from "@/lib/platform-settings";
+import { pageMetadata, titleOf } from "@/lib/seo";
 import { POLICIES_LAST_UPDATED, POLICY_SLUGS, companyDetails, policyPage, type PolicySlug } from "@/lib/policies";
 import { SiteFooter } from "./site-footer";
 import { SiteHeader } from "./site-header";
@@ -17,21 +17,7 @@ import { container } from "./ui";
 export function policyMetadata(slug: PolicySlug, locale: string): Metadata {
   if (!isLocale(locale)) return {};
   const page = policyPage(slug, locale);
-  return {
-    title: `${page.title} — ZIMOS`,
-    description: page.description,
-    alternates: {
-      canonical: `/${locale}/${slug}`,
-      languages: { ar: `/ar/${slug}`, en: `/en/${slug}` },
-    },
-    openGraph: {
-      title: `${page.title} — ZIMOS`,
-      description: page.description,
-      type: "article",
-      url: `/${locale}/${slug}`,
-      images: [ogImage(locale)],
-    },
-  };
+  return pageMetadata({ locale, path: `/${slug}`, title: titleOf(page.title), description: page.description, type: "article" });
 }
 
 /**

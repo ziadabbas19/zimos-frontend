@@ -11,7 +11,7 @@ import { FeaturesNav } from "@/components/features-nav";
 import { FinalCta } from "@/components/final-cta";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { ogImage } from "@/lib/og";
+import { pageMetadata } from "@/lib/seo";
 import { REGISTER_URL } from "@/lib/urls";
 
 type Params = { params: Promise<{ locale: string }> };
@@ -24,18 +24,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   const { meta } = getFeatures(locale);
-  return {
-    title: meta.title,
-    description: meta.description,
-    alternates: { canonical: `/${locale}/features`, languages: { ar: "/ar/features", en: "/en/features" } },
-    openGraph: {
-      title: meta.title,
-      description: meta.description,
-      type: "website",
-      url: `/${locale}/features`,
-      images: [ogImage(locale)],
-    },
-  };
+  return pageMetadata({ locale, path: "/features", title: meta.title, description: meta.description });
 }
 
 /**
