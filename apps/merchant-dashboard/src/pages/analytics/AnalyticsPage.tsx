@@ -255,7 +255,7 @@ const STRINGS = {
   },
 } satisfies Messages;
 
-/** Change vs the previous period: blue up (good), red down, muted dash when no baseline. */
+/** Change vs the previous period: green up, red down, muted dash when no baseline. */
 function Delta({ basisPoints, vsLabel }: { basisPoints: number | null; vsLabel: string }) {
   if (basisPoints === null) return <span className="text-xs text-ink-soft">—</span>;
   const up = basisPoints > 0;
@@ -265,7 +265,7 @@ function Delta({ basisPoints, vsLabel }: { basisPoints: number | null; vsLabel: 
       <span
         className={cn(
           "inline-flex items-center gap-0.5 font-medium",
-          up && "text-primary",
+          up && "text-success",
           down && "text-danger",
           !up && !down && "text-ink-soft"
         )}

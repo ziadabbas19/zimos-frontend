@@ -163,7 +163,7 @@ function Figure({ label, value, delta, hint, live }: { label: string; value: str
         <bdi>{value}</bdi>
       </dd>
       {delta !== null && delta !== undefined && (
-        <p className={delta >= 0 ? "text-xs font-medium text-primary" : "text-xs font-medium text-danger"} title={hint}>
+        <p className={delta >= 0 ? "text-xs font-medium text-success" : "text-xs font-medium text-danger"} title={hint}>
           <bdi dir="ltr">
             {delta > 0 ? "+" : ""}
             {delta}%

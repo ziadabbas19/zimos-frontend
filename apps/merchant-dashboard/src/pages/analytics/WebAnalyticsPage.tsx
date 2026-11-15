@@ -181,7 +181,7 @@ function Delta({ now, before }: { now: number | null; before: number | null | un
   const up = bp > 0;
   const down = bp < 0;
   return (
-    <span className={cn("ms-2 inline-flex items-center gap-0.5 text-xs font-medium", up && "text-primary", down && "text-danger", !up && !down && "text-ink-soft")}>
+    <span className={cn("ms-2 inline-flex items-center gap-0.5 text-xs font-medium", up && "text-success", down && "text-danger", !up && !down && "text-ink-soft")}>
       {up && <ArrowUpRight className="size-3.5" aria-hidden />}
       {down && <ArrowDownRight className="size-3.5" aria-hidden />}
       <bdi dir="ltr">{formatPercentValue(Math.abs(bp) / 10000)}</bdi>
