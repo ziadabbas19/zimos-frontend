@@ -2973,6 +2973,119 @@ html:has(.zm-viewer[open]) {
   font-size: max(19px, 1.625rem);
 }
 
+/* The name and, on the plan to look at, its badge: one row that wraps
+   rather than letting the badge come over the name. */
+.zm-plan-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+}
+
+.zm-badge {
+  flex: none;
+  padding: 0.375rem 0.875rem;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 8px 20px -10px rgb(4 20 70 / 0.6);
+  color: var(--blue);
+  font-size: var(--t-tiny);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* The middle of three plans: ZIMOS blue, white type, a light ring and a
+   glow that breathes (still with reduced motion), raised a little on a
+   computer. The same blue in both themes. */
+.zm-plan--hot {
+  isolation: isolate;
+  border-color: transparent;
+  background:
+    radial-gradient(90% 55% at 100% 0%, rgb(111 220 255 / 0.3), transparent 62%),
+    radial-gradient(80% 60% at 0% 100%, rgb(8 31 92 / 0.55), transparent 70%),
+    linear-gradient(160deg, #2b6dff 0%, #165dff 45%, #0b46cc 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    0 40px 70px -32px rgb(22 93 255 / 0.85);
+  color: #fff;
+}
+
+.zm-plan--hot::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  padding: 1.5px;
+  border-radius: inherit;
+  background: linear-gradient(140deg, rgb(255 255 255 / 0.75), rgb(111 220 255 / 0.25) 40%, rgb(111 220 255 / 0.85));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.zm-plan--hot::after {
+  content: "";
+  position: absolute;
+  inset: 8% 6% -4%;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(60% 60% at 50% 60%, rgb(79 195 255 / 0.55), transparent 70%);
+  filter: blur(28px);
+  opacity: 0.6;
+  animation: zm-hot-glow 4s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes zm-hot-glow {
+  from {
+    opacity: 0.45;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 0.85;
+    transform: scale(1.04);
+  }
+}
+
+.zm-plan--hot :is(.zm-psub, .zm-price small) {
+  color: rgb(255 255 255 / 0.78);
+  opacity: 1;
+}
+
+.zm-plan.zm-plan--hot :is(.zm-trial, li svg),
+.dark .zm-plan.zm-plan--hot .zm-trial {
+  color: var(--cyan);
+}
+
+.zm-plan.zm-plan--hot:hover {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    0 46px 80px -32px rgb(22 93 255 / 0.95);
+}
+
+.zm-plan--hot .zm-lim span,
+.dark .zm-plan--hot .zm-lim span {
+  background: rgb(255 255 255 / 0.16);
+  color: #fff;
+}
+
+.zm-plan--hot ::selection {
+  background: rgb(255 255 255 / 0.3);
+  color: #fff;
+}
+
+@media (min-width: 1024px) {
+  .zm-plan--hot {
+    z-index: 1;
+    scale: 1.035;
+    translate: 0 -0.5rem;
+  }
+}
+
 .zm-price {
   display: flex;
   flex-wrap: wrap;

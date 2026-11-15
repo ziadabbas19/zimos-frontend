@@ -68,6 +68,11 @@ function Count({ value, from, turn, format }: { value: number; from: number; tur
  * each plan with its price, limits and features, then the pay-per-order
  * plan as a wide strip when the API offers it.
  *
+ * With exactly three plans the middle one is the one to look at: blue,
+ * raised a little on a computer, with the badge "Most popular" and the
+ * brighter button. It is picked by its place in the console's order, never
+ * by its price; any other number of plans has no badge.
+ *
  * Every price of both cycles is in the HTML: the switch is two radio inputs
  * and the cards show one cycle or the other with CSS (home.css
  * `.zm-m`/`.zm-y`), so it works, and reads, without script. With script the
@@ -82,6 +87,8 @@ export function HomePlans({ initial, copy, locale }: { initial: PublicOffer | nu
   const payPerOrder = offer?.payPerOrder ?? null;
   const showYearly = plans.some((plan) => plan.yearlyPrice > 0);
   const saves = yearlySaves(plans);
+  // The middle of three subscription plans, by its place in the list (pay per order is not one of them).
+  const hot = plans.length === 3 ? 1 : -1;
   const pick = (next: Cycle) => {
     setCycle(next);
     setTurn((n) => n + 1);
@@ -121,8 +128,8 @@ export function HomePlans({ initial, copy, locale }: { initial: PublicOffer | nu
 
       {plans.length > 0 ? (
         <ul className="zm-plans" style={{ "--cols": Math.min(3, plans.length) } as CSSProperties}>
-          {plans.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} copy={copy} locale={locale} showYearly={showYearly} turn={turn} cycle={cycle} />
+          {plans.map((plan, i) => (
+            <PlanCard key={plan.id} plan={plan} copy={copy} locale={locale} showYearly={showYearly} turn={turn} cycle={cycle} hot={i === hot} />
           ))}
         </ul>
       ) : null}
@@ -163,6 +170,7 @@ function PlanCard({
   showYearly,
   turn,
   cycle,
+  hot,
 }: {
   plan: PublicPlan;
   copy: Copy;
@@ -170,6 +178,8 @@ function PlanCard({
   showYearly: boolean;
   turn: number;
   cycle: Cycle;
+  /** The plan to look at: blue, raised, with the "Most popular" badge. */
+  hot: boolean;
 }) {
   const headingId = `home-plan-${plan.id}`;
   const free = plan.monthlyPrice === 0;
@@ -179,6 +189,7 @@ function PlanCard({
   const year = priceParts(plan.yearlyPrice, plan.currency, locale);
   const limit = (value: number | null) => (value === null ? copy.unlimited : formatNumber(value, locale));
   const features = plan.features.filter((key): key is keyof Copy["features"] => key in copy.features);
+  const button = hot ? "zm-btn zm-btn--volt" : "zm-btn zm-btn--blue";
 
   const price = (parts: typeof month, from: number, on: boolean, per: string) => (
     <div className="zm-price">
@@ -192,8 +203,12 @@ function PlanCard({
   );
 
   return (
-    <li className="zm-plan" aria-labelledby={headingId}>
-      <h3 id={headingId}>{plan.name}</h3>
+    <li className={hot ? "zm-plan zm-plan--hot" : "zm-plan"} aria-labelledby={headingId}>
+      {/* The badge beside the name, on the same row; a long name pushes it to the next one, never under it. */}
+      <div className="zm-plan-top">
+        <h3 id={headingId}>{plan.name}</h3>
+        {hot ? <span className="zm-badge">{copy.mostPopular}</span> : null}
+      </div>
 
       {free ? (
         <div className="zm-price">
@@ -250,14 +265,14 @@ function PlanCard({
       ) : null}
 
       <div className={both ? "zm-buy zm-m" : "zm-buy"}>
-        <a className="zm-btn zm-btn--blue" href={registerUrlFor(plan.id, "monthly")}>
+        <a className={button} href={registerUrlFor(plan.id, "monthly")}>
           {copy.cta}
           <Arrow size={16} className="zm-arr" />
         </a>
       </div>
       {both ? (
         <div className="zm-buy zm-y">
-          <a className="zm-btn zm-btn--blue" href={registerUrlFor(plan.id, "yearly")}>
+          <a className={button} href={registerUrlFor(plan.id, "yearly")}>
             {copy.ctaYearly}
             <Arrow size={16} className="zm-arr" />
           </a>

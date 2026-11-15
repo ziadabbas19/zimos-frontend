@@ -234,6 +234,8 @@ export interface Dictionary {
     unlimited: string;
     cta: string;
     ctaYearly: string;
+    /** The badge on the middle of three plans (the home page and the pricing page). */
+    mostPopular: string;
     seeAll: string;
     comingSoon: string;
     comingSoonBody: string;

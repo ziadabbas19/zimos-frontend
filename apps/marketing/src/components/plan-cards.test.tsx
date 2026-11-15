@@ -234,3 +234,34 @@ describe("the pay-per-order words", () => {
     }
   });
 });
+
+describe("the plan to look at", () => {
+  it("is the middle of three, by its place in the list and not by its price, with the badge beside its name", () => {
+    // The middle one is the cheapest here: its place is what counts.
+    renderCards("en", PPO, [plan("a", 99900), plan("b", 29900), plan("c", 49900)]);
+    const hot = card("Plan b");
+    expect(hot.classList.contains("plan-card--hot")).toBe(true);
+    expect(within(hot).getByText("Most popular")).toBeTruthy();
+    // The badge is not part of the plan's name.
+    expect(within(hot).getByRole("heading", { level: 2 }).textContent).toBe("Plan b");
+    for (const name of ["Plan a", "Plan c"]) {
+      expect(card(name).classList.contains("plan-card--hot")).toBe(false);
+      expect(within(card(name)).queryByText("Most popular")).toBeNull();
+    }
+    expect(card("الدفع لكل طلب").classList.contains("plan-card--hot")).toBe(false);
+  });
+
+  it("says it in Arabic", () => {
+    renderCards("ar", null);
+    expect(within(card("Plan b")).getByText("الأكثر طلبًا")).toBeTruthy();
+  });
+
+  it("is not picked when there are not exactly three plans", () => {
+    for (const plans of [[plan("a"), plan("b")], [plan("a"), plan("b"), plan("c"), plan("d")]]) {
+      renderCards("en", PPO, plans);
+      expect(screen.queryByText("Most popular")).toBeNull();
+      expect(document.querySelector(".plan-card--hot")).toBeNull();
+      cleanup();
+    }
+  });
+});

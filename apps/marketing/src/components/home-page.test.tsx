@@ -71,6 +71,24 @@ describe("the home page's plans", () => {
     expect(radios[1].checked).toBe(true);
   });
 
+  it("raises the middle of three plans, with its badge and the brighter button, and no other", () => {
+    const three: PublicOffer = {
+      plans: [offer.plans[0], { ...offer.plans[0], id: "pro", name: "Pro", monthlyPrice: 71900, yearlyPrice: 719000 }, offer.plans[1]],
+      payPerOrder: offer.payPerOrder,
+    };
+    const { container } = render(createElement(HomePlans, { initial: three, copy: en.pricing, locale: "en" }));
+    const hot = container.querySelectorAll(".zm-plan--hot");
+    expect(hot).toHaveLength(1);
+    expect(hot[0].getAttribute("aria-labelledby")).toBe(screen.getByRole("heading", { name: "Pro" }).id);
+    expect(hot[0].querySelector(".zm-badge")?.textContent).toBe(en.pricing.mostPopular);
+    expect([...hot[0].querySelectorAll("a")].every((a) => a.classList.contains("zm-btn--volt"))).toBe(true);
+    expect(container.querySelectorAll(".zm-badge")).toHaveLength(1);
+    cleanup();
+    // Two plans: no badge at all.
+    const { container: two } = render(createElement(HomePlans, { initial: offer, copy: en.pricing, locale: "en" }));
+    expect(two.querySelector(".zm-plan--hot, .zm-badge")).toBeNull();
+  });
+
   it("offers pay per order as its own plan, and says so kindly when there is no plan", () => {
     render(createElement(HomePlans, { initial: offer, copy: en.pricing, locale: "en" }));
     expect(screen.getByRole("heading", { name: "Pay per order" }).closest("li")!.querySelector("a")!.getAttribute("href")).toBe("https://app.zimos.co/register?plan=payg");

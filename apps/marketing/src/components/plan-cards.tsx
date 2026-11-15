@@ -36,6 +36,9 @@ export const FEATURES_FIRST = 6;
  *
  * The plans' cards are ZIMOS blue (landing.css `.plan-card`), white type on
  * them, so they stand out on the page; the pay-per-order card is a soft blue.
+ * With exactly three plans the middle one, by its place in the console's
+ * order, carries the "Most popular" badge, a light ring and, on a computer,
+ * stands a little forward (`.plan-card--hot`), as on the home page.
  *
  * `compact` leaves out the limits and features. The home page and the pricing
  * page both show everything (components/live-plans.tsx keeps it current).
@@ -73,6 +76,8 @@ export function PlanCards({
   // platform after this page) is left out rather than shown as a raw key.
   const named = (features: readonly string[]) => features.filter((key): key is keyof Copy["features"] => key in copy.features);
   const cards = plans.length + (payPerOrder ? 1 : 0);
+  // The middle of three subscription plans, by its place in the list (pay per order is not one of them).
+  const hot = plans.length === 3 ? 1 : -1;
 
   return (
     <div className="group/pricing">
@@ -104,7 +109,7 @@ export function PlanCards({
       ) : null}
 
       <ul className={`mx-auto mt-10 grid max-w-6xl gap-4 lg:gap-6 ${cards >= 3 ? "lg:grid-cols-3" : cards === 2 ? "md:grid-cols-2 md:max-w-4xl" : "max-w-md"}`}>
-        {plans.map((plan) => {
+        {plans.map((plan, i) => {
           const free = plan.monthlyPrice === 0;
           const whenMonthly = showYearly ? WHEN_MONTHLY : "";
           const yearly = yearlyBreakdown(plan);
@@ -112,11 +117,17 @@ export function PlanCards({
             <li
               key={plan.id}
               aria-labelledby={`${idPrefix}-plan-${plan.id}`}
-              className="plan-card relative flex flex-col overflow-hidden rounded-3xl p-6 text-white sm:p-8"
+              className={`plan-card relative flex flex-col overflow-hidden rounded-3xl p-6 text-white sm:p-8${i === hot ? " plan-card--hot" : ""}`}
             >
-              <PlanHeading id={`${idPrefix}-plan-${plan.id}`} className="text-xl font-bold text-white">
-                {plan.name}
-              </PlanHeading>
+              {/* The badge beside the name, on the same row; a long name pushes it to the next one, never under it. */}
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                <PlanHeading id={`${idPrefix}-plan-${plan.id}`} className="text-xl font-bold text-white">
+                  {plan.name}
+                </PlanHeading>
+                {i === hot ? (
+                  <span className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1 text-xs font-bold text-primary-dark">{copy.mostPopular}</span>
+                ) : null}
+              </div>
 
               <div className="mt-4">
                 {free ? (

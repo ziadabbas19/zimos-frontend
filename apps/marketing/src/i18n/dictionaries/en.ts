@@ -331,6 +331,7 @@ export const en: Dictionary = {
     unlimited: "Unlimited",
     cta: "Subscribe",
     ctaYearly: "Subscribe yearly",
+    mostPopular: "Most popular",
     seeAll: "See all plans and prices",
     comingSoon: "Prices will be available soon.",
     comingSoonBody: "Our plans are being finalised. Create your account now and we'll show you the plans as soon as they're published.",
