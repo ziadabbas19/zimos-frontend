@@ -88,7 +88,7 @@ export function featureLabel(key: PlanFeatureKey, t: PlanText): string {
 /** "14 days" / "١٤ يومًا", with the Arabic number agreeing with its count. */
 export function formatDays(days: number, locale: "ar" | "en"): string {
   if (locale === "en") return days === 1 ? "1 day" : `${days} days`;
-  const n = new Intl.NumberFormat("ar-EG-u-nu-latn").format(days);
+  const n = new Intl.NumberFormat("ar-EG").format(days);
   if (days === 1) return "يوم واحد";
   if (days === 2) return "يومان";
   if (days >= 3 && days <= 10) return `${n} أيام`;

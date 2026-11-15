@@ -454,7 +454,7 @@ describe("how long the charge lives (preview.chargeExpiry)", () => {
 
   it("in Arabic", async () => {
     const dialog = await confirmationFor("Pro", upgrade({ chargeExpiry: { hours: 48, expiresAt: "2030-01-19T12:00:00.000Z" } }), { locale: "ar" });
-    expect(within(dialog).getByText(/\(خلال 48 ساعة من الآن\)/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/\(خلال ٤٨ ساعة من الآن\)/)).toBeInTheDocument();
   });
 });
 

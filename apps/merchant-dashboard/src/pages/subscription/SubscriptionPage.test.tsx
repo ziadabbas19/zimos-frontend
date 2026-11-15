@@ -170,23 +170,6 @@ describe("SubscriptionPage", () => {
     expect(screen.getByRole("link", { name: "Pay and see invoices" })).toHaveAttribute("href", "/subscription?tab=invoices");
   });
 
-  it("says a trial that has ended, strikes the price a code covers, and offers no Pay when nothing is due", async () => {
-    api.getPaymentMethods.mockResolvedValue({ methods: [fake({ code: "instapay", kind: "manual", label: { ar: "إنستا باي", en: "InstaPay" } })], currency: "EGP", contactSupport: false });
-    api.listBillingPaymentProofs.mockResolvedValue({ proofs: [] });
-    setup({
-      route: "/subscription?tab=invoices",
-      bill: billing({
-        subscription: { ...billing().subscription, trialEndsAt: "2020-01-01", currentPeriodEnd: "2020-01-01" },
-        nextCharge: { grossAmount: 30000, discountAmount: 30000, amount: 0, currency: "EGP" },
-      }),
-    });
-    expect(await screen.findByText("Trial ended")).toBeInTheDocument();
-    expect(screen.getByText("Nothing to pay: your code covers the plan.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "See invoices" })).toHaveAttribute("href", "/subscription?tab=invoices");
-    await screen.findByRole("tab", { name: "Invoices", selected: true });
-    expect(screen.queryByRole("button", { name: "Pay" })).not.toBeInTheDocument();
-  });
-
   it("offers the free trial on every plan of a draft store whose account hasn't had one", async () => {
     api.startTrial.mockResolvedValue(fake({ started: true }));
     const { user } = setup({

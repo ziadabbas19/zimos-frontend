@@ -58,13 +58,12 @@ describe("PlanPicker's yearly price", () => {
     expect(within(basic).getByText(/^= .*100 \/ month$/)).toBeInTheDocument();
   });
 
-  it("writes Western digits under Arabic, as Net Profit's system does", async () => {
+  it("writes Arabic digits under Arabic", async () => {
     const { user } = renderWithProviders(<Picker plans={[plan()]} />, { locale: "ar" });
     await user.click(screen.getByRole("radio", { name: "سنوي · وفّر" }));
     const basic = cardOf("Basic");
-    expect(basic.querySelector("s")?.textContent).toMatch(/3,828/);
-    expect(basic.textContent).not.toMatch(/[٠-٩]/);
-    expect(within(basic).getByText(/^= .*266.* \/ شهر$/)).toBeInTheDocument();
+    expect(basic.querySelector("s")?.textContent).toMatch(/٣٬٨٢٨/);
+    expect(within(basic).getByText(/^= .*٢٦٦.* \/ شهر$/)).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/شهران مجان/);
   });
 });

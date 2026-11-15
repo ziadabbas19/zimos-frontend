@@ -36,8 +36,7 @@ function constant(source, name) {
 describe("the console's frame is the merchant dashboard's", () => {
   it("the three panes carry the dashboard's own classes", () => {
     assert.match(adminLayout, /<div className="glass-app flex min-h-screen" data-focus=\{focus \? "on" : undefined\}>/);
-    // The dashboard's frame also carries the merchant's wallpaper (lib/wallpaper.ts); the console has none.
-    assert.match(dashboardLayout, /<div className="glass-app flex min-h-screen" data-focus=\{focus \? "on" : undefined\} \{\.\.\.wallpaper\}>/);
+    assert.match(dashboardLayout, /<div className="glass-app flex min-h-screen" data-focus=\{focus \? "on" : undefined\}>/);
     for (const slot of ['data-slot="side-menu"', 'data-slot="toolbar"']) {
       assert.equal(classAfter(adminLayout, slot), classAfter(dashboardLayout, slot), slot);
     }
@@ -57,10 +56,8 @@ describe("the console's frame is the merchant dashboard's", () => {
     const mine = read("./SidebarNav.tsx");
     const theirs = dashboard("shell/SidebarNav.tsx");
     for (const name of ["ROW", "ROW_RAIL", "ROW_SHEET"]) assert.equal(constant(mine, name), constant(theirs, name), name);
-    // The console folds its groups under their headings; the dashboard lists its places beside their
-    // coloured tiles in the dock and shows the chosen one (2026-11-15). The list fades at both ends in both.
-    assert.match(classAfter(mine, "onClick={() => toggle(group.id)}"), /^zimos-menu-heading /);
-    assert.match(theirs, /<PlaceTile place=\{shown\.id\}/);
+    // The heading that folds a group, and the list that fades at both ends.
+    assert.equal(classAfter(mine, "onClick={() => toggle(group.id)}"), classAfter(theirs, "onClick={() => toggle(group.id)}"));
     assert.match(mine, /className="zimos-menu-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-2\.5 pt-2\.5 pb-5 \[scrollbar-width:none\] \[&::-webkit-scrollbar\]:hidden/);
     assert.match(theirs, /className="zimos-menu-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-2\.5 pt-2\.5 pb-5 \[scrollbar-width:none\] \[&::-webkit-scrollbar\]:hidden/);
     assert.match(mine, /<ZimosLogo height=\{22\} \/>/);

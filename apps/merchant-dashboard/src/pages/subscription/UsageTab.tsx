@@ -31,7 +31,7 @@ export function UsageTab({ limits }: { limits: PlanLimits }) {
 function UsageMeter({ label, used, max, note }: { label: string; used: number; max: number | null; note?: string }) {
   const t = useT(SUBSCRIPTION_STRINGS);
   const { locale } = useLocale();
-  const number = (n: number) => new Intl.NumberFormat(locale === "ar" ? "ar-EG-u-nu-latn" : "en-US").format(n);
+  const number = (n: number) => new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US").format(n);
   const share = max ? Math.min(1, used / max) : 0;
   const full = max !== null && used >= max;
   return (

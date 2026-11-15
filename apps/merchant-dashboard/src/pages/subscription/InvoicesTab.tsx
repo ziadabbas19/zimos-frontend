@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Alert, Button, cn } from "@store-builder/ui";
-import type { BillingPaymentMethod, MerchantInvoice, BillingPaymentProof, WorkspaceBilling } from "@store-builder/api-client";
+import type { MerchantInvoice, BillingPaymentProof, WorkspaceBilling } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useAsync } from "@/lib/useAsync";
@@ -12,7 +12,6 @@ import { useLocale, useT, fmt } from "@/i18n/LocaleContext";
 import { DataState } from "@/components/DataState";
 import { useToast } from "@/components/Toast";
 import { PaymentReturn } from "./billingParts";
-import { PaymentMark } from "@/components/PaymentMark";
 import { PayDialog } from "./PayDialog";
 import { PAY_STRINGS } from "./payStrings";
 import { BILLING_STRINGS, type ReturnHint } from "./billingText";
@@ -61,9 +60,7 @@ export function InvoicesTab({
 
   const offered = methods.data?.methods ?? [];
   const openInvoice = invoices.data?.invoices.find((i) => i.status === "pending") ?? null;
-  // Something to pay: an open charge, or a next charge the store's code does not cover whole.
-  // A charge of nothing has no transfer to send, so it offers no Pay button (the summary says why).
-  const due = openInvoice ? openInvoice.amountDue > 0 : Boolean(billing?.nextCharge && billing.nextCharge.amount > 0);
+  const due = Boolean(openInvoice || billing?.nextCharge);
   const allProofs = proofs.data?.proofs ?? [];
   const waiting = allProofs.find((x) => x.status === "pending" && x.purpose === "invoice") ?? null;
   const latestFor = (invoiceId: string) => allProofs.find((x) => x.invoiceId === invoiceId) ?? null;
@@ -98,7 +95,6 @@ export function InvoicesTab({
           billing={billing}
           openInvoice={openInvoice}
           contactSupport={methods.data.contactSupport}
-          methods={offered}
           waiting={waiting}
           canPay={canPay}
           onPay={() => setPaying(true)}
@@ -171,7 +167,6 @@ function PayPanel({
   billing,
   openInvoice,
   contactSupport,
-  methods,
   waiting,
   canPay,
   onPay,
@@ -180,7 +175,6 @@ function PayPanel({
   billing: WorkspaceBilling | null;
   openInvoice: MerchantInvoice | null;
   contactSupport: boolean;
-  methods: BillingPaymentMethod[];
   waiting: BillingPaymentProof | null;
   canPay: boolean;
   onPay: () => void;
@@ -196,24 +190,8 @@ function PayPanel({
   const awaiting = latest && latest.status === "pending" && latest.referenceNumber ? latest : null;
 
   return (
-    <section aria-label={p.payPanelTitle} className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-[var(--radius-card)] border border-line bg-paper-raised p-4 sm:p-5">
-      <div className="min-w-0 flex-1 space-y-2">
-      {/* The amount for the eye, large; the sentence stays for a screen reader. */}
-      <p className="sr-only">{fmt(p.payPanelBody, { amount })}</p>
-      <div aria-hidden>
-        <p className="text-sm text-ink-soft">{p.amountDue}</p>
-        <p className="tabular text-3xl font-bold tracking-tight text-ink">
-          <bdi>{amount}</bdi>
-        </p>
-      </div>
-      {methods.length > 0 && !contactSupport && (
-        <p className="flex flex-wrap items-center gap-2 text-xs text-ink-soft">
-          {p.payWith}
-          {methods.map((m) => (
-            <PaymentMark key={m.code} code={m.code} kind={m.kind} className="h-7 [&_img]:size-7" />
-          ))}
-        </p>
-      )}
+    <section aria-label={p.payPanelTitle} className="space-y-2 rounded-[10px] border border-line bg-paper px-4 py-3">
+      <p className="text-sm text-ink">{fmt(p.payPanelBody, { amount })}</p>
       {awaiting && (
         <p className="text-sm text-ink-soft">
           {fmt(bt.awaitingReference, { method: awaiting.paymentMethod ?? "", reference: awaiting.referenceNumber ?? "" })}
@@ -228,12 +206,12 @@ function PayPanel({
         </p>
       ) : waiting ? (
         <p className="text-sm font-medium text-ink">{p.transferUnderReview}</p>
-      ) : null}
-      </div>
-      {!contactSupport && !waiting && canPay && (
-        <Button type="button" onClick={onPay} className="min-h-12 min-w-36 text-base">
-          {p.payButton}
-        </Button>
+      ) : (
+        canPay && (
+          <Button type="button" onClick={onPay} className="min-h-11">
+            {p.payButton}
+          </Button>
+        )
       )}
     </section>
   );
