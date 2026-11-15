@@ -36,7 +36,8 @@ function constant(source, name) {
 describe("the console's frame is the merchant dashboard's", () => {
   it("the three panes carry the dashboard's own classes", () => {
     assert.match(adminLayout, /<div className="glass-app flex min-h-screen" data-focus=\{focus \? "on" : undefined\}>/);
-    assert.match(dashboardLayout, /<div className="glass-app flex min-h-screen" data-focus=\{focus \? "on" : undefined\}>/);
+    // The dashboard's frame also carries the merchant's wallpaper (lib/wallpaper.ts); the console has none.
+    assert.match(dashboardLayout, /<div className="glass-app flex min-h-screen" data-focus=\{focus \? "on" : undefined\} \{\.\.\.wallpaper\}>/);
     for (const slot of ['data-slot="side-menu"', 'data-slot="toolbar"']) {
       assert.equal(classAfter(adminLayout, slot), classAfter(dashboardLayout, slot), slot);
     }

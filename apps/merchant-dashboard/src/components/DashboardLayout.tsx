@@ -25,6 +25,7 @@ import { PhoneMenu } from "@/components/shell/PhoneMenu";
 import { PlaceDock } from "@/components/shell/PlaceDock";
 import { SidebarNav } from "@/components/shell/SidebarNav";
 import { useScrollRestoration } from "@/lib/scrollRestore";
+import { useWallpaper, wallpaperFrame } from "@/lib/wallpaper";
 
 const STRINGS = {
   en: {
@@ -60,6 +61,8 @@ export function DashboardLayout() {
   useScrollRestoration();
   const location = useLocation();
   const t = useT(STRINGS);
+  // The picture behind the glass, chosen in Settings → Language and look (lib/wallpaper.ts).
+  const wallpaper = wallpaperFrame(useWallpaper());
 
   // Full screen: the side menu steps aside so the page has the whole width.
   const [focus, setFocus] = useState(() => {
@@ -107,7 +110,7 @@ export function DashboardLayout() {
   }, [location.pathname]);
 
   return (
-    <div className="glass-app flex min-h-screen" data-focus={focus ? "on" : undefined}>
+    <div className="glass-app flex min-h-screen" data-focus={focus ? "on" : undefined} {...wallpaper}>
       <KeyboardShortcuts />
       <aside
         id={SIDE_MENU_ID}

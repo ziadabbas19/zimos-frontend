@@ -139,6 +139,19 @@ describe("the side menu", () => {
     await waitFor(() => expect(orders).toHaveTextContent("4"));
   });
 
+  it("lays the chosen wallpaper behind the glass, the blue waves until one is chosen", () => {
+    store("owner");
+    const { container, unmount } = renderWithProviders(<DashboardLayout />, { route: "/" });
+    const frame = container.querySelector<HTMLElement>(".glass-app")!;
+    expect(frame).toHaveAttribute("data-wallpaper", "waves");
+    expect(frame.style.getPropertyValue("--zimos-wallpaper")).toBe('url("/wallpapers/waves.webp")');
+    unmount();
+
+    localStorage.setItem("zimos.wallpaper", "calm");
+    const calm = renderWithProviders(<DashboardLayout />, { route: "/" });
+    expect(calm.container.querySelector(".glass-app")).not.toHaveAttribute("data-wallpaper");
+  });
+
   it("carries our logo and the store's name", () => {
     store("owner");
     renderWithProviders(<DashboardLayout />, { route: "/" });

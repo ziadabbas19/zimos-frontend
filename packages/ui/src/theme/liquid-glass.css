@@ -57,12 +57,16 @@
      bar and the page pane each sit over it — so it can be real colour. The
      pane fills and these five are tuned together: change one only with the
      contrast check. */
-  --lg-bg-base: #d5defc;
-  --lg-own-brand: color-mix(in srgb, var(--brand) 40%, white);
-  --lg-own-violet: #b9a5ff;
-  --lg-own-pink: #ffa8d4;
-  --lg-own-peach: #ffc594;
-  --lg-own-sky: #8fdcff;
+  /* Calm by default (owner, 2026-11-15: "I don't like the background"): a
+     light cool grey with a faint wash of the store's blue at the top, no
+     violet, pink or peach; the white cards stand on it. A merchant who picks
+     glow colours (below) still gets them. */
+  --lg-bg-base: #eef2f8;
+  --lg-own-brand: color-mix(in srgb, var(--brand) 16%, white);
+  --lg-own-violet: #e6ebf7;
+  --lg-own-pink: #eef2f8;
+  --lg-own-peach: #eef2f8;
+  --lg-own-sky: #e4edfb;
 
   /* Glow colours (Settings → Language and look). The five above are what the
      pools are by themselves. <html> carries --zimos-glow-left,
@@ -151,11 +155,11 @@
     --lg-brand-glow: 0 10px 22px -12px color-mix(in srgb, var(--color-primary) 60%, transparent);
     /* The ground follows the tone of the Dark look once one is chosen (looks.css). */
     --lg-bg-base: var(--lg-tone-base, #070a16);
-    --lg-own-brand: color-mix(in srgb, var(--brand) 60%, black);
-    --lg-own-violet: #43259a;
-    --lg-own-pink: #7a1d5c;
-    --lg-own-peach: #6b3414;
-    --lg-own-sky: #0b5578;
+    --lg-own-brand: color-mix(in srgb, var(--brand) 28%, black);
+    --lg-own-violet: #0d1430;
+    --lg-own-pink: #070a16;
+    --lg-own-peach: #070a16;
+    --lg-own-sky: #0a1a33;
     --lg-pick-brand: color-mix(in srgb, var(--zimos-glow-left) 30%, black);
     --lg-pick-peach: color-mix(in srgb, var(--zimos-glow-left) 36%, black);
     --lg-pick-violet: color-mix(in srgb, var(--zimos-glow-right) 30%, black);
@@ -212,6 +216,31 @@
       radial-gradient(ellipse 62vw 60vh at 0% 100%, var(--lg-bg-peach) 0%, transparent 70%),
       radial-gradient(ellipse 46vw 42vh at 48% 46%, var(--lg-bg-sky) 0%, transparent 70%),
       var(--lg-bg-base);
+  }
+
+  /* A wallpaper behind the glass (the merchant dashboard's lib/wallpaper.ts:
+     data-wallpaper on the frame, the picture in --zimos-wallpaper, a tall one
+     for a phone in --zimos-wallpaper-phone). It replaces the pools; the ground
+     colour shows while it loads. The panes over it are filled more, so words
+     on them hold their contrast over any part of any picture: the page pane
+     and the side menu (which take no blur) let only a tint of it through, the
+     top bar stays frosted. */
+  .glass-app[data-wallpaper]::before {
+    background: var(--zimos-wallpaper) center / cover no-repeat, var(--lg-bg-base);
+  }
+  @media (max-width: 47.99rem) {
+    .glass-app[data-wallpaper]::before {
+      background-image: var(--zimos-wallpaper-phone);
+    }
+  }
+  .glass-app[data-wallpaper] {
+    --lg-panel: color-mix(in srgb, var(--color-paper-raised) 80%, transparent);
+    --lg-nav: color-mix(in srgb, var(--color-paper-raised) 84%, transparent);
+    --lg-frost: color-mix(in srgb, var(--color-paper-raised) 90%, transparent);
+  }
+  &.dark .glass-app[data-wallpaper] {
+    --lg-panel: color-mix(in srgb, var(--color-paper-raised) 82%, transparent);
+    --lg-nav: color-mix(in srgb, var(--color-paper-raised) 86%, transparent);
   }
 
   /* The page pane. From md up it floats like the side menu and the top bar:
