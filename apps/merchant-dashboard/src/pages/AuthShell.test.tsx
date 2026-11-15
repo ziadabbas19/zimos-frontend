@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -9,6 +9,9 @@ import { ForgotPasswordPage } from "./ForgotPasswordPage";
 import { LoginPage } from "./LoginPage";
 import { ResetPasswordPage } from "./ResetPasswordPage";
 import shell from "./AuthShell.tsx?raw";
+
+/** The 3D icons around the scene's phone, copied from the marketing site (public/icons/3d). */
+const ICONS = ["package", "truck", "money", "chart", "check", "rocket"];
 
 /** The one frame of every screen outside the dashboard: our mark, the language switch, one card. */
 function expectShell(container: HTMLElement) {
@@ -62,24 +65,60 @@ describe("the frame of the sign-in screens", () => {
     expect(screen.getByRole("button", { name: "إخفاء كلمة المرور" })).toBeInTheDocument();
   });
 
-  it("lays sign in beside a photograph of a shop, with the way back to the site", () => {
+  it("lays sign in beside an animated scene, with the way back to the site", () => {
     const { container } = renderWithProviders(<LoginPage />, { route: "/login", auth: { status: "guest", user: null } });
     const frame = container.querySelector(".auth-glass[data-split]")!;
     expect(frame).not.toBeNull();
     expect(screen.getByRole("link", { name: "Home page" })).toHaveAttribute("href", expect.stringMatching(/^https:\/\/[^/]+\/en$/));
     const panel = frame.querySelector("aside")!;
-    expect(panel.querySelector("img")).toHaveAttribute("src", "/photos/store-racks-1080.webp");
-    // Decoration: the words beside it say what ZIMOS does, and the page keeps one title.
-    expect(panel.querySelector("img")).toHaveAttribute("alt", "");
+    // The background first, the one picture fetched early; the phone and the icons only when shown.
+    const pictures = [...panel.querySelectorAll("img")];
+    expect(pictures[0]).toHaveAttribute("src", "/photos/auth-bg-1080.webp");
+    expect(pictures[0]).toHaveAttribute("srcset", "/photos/auth-bg-720.webp 720w, /photos/auth-bg-1080.webp 1080w");
+    expect(pictures[0]).toHaveAttribute("fetchpriority", "high");
+    expect(pictures.slice(1).map((img) => img.getAttribute("loading"))).toEqual(Array(pictures.length - 1).fill("lazy"));
+    expect(pictures.map((img) => img.getAttribute("src"))).toEqual(
+      expect.arrayContaining(["/photos/auth-phone.webp", ...ICONS.map((name) => `/icons/3d/${name}.webp`)]),
+    );
+    // Decoration: every picture is silent, the scene is hidden from screen readers, and the page keeps one title.
+    for (const img of pictures) expect(img).toHaveAttribute("alt", "");
+    for (const layer of panel.querySelectorAll(".auth-scene__back, .auth-scene__stage")) expect(layer).toHaveAttribute("aria-hidden", "true");
     expect(panel).toHaveTextContent("Your store, from the first product to the profit");
     expect(panel.querySelectorAll("li")).toHaveLength(3);
     expect(panel.querySelector("h1, h2")).toBeNull();
+    // The words come before the stage, so the scene stands under them.
+    const words = panel.querySelector(".auth-split__words")!;
+    expect(words.compareDocumentPosition(panel.querySelector(".auth-scene__stage")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("has the photograph it shows on disk", () => {
-    for (const file of ["store-racks-720.webp", "store-racks-1080.webp"]) {
-      expect(existsSync(join(dirname(fileURLToPath(import.meta.url)), "../../public/photos", file)), file).toBe(true);
+  it("says what happens to an order on the scene's cards, in English and in Arabic", () => {
+    const en = renderWithProviders(<LoginPage />, { route: "/login", auth: { status: "guest", user: null } });
+    const cards = () => [...document.querySelectorAll(".auth-scene__card")].map((card) => card.textContent);
+    expect(cards()).toEqual(["New orderIn the confirmation queue", "Order confirmedTracking code ready", "DeliveredCounted in your profit"]);
+    en.unmount();
+    renderWithProviders(<LoginPage />, { route: "/login", locale: "ar", auth: { status: "guest", user: null } });
+    expect(cards()).toEqual(["طلب جديددخل قائمة التأكيد", "تم تأكيد الطلبرقم التتبع جاهز", "تم التسليمدخل في حساب أرباحك"]);
+  });
+
+  it("has the pictures it shows on disk", () => {
+    const pub = join(dirname(fileURLToPath(import.meta.url)), "../../public");
+    for (const file of ["photos/auth-bg-720.webp", "photos/auth-bg-1080.webp", "photos/auth-phone.webp", "photos/auth-phone-400.webp", ...ICONS.map((name) => `icons/3d/${name}.webp`)]) {
+      expect(existsSync(join(pub, file)), file).toBe(true);
     }
+  });
+
+  it("moves only by transform and opacity, and not at all for someone who asked for less motion", () => {
+    const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "auth-scene.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    const keyframes = [...css.matchAll(/@keyframes\s+([\w-]+)\s*\{((?:[^{}]*\{[^{}]*\})*)\s*\}/g)];
+    expect(keyframes.length).toBeGreaterThanOrEqual(8);
+    const other = keyframes.flatMap(([, name, body]) =>
+      [...body.matchAll(/([a-z-]+)\s*:/g)].map((m) => m[1]).filter((prop) => !["transform", "opacity"].includes(prop)).map((prop) => `${name}: ${prop}`),
+    );
+    expect(other).toEqual([]);
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\.auth-split__photo \*,[^{]*\{\s*animation: none !important;/);
+    expect(css).toMatch(/\.auth-split__photo\[data-paused\] \*[^{]*\{\s*animation-play-state: paused !important;/);
+    // No picture fetched from the stylesheet: the scene's pictures are the page's own <img>s.
+    expect(css).not.toMatch(/url\(/);
   });
 
   it("draws our mark and nothing of another brand", () => {

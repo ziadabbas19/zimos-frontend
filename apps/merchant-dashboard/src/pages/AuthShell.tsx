@@ -6,6 +6,7 @@ import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { ZimosLogo } from "@/components/ZimosLogo";
 import { useLocale, useT, type Messages } from "@/i18n/LocaleContext";
 import { MARKETING_URL } from "@/lib/legalLinks";
+import { AuthBackdrop, AuthStage } from "./AuthScene";
 
 /**
  * The one composition of every screen outside the dashboard: sign in, sign up,
@@ -23,8 +24,9 @@ import { MARKETING_URL } from "@/lib/legalLinks";
  * Sign in and sign up are laid out with `side` (the owner, 2026-11-14): the
  * same pieces stand straight on the paper in one half of the screen — a way
  * back to the site and the language switch above them, the mark over the
- * title — and the other half is a photograph of a shop (public/photos) with
- * what ZIMOS does in three lines. Below 1024px the photograph steps aside.
+ * title — and the other half is an animated scene (AuthScene.tsx: a phone
+ * with a store on it, the site's 3D icons, the cards of an order on its way)
+ * under what ZIMOS does in three lines. Below 1024px the scene steps aside.
  * The layout is `.auth-split` in theme/auth.css.
  *
  * Nothing here knows about accounts: the pages keep their own calls,
@@ -40,6 +42,13 @@ const STRINGS = {
     sideTemplates: "Build your store from a ready template",
     sideConfirm: "Confirm your orders before they ship",
     sideProfit: "See the real profit of every order",
+    // The scene's cards, in the marketing site's words for the same moments.
+    sceneNewOrder: "New order",
+    sceneNewOrderDetail: "In the confirmation queue",
+    sceneConfirmed: "Order confirmed",
+    sceneConfirmedDetail: "Tracking code ready",
+    sceneDelivered: "Delivered",
+    sceneDeliveredDetail: "Counted in your profit",
   },
   ar: {
     show: "إظهار كلمة المرور",
@@ -49,6 +58,12 @@ const STRINGS = {
     sideTemplates: "ابنِ متجرك من قالب جاهز",
     sideConfirm: "أكِّد طلباتك قبل الشحن",
     sideProfit: "اعرف الربح الحقيقي لكل طلب",
+    sceneNewOrder: "طلب جديد",
+    sceneNewOrderDetail: "دخل قائمة التأكيد",
+    sceneConfirmed: "تم تأكيد الطلب",
+    sceneConfirmedDetail: "رقم التتبع جاهز",
+    sceneDelivered: "تم التسليم",
+    sceneDeliveredDetail: "دخل في حساب أرباحك",
   },
 } satisfies Messages;
 
@@ -68,7 +83,7 @@ export function AuthShell({
   size?: keyof typeof WIDTH;
   /** A card wider than the three sizes (the sign-up form's two columns). */
   className?: string;
-  /** Sign in and sign up: the form in one half of the screen, a photograph of a shop in the other. */
+  /** Sign in and sign up: the form in one half of the screen, the animated scene in the other. */
   side?: boolean;
 }) {
   const t = useT(STRINGS);
@@ -103,15 +118,7 @@ export function AuthShell({
 
           <aside className="auth-split__panel">
             <div className="auth-split__photo">
-              <img
-                src="/photos/store-racks-1080.webp"
-                srcSet="/photos/store-racks-720.webp 720w, /photos/store-racks-1080.webp 1080w"
-                sizes="(min-width: 64rem) 44vw, 1px"
-                width={1080}
-                height={1350}
-                alt=""
-                decoding="async"
-              />
+              <AuthBackdrop />
               <div className="auth-split__words">
                 <p className="auth-split__title">{t.sideTitle}</p>
                 <ul>
@@ -135,6 +142,16 @@ export function AuthShell({
                   </li>
                 </ul>
               </div>
+              <AuthStage
+                t={{
+                  newOrder: t.sceneNewOrder,
+                  newOrderDetail: t.sceneNewOrderDetail,
+                  confirmed: t.sceneConfirmed,
+                  confirmedDetail: t.sceneConfirmedDetail,
+                  delivered: t.sceneDelivered,
+                  deliveredDetail: t.sceneDeliveredDetail,
+                }}
+              />
             </div>
           </aside>
         </div>

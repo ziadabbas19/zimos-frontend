@@ -177,36 +177,33 @@ html:not(.dark) .auth-glass {
     padding: 0.75rem;
   }
 }
+/* A scene drawn in the dashboard (apps/merchant-dashboard/src/pages/AuthScene.tsx):
+   the words at the top, where the picture is calm, and the stage of the
+   scene in the space under them, so nothing of it can come over the words. */
 .auth-split__photo {
   position: relative;
   isolation: isolate;
+  display: flex;
   height: 100%;
+  flex-direction: column;
   overflow: hidden;
   border-radius: 1.75rem;
   background: #0a1226;
   color: #fff;
 }
-.auth-split__photo img {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-/* Dark at the foot, where the words stand. */
+/* Darker at the top, where the words stand. */
 .auth-split__photo::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: linear-gradient(180deg, rgb(5 9 18 / 0.08) 28%, rgb(6 12 30 / 0.7) 66%, rgb(5 9 18 / 0.94) 100%);
+  background: linear-gradient(180deg, rgb(5 9 18 / 0.78) 0%, rgb(6 12 30 / 0.4) 26%, rgb(5 9 18 / 0) 46%);
+  pointer-events: none;
 }
 .auth-split__words {
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0;
-  padding: 2.5rem;
+  position: relative;
+  flex: none;
+  padding: 2.5rem 2.5rem 1rem;
 }
 .auth-split__title {
   margin: 0 0 1.25rem;

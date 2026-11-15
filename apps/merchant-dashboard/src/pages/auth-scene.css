@@ -1,0 +1,370 @@
+/* The scene beside sign in and sign up (AuthScene.tsx). Loaded with the
+   sign-in screens' own code, not with the dashboard's stylesheet. The panel's
+   layout (words on top, the stage under them) is .auth-split in
+   packages/ui/src/theme/auth.css. Only transform and opacity move; nothing
+   moves with reduced motion, and nothing while the tab is hidden. */
+
+/* ── 1. The background, its light and its floor ── */
+.auth-scene__back {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+}
+
+.auth-scene__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* The floor stays at the foot whatever the panel's shape. */
+  object-position: 50% 100%;
+}
+
+.auth-scene__glow {
+  position: absolute;
+  bottom: 6%;
+  left: 50%;
+  width: 120%;
+  height: 62%;
+  background: radial-gradient(50% 50% at 50% 78%, rgb(40 150 255 / 0.5), rgb(0 200 255 / 0.16) 45%, transparent 72%);
+  mix-blend-mode: screen;
+  opacity: 0.8;
+  translate: -50% 0;
+  animation: auth-breathe 8s ease-in-out infinite alternate;
+}
+
+@keyframes auth-breathe {
+  from {
+    opacity: 0.62;
+    transform: scale(1);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+/* The floor: the picture's own grid is covered and drawn again, moving towards the viewer. */
+.auth-scene__floor {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 18.5%;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgb(8 22 60 / 0) 0%, rgb(6 14 36 / 0.92) 34%, rgb(5 10 26) 100%);
+  perspective: 18rem;
+  perspective-origin: 50% 0%;
+}
+
+.auth-scene__floor::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 1;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgb(120 220 255 / 0.9) 50%, transparent);
+  box-shadow: 0 0 18px 4px rgb(60 180 255 / 0.55);
+}
+
+.auth-scene__floor i {
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 220%;
+  height: 360%;
+  background-image:
+    linear-gradient(rgb(90 170 255 / 0.55) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(90 170 255 / 0.45) 1px, transparent 1px);
+  background-size: 2.75rem 2.75rem;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 22%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 22%);
+  transform: rotateX(72deg) translateY(0);
+  transform-origin: 50% 0;
+  animation: auth-floor 2.6s linear infinite;
+}
+
+@keyframes auth-floor {
+  to {
+    transform: rotateX(72deg) translateY(2.75rem);
+  }
+}
+
+/* ── The stage: the space under the words ── */
+.auth-scene__stage {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  container-type: size;
+}
+
+/* ── 2. Specks of light, rising slowly ── */
+.auth-scene__specks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.auth-scene__specks i {
+  position: absolute;
+  top: var(--y);
+  left: var(--x);
+  width: var(--z);
+  height: var(--z);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(190 235 255 / 0.95), rgb(110 190 255 / 0) 70%);
+  opacity: 0.45;
+  animation: auth-speck var(--t) var(--w) ease-in-out infinite;
+}
+
+@keyframes auth-speck {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.8);
+  }
+  25% {
+    opacity: 0.95;
+  }
+  55% {
+    opacity: 0.35;
+  }
+  80% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-3.5rem) scale(1.1);
+  }
+}
+
+/* ── 3. The phone, its shadow and its sheen ── */
+.auth-scene__phone,
+.auth-scene__shadow {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+}
+
+.auth-scene__phone {
+  bottom: 13cqh;
+  z-index: 1;
+  width: min(36cqw, 40cqh);
+  aspect-ratio: 720 / 1262;
+  will-change: transform;
+  animation: auth-phone 6s ease-in-out infinite;
+}
+
+.auth-scene__phone img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 26px 34px rgb(0 0 0 / 0.45));
+}
+
+@keyframes auth-phone {
+  0%,
+  100% {
+    transform: translateY(10px) rotate(-1.5deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(1.5deg);
+  }
+}
+
+.auth-scene__shadow {
+  bottom: 8cqh;
+  width: min(30cqw, 33cqh);
+  height: 5cqh;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(0 6 20 / 0.75), rgb(30 140 255 / 0.25) 60%, transparent);
+  opacity: 0.85;
+  animation: auth-shadow 6s ease-in-out infinite;
+}
+
+@keyframes auth-shadow {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scaleX(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scaleX(0.82);
+  }
+}
+
+/* The light crosses the phone only where the phone is: clipped to the phone's
+   outline in the picture (measured from its transparency), not masked by the
+   picture itself, which the browser would fetch a second time. */
+.auth-scene__sheen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  clip-path: polygon(26% 0.5%, 60% 1.5%, 97% 5%, 91% 50%, 80% 95%, 74% 99.5%, 56% 99.5%, 9.5% 95%, 8.5% 50%, 20% 5%);
+}
+
+.auth-scene__sheen::before {
+  content: "";
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  left: 0;
+  width: 38%;
+  background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.5), transparent);
+  transform: translateX(-160%) skewX(-12deg);
+  animation: auth-sheen 7s 2s ease-in-out infinite;
+}
+
+@keyframes auth-sheen {
+  0%,
+  72% {
+    transform: translateX(-160%) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(330%) skewX(-12deg);
+  }
+}
+
+/* ── 4. The icons around it, each on its own beat ── */
+.auth-scene__icon {
+  position: absolute;
+  top: var(--top);
+  width: calc(var(--size) * min(0.62cqw, 0.7cqh));
+  height: auto;
+  filter: drop-shadow(0 12px 14px rgb(0 0 0 / 0.35));
+  animation: auth-icon var(--t) var(--w) ease-in-out infinite;
+}
+
+.auth-scene__icon--start {
+  inset-inline-start: var(--in);
+}
+
+.auth-scene__icon--end {
+  inset-inline-end: var(--in);
+}
+
+@keyframes auth-icon {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(-0.75rem) rotate(var(--tilt));
+  }
+}
+
+/* ── 5. What happens to an order, one card after the other on a 9s turn ── */
+.auth-scene__card {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  max-width: 64cqw;
+  align-items: center;
+  white-space: nowrap;
+  gap: 0.625rem;
+  padding: 0.625rem 0.875rem 0.625rem 0.75rem;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: 1rem;
+  background: rgb(13 22 48 / 0.55);
+  box-shadow: 0 20px 40px -14px rgb(0 0 0 / 0.6);
+  color: #fff;
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
+  animation: auth-card 9s ease-in-out infinite both;
+}
+
+.auth-scene__card b {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.auth-scene__card small {
+  display: block;
+  margin-top: 1px;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  opacity: 0.75;
+}
+
+.auth-scene__card--a {
+  top: 19%;
+  inset-inline-start: 3%;
+}
+
+.auth-scene__card--b {
+  top: 49%;
+  inset-inline-end: 3%;
+  animation-delay: 3s;
+}
+
+.auth-scene__card--c {
+  top: 63%;
+  inset-inline-start: 4%;
+  animation-delay: 6s;
+}
+
+@keyframes auth-card {
+  0% {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.96);
+  }
+  6%,
+  46% {
+    opacity: 1;
+    transform: none;
+  }
+  54%,
+  100% {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+}
+
+.auth-scene__dot {
+  position: relative;
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.12);
+}
+
+.auth-scene__dot::after {
+  content: "";
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  background: #4fc3ff;
+  box-shadow: 0 0 10px #4fc3ff;
+}
+
+.auth-scene__dot--ok::after {
+  background: #5cbf8f;
+  box-shadow: 0 0 10px #5cbf8f;
+}
+
+.auth-scene__dot--paid::after {
+  background: #e8b96a;
+  box-shadow: 0 0 10px #e8b96a;
+}
+
+/* ── Still, when asked, and while the tab is hidden ── */
+.auth-split__photo[data-paused] *,
+.auth-split__photo[data-paused] *::before,
+.auth-split__photo[data-paused] *::after {
+  animation-play-state: paused !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-split__photo *,
+  .auth-split__photo *::before,
+  .auth-split__photo *::after {
+    animation: none !important;
+  }
+}
