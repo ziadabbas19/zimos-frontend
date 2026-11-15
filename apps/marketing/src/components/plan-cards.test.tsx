@@ -130,7 +130,9 @@ describe("the yearly price", () => {
     const { monthly, yearly } = blocks(card("Plan a"));
     expect(yearly.className).toMatch(/(^| )hidden( |$)/);
 
-    expect(yearly.textContent).toContain(`${formatPrice(319000, "EGP", "en")} / year`);
+    // The price drawn in parts (currency small, number large, period small): read as one line.
+    expect(perMonthText(yearly.querySelector(".zp-price")!.textContent!)).toBe(perMonthText(`${formatPrice(319000, "EGP", "en")} / year`));
+    expect(yearly.querySelector(".zp-price strong")?.textContent).toBe("3,190");
     const struck = yearly.querySelector("s")!;
     expect(struck.textContent).toBe(formatPrice(382800, "EGP", "en"));
     expect(struck.textContent).toMatch(/3,828/);
@@ -139,6 +141,7 @@ describe("the yearly price", () => {
     // Read with what it stands for: the struck price is not the price.
     expect(yearly.textContent).toContain("Instead of paying monthly for a year:");
 
+    expect(monthly.querySelector(".zp-psub")?.textContent).toBe("Billed monthly");
     expect(monthly.querySelector("s")).toBeNull();
     expect(monthly.textContent).not.toMatch(/= .* \/ month/);
     expect(monthly.textContent).not.toContain(formatPrice(382800, "EGP", "en"));
@@ -188,8 +191,8 @@ describe("the yearly price", () => {
     ["ar", getDictionary("ar")],
     ["en", getDictionary("en")],
   ])("is written with no number of its own (%s)", (_, dict) => {
-    const { yearly, yearlySave, fullYearLabel, perMonthEquivalent, yearlyEquivalent } = dict.pricing;
-    for (const text of [yearly, yearlySave, fullYearLabel, perMonthEquivalent, yearlyEquivalent]) {
+    const { yearly, yearlySave, fullYearLabel, perMonthEquivalent, billedMonthly } = dict.pricing;
+    for (const text of [yearly, yearlySave, fullYearLabel, perMonthEquivalent, billedMonthly]) {
       expect(text).not.toMatch(/[0-9٠-٩]/);
       expect(text).not.toMatch(/مجان|free/i);
     }
@@ -236,19 +239,31 @@ describe("the pay-per-order words", () => {
 });
 
 describe("the plan to look at", () => {
-  it("is the middle of three, by its place in the list and not by its price, with the badge beside its name", () => {
+  it("is the middle of three, by its place in the list and not by its price, with the badge over its edge and the sky button", () => {
     // The middle one is the cheapest here: its place is what counts.
     renderCards("en", PPO, [plan("a", 99900), plan("b", 29900), plan("c", 49900)]);
     const hot = card("Plan b");
-    expect(hot.classList.contains("plan-card--hot")).toBe(true);
-    expect(within(hot).getByText("Most popular")).toBeTruthy();
+    expect(hot.classList.contains("zp-plan--hot")).toBe(true);
+    expect(within(hot).getByText("Most popular").className).toBe("zp-badge");
     // The badge is not part of the plan's name.
     expect(within(hot).getByRole("heading", { level: 2 }).textContent).toBe("Plan b");
+    expect([...hot.querySelectorAll("a")].every((a) => a.classList.contains("zp-btn--hot"))).toBe(true);
     for (const name of ["Plan a", "Plan c"]) {
-      expect(card(name).classList.contains("plan-card--hot")).toBe(false);
+      expect(card(name).classList.contains("zp-plan--hot")).toBe(false);
       expect(within(card(name)).queryByText("Most popular")).toBeNull();
+      expect([...card(name).querySelectorAll("a")].every((a) => a.className.includes("zp-btn") && !a.className.includes("zp-btn--hot"))).toBe(true);
     }
-    expect(card("الدفع لكل طلب").classList.contains("plan-card--hot")).toBe(false);
+    expect(card("الدفع لكل طلب").classList.contains("zp-plan--hot")).toBe(false);
+  });
+
+  it("puts every card's button at its foot, the limits as chips above the features", () => {
+    renderCards("en", null, [{ ...plan("a"), features: ["funnels", "custom_domain"] }, plan("b"), plan("c")]);
+    const a = card("Plan a");
+    const parts = [...a.children].map((el) => el.className.split(" ")[0]);
+    expect(parts.indexOf("zp-lim")).toBeGreaterThan(-1);
+    expect(parts.indexOf("zp-lim")).toBeLessThan(parts.indexOf("zp-feats"));
+    expect(parts.slice(-2)).toEqual(["zp-buy", "zp-buy"]);
+    expect([...a.querySelectorAll(".zp-lim span")].map((chip) => chip.textContent)).toEqual(["Stores: 1", "Funnels a month: Unlimited"]);
   });
 
   it("says it in Arabic", () => {
@@ -260,7 +275,7 @@ describe("the plan to look at", () => {
     for (const plans of [[plan("a"), plan("b")], [plan("a"), plan("b"), plan("c"), plan("d")]]) {
       renderCards("en", PPO, plans);
       expect(screen.queryByText("Most popular")).toBeNull();
-      expect(document.querySelector(".plan-card--hot")).toBeNull();
+      expect(document.querySelector(".zp-plan--hot")).toBeNull();
       cleanup();
     }
   });

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { socialLinksOf } from "@store-builder/ui/platform-info";
+// After home.css: the plan cards' own rules win over the page's resets.
 import "../home.css";
+import "../plans.css";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { FeatureGrid } from "@/components/feature-grid";

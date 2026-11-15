@@ -10,6 +10,7 @@ import { HomeEffects } from "./home-effects";
 import { HomeFaq } from "./home-faq";
 import { HomeHeader } from "./home-header";
 import { HomePlans } from "./home-plans";
+import { OrderJourney } from "./order-journey";
 import { StoreShowcase } from "./store-showcase";
 
 /**
@@ -71,30 +72,106 @@ describe("the home page's plans", () => {
     expect(radios[1].checked).toBe(true);
   });
 
-  it("raises the middle of three plans, with its badge and the brighter button, and no other", () => {
+  it("marks the middle of three plans, with its badge and the sky button, and no other", () => {
     const three: PublicOffer = {
       plans: [offer.plans[0], { ...offer.plans[0], id: "pro", name: "Pro", monthlyPrice: 71900, yearlyPrice: 719000 }, offer.plans[1]],
       payPerOrder: offer.payPerOrder,
     };
     const { container } = render(createElement(HomePlans, { initial: three, copy: en.pricing, locale: "en" }));
-    const hot = container.querySelectorAll(".zm-plan--hot");
+    const hot = container.querySelectorAll(".zp-plan--hot");
     expect(hot).toHaveLength(1);
+    expect([...container.querySelectorAll(".zp-plan")].indexOf(hot[0])).toBe(1);
     expect(hot[0].getAttribute("aria-labelledby")).toBe(screen.getByRole("heading", { name: "Pro" }).id);
-    expect(hot[0].querySelector(".zm-badge")?.textContent).toBe(en.pricing.mostPopular);
-    expect([...hot[0].querySelectorAll("a")].every((a) => a.classList.contains("zm-btn--volt"))).toBe(true);
-    expect(container.querySelectorAll(".zm-badge")).toHaveLength(1);
+    expect(hot[0].querySelector(".zp-badge")?.textContent).toBe(en.pricing.mostPopular);
+    expect([...hot[0].querySelectorAll("a")].every((a) => a.classList.contains("zp-btn--hot"))).toBe(true);
+    expect(container.querySelectorAll(".zp-badge")).toHaveLength(1);
+    // The others keep the blue button.
+    expect([...container.querySelectorAll(".zp-plan:not(.zp-plan--hot) a")].every((a) => a.className === "zp-btn")).toBe(true);
     cleanup();
     // Two plans: no badge at all.
     const { container: two } = render(createElement(HomePlans, { initial: offer, copy: en.pricing, locale: "en" }));
-    expect(two.querySelector(".zm-plan--hot, .zm-badge")).toBeNull();
+    expect(two.querySelector(".zp-plan--hot, .zp-badge")).toBeNull();
   });
 
-  it("offers pay per order as its own plan, and says so kindly when there is no plan", () => {
+  it("writes the price large between its currency and its period, billed monthly under it", () => {
+    const { container } = render(createElement(HomePlans, { initial: offer, copy: en.pricing, locale: "en" }));
+    const monthly = container.querySelector(".zp-plan .zm-m")!;
+    const price = monthly.querySelector(".zp-price")!;
+    expect([...price.children].map((part) => part.textContent)).toEqual(["EGP", "319", en.pricing.perMonth]);
+    expect(price.querySelector("strong")?.textContent).toBe("319");
+    expect(monthly.querySelector(".zp-psub")?.textContent).toBe(en.pricing.billedMonthly);
+    // The limits as chips, the button at the card's foot.
+    expect([...container.querySelectorAll(".zp-plan")[0].querySelectorAll(".zp-lim span")].map((chip) => chip.textContent)).toEqual(["Stores: 1", "Funnels a month: 5", "Orders a month: 1,000"]);
+    expect(container.querySelectorAll(".zp-plan")[0].lastElementChild?.classList.contains("zp-buy")).toBe(true);
+  });
+
+  it("offers pay per order as its own wide card, and says so kindly when there is no plan", () => {
     render(createElement(HomePlans, { initial: offer, copy: en.pricing, locale: "en" }));
-    expect(screen.getByRole("heading", { name: "Pay per order" }).closest("li")!.querySelector("a")!.getAttribute("href")).toBe("https://app.zimos.co/register?plan=payg");
+    const ppo = screen.getByRole("listitem", { name: "Pay per order" });
+    expect(ppo.classList.contains("zp-ppo--wide")).toBe(true);
+    expect(ppo.querySelector(".zp-ppo-price")?.textContent?.replace(/\s+/g, " ")).toBe("EGP 0.75 / order");
+    expect(screen.getByRole("heading", { name: en.pricing.payPerOrder.title }).closest("li")).toBe(ppo);
+    const link = ppo.querySelector("a")!;
+    expect(link.getAttribute("href")).toBe("https://app.zimos.co/register?plan=payg");
+    expect(link.className).toBe("zp-btn zp-btn--dark");
     cleanup();
     render(createElement(HomePlans, { initial: null, copy: en.pricing, locale: "en" }));
     expect(screen.getByText(en.pricing.comingSoon)).toBeTruthy();
+  });
+});
+
+describe("the order's journey", () => {
+  const ar = getDictionary("ar");
+  const phone = (container: HTMLElement) => container.querySelector<HTMLElement>(".zm-jph")!;
+  const open = (name: string) => fireEvent.click(screen.getByRole("button", { name: new RegExp(name) }));
+
+  it("fills the confirmation queue: its three counts, the order on the call and three more", () => {
+    const { container } = render(createElement(OrderJourney, { copy: en.journey }));
+    open(en.journey.steps[2].title);
+    const screenText = phone(container).textContent ?? "";
+    for (const count of en.journey.demo.counts) expect(screenText).toContain(`${count.value}${count.label}`);
+    expect(phone(container).querySelectorAll(".zm-qcount > span")).toHaveLength(3);
+    expect(phone(container).querySelector(".zm-q:not(.zm-q--slim)")?.textContent).toContain(en.journey.demo.orderNumber);
+    const next = [...phone(container).querySelectorAll<HTMLElement>(".zm-q--slim")];
+    expect(next.map((card) => card.querySelector("b")?.textContent)).toEqual(["Order 1043", "Order 1044", "Order 1045"]);
+    // One after the other: each waits a little longer.
+    expect(next.map((card) => card.style.getPropertyValue("--k"))).toEqual(["0", "1", "2"]);
+  });
+
+  it("gives the shipment its courier, the sum to collect, the address, the code, the road and when it arrives", () => {
+    const { container } = render(createElement(OrderJourney, { copy: ar.journey }));
+    open(ar.journey.steps[3].title);
+    const screenText = phone(container).textContent ?? "";
+    const { courier, collect, deliverTo, expected, statuses, statusTimes } = ar.journey.demo;
+    for (const line of [courier, collect, deliverTo, expected]) expect(screenText).toContain(`${line.label}${line.value}`);
+    expect(screenText).toContain("ZM-20481-EG");
+    expect([...phone(container).querySelectorAll(".zm-tl li")].map((li) => li.textContent)).toEqual(statuses.map((status, k) => `${status}${statusTimes[k]}`));
+  });
+
+  it("draws the profit with the week's seven bars and how the week went", () => {
+    const { container } = render(createElement(OrderJourney, { copy: en.journey }));
+    open(en.journey.steps[4].title);
+    const bars = [...phone(container).querySelectorAll<HTMLElement>(".zm-bars i")];
+    expect(bars).toHaveLength(7);
+    expect(bars.every((bar) => /^\d+%$/.test(bar.style.getPropertyValue("--h")))).toBe(true);
+    expect(phone(container).textContent).toContain(`${en.journey.demo.week.label}${en.journey.demo.week.value}`);
+  });
+
+  it("keeps the phone's tab bar on every screen, the first tab open, and the phone out of the reading order", () => {
+    const { container } = render(createElement(OrderJourney, { copy: en.journey }));
+    for (const step of en.journey.steps) {
+      open(step.title);
+      const tabs = [...phone(container).querySelectorAll(".zm-tabbar > i")];
+      expect(tabs).toHaveLength(4);
+      expect(tabs.map((tab) => tab.classList.contains("on"))).toEqual([true, false, false, false]);
+    }
+    expect(phone(container).closest("[aria-hidden]")).not.toBeNull();
+  });
+
+  it("writes every word of the drawings in both languages", () => {
+    const keys = (value: unknown): string[] =>
+      value && typeof value === "object" ? Object.entries(value).flatMap(([key, inner]) => [key, ...keys(inner).map((k) => `${key}.${k}`)]) : [];
+    expect(keys(ar.journey.demo)).toEqual(keys(en.journey.demo));
   });
 });
 

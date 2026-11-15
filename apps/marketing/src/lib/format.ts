@@ -30,6 +30,29 @@ export function formatPrice(minor: number, currency: string, locale: Locale): st
   }
 }
 
+/**
+ * A price from the API (minor units) split the way a plan card draws it:
+ * the currency small, on the side Intl puts it, the number large. `number`
+ * writes any figure of it, so a counting number keeps its format.
+ */
+export function priceParts(minor: number, currency: string, locale: Locale) {
+  const digits = minorUnitDigits(currency);
+  const value = minor / 10 ** digits;
+  const fraction = Number.isInteger(value) ? 0 : digits;
+  let symbol = currency;
+  let before = true;
+  try {
+    const parts = new Intl.NumberFormat(intlLocale(locale), { style: "currency", currency, maximumFractionDigits: fraction }).formatToParts(value);
+    const at = parts.findIndex((part) => part.type === "currency");
+    symbol = at >= 0 ? parts[at].value.trim() : currency;
+    before = at >= 0 && at < parts.findIndex((part) => part.type === "integer");
+  } catch {
+    /* keep the code */
+  }
+  const number = (n: number) => new Intl.NumberFormat(intlLocale(locale), { minimumFractionDigits: fraction, maximumFractionDigits: fraction }).format(n);
+  return { value, symbol, before, number };
+}
+
 export function formatNumber(value: number, locale: Locale): string {
   return new Intl.NumberFormat(intlLocale(locale)).format(value);
 }

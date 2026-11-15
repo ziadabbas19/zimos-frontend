@@ -144,18 +144,30 @@ export interface Dictionary {
       bump: string;
       orderNow: string;
       queue: string;
+      /** The queue's three counts: new, confirmed, later. */
+      counts: [Amount, Amount, Amount];
       orderNumber: string;
       risk: string;
       confirmed: string;
       refused: string;
       later: string;
+      /** The orders waiting under the one on the call. */
+      nextOrders: [QueuedOrder, QueuedOrder, QueuedOrder];
       shipment: string;
+      courier: Amount;
+      collect: Amount;
+      deliverTo: Amount;
       tracking: string;
       statuses: [string, string, string];
+      /** When each status came, under it. */
+      statusTimes: [string, string, string];
+      expected: Amount;
       profitTitle: string;
       rows: [Amount, Amount, Amount, Amount];
       net: Amount;
       currency: string;
+      /** Under the week's chart: how the week compares. */
+      week: Amount;
     };
     /** Under the drawings: they are an illustration. */
     note: string;
@@ -218,8 +230,8 @@ export interface Dictionary {
     yearlySave: string;
     perMonth: string;
     perYear: string;
-    /** "{price}" */
-    yearlyEquivalent: string;
+    /** Under a monthly price, muted. */
+    billedMonthly: string;
     /** Read before the struck-out twelve monthly payments under a yearly price (screen readers only). */
     fullYearLabel: string;
     /** "{price}": the yearly price over twelve months, under it. */
@@ -255,6 +267,8 @@ export interface Dictionary {
       /** The pill above the plan's name. */
       badge: string;
       tagline: string;
+      /** The home page's wide card: what the plan is, as its title (its name, from the API, is the pill above). */
+      title: string;
       /** After the fee, like perMonth. */
       perOrder: string;
       /** "{orders}" (lib/format formatOrderCount). */
@@ -364,6 +378,13 @@ export interface Chip {
 export interface Amount {
   label: string;
   value: string;
+}
+
+/** An order in the journey's confirmation queue: its number, its product and its total, as written. */
+export interface QueuedOrder {
+  number: string;
+  item: string;
+  total: string;
 }
 
 export interface JourneyStep {
