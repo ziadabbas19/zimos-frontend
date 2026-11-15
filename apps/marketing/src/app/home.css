@@ -683,74 +683,6 @@
   translate: calc(-50% + var(--bw) * 0.59) 0;
 }
 
-/* What happens to an order, as three cards floating over the stores. */
-.zx-floats {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  pointer-events: none;
-}
-
-.zx-float {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding-block: 8px;
-  padding-inline: 10px 18px;
-  border: 1px solid rgb(255 255 255 / 0.16);
-  border-radius: 16px;
-  background: rgb(13 20 37 / 0.84);
-  box-shadow: 0 22px 44px -18px rgb(0 0 0 / 0.75);
-  text-align: start;
-  white-space: nowrap;
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
-  animation: zx-bob 6s ease-in-out infinite;
-}
-
-.zx-float b {
-  display: block;
-  font-size: 14.5px;
-  font-weight: 600;
-  line-height: 1.5;
-  color: #fff;
-}
-
-.zx-float small {
-  display: block;
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: rgb(255 255 255 / 0.66);
-}
-
-.zx-float--a {
-  inset-block-start: calc(var(--bw) * -0.03);
-  left: calc(50% - var(--bw) * 0.66);
-}
-
-.zx-float--b {
-  inset-block-start: calc(var(--bw) * 0.1);
-  right: calc(50% - var(--bw) * 0.9);
-  animation-delay: -2s;
-}
-
-.zx-float--c {
-  inset-block-start: calc(var(--bw) * 0.14);
-  left: calc(50% - var(--bw) * 0.94);
-  animation-delay: -4s;
-}
-
-@keyframes zx-bob {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-9px);
-  }
-}
-
 .zx-hero__cap {
   position: relative;
   z-index: 2;
@@ -1781,10 +1713,6 @@
   .zx-tools {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .zx-float--c {
-    display: none;
-  }
 }
 
 @media (max-width: 960px) {
@@ -1817,8 +1745,7 @@
     overflow: hidden;
   }
 
-  .zx-stage__frame,
-  .zx-float--c {
+  .zx-stage__frame {
     display: none;
   }
 
@@ -1847,31 +1774,6 @@
     z-index: 1;
     translate: calc(-50% + 112px) 44px;
     rotate: 8deg;
-  }
-
-  .zx-float {
-    gap: 9px;
-    padding-block: 7px;
-    padding-inline: 7px 12px;
-    border-radius: 13px;
-  }
-
-  .zx-float b {
-    font-size: 12.5px;
-  }
-
-  .zx-float small {
-    font-size: 11px;
-  }
-
-  .zx-float--a {
-    inset-block-start: 96px;
-    left: 8px;
-  }
-
-  .zx-float--b {
-    inset-block-start: 186px;
-    right: 8px;
   }
 
   .zx-hero__cap {
@@ -2019,7 +1921,6 @@
 @media (prefers-reduced-motion: reduce) {
   .zx-glow,
   .zx-cycle img,
-  .zx-float,
   .zx-mock,
   .zx-jstep__line.is-playing {
     animation: none;
@@ -2032,7 +1933,6 @@
 
 /* Asked for less motion or less transparency: the stage's cards and glass drop the blur behind them. */
 @media (prefers-reduced-motion: reduce), (prefers-reduced-transparency: reduce) {
-  .zx-float,
   .zx-pill,
   .zx-btn--glass {
     -webkit-backdrop-filter: none;
@@ -2052,14 +1952,8 @@
     animation: none;
   }
 
-  .zx-hero .zx-float {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-
   html:not(.lz-loaded) .lz-home .zx-glow,
-  html:not(.lz-loaded) .lz-home .zx-cycle img,
-  html:not(.lz-loaded) .lz-home .zx-float {
+  html:not(.lz-loaded) .lz-home .zx-cycle img {
     animation-play-state: paused;
   }
 }
@@ -2523,5 +2417,202 @@
   .zx-feat,
   .zx-feat .i3d {
     transition: none;
+  }
+}
+
+/* ══ Phones: a page that reads in a few screens, not twenty ══════════
+   After every rule above, so it wins at the same specificity. */
+@media (max-width: 600px) {
+  .zx-sec {
+    padding-block: 52px;
+  }
+
+  .zx-sec--night {
+    padding-block: 0;
+  }
+
+  .zx-head {
+    margin-block-end: 24px;
+  }
+
+  /* The stores: a row to swipe through, the next one peeking in. */
+  .zx-shops {
+    display: flex;
+    gap: 12px;
+    margin-inline: -20px;
+    padding-block: 2px 14px;
+    padding-inline: 20px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 20px;
+    scrollbar-width: none;
+  }
+
+  .zx-shops::-webkit-scrollbar {
+    display: none;
+  }
+
+  .zx-shop {
+    flex: 0 0 84%;
+    scroll-snap-align: start;
+  }
+
+  .zx-shop__meta {
+    padding: 14px 16px 16px;
+  }
+
+  .zx-shop__name b {
+    font-size: 16.5px;
+  }
+
+  .zx-shop__go {
+    min-block-size: 38px;
+    padding: 0 14px;
+    font-size: 13.5px;
+  }
+
+  .zx-stores__foot {
+    margin-block-start: 18px;
+  }
+
+  /* What a merchant gets: two columns, the picture on top. */
+  .zx-feats__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .zx-feat {
+    display: flex;
+    flex-direction: column;
+    padding: 16px 14px;
+    border-radius: 20px;
+  }
+
+  .zx-feat .i3d {
+    grid-row: auto;
+    inline-size: 44px;
+    block-size: 44px;
+    margin: 0 0 10px;
+  }
+
+  .zx-feat h3 {
+    font-size: 16px;
+  }
+
+  .zx-feat p {
+    font-size: 13.5px;
+    line-height: 1.7;
+  }
+
+  /* The three steps: the picture beside the words, the number small. */
+  .zx-steps {
+    gap: 10px;
+  }
+
+  .zx-step {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 14px;
+    align-items: start;
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .zx-step .i3d {
+    grid-row: span 2;
+    inline-size: 48px;
+    block-size: 48px;
+    margin: 0;
+  }
+
+  .zx-step h3 {
+    margin: 2px 0 4px;
+    font-size: 17.5px;
+  }
+
+  .zx-step p {
+    font-size: 14.5px;
+    line-height: 1.75;
+  }
+
+  .zx-step em {
+    inset-block-start: 8px;
+    inset-inline-end: 14px;
+    font-size: 56px;
+  }
+
+  /* The growth tools: the picture on a small tile beside the words. */
+  .zx-tools {
+    gap: 10px;
+    margin-block-end: 20px;
+  }
+
+  .zx-tool {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 14px;
+    align-items: start;
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .zx-tool__art {
+    grid-row: span 2;
+    inline-size: 64px;
+    block-size: 64px;
+    margin: 0;
+    border-radius: 16px;
+  }
+
+  .zx-tool__art .i3d {
+    inline-size: 40px;
+    block-size: 40px;
+  }
+
+  .zx-tool__tag {
+    display: none;
+  }
+
+  .zx-tool h3 {
+    margin: 2px 0 4px;
+    font-size: 17px;
+  }
+
+  .zx-tool p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  /* What reassures you: the picture beside the words. */
+  .zx-points article {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 14px;
+    padding-block: 18px;
+  }
+
+  .zx-points .i3d {
+    grid-row: span 2;
+    inline-size: 44px;
+    block-size: 44px;
+    margin: 0;
+  }
+
+  .zx-points h3 {
+    margin: 0 0 4px;
+    font-size: 17px;
+  }
+}
+
+/* Phones: the questions and the closing band, without a screen of air between them. */
+@media (max-width: 600px) {
+  .lz-home .lz-sec {
+    padding-block: 48px;
+  }
+
+  .lz-home [data-section="final-cta"] {
+    padding-block-start: 0;
   }
 }

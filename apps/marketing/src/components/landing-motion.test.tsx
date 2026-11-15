@@ -52,7 +52,7 @@ const endless = [...new Set(rules(css).filter((rule) => /animation:[^;]*\binfini
 describe("the landing's endless animations", () => {
   it("are found (the stage's lights, cards and crossfade, the strip, the closing band…)", () => {
     expect(endless).toEqual(
-      expect.arrayContaining([".zx-glow", ".zx-float", ".zx-cycle img", ".lz-marquee__track", ".lz-fx__orb", ".lz-fx__wave"]),
+      expect.arrayContaining([".zx-glow", ".zx-cycle img", ".lz-marquee__track", ".lz-fx__orb", ".lz-fx__wave"]),
     );
   });
 
@@ -70,7 +70,7 @@ describe("the landing's endless animations", () => {
     expect(held).toEqual(expect.arrayContaining(endless));
   });
 
-  it("leave the lights of the stage, and the lights and lines of the closing band, still on a phone, and the stage's cards without the blur", () => {
+  it("leave the lights of the stage, and the lights and lines of the closing band, still on a phone", () => {
     const phone = rules(media("(max-width: 600px)"));
     const body = (selector: string) => phone.filter((rule) => rule.selector === selector).map((rule) => rule.body).join("");
     expect(body(".zx-hero .zx-glow")).toMatch(/animation:\s*none/);
@@ -78,7 +78,6 @@ describe("the landing's endless animations", () => {
     expect(body(".lz-hero .lz-fx__wave")).toMatch(/animation:\s*none/);
     expect(body(".lz-end .lz-fx__orb")).toMatch(/animation:\s*none/);
     expect(body(".lz-end .lz-fx__wave")).toMatch(/animation:\s*none/);
-    expect(body(".zx-hero .zx-float")).toMatch(/(^|[^-])backdrop-filter:\s*none/);
   });
 });
 

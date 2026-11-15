@@ -5,7 +5,6 @@ import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionary";
 import { REGISTER_URL } from "@/lib/urls";
 import { HERO_LOOKS, HERO_PHONES, galleryShot } from "@/lib/store-shots";
-import { Icon3D } from "./icon-3d";
 import { Arrow, Check } from "./duo-icons";
 
 const turn = (i: number) => ({ "--k": i }) as CSSProperties;
@@ -24,13 +23,12 @@ const NOTHING = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAA
  * read). The words stand in the middle — a pill, the title in two colours,
  * one paragraph, the two ways in — and under them real stores on real
  * devices: a laptop crossfading from one store to the next, and a store on a
- * phone at each side of it. Three cards float over them with what happens to
- * an order. On a phone screen the laptop steps aside and three phones take
- * the stage. The cards and the phones are decoration (aria-hidden); the
- * first picture's alt says what they are.
+ * phone at each side of it — nothing laid over them (the owner, 2026-11-15).
+ * On a phone screen the laptop steps aside and three phones take the stage.
+ * The phones are decoration (aria-hidden); the first picture's alt says what
+ * they are.
  */
 export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Locale }) {
-  const { chips } = copy;
   // The first capture is the page's largest picture on a computer: fetched
   // early there, and not at all on a phone.
   preload(galleryShot(HERO_LOOKS[0], locale, "desk", "card"), { as: "image", fetchPriority: "high", media: "(min-width: 761px)" });
@@ -109,30 +107,6 @@ export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Local
           </div>
           <div className="zx-laptop__base" aria-hidden />
         </figure>
-
-        <div className="zx-floats" aria-hidden>
-          <div className="zx-float zx-float--a">
-            <Icon3D name="package" size={40} />
-            <span>
-              <b>{chips.order.title}</b>
-              <small>{chips.order.detail}</small>
-            </span>
-          </div>
-          <div className="zx-float zx-float--b">
-            <Icon3D name="check" size={40} />
-            <span>
-              <b>{chips.confirmed.title}</b>
-              <small>{chips.confirmed.detail}</small>
-            </span>
-          </div>
-          <div className="zx-float zx-float--c">
-            <Icon3D name="money" size={40} />
-            <span>
-              <b>{chips.delivered.title}</b>
-              <small>{chips.delivered.detail}</small>
-            </span>
-          </div>
-        </div>
       </div>
 
       <p className="zx-hero__cap">{copy.caption}</p>

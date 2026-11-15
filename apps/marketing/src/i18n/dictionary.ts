@@ -73,12 +73,6 @@ export interface Dictionary {
     /** Under the buttons, each with a tick. */
     ticks: [string, string, string];
     imageAlt: string;
-    /** The cards floating over the stores — illustration, generic labels. */
-    chips: {
-      order: Chip;
-      confirmed: Chip;
-      delivered: Chip;
-    };
     caption: string;
   };
 
@@ -242,6 +236,8 @@ export interface Dictionary {
     paymentNote: string;
     refundLink: string;
     features: Record<PlanFeatureKey, string>;
+    /** On a phone, under a plan's first six features: "{n}" more. */
+    moreFeatures: string;
     /**
      * The pay-per-order card and its questions, shown only while the API
      * sends that plan (lib/plans `payPerOrder`). Every number in them — the

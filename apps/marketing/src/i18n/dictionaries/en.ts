@@ -47,11 +47,6 @@ export const en: Dictionary = {
     secondaryCta: "See the stores",
     ticks: ["Subscribe when you publish", "Ready store templates", "Arabic and English"],
     imageAlt: "Stores built on ZIMOS from its templates, on a computer and on a phone",
-    chips: {
-      order: { title: "New order", detail: "In the confirmation queue" },
-      confirmed: { title: "Order confirmed", detail: "Tracking code ready" },
-      delivered: { title: "Delivered", detail: "Counted in your profit" },
-    },
     caption: "Real screenshots of ZIMOS stores — demo products and pictures.",
   },
 
@@ -337,6 +332,7 @@ export const en: Dictionary = {
     comingSoonCta: "Create your account",
     paymentNote: "Payment is currently by manual transfer, and refunds follow our",
     refundLink: "refund policy",
+    moreFeatures: "Show all features (+{n})",
     features: {
       custom_domain: "Custom domain",
       funnels: "Sales funnels",

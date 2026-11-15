@@ -15,6 +15,9 @@ type Copy = Dictionary["pricing"];
 const WHEN_MONTHLY = "group-has-[.cycle-yearly:checked]/pricing:hidden";
 const WHEN_YEARLY_BLOCK = "hidden group-has-[.cycle-yearly:checked]/pricing:block";
 
+/** How many of a plan's features a phone shows before "show all". */
+export const FEATURES_FIRST = 6;
+
 /**
  * The plans as cards, rendered on the server: every price — monthly and
  * yearly — is in the page's HTML, so a reader, a payment provider's reviewer
@@ -102,7 +105,7 @@ export function PlanCards({
             <li
               key={plan.id}
               aria-labelledby={`${idPrefix}-plan-${plan.id}`}
-              className="relative flex flex-col overflow-hidden rounded-3xl border border-line bg-paper-raised p-6 sm:p-8"
+              className="plan-card relative flex flex-col overflow-hidden rounded-3xl border border-line bg-paper-raised p-6 sm:p-8"
             >
               <PlanHeading id={`${idPrefix}-plan-${plan.id}`} className="text-xl font-bold text-ink">
                 {plan.name}
@@ -182,7 +185,7 @@ export function PlanCards({
                     ) : null}
                   </dl>
                   {named(plan.features).length > 0 ? (
-                    <ul className="mt-6 space-y-3 border-t border-line pt-6">
+                    <ul className="plan-features mt-6 space-y-3 border-t border-line pt-6">
                       {named(plan.features).map((feature) => (
                         <li key={feature} className="flex gap-3 text-sm text-ink-soft">
                           <CheckIcon width="1.1rem" height="1.1rem" className="mt-px shrink-0 text-primary" />
@@ -190,6 +193,13 @@ export function PlanCards({
                         </li>
                       ))}
                     </ul>
+                  ) : null}
+                  {/* On a phone a long list stops at six, the rest one tap away (landing.css `.plan-more`); a computer shows it whole. */}
+                  {named(plan.features).length > FEATURES_FIRST ? (
+                    <label className="plan-more">
+                      <input type="checkbox" className="plan-more__box sr-only" />
+                      {copy.moreFeatures.replace("{n}", String(named(plan.features).length - FEATURES_FIRST))}
+                    </label>
                   ) : null}
                 </>
               )}

@@ -52,11 +52,6 @@ export const ar: Dictionary = {
     secondaryCta: "شاهد المتاجر",
     ticks: ["تشترك عند نشر متجرك", "قوالب متاجر جاهزة", "بالعربية والإنجليزية"],
     imageAlt: "متاجر مبنية على ZIMOS من قوالبه، على الكمبيوتر وعلى الهاتف",
-    chips: {
-      order: { title: "طلب جديد", detail: "دخل قائمة التأكيد" },
-      confirmed: { title: "تم تأكيد الطلب", detail: "رقم التتبع جاهز" },
-      delivered: { title: "تم التسليم", detail: "دخل في حساب أرباحك" },
-    },
     caption: "لقطات حقيقية من متاجر ZIMOS، والمنتجات والصور للعرض فقط.",
   },
 
@@ -342,6 +337,7 @@ export const ar: Dictionary = {
     comingSoonCta: "أنشئ حسابك",
     paymentNote: "الدفع حاليا بالتحويل اليدوي، والاسترجاع وفق",
     refundLink: "سياسة الاسترجاع",
+    moreFeatures: "اعرض كل المميزات (+{n})",
     features: {
       custom_domain: "نطاق خاص",
       funnels: "مسارات البيع",
