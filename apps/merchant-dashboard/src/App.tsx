@@ -5,6 +5,7 @@ import { LocaleProvider } from "@/i18n/LocaleContext";
 import { WorkspaceProvider } from "@/context/WorkspaceContext";
 import { ToastProvider } from "@/components/Toast";
 import { AppearanceSync } from "@/components/AppearanceSync";
+import { SiteTheme } from "@/components/SiteTheme";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { RequireWorkspace } from "@/routes/RequireWorkspace";
 import { LazyRoute } from "@/routes/LazyRoute";
@@ -170,6 +171,8 @@ export default function App() {
     <BrowserRouter>
       {/* Tells a running view transition that the next page is in the DOM (lib/viewTransition.ts). */}
       <RouteCommitSignal />
+      {/* The sign-in screens open in the theme chosen on the marketing site (lib/siteTheme.ts). */}
+      <SiteTheme />
       <LocaleProvider>
         <AuthProvider>
           {/* The signed-in account's look, followed from one device to another (lib/appearanceSync). */}

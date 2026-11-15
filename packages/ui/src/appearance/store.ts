@@ -9,7 +9,9 @@ import { useSyncExternalStore } from "react";
  * `data-glass="off"` and a few `--zimos-*` variables that theme/looks.css and
  * theme/liquid-glass.css read. The pre-paint script in index.html sets the
  * same things from the same keys before the first frame; a test runs both
- * over the same storage and compares what they leave on <html>.
+ * over the same storage and compares what they leave on <html>. On the merchant
+ * dashboard's sign-in screens, both open in the marketing site's light or dark
+ * while nothing was chosen here (preferScheme below).
  *
  * The same choices are also kept on the signed-in account, so they follow it
  * to another device: that is lib/appearanceSync.ts, which reads and writes
@@ -124,9 +126,25 @@ function chosenDarkLook(): DarkLook {
   return read(DARK_LOOK_KEY) === "black" ? "black" : "dark";
 }
 
+/**
+ * Light or dark to open in while nothing was chosen here, in place of the
+ * device's scheme: the merchant dashboard's sign-in screens take the one
+ * chosen on the marketing site (apps/merchant-dashboard/src/lib/siteTheme.ts).
+ * Never kept, never sent to the account; a look chosen here wins over it.
+ */
+let preferred: "light" | "dark" | null = null;
+
+/** Sets that scheme, or lets go of it (null) and follows the device again. */
+export function preferScheme(scheme: "light" | "dark" | null) {
+  if (preferred === scheme) return;
+  preferred = scheme;
+  changed();
+}
+
 function current(): Appearance {
   const darkLook = chosenDarkLook();
-  const look = chosenLook() ?? (systemDark() ? darkLook : "light");
+  const dark = preferred === null ? systemDark() : preferred === "dark";
+  const look = chosenLook() ?? (dark ? darkLook : "light");
   const glassOff = read(GLASS_KEY) === "off";
   return {
     look,
