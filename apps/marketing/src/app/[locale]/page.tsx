@@ -4,17 +4,16 @@ import { socialLinksOf } from "@store-builder/ui/platform-info";
 import "../home.css";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
-import { DashboardShow } from "@/components/dashboard-show";
-import { Faq } from "@/components/faq";
 import { FeatureGrid } from "@/components/feature-grid";
-import { FinalCta } from "@/components/final-cta";
 import { GrowthTools } from "@/components/growth-tools";
 import { Hero } from "@/components/hero";
+import { HomeEffects } from "@/components/home-effects";
+import { HomeFaq } from "@/components/home-faq";
+import { HomeFinal } from "@/components/home-final";
+import { HomeFooter } from "@/components/home-footer";
+import { HomeHeader } from "@/components/home-header";
+import { DashboardShow, OrderJourney } from "@/components/home-lazy";
 import { HomePricing } from "@/components/home-pricing";
-import { LandingMotion } from "@/components/landing-motion";
-import { OrderJourney } from "@/components/order-journey";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
 import { StartSteps } from "@/components/start-steps";
 import { StoreShowcase } from "@/components/store-showcase";
 import { WhatsAppFloat } from "@/components/whatsapp-float";
@@ -23,20 +22,26 @@ import { getPlatformSettings } from "@/lib/platform-settings";
 import { homeJsonLd, jsonLdScript, pageMetadata } from "@/lib/seo";
 
 /**
- * The landing (app/home.css, over the kit every page shares in
- * app/landing.css), in the order a merchant decides in (the owner,
- * 2026-11-14: the stores first, and a flow that sells). A night-blue stage of
- * real stores opens it, then the platforms strip and eight numbered sections:
- * the stores themselves, each one to open and look through; what a merchant
- * gets, as eight cards to the features page; three steps to a live store; an order's road from the ad to the profit;
- * real screens of the dashboard; the growth tools; what it costs, with the
- * plans read from the API; and the questions — then the closing band. A
- * WhatsApp button stays at the corner for whoever would rather ask first.
+ * The landing (app/home.css, every rule under `.zm`), in the order a
+ * merchant decides in (the owner, 2026-11-14: the stores first, and a flow
+ * that sells): a night-blue opening with real stores on real devices, the
+ * platforms strip, then eight numbered sections — the stores themselves,
+ * each one to open and look through; what a merchant gets; three steps to a
+ * live store; an order's road from the ad to the profit; real screens of
+ * the dashboard; the growth tools; what it costs, with the plans read from
+ * the API; and the questions — then the closing band. A WhatsApp button
+ * stays at the corner for whoever would rather ask first.
+ *
+ * Mostly server-rendered: the header, the stores gallery, and (each in a
+ * chunk of its own, components/home-lazy.tsx) the order's journey, the
+ * dashboard and the plans are client components; the questions and the
+ * closing band need no script. The motion starts once the page is idle
+ * (components/home-effects.tsx).
  */
 
 // Rebuilt at most every minute: the plans and the footer's platform details
 // come from the API (lib/plans.ts, lib/platform-settings.ts). The browser
-// reads the plans again on every visit besides (components/live-plans.tsx).
+// reads the plans again on every visit besides (components/use-live-offer.ts).
 export const revalidate = 60;
 
 type Params = { params: Promise<{ locale: string }> };
@@ -60,23 +65,26 @@ export default async function MarketingHome({ params }: Params) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }} />
-      <SiteHeader />
-      <main id="main" className="lz-page lz-home">
-        <Hero copy={dict.hero} locale={locale} />
-        <WorksWith copy={dict.integrations} />
-        <StoreShowcase copy={dict.templates} locale={locale} />
-        <FeatureGrid locale={locale} startCta={dict.finalCta.primaryCta} />
-        <StartSteps copy={dict.start} />
-        <OrderJourney copy={dict.journey} />
-        <DashboardShow copy={dict.dashboard} locale={locale} />
-        <GrowthTools copy={dict.growth} locale={locale} />
-        <HomePricing copy={dict.pricing} trust={dict.trust} locale={locale} />
-        <Faq copy={dict.faq} locale={locale} n="08" />
-        <FinalCta copy={dict.finalCta} photo />
-      </main>
-      <SiteFooter copy={dict.footer} brand={dict.brand} locale={locale} />
-      <WhatsAppFloat settings={settings} locale={locale} />
-      <LandingMotion />
+      <div className="zm">
+        <i className="zm-prog" aria-hidden />
+        <HomeHeader />
+        <main id="main">
+          <Hero copy={dict.hero} locale={locale} />
+          <WorksWith copy={dict.integrations} />
+          <StoreShowcase copy={dict.templates} locale={locale} />
+          <FeatureGrid locale={locale} startCta={dict.finalCta.primaryCta} />
+          <StartSteps copy={dict.start} />
+          <OrderJourney copy={dict.journey} />
+          <DashboardShow copy={dict.dashboard} locale={locale} />
+          <GrowthTools copy={dict.growth} locale={locale} />
+          <HomePricing copy={dict.pricing} trust={dict.trust} locale={locale} />
+          <HomeFaq copy={dict.faq} locale={locale} />
+          <HomeFinal copy={dict.finalCta} />
+        </main>
+        <HomeFooter copy={dict.footer} brand={dict.brand} locale={locale} />
+        <WhatsAppFloat settings={settings} locale={locale} />
+        <HomeEffects />
+      </div>
     </>
   );
 }

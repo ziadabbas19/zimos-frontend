@@ -1,2527 +1,3574 @@
-/* ------------------------------------------------------------------ *
- * The home page's own sections (`zx-*`), over the kit every page shares
- * (`lz-*`, landing.css: the header, the footer, the strip, the questions,
- * the closing band, the reveal on scroll). Laid out after the two
- * references the owner gave (2026-11-14): the flow and the store gallery
- * of a competing store builder, in the look of Net Profit's landing — a
- * warm paper page, near-black ink, night-blue panels with rounded
- * corners, numbered section labels, large titles — in the ZIMOS blues.
- * Logical properties wherever a side means start or end, so one
- * stylesheet serves Arabic and English; the colours come from the tokens
- * in globals.css and landing.css, so `.dark` flips them.
- * ------------------------------------------------------------------ */
+/* ══ The home page ═════════════════════════════════════════════════════
+   Everything here is scoped under `.zm` (the page's wrapper in
+   app/[locale]/page.tsx). Sizes are in rem, so one factor, `--s`, scales
+   the whole page through the root font size, only while `.zm` is on the
+   page (another page reached from here keeps its own sizes).
 
-/* ══ Kit ═════════════════════════════════════════════════════════════ */
-.zx-sec {
-  padding-block: clamp(68px, 8vw, 118px);
-  scroll-margin-block-start: 112px;
+   Every other page is drawn at 0.9 from 601px up (landing.css, `zoom`). The
+   home page leaves that zoom off, since a zoomed page also shrinks its
+   viewport units and the hero would no longer fill the screen, and takes
+   the same 0.9 into `--s` instead: tablets look as they did. From 1024px up
+   the factor is 0.67 of that, so at 100% the page looks as the site did at
+   the browser's 67% (the owner, 2026-11-15). Phones keep full size. Text
+   that would get too small has a floor in px (`--t-*`).
+
+   Logical properties throughout: Arabic mirrors without extra rules, except
+   the few directional motions below. Entrance animations are written as
+   `from` keyframes, so with reduced motion everything simply stands still
+   where it belongs. Only transform and opacity are animated. */
+
+html:has(.zm) {
+  --s: 1;
+  zoom: 1;
+  font-size: calc(var(--s) * 100%);
+  scroll-padding-top: 6.5rem;
 }
 
-.zx-label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 0 18px;
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 1.4;
-  color: var(--lz-text);
+@media (min-width: 601px) {
+  html:has(.zm) {
+    --s: 0.9;
+  }
 }
 
-.zx-label b {
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--lz-accent);
+@media (min-width: 1024px) {
+  html:has(.zm) {
+    --s: calc(0.9 * 0.67);
+  }
 }
 
-.zx-head {
-  max-inline-size: 50rem;
-  margin-block-end: clamp(34px, 4.4vw, 60px);
+.zm {
+  --night: #070b14;
+  --navy: #0d1b3e;
+  --blue: #165dff;
+  --blue2: #0b46cc;
+  --cyan: #6fdcff;
+  --volt: #4fc3ff;
+  --ok: #357150;
+  --bg: var(--color-paper);
+  --card: var(--color-paper-raised);
+  --text: var(--color-ink);
+  --muted: var(--color-ink-soft);
+  --line: var(--color-line);
+  --soft: var(--color-primary-soft);
+  --shadow: rgb(13 27 62 / 0.14);
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  /* The margin around the night panels. */
+  --gut: 0.625rem;
+  /* Between two buttons side by side: never under 12px. */
+  --gap-btn: max(12px, 1rem);
+  /* Text floors, so the scaled page stays readable. */
+  --t-body: max(12px, 1rem);
+  --t-small: max(11px, 0.875rem);
+  --t-tiny: max(10.5px, 0.78rem);
+
+  min-height: 100dvh;
+  overflow-x: clip;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--t-body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
 }
 
-.zx-head--center {
+.dark .zm {
+  --shadow: rgb(0 0 0 / 0.5);
+}
+
+.zm *,
+.zm *::before,
+.zm *::after {
+  box-sizing: border-box;
+}
+
+/* Resets at zero specificity (:where), so every component rule below wins over them. */
+.zm :where(a) {
+  color: inherit;
+  text-decoration: none;
+}
+
+.zm :where(h1, h2, h3, h4, p, figure, ul, ol, dl, dd) {
+  margin: 0;
+}
+
+.zm :where(h1, h2, h3) {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.06;
+  text-wrap: balance;
+}
+
+/* Arabic letters join: no tracking, and taller lines for the marks. */
+.zm:is([dir="rtl"] *) :where(h1, h2, h3) {
+  letter-spacing: 0;
+  line-height: 1.3;
+}
+
+.zm :where(ul, ol) {
+  padding: 0;
+  list-style: none;
+}
+
+.zm :where(img) {
+  display: block;
+  max-width: 100%;
+}
+
+.zm :where(button) {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.zm :focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+
+.zm-in {
+  position: relative;
+  max-width: 73.75rem;
   margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+.zm-sec {
+  position: relative;
+  padding-block: 6.5rem;
+}
+
+.zm-sec--tight {
+  padding-block-start: 2.5rem;
+}
+
+/* The bar across the top that fills as the page is read. */
+.zm-prog {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 100;
+  height: 3px;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  transform: scaleX(0);
+  transform-origin: left;
+  pointer-events: none;
+}
+
+.zm:is([dir="rtl"] *) .zm-prog {
+  transform-origin: right;
+}
+
+/* Reveal on scroll: transform only, and only once the effects run (html.zm-fx). */
+.zm-fx .rv {
+  transition: transform 0.9s var(--ease);
+  transition-delay: calc(var(--d, 0) * 70ms);
+}
+
+.zm-fx .rv:not(.is-in) {
+  transform: translateY(2.375rem) scale(0.985);
+}
+
+/* ── Section titles ── */
+.zm .zx-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: var(--t-small);
+  font-weight: 600;
+}
+
+.zm .zx-label b {
+  color: var(--blue);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.zm-night .zx-label b,
+.zm-end .zx-label b {
+  color: var(--cyan);
+}
+
+.zm-night .zx-label {
+  color: rgb(231 236 245 / 0.62);
+}
+
+.zm-sh {
+  margin-block-end: 3.5rem;
   text-align: center;
 }
 
-.zx-head--center .zx-label {
-  justify-content: center;
+.zm-sh h2 {
+  max-width: 18ch;
+  margin: 1rem auto 0;
+  font-size: clamp(2rem, 4.2vw, 3.625rem);
 }
 
-.zx-head--center .zx-lede {
-  margin-inline: auto;
+.zm-sh > p:not(.zx-label) {
+  max-width: 60ch;
+  margin: 1.125rem auto 0;
+  color: var(--muted);
+  font-size: max(14px, clamp(1rem, 1.3vw, 1.1875rem));
 }
 
-.zx-head--split {
+.zm-night .zm-sh > p:not(.zx-label) {
+  color: rgb(231 236 245 / 0.72);
+}
+
+/* A title on one side and its action on the other. */
+.zm-sh--split {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 24px 40px;
-  max-inline-size: none;
+  gap: 1.5rem;
+  text-align: start;
 }
 
-.zx-head--split > div:first-child {
-  max-inline-size: 46rem;
+.zm-sh--split h2 {
+  margin-inline: 0;
 }
 
-.zx-h2 {
-  margin: 0 0 16px;
-  font-family: var(--font-display);
-  font-size: clamp(30px, 4.4vw, 58px);
-  font-weight: 600;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
-  color: var(--lz-ink);
-  text-wrap: balance;
-}
-
-[dir="rtl"] .zx-h2 {
-  line-height: 1.34;
-  letter-spacing: 0;
-}
-
-.zx-lede {
-  margin: 0;
-  max-inline-size: 42rem;
-  font-size: clamp(16px, 1.3vw, 19px);
-  line-height: 1.8;
-  color: var(--lz-text);
-  text-wrap: pretty;
-}
-
-.zx-cap {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--lz-text);
-  text-align: center;
-}
-
-.zx-cap a {
-  color: var(--lz-accent);
-  text-underline-offset: 3px;
-}
-
-/* Pill buttons. Lifted with `translate`, which the reveal's transform leaves alone. */
-.zx-btn {
-  display: inline-flex;
+/* ── Buttons ──
+   A row of buttons wraps, with at least 12px between them; on a phone they
+   stack, each the row's whole width. A button never wraps its words, never
+   grows on hover, and the magnetic pull (data-mag, home-effects.tsx) is
+   held within --mag, under half the gap. */
+.zm-ctas {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  min-block-size: 54px;
-  padding: 0 28px;
-  border: 1px solid transparent;
+  gap: var(--gap-btn);
+}
+
+.zm-btn {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  min-height: 3rem;
+  padding: 0.875rem 1.625rem;
+  border: 0;
   border-radius: 999px;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: max(13px, 0.97rem);
+  font-weight: 700;
+  line-height: 1.2;
   white-space: nowrap;
   text-decoration: none;
+  overflow: hidden;
   transition:
-    translate 0.3s var(--lz-ease),
-    box-shadow 0.3s var(--lz-ease),
-    background 0.2s,
-    border-color 0.2s,
-    color 0.2s;
+    translate 0.25s var(--ease),
+    box-shadow 0.25s,
+    background-color 0.25s,
+    border-color 0.25s;
 }
 
-.zx-btn:hover {
-  translate: 0 -2px;
+.zm-btn--sm {
+  min-height: 2.625rem;
+  padding: 0.625rem 1.25rem;
+  font-size: max(12.5px, 0.875rem);
 }
 
-.zx-btn--ink {
-  background: var(--lz-solid);
-  color: var(--lz-on-solid);
-  box-shadow: 0 16px 32px -18px rgb(var(--lz-sh) / 0.7);
+.zm-arr {
+  flex: none;
+  transition: transform 0.25s var(--ease);
 }
 
-.zx-btn--ink:hover {
-  background: var(--lz-solid-hover);
+.zm:is([dir="rtl"] *) .zm-arr {
+  transform: scaleX(-1);
 }
 
-.zx-btn--line {
-  border-color: color-mix(in srgb, var(--lz-ink) 22%, transparent);
-  background: var(--lz-card);
-  color: var(--lz-ink);
+.zm-btn:hover .zm-arr {
+  transform: translateX(0.25rem);
 }
 
-.zx-btn--line:hover {
-  border-color: var(--lz-accent);
-  color: var(--lz-accent);
+.zm:is([dir="rtl"] *) .zm-btn:hover .zm-arr {
+  transform: translateX(-0.25rem) scaleX(-1);
 }
 
-/* On the night-blue grounds: the logo's light blue, and glass beside it. */
-.zx-btn--volt {
-  background: linear-gradient(180deg, #97e8ff, #4fc4ff);
-  color: #04142e;
+.zm-btn--volt {
+  background: linear-gradient(180deg, #7dd6ff, #3aa8ff);
   box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 0.3),
-    0 18px 40px -14px rgb(79 196 255 / 0.65);
+    0 12px 34px -8px rgb(79 195 255 / 0.7),
+    inset 0 1px 0 rgb(255 255 255 / 0.6);
+  color: #05132e;
 }
 
-.zx-btn--volt:hover {
-  box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 0.3),
-    0 24px 50px -14px rgb(79 196 255 / 0.85);
+.zm-btn--volt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.7) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: zm-shine 4.5s 1.5s infinite;
+  pointer-events: none;
 }
 
-.zx-btn--glass {
-  border-color: rgb(255 255 255 / 0.22);
-  background: rgb(255 255 255 / 0.08);
+@keyframes zm-shine {
+  0%,
+  60% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+/* In Arabic the light crosses the other way, as the words are read. */
+.zm:is([dir="rtl"] *) .zm-btn--volt::after {
+  transform: translateX(120%);
+  animation-name: zm-shine-rtl;
+}
+
+@keyframes zm-shine-rtl {
+  0%,
+  60% {
+    transform: translateX(120%);
+  }
+  100% {
+    transform: translateX(-120%);
+  }
+}
+
+.zm-btn--glass {
+  border: 1px solid rgb(255 255 255 / 0.22);
+  background: rgb(255 255 255 / 0.09);
   color: #fff;
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
 
-.zx-btn--glass:hover {
-  background: rgb(255 255 255 / 0.16);
+.zm-btn--glass:hover {
+  background: rgb(255 255 255 / 0.18);
 }
 
-/* A browser frame: the hero's store, the gallery's cards, the dashboard. */
-.zx-browser {
-  margin: 0;
+.zm-btn--blue {
+  background: var(--blue);
+  box-shadow: 0 12px 28px -10px rgb(22 93 255 / 0.8);
+  color: #fff;
+}
+
+.zm-btn--blue:hover {
+  background: var(--blue2);
+}
+
+.zm-btn--line {
+  border: 1.5px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+}
+
+.zm-btn--line:hover {
+  border-color: var(--blue);
+}
+
+@media (max-width: 639.98px) {
+  .zm-ctas {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .zm-ctas > .zm-btn {
+    width: 100%;
+  }
+}
+
+/* ══ Header ══════════════════════════════════════════════════════════
+   A pill floating over the page: logo · the sections · language, theme,
+   sign in and the way in. Nothing in it wraps; from 1024px up it is one
+   line in both languages, below that the sections fold into a sheet. */
+.zm-hdr {
+  position: fixed;
+  inset-block-start: 0.875rem;
+  inset-inline: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: center;
+  padding-inline: 0.875rem;
+  pointer-events: none;
+}
+
+/* Out of sight until the keyboard reaches it. */
+.zm-skip {
+  position: absolute;
+  inset-inline-start: 1rem;
+  inset-block-start: 0;
+  z-index: 2;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--card);
+  color: var(--text);
+  font-weight: 700;
+  pointer-events: auto;
+}
+
+.zm-skip:not(:focus) {
+  width: 1px;
+  height: 1px;
+  padding: 0;
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 0.14);
-  border-radius: 18px;
-  background: #0e1524;
-  box-shadow:
-    0 0 0 6px rgb(255 255 255 / 0.04),
-    0 40px 90px -30px rgb(0 0 0 / 0.75);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
-.zx-browser__bar {
+.zm-hdr-in {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 7px;
-  block-size: 42px;
-  padding-inline: 16px;
-  border-block-end: 1px solid rgb(255 255 255 / 0.08);
-  background: rgb(255 255 255 / 0.06);
-  direction: ltr;
-}
-
-.zx-browser__bar i {
-  inline-size: 10px;
-  block-size: 10px;
-  border-radius: 50%;
-  background: rgb(255 255 255 / 0.24);
-}
-
-.zx-browser__bar span {
-  margin-inline: auto;
-  padding: 5px 16px;
+  gap: clamp(0.75rem, 1.6vw, 1.5rem);
+  width: max-content;
+  min-width: min(100%, 75rem);
+  max-width: 100%;
+  padding-block: 0.5rem;
+  padding-inline: 1.25rem 0.5rem;
+  border: 1px solid rgb(255 255 255 / 0.7);
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.07);
-  font-size: 12px;
-  color: rgb(255 255 255 / 0.72);
-  /* The three dots' width on the other side, so the address sits in the middle. */
-  translate: -22px 0;
+  background: rgb(245 248 253 / 0.86);
+  box-shadow: 0 18px 40px -18px var(--shadow);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  backdrop-filter: blur(18px) saturate(1.6);
+  white-space: nowrap;
+  pointer-events: auto;
+  transition:
+    background-color 0.4s,
+    border-color 0.4s,
+    box-shadow 0.4s;
 }
 
-/* A phone: a dark bezel around a tall capture shown from its top, with the
-   small island a phone's camera sits in. */
-.zx-phone {
-  position: relative;
-  display: block;
-  padding: 6px;
-  border-radius: 30px;
-  background: #05080f;
-  box-shadow:
-    0 0 0 1px rgb(255 255 255 / 0.16),
-    0 34px 70px -24px rgb(0 0 0 / 0.8);
+.dark .zm-hdr-in {
+  border-color: rgb(255 255 255 / 0.08);
+  background: rgb(17 24 39 / 0.8);
 }
 
-.zx-phone::before {
-  content: "";
-  position: absolute;
-  inset-block-start: 3.4%;
-  left: 50%;
-  z-index: 1;
-  inline-size: 30%;
-  block-size: 2.7%;
-  min-block-size: 5px;
+.zm-hdr.is-scrolled .zm-hdr-in {
+  box-shadow: 0 22px 48px -18px rgb(13 27 62 / 0.32);
+}
+
+.zm-logo {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+}
+
+.zm-logo .zimos-logo {
+  height: 2rem !important;
+}
+
+.zm-nav {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 0.125rem;
+}
+
+.zm-nav a {
+  flex: none;
+  padding: 0.5rem clamp(0.5rem, 0.9vw, 0.875rem);
   border-radius: 999px;
-  background: #05080f;
-  translate: -50% 0;
+  color: var(--text);
+  font-size: clamp(12px, 0.55vw + 5px, 14.5px);
+  font-weight: 600;
+  opacity: 0.8;
+  transition:
+    background-color 0.2s,
+    color 0.2s,
+    opacity 0.2s;
 }
 
-.zx-phone img {
-  display: block;
-  inline-size: 100%;
-  block-size: auto;
-  aspect-ratio: 390 / 820;
-  object-fit: cover;
-  object-position: top center;
-  border-radius: 24px;
+.zm-nav a:hover {
+  background: var(--soft);
+  opacity: 1;
 }
 
-/* A laptop: the lid with its dark bezel and camera, then the base it stands
-   on, a little wider than the lid, with the notch a thumb opens it by. */
-.zx-laptop {
-  margin: 0;
+.zm-nav a.on {
+  background: var(--soft);
+  color: var(--blue);
+  opacity: 1;
 }
 
-.zx-laptop__lid {
-  position: relative;
-  padding: 2.5% 2.5% 2.9%;
-  border-radius: clamp(10px, 1.5vw, 22px) clamp(10px, 1.5vw, 22px) 3px 3px;
-  background: #0a0d14;
-  box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 0.16),
-    inset 0 0 0 3px #1a1f2a,
-    0 40px 90px -34px rgb(0 0 0 / 0.75);
+.dark .zm-nav a.on {
+  color: #8db1ff;
 }
 
-.zx-laptop__lid::before {
-  content: "";
-  position: absolute;
-  inset-block-start: 1.2%;
-  left: 50%;
-  inline-size: 5px;
-  block-size: 5px;
-  border-radius: 50%;
-  background: #2b3242;
-  translate: -50% 0;
-}
-
-.zx-laptop__lid > * {
-  overflow: hidden;
-  border-radius: 3px;
-}
-
-.zx-laptop__base {
-  position: relative;
-  block-size: clamp(8px, 1.1vw, 15px);
-  margin-inline: -6.5%;
-  border-radius: 2px 2px 16px 16px / 2px 2px 100% 100%;
-  background: linear-gradient(180deg, #e6e9ee 0%, #bfc4ce 42%, #7f8695 100%);
-  box-shadow: 0 20px 30px -14px rgb(0 0 0 / 0.6);
-}
-
-.zx-laptop__base::before {
-  content: "";
-  position: absolute;
-  inset-block-start: 0;
-  left: 50%;
-  inline-size: 14%;
-  block-size: 40%;
-  border-radius: 0 0 8px 8px;
-  background: #9aa1ae;
-  translate: -50% 0;
-}
-
-/* The round arrows and the counter beside a section's title. */
-.zx-pager {
+.zm-hact {
   display: flex;
   flex: none;
   align-items: center;
-  gap: 12px;
+  gap: 0.5rem;
+  margin-inline-start: auto;
 }
 
-.zx-pager__n {
-  padding-inline: 8px;
-  font-size: 15px;
-  font-variant-numeric: tabular-nums;
-  color: var(--lz-text);
-}
-
-.zx-pager__n b {
-  font-weight: 600;
-  color: var(--lz-ink);
-}
-
-.zx-round {
-  display: grid;
+.zm-hdr .lz-lang-pill,
+.zm-ic,
+.zm-menu {
+  display: inline-grid;
+  flex: none;
   place-items: center;
-  inline-size: 54px;
-  block-size: 54px;
-  padding: 0;
-  border: 1px solid color-mix(in srgb, var(--lz-ink) 20%, transparent);
-  border-radius: 50%;
-  background: transparent;
-  color: var(--lz-ink);
-  cursor: pointer;
-  transition:
-    background 0.2s,
-    border-color 0.2s,
-    color 0.2s;
-}
-
-.zx-round:hover {
-  border-color: var(--lz-ink);
-}
-
-.zx-round--solid {
-  border-color: transparent;
-  background: var(--lz-solid);
-  color: var(--lz-on-solid);
-}
-
-.zx-round--solid:hover {
-  border-color: transparent;
-  background: var(--lz-solid-hover);
-}
-
-/* The arrow glyph points right: back is its mirror, and Arabic swaps the two. */
-.zx-arr--prev,
-[dir="rtl"] .zx-arr--next {
-  transform: scaleX(-1);
-}
-
-[dir="rtl"] .zx-arr--prev {
-  transform: none;
-}
-
-/* A row of choices: the kinds of store, the dashboard's screens. */
-.zx-kinds {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-block-end: clamp(26px, 3.4vw, 44px);
-}
-
-.zx-kind {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-block-size: 44px;
-  padding: 0 20px;
-  border: 1px solid color-mix(in srgb, var(--lz-ink) 16%, transparent);
+  min-inline-size: 2.5rem;
+  block-size: 2.5rem;
+  min-block-size: 32px;
+  border: 1px solid var(--line);
   border-radius: 999px;
-  background: var(--lz-card);
-  color: var(--lz-ink);
-  font: inherit;
-  font-size: 15px;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
+  background: var(--card);
+  color: var(--text);
   transition:
-    background 0.2s,
     border-color 0.2s,
-    color 0.2s;
+    transform 0.3s var(--ease);
 }
 
-.zx-kind:hover {
-  border-color: var(--lz-ink);
+.zm-hdr .lz-lang-pill {
+  display: inline-flex;
+  gap: 0.375rem;
+  padding: 0 0.875rem;
+  font-size: clamp(12px, 0.55vw + 5px, 14px);
 }
 
-.zx-kind[aria-pressed="true"],
-.zx-kind[aria-selected="true"] {
-  border-color: transparent;
-  background: var(--lz-solid);
-  color: var(--lz-on-solid);
+.zm-ic,
+.zm-menu {
+  inline-size: 2.5rem;
+  min-inline-size: 32px;
+  padding: 0;
 }
 
-/* ══ The stage ═══════════════════════════════════════════════════════
-   A night-blue panel with rounded corners that reaches up behind the
-   floating header (the negative margin is the header's height, less the
-   panel's own distance from the top of the page). */
-.zx-hero {
+.zm-hdr .lz-lang-pill:hover,
+.zm-ic:hover,
+.zm-menu:hover {
+  border-color: var(--blue);
+}
+
+.zm-ic:hover {
+  transform: rotate(18deg);
+}
+
+.zm-hdr .ci {
+  inline-size: max(14px, 1.125rem) !important;
+  block-size: max(14px, 1.125rem) !important;
+}
+
+.zm-signin {
+  flex: none;
+  padding-inline: 0.625rem;
+  font-size: clamp(12px, 0.55vw + 5px, 14.5px);
+  font-weight: 700;
+}
+
+.zm-signin:hover {
+  color: var(--blue);
+}
+
+.zm-menu {
+  display: none;
+}
+
+.zm-menu .zm-menu-close,
+.zm-hdr.is-open .zm-menu .zm-menu-open {
+  display: none;
+}
+
+.zm-hdr.is-open .zm-menu .zm-menu-close {
+  display: block;
+}
+
+.zm-sheet {
+  position: absolute;
+  inset-block-start: calc(100% + 0.5rem);
+  inset-inline: 0;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 1.5rem;
+  background: var(--card);
+  box-shadow: 0 30px 60px -24px var(--shadow);
+  white-space: normal;
+  animation: zm-drop 0.25s var(--ease);
+}
+
+.zm-sheet[hidden] {
+  display: none;
+}
+
+@keyframes zm-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+}
+
+.zm-sheet nav {
+  display: grid;
+}
+
+.zm-sheet nav a,
+.zm-sheet__login {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding-inline: 1rem;
+  border-radius: 0.875rem;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.zm-sheet nav a:hover,
+.zm-sheet__login:hover {
+  background: var(--soft);
+}
+
+.zm-sheet__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 52px;
+  padding-inline: 1rem;
+  border-block-start: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.zm-sheet__row .zm-ic {
+  inline-size: 44px;
+  block-size: 44px;
+}
+
+.zm-sheet__login {
+  border-block-start: 1px solid var(--line);
+  border-radius: 0 0 0.875rem 0.875rem;
+  color: var(--blue);
+}
+
+@media (max-width: 1023.98px) {
+  .zm-nav {
+    display: none;
+  }
+
+  .zm-menu {
+    display: inline-grid;
+    inline-size: 44px;
+    block-size: 44px;
+  }
+
+  .zm-hdr .lz-lang-pill,
+  .zm-ic {
+    block-size: 44px;
+    min-inline-size: 44px;
+  }
+
+  .zm-hdr-in {
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 639.98px) {
+  .zm-hdr {
+    inset-block-start: 0.625rem;
+    padding-inline: 0.625rem;
+  }
+
+  .zm-hdr-in {
+    padding-inline: 1rem 0.375rem;
+  }
+
+  .zm-logo .zimos-logo {
+    height: 1.75rem !important;
+  }
+
+  .zm-hact > .zm-signin,
+  .zm-hact > .zm-ic {
+    display: none;
+  }
+
+  .zm-hdr .lz-lang-pill {
+    padding: 0;
+  }
+
+  .zm-hdr .lz-lang-pill .ci {
+    display: none;
+  }
+}
+
+@media (max-width: 359.98px) {
+  .zm-hact > .zm-btn {
+    padding-inline: 0.875rem;
+  }
+}
+
+/* ══ Hero ════════════════════════════════════════════════════════════
+   One screen, top to bottom: the words in their own block, then the stage
+   of devices in the space left under them (a size container, so the laptop
+   and the phones are drawn to fit it), then a line of caption. The floating
+   cards live on the stage, so they can never cover a word or a button. */
+.zm-hero {
   position: relative;
   isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  height: max(calc(100svh - 2 * var(--gut)), 40rem);
+  margin: var(--gut);
   overflow: hidden;
-  margin: -74px 12px 0;
-  padding-block-start: calc(74px + clamp(48px, 6.4vw, 92px));
-  border-radius: 30px;
-  background: var(--zx-night);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
+  border-radius: 2.5rem;
+  background: var(--night);
   color: #fff;
-  text-align: center;
 }
 
-.zx-hero__bg {
+.zm-hero-bg {
   position: absolute;
   inset: 0;
   z-index: -1;
-  overflow: hidden;
-  pointer-events: none;
-  background: #050912;
 }
 
-/* A shop, under the night blue: dark enough that the words read, light
-   enough that it is a place. */
-.zx-hero__photo {
+.zm-hero-photo {
   position: absolute;
   inset: 0;
-  background: url("/photos/store-interior-1920.webp") center 36% / cover no-repeat;
+  width: 100%;
+  height: 100%;
+  max-width: none !important;
+  object-fit: cover;
+  opacity: 0.5;
+  filter: saturate(0.7);
+  transform: scale(1.08);
+  translate: calc(var(--mx, 0) * -14px) calc(var(--my, 0) * -10px);
 }
 
-.zx-hero__photo::after {
+.zm-hero-bg::after {
   content: "";
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(62% 46% at 50% 0%, rgb(30 84 226 / 0.6), transparent 72%),
-    linear-gradient(180deg, rgb(5 9 18 / 0.76) 0%, rgb(6 12 30 / 0.84) 52%, rgb(7 11 20 / 0.97) 100%);
+  background: linear-gradient(180deg, rgb(10 22 70 / 0.82) 0%, rgb(7 11 20 / 0.6) 45%, rgb(7 11 20 / 0.96) 100%);
 }
 
-.zx-glow {
+.zm-glow {
   position: absolute;
+  z-index: 0;
   border-radius: 50%;
-  background: radial-gradient(closest-side, var(--c), transparent);
-  animation: zx-drift 22s ease-in-out infinite alternate;
+  filter: blur(80px);
+  pointer-events: none;
 }
 
-.zx-glow--a {
-  --c: rgb(47 107 255 / 0.4);
-  inline-size: 780px;
-  block-size: 780px;
-  inset-block-start: -320px;
-  left: calc(50% - 390px);
+.zm-glow--a {
+  inset-block-start: -16rem;
+  left: 50%;
+  width: 38rem;
+  height: 38rem;
+  margin-left: -19rem;
+  background: rgb(43 108 255 / 0.55);
+  animation: zm-drift 14s ease-in-out infinite;
 }
 
-.zx-glow--b {
-  --c: rgb(0 200 255 / 0.2);
-  inline-size: 640px;
-  block-size: 640px;
-  inset-block-end: -220px;
-  right: -180px;
-  animation-duration: 28s;
-  animation-delay: -10s;
+.zm-glow--b {
+  inset-block-end: 5rem;
+  inset-inline-end: -7.5rem;
+  width: 30rem;
+  height: 30rem;
+  background: rgb(0 190 255 / 0.3);
+  animation: zm-drift 18s -6s ease-in-out infinite reverse;
 }
 
-@keyframes zx-drift {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
+.zm-glow--c {
+  inset-block-end: -4rem;
+  inset-inline-start: -7.5rem;
+  width: 26rem;
+  height: 26rem;
+  background: rgb(22 93 255 / 0.4);
+  animation: zm-drift 16s -3s ease-in-out infinite;
+}
+
+@keyframes zm-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
   }
-  to {
-    transform: translate3d(-70px, 60px, 0) scale(1.14);
+  50% {
+    transform: translate(3rem, 2.25rem) scale(1.12);
   }
 }
 
-/* A fine grid, fading out from behind the title. */
-.zx-hero__grid {
+.zm-grid {
   position: absolute;
   inset: 0;
+  z-index: 0;
   background-image:
-    linear-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px);
-  background-size: 58px 58px;
-  -webkit-mask-image: radial-gradient(70% 58% at 50% 32%, #000 8%, transparent 76%);
-  mask-image: radial-gradient(70% 58% at 50% 32%, #000 8%, transparent 76%);
+    linear-gradient(rgb(160 190 255 / 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(160 190 255 / 0.07) 1px, transparent 1px);
+  background-size: 3.5rem 3.5rem;
+  -webkit-mask-image: radial-gradient(70% 60% at 50% 30%, #000, transparent);
+  mask-image: radial-gradient(70% 60% at 50% 30%, #000, transparent);
 }
 
-.zx-hero__copy {
+.zm-hero-copy {
   position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  z-index: 3;
+  flex: none;
+  width: 100%;
+  max-width: 82rem;
+  margin-inline: auto;
+  padding: 7.25rem 1.5rem 0;
+  text-align: center;
 }
 
-.zx-pill {
+.zm-pill {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  margin: 0 0 26px;
-  padding-block: 9px;
-  padding-inline: 14px 18px;
-  border: 1px solid rgb(255 255 255 / 0.16);
+  gap: 0.625rem;
+  padding: 0.5rem 1.125rem;
+  border: 1px solid rgb(255 255 255 / 0.2);
   border-radius: 999px;
   background: rgb(255 255 255 / 0.08);
-  font-size: 15px;
-  font-weight: 500;
-  color: rgb(255 255 255 / 0.92);
+  font-size: var(--t-small);
+  font-weight: 600;
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
+  animation: zm-fade 1s 0.05s both;
 }
 
-.zx-pill i {
+.zm-pill i {
+  position: relative;
+  width: 0.5625rem;
+  height: 0.5625rem;
   flex: none;
-  inline-size: 9px;
-  block-size: 9px;
   border-radius: 50%;
-  background: var(--zx-volt);
-  box-shadow: 0 0 0 4px rgb(111 220 255 / 0.22);
+  background: var(--volt);
 }
 
-.zx-h1 {
-  margin: 0 0 24px;
-  font-family: var(--font-display);
-  font-size: clamp(36px, 6.2vw, 86px);
-  font-weight: 600;
+.zm-pill i::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--volt);
+  opacity: 0;
+  animation: zm-pulse 2s infinite;
+}
+
+@keyframes zm-pulse {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(3.2);
+  }
+}
+
+/* Two lines from 1024px up, in both languages: each line stays whole and
+   the size is held to what the narrowest screen of that range can fit. */
+.zm-h1 {
+  margin-block-start: 1.375rem;
+  font-size: clamp(2.25rem, 7.6vw, 3.5rem);
   line-height: 1.04;
-  letter-spacing: -0.035em;
-  color: #fff;
-  text-wrap: balance;
 }
 
-[dir="rtl"] .zx-h1 {
-  line-height: 1.3;
-  letter-spacing: 0;
-}
-
-.zx-h1__line {
+.zm-h1 .ln {
   display: block;
+  padding-block-end: 0.06em;
+  overflow: hidden;
 }
 
-/* The second line in the logo's blues. The padding keeps the letters' tails
-   and dots inside the painted box; the margin gives the space back. */
-.zx-volt {
-  padding-block-end: 0.2em;
-  margin-block-end: -0.2em;
-  background: linear-gradient(90deg, #a6edff 0%, #5fbcff 52%, #86b4ff 100%);
+.zm-h1 .ln > span {
+  display: inline-block;
+  animation: zm-up 1s var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 0.14s + 0.15s);
+}
+
+@keyframes zm-up {
+  from {
+    transform: translateY(110%);
+  }
+}
+
+.zm-h1 .acc {
+  background: linear-gradient(95deg, #7dd6ff, #4fa3ff 55%, #7dd6ff);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-.zx-hero__body {
-  margin: 0 0 34px;
-  max-inline-size: 46rem;
-  font-size: clamp(16.5px, 1.45vw, 20px);
-  line-height: 1.85;
-  color: rgb(255 255 255 / 0.78);
-  text-wrap: pretty;
+.zm-hero-sub {
+  max-width: 62ch;
+  margin: 1.25rem auto 0;
+  color: rgb(255 255 255 / 0.82);
+  font-size: max(14px, clamp(0.9375rem, 1.25vw, 1.125rem));
+  animation: zm-fade 1s 0.7s both;
 }
 
-.zx-ctas {
+@keyframes zm-fade {
+  from {
+    opacity: 0;
+    transform: translateY(0.875rem);
+  }
+}
+
+.zm-hero .zm-ctas {
+  margin-block-start: 1.75rem;
+  animation: zm-fade 1s 0.85s both;
+}
+
+.zm-ticks {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 12px 14px;
+  gap: 0.375rem 1.375rem;
+  margin-block-start: 1.375rem;
+  color: rgb(255 255 255 / 0.75);
+  font-size: var(--t-small);
+  animation: zm-fade 1s 1s both;
 }
 
-.zx-ticks {
+.zm-ticks li {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px 26px;
-  list-style: none;
-  margin: 28px 0 0;
-  padding: 0;
-  font-size: 14.5px;
-  color: rgb(255 255 255 / 0.72);
-}
-
-.zx-ticks li {
-  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.4375rem;
 }
 
-.zx-ticks svg {
-  color: var(--zx-volt);
+.zm-ticks svg {
+  flex: none;
+  color: var(--volt);
 }
 
-/* The stores. Everything is placed from the middle of the stage, in shares
-   of the laptop's width (`--bw`), so the whole picture scales as one. The
-   laptop and the phones stand on one line: the stage's lower edge. */
-.zx-stage {
-  --bw: min(720px, 50vw);
+@media (min-width: 1024px) {
+  .zm-h1 {
+    /* Arabic line one is the widest: about 20em of Alexandria. */
+    font-size: min(4.6rem, 4.3vw);
+  }
+
+  .zm-h1 .ln {
+    white-space: nowrap;
+  }
+}
+
+.zm-stage {
   position: relative;
-  z-index: 1;
-  block-size: calc(var(--bw) * 0.7);
-  margin-block: clamp(52px, 6vw, 88px) clamp(26px, 3vw, 40px);
+  z-index: 2;
+  flex: 1 1 0;
+  min-height: 9rem;
+  margin-block-start: 2.25rem;
+  container-type: size;
 }
 
-.zx-stage__frame {
+/* Half the laptop's width: the phones and the cards stand from its edges. */
+.zm-stage {
+  --lap: min(84rem, 62cqw, calc((100cqh - 1.5rem) * 1.6));
+  --half: calc(var(--lap) / 2);
+}
+
+.zm-laptop {
   position: absolute;
   inset-block-end: 0;
   left: 50%;
   z-index: 2;
-  inline-size: var(--bw);
-  translate: -50% 0;
+  width: var(--lap);
+  translate: calc(-50% + var(--mx, 0) * 10px) calc(var(--my, 0) * 6px);
+  animation: zm-rise 1.4s 0.5s var(--ease) both;
 }
 
-.zx-cycle {
+@keyframes zm-rise {
+  from {
+    opacity: 0;
+    transform: translateY(7.5rem);
+  }
+}
+
+.zm-lid {
+  padding: 0.6875rem 0.6875rem 0;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-radius: 1.25rem 1.25rem 0 0;
+  background: #0a0f1c;
+  box-shadow:
+    0 -30px 90px -20px rgb(79 163 255 / 0.45),
+    0 0 0 1px rgb(255 255 255 / 0.05);
+}
+
+.zm-scr {
   position: relative;
   aspect-ratio: 16 / 10;
   overflow: hidden;
-  background: #fff;
+  border-radius: 0.625rem 0.625rem 0 0;
+  background: #111;
 }
 
-/* One store after the other, crossfading; the first is there from the start. */
-.zx-cycle img {
+/* Three stores, one after the other: each shows for a third of the turn. */
+.zm-scr img {
   position: absolute;
   inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  object-position: top center;
+  object-position: top;
   opacity: 0;
-  animation: zx-cycle 15s infinite;
-  animation-delay: calc(var(--k) * 5s - 0.8s);
+  animation: zm-turn 12.6s ease infinite;
+  animation-delay: calc((var(--k, 0) - 3) * 4.2s);
 }
 
-.zx-cycle picture:first-child img {
+.zm-scr img:first-child {
   opacity: 1;
 }
 
-@keyframes zx-cycle {
+/* Each picture is seen for its third of the turn and fades into the next. */
+@keyframes zm-turn {
   0% {
-    opacity: 0;
+    opacity: 1;
+    transform: scale(1.025);
   }
-  5%,
-  33.3% {
+  27% {
     opacity: 1;
   }
-  38.3%,
-  100% {
+  33% {
     opacity: 0;
+    transform: scale(1);
+  }
+  94% {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.025);
   }
 }
 
-.zx-fan .zx-phone {
+.zm-base {
+  height: 0.875rem;
+  margin-inline: -3%;
+  border-radius: 0 0 1.125rem 1.125rem;
+  background: linear-gradient(#cfd6e4, #8d97ad);
+}
+
+.zm-ph {
+  --ph: min(11.875rem, 15cqw, calc(100cqh * 0.42));
   position: absolute;
-  inset-block-end: 0;
-  left: 50%;
-  z-index: 3;
-  inline-size: calc(var(--bw) * 0.205);
+  inset-block-end: 0.5rem;
+  z-index: 1;
+  width: var(--ph);
+  overflow: hidden;
+  border: 0.3125rem solid #0a0f1c;
+  border-radius: 1.75rem;
+  background: #0a0f1c;
+  box-shadow:
+    0 30px 70px -20px rgb(0 0 0 / 0.8),
+    0 0 0 1px rgb(255 255 255 / 0.18);
+  translate: calc(var(--mx, 0) * 22px) calc(var(--my, 0) * 10px);
+  rotate: var(--rot, 0deg);
 }
 
-.zx-fan .zx-phone:nth-child(1) {
-  translate: calc(-50% - var(--bw) * 0.59) 0;
+.zm-ph img {
+  width: 100%;
+  height: auto;
 }
 
-/* The middle phone is the laptop's place on a phone screen. */
-.zx-fan .zx-phone:nth-child(2) {
-  display: none;
+.zm-ph--l {
+  --rot: -5deg;
+  inset-inline-end: calc(50% + var(--half) - var(--ph) * 0.35);
+  animation: zm-rise 1.4s 0.7s var(--ease) both;
 }
 
-.zx-fan .zx-phone:nth-child(3) {
-  translate: calc(-50% + var(--bw) * 0.59) 0;
+.zm-ph--r {
+  --rot: 5deg;
+  inset-inline-start: calc(50% + var(--half) - var(--ph) * 0.35);
+  animation: zm-rise 1.4s 0.9s var(--ease) both;
 }
 
-/* What happens to an order, as three cards floating over the stores. */
-.zx-floats {
+.zm:is([dir="rtl"] *) .zm-ph--l {
+  --rot: 5deg;
+}
+
+.zm:is([dir="rtl"] *) .zm-ph--r {
+  --rot: -5deg;
+}
+
+.zm-fl {
   position: absolute;
-  inset: 0;
   z-index: 4;
-  pointer-events: none;
-}
-
-.zx-float {
-  position: absolute;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding-block: 8px;
-  padding-inline: 10px 18px;
-  border: 1px solid rgb(255 255 255 / 0.16);
-  border-radius: 16px;
-  background: rgb(13 20 37 / 0.84);
-  box-shadow: 0 22px 44px -18px rgb(0 0 0 / 0.75);
-  text-align: start;
+  gap: 0.75rem;
+  padding-block: 0.625rem;
+  padding-inline: 0.75rem 1.125rem;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-radius: 1rem;
+  background: rgb(13 22 48 / 0.78);
+  box-shadow: 0 20px 40px -14px rgb(0 0 0 / 0.6);
   white-space: nowrap;
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
-  animation: zx-bob 6s ease-in-out infinite;
+  animation: zm-fl 7s ease-in-out infinite;
 }
 
-.zx-float b {
-  display: block;
-  font-size: 14.5px;
-  font-weight: 600;
-  line-height: 1.5;
-  color: #fff;
-}
-
-.zx-float small {
-  display: block;
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: rgb(255 255 255 / 0.66);
-}
-
-.zx-float--a {
-  inset-block-start: calc(var(--bw) * -0.03);
-  left: calc(50% - var(--bw) * 0.66);
-}
-
-.zx-float--b {
-  inset-block-start: calc(var(--bw) * 0.1);
-  right: calc(50% - var(--bw) * 0.9);
-  animation-delay: -2s;
-}
-
-.zx-float--c {
-  inset-block-start: calc(var(--bw) * 0.14);
-  left: calc(50% - var(--bw) * 0.94);
-  animation-delay: -4s;
-}
-
-@keyframes zx-bob {
+@keyframes zm-fl {
   0%,
   100% {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-9px);
+    transform: translateY(-0.75rem);
   }
 }
 
-.zx-hero__cap {
-  position: relative;
-  z-index: 2;
-  margin: 0;
-  padding: 0 20px 22px;
-  font-size: 12.5px;
-  color: rgb(255 255 255 / 0.6);
-}
-
-/* The strip of platforms, straight under the stage, and the questions: no rule across the page. */
-.lz-home .lz-strip {
-  border: 0;
-  padding-block-start: 14px;
-}
-
-.lz-home .lz-sec--line {
-  border: 0;
-}
-
-/* ══ The stores ══════════════════════════════════════════════════════
-   A grid of whole stores, each on a laptop with its phone beside it. */
-.zx-kinds--center {
-  justify-content: center;
-}
-
-.zx-kind small {
-  font-size: 12px;
-  font-weight: 600;
-  opacity: 0.6;
-}
-
-.zx-shops {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 22px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.zx-shop[hidden] {
-  display: none;
-}
-
-.zx-shop__open {
-  display: flex;
-  flex-direction: column;
-  block-size: 100%;
-  border: 1px solid var(--lz-line);
-  border-radius: 26px;
-  background: var(--lz-card);
-  color: inherit;
-  text-decoration: none;
-  overflow: hidden;
-  transition:
-    translate 0.35s var(--lz-ease),
-    box-shadow 0.35s var(--lz-ease),
-    border-color 0.2s;
-}
-
-.zx-shop__open:hover {
-  translate: 0 -4px;
-  border-color: color-mix(in srgb, var(--lz-accent) 46%, var(--lz-line));
-  box-shadow: 0 34px 64px -40px rgb(var(--lz-sh) / 0.55);
-}
-
-/* The devices' ground: room for the phone at the end side. */
-.zx-shop__media {
-  position: relative;
-  display: block;
-  padding-block: 8% 7%;
-  padding-inline: 8% 17%;
-  background: radial-gradient(90% 90% at 50% 0%, var(--lz-soft), transparent 74%), var(--lz-paper);
-}
-
-.zx-shop__media .zx-laptop,
-.zx-shop__media .zx-laptop__lid,
-.zx-shop__media .zx-laptop__base,
-.zx-shop__shot {
-  display: block;
-}
-
-.zx-shop__media .zx-laptop__lid {
-  border-radius: 12px 12px 3px 3px;
-  box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 0.16),
-    inset 0 0 0 2px #1a1f2a,
-    0 30px 50px -34px rgb(var(--lz-sh) / 0.7);
-}
-
-.zx-shop__media .zx-laptop__base {
-  block-size: 8px;
-  box-shadow: 0 16px 22px -12px rgb(var(--lz-sh) / 0.5);
-}
-
-/* The top of the store's page; pointing at the card slides it up a little, as a first look. */
-.zx-shop__shot {
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-  background: #fff;
-}
-
-.zx-shop__shot img {
-  display: block;
-  inline-size: 100%;
-  block-size: 100%;
-  object-fit: cover;
-  object-position: top center;
-  transition: scale 0.6s var(--lz-ease);
-  transform-origin: top center;
-}
-
-.zx-shop__open:hover .zx-shop__shot img {
-  scale: 1.04;
-}
-
-.zx-shop__phone {
-  position: absolute;
-  inset-block-end: 7%;
-  inset-inline-end: 6%;
-  inline-size: 20%;
-  padding: 1%;
-  border-radius: 16px;
-  box-shadow:
-    0 0 0 1px rgb(255 255 255 / 0.16),
-    0 24px 36px -18px rgb(var(--lz-sh) / 0.75);
-}
-
-.zx-shop__phone img {
-  aspect-ratio: 1 / 2;
-  border-radius: 12px;
-}
-
-.zx-shop__meta {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 18px 22px 20px;
-  border-block-start: 1px solid var(--lz-line);
-}
-
-.zx-shop__name {
-  display: grid;
-  gap: 2px;
-  min-inline-size: 0;
-}
-
-.zx-shop__name b {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.5;
-  color: var(--lz-ink);
-}
-
-.zx-shop__name small {
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--lz-text);
-}
-
-.zx-shop__go {
-  display: inline-flex;
+.zm-fl img {
+  width: 2.375rem;
+  height: 2.375rem;
   flex: none;
-  align-items: center;
-  gap: 8px;
-  min-block-size: 40px;
-  padding: 0 16px;
-  border-radius: 999px;
-  background: var(--lz-solid);
-  color: var(--lz-on-solid);
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-  transition: background 0.2s;
 }
 
-.zx-shop__open:hover .zx-shop__go {
-  background: var(--lz-solid-hover);
+.zm-fl b {
+  display: block;
+  font-size: var(--t-small);
 }
 
-.zx-stores__foot {
-  display: grid;
-  justify-items: center;
-  gap: 16px;
-  margin-block-start: clamp(28px, 3.4vw, 44px);
-  text-align: center;
+.zm-fl small {
+  font-size: var(--t-tiny);
+  opacity: 0.72;
 }
 
-/* ══ The drawings: a sum, the confirmation queue, an order's risk ═══ */
-
-/* The drawings share one ground: the page's paper, set into the white card. */
-.zx-sum {
-  display: grid;
-  gap: 14px;
-  padding: 20px;
-  border: 1px solid var(--lz-line);
-  border-radius: 18px;
-  background: var(--lz-paper);
+.zm-fl--a {
+  inset-block-start: 14%;
+  inset-inline-end: calc(50% + var(--half) - 2.5rem);
 }
 
-.zx-sum small {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--lz-ink);
+.zm-fl--b {
+  inset-block-start: 6%;
+  inset-inline-start: calc(50% + var(--half) - 2.5rem);
+  animation-delay: -2.5s;
 }
 
-/* A sum: each line with its figure and a bar of its share of the sale price. */
-.zx-sum__row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 7px 12px;
-  font-size: 14px;
-  color: var(--lz-text);
+.zm-fl--c {
+  inset-block-end: 14%;
+  inset-inline-end: calc(50% + var(--half) - 4.5rem);
+  animation-delay: -4.5s;
 }
 
-.zx-sum__row b {
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--lz-ink);
-}
-
-.zx-sum__row i {
-  position: relative;
-  grid-column: 1 / -1;
-  block-size: 5px;
-  border-radius: 5px;
-  background: color-mix(in srgb, var(--lz-ink) 8%, transparent);
-}
-
-.zx-sum__row i::after {
+.zm-fl::after {
   content: "";
   position: absolute;
-  inset-block: 0;
-  inset-inline-end: 0;
-  inline-size: var(--w);
+  inset: -1px;
+  border: 1.5px solid var(--volt);
   border-radius: inherit;
-  background: color-mix(in srgb, var(--lz-ink) 32%, transparent);
+  opacity: 0;
+  animation: zm-ring 9s infinite;
 }
 
-.zx-sum__row.is-whole i::after {
-  background: var(--lz-ink);
+.zm-fl--b::after {
+  animation-delay: 3s;
 }
 
-.zx-sum__net {
+.zm-fl--c::after {
+  animation-delay: 6s;
+}
+
+@keyframes zm-ring {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  8% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  28%,
+  100% {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+}
+
+/* A short stage keeps only the laptop and two cards. */
+@container (max-height: 15rem) {
+  .zm-fl--c {
+    display: none;
+  }
+}
+
+.zm-hero-foot {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 2.5rem;
+  padding-inline: 1.75rem;
+  text-align: end;
+  color: rgb(255 255 255 / 0.55);
+  font-size: var(--t-tiny);
+}
+
+.zm-scroll {
+  position: absolute;
+  inset-block-start: 50%;
+  left: 50%;
+  width: 1.25rem;
+  height: 2rem;
+  margin: -1rem 0 0 -0.625rem;
+  border: 2px solid rgb(255 255 255 / 0.4);
+  border-radius: 0.75rem;
+}
+
+.zm-scroll::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 0.375rem;
+  left: 50%;
+  width: 3px;
+  height: 0.4375rem;
+  margin-left: -1.5px;
+  border-radius: 3px;
+  background: #fff;
+  animation: zm-sc 1.8s infinite;
+}
+
+@keyframes zm-sc {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+
+@media (max-width: 1023.98px) {
+  .zm-fl,
+  .zm-scroll {
+    display: none;
+  }
+
+  .zm-stage {
+    --lap: min(45rem, 84cqw, calc((100cqh - 1.5rem) * 1.6));
+  }
+
+  .zm-ph {
+    --ph: min(7.5rem, 18cqw, calc(100cqh * 0.42));
+  }
+}
+
+@media (max-width: 639.98px) {
+  .zm-hero {
+    border-radius: 1.75rem;
+  }
+
+  .zm-hero-copy {
+    padding-block-start: 6.25rem;
+    padding-inline: 1.125rem;
+  }
+
+  .zm-ph {
+    display: none;
+  }
+
+  .zm-stage {
+    --lap: min(45rem, 94cqw, calc((100cqh - 1rem) * 1.6));
+    margin-block-start: 1.5rem;
+  }
+
+  /* Clear of the WhatsApp button at the start corner. */
+  .zm-hero-foot {
+    padding-inline: 4.75rem 1rem;
+  }
+}
+
+/* ══ The platforms strip ═════════════════════════════════════════════ */
+.zm-works {
+  position: relative;
+  padding: 2.125rem 0 0.5rem;
+  overflow: hidden;
+}
+
+.zm-works-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-block-start: 16px;
-  border-block-start: 1px dashed color-mix(in srgb, var(--lz-ink) 18%, transparent);
-  font-size: 15px;
+  gap: 2.125rem;
+}
+
+.zm-works-l {
+  flex: none;
+  padding-inline-start: max(1.5rem, calc((100vw - 73.75rem) / 2 + 1.5rem));
+  color: var(--muted);
+  font-size: var(--t-small);
   font-weight: 600;
-  color: var(--lz-ink);
 }
 
-.zx-sum__net b {
-  padding: 6px 14px;
-  border-radius: 12px;
-  background: var(--color-primary);
-  font-size: 21px;
+.zm-works-vp {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.zm-works-t {
+  display: flex;
+  gap: 2.625rem;
+  width: max-content;
+  animation: zm-m 48s linear infinite;
+}
+
+.zm-works-vp:hover .zm-works-t {
+  animation-play-state: paused;
+}
+
+.zm:is([dir="rtl"] *) .zm-works-t {
+  animation-name: zm-m-rtl;
+}
+
+@keyframes zm-m {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes zm-m-rtl {
+  to {
+    transform: translateX(50%);
+  }
+}
+
+.zm-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: var(--t-body);
   font-weight: 700;
-  color: var(--primary-foreground);
+  white-space: nowrap;
+  opacity: 0.65;
+  filter: grayscale(1);
+  transition:
+    filter 0.3s,
+    opacity 0.3s,
+    transform 0.3s;
 }
 
-.zx-sum__net small {
-  font-size: 12px;
-  font-weight: 500;
-  color: inherit;
+.zm-brand:hover {
+  opacity: 1;
+  filter: none;
+  transform: translateY(-3px);
+}
+
+.zm-brand img {
+  width: 1.625rem;
+  height: 1.625rem;
+  object-fit: contain;
+}
+
+.zm-brand--word img {
+  width: auto;
+  height: 1.375rem;
+}
+
+.zm-note {
+  margin-block-start: 0.875rem;
+  color: var(--muted);
+  font-size: var(--t-tiny);
+  text-align: center;
   opacity: 0.85;
 }
 
-/* A shipment's road: its code, then three stops, two of them behind it. */
-.zx-ship__code {
+/* Without motion the strip is one still list; the copies are not shown. */
+@media (prefers-reduced-motion: reduce) {
+  .zm-works-t > [aria-hidden="true"] {
+    display: none;
+  }
+
+  .zm-works-t {
+    flex-wrap: wrap;
+    width: auto;
+  }
+}
+
+/* ══ Stores ══════════════════════════════════════════════════════════ */
+.zm-chips {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.625rem;
+  margin-block-end: 2.375rem;
+}
+
+.zm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.625rem 1.125rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  font-size: var(--t-small);
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    transform 0.25s var(--ease),
+    border-color 0.25s,
+    background-color 0.25s,
+    color 0.25s;
+}
+
+.zm-chip em {
+  padding: 1px 0.5rem;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--blue);
+  font-size: var(--t-tiny);
+  font-style: normal;
+}
+
+.dark .zm-chip em {
+  color: #8db1ff;
+}
+
+.zm-chip:hover {
+  border-color: var(--blue);
+  transform: translateY(-2px);
+}
+
+.zm-chip[aria-pressed="true"] {
+  border-color: var(--blue);
+  background: var(--blue);
+  box-shadow: 0 12px 24px -10px rgb(22 93 255 / 0.8);
+  color: #fff;
+}
+
+.zm-chip[aria-pressed="true"] em {
+  background: rgb(255 255 255 / 0.22);
+  color: #fff;
+}
+
+.zm-sgrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.375rem;
+}
+
+.zm-sgrid > [hidden] {
+  display: none;
+}
+
+.zm-sc {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 1.625rem;
+  background: var(--card);
+  transition:
+    transform 0.45s var(--ease),
+    box-shadow 0.45s,
+    border-color 0.3s;
+  animation: zm-card 0.6s var(--ease) both;
+  animation-delay: calc(var(--n, 0) * 60ms);
+}
+
+@keyframes zm-card {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem) scale(0.97);
+  }
+}
+
+.zm-sc:hover {
+  border-color: rgb(22 93 255 / 0.4);
+  box-shadow: 0 40px 60px -30px var(--shadow);
+  transform: translateY(-0.5rem);
+}
+
+.zm-sc-pic {
+  position: relative;
+  aspect-ratio: 16 / 11;
+  padding: 1.375rem 1.375rem 0;
+  overflow: hidden;
+  background: linear-gradient(160deg, var(--soft), transparent 80%);
+}
+
+.zm-sc-lap {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-block-end: 0;
+  border-radius: 0.625rem 0.625rem 0 0;
+  background: #fff;
+  box-shadow: 0 20px 40px -22px var(--shadow);
+}
+
+.zm-sc-lap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  transition: transform 0.6s var(--ease);
+}
+
+.zm-sc:hover .zm-sc-lap img {
+  transform: scale(1.04);
+}
+
+.zm-sc-ph {
+  position: absolute;
+  inset-block-end: -0.875rem;
+  inset-inline-end: 1.25rem;
+  width: 22%;
+  overflow: hidden;
+  border: 3px solid var(--navy);
+  border-radius: 0.75rem;
+  box-shadow: 0 14px 26px -8px rgb(0 0 0 / 0.45);
+  transform: translateY(0.5rem) rotate(3deg);
+  transition: transform 0.5s var(--ease);
+}
+
+.zm:is([dir="rtl"] *) .zm-sc-ph {
+  transform: translateY(0.5rem) rotate(-3deg);
+}
+
+.zm-sc:hover .zm-sc-ph {
+  transform: translateY(-0.5rem) rotate(-2deg);
+}
+
+.zm:is([dir="rtl"] *) .zm-sc:hover .zm-sc-ph {
+  transform: translateY(-0.5rem) rotate(2deg);
+}
+
+.zm-sc-ph img {
+  width: 100%;
+  height: auto;
+}
+
+.zm-sc-bd {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  font-size: 13px;
-  color: var(--lz-text);
+  gap: 0.75rem;
+  padding: 1.125rem 1.25rem 1.25rem;
 }
 
-.zx-ship__code b {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 14px;
-  font-style: normal;
+/* The name keeps room to read; when the card is too narrow for both, the button goes under it. */
+.zm-sc-bd > div {
+  flex: 1 1 max(9.5rem, 130px);
+  min-width: 0;
+}
+
+.zm-sc-bd h3 {
+  font-size: max(14px, 1.0625rem);
   font-weight: 700;
-  letter-spacing: 0.03em;
-  color: var(--lz-ink);
+  letter-spacing: -0.02em;
 }
 
-.zx-ship__road li i {
-  z-index: 1;
+.zm-sc-bd small {
+  display: block;
+  margin-block-start: 0.1875rem;
+  color: var(--muted);
+  font-size: var(--t-tiny);
+}
+
+.zm-sc-bd .own {
+  color: var(--blue);
+  font-weight: 700;
+}
+
+.dark .zm-sc-bd .own {
+  color: #8db1ff;
+}
+
+.zm-more {
+  display: grid;
+  justify-items: center;
+  gap: 1.375rem;
+  margin-block-start: 2.75rem;
+}
+
+/* ── The store viewer (a native dialog, store-viewer.tsx) ── */
+.zm-viewer {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+}
+
+.zm-viewer[open] {
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.zm-viewer::backdrop {
+  background: rgb(5 9 20 / 0.82);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  animation: zm-fadein 0.3s both;
+}
+
+@keyframes zm-fadein {
+  from {
+    opacity: 0;
+  }
+}
+
+.zm-mbox {
+  display: flex;
+  flex-direction: column;
+  width: min(68.75rem, 100%);
+  max-height: calc(100dvh - 3rem);
+  overflow: hidden;
+  border-radius: 1.75rem;
+  background: var(--card);
+  box-shadow: 0 60px 120px -30px #000;
+  animation: zm-pop 0.45s var(--ease) both;
+}
+
+@keyframes zm-pop {
+  from {
+    opacity: 0;
+    transform: translateY(1.875rem) scale(0.96);
+  }
+}
+
+.zm-mtop,
+.zm-mfoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1rem 1.25rem;
+}
+
+.zm-mtop {
+  border-block-end: 1px solid var(--line);
+}
+
+.zm-mfoot {
+  justify-content: space-between;
+  border-block-start: 1px solid var(--line);
+}
+
+.zm-mtop h3 {
+  margin-inline-end: auto;
+  font-size: max(15px, 1.125rem);
+}
+
+.zm-mtop h3 small {
+  display: block;
+  color: var(--muted);
+  font-size: var(--t-tiny);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.zm-seg {
+  display: inline-flex;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: var(--soft);
+}
+
+.zm-seg button {
+  min-height: 2.5rem;
+  padding: 0.5rem 1rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-size: var(--t-small);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.zm-seg button[aria-pressed="true"] {
+  background: var(--card);
+  box-shadow: 0 4px 12px -4px var(--shadow);
+  color: var(--blue);
+}
+
+.zm-mbody {
+  position: relative;
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  padding: 1.625rem;
+  overflow: auto;
+  background: var(--soft);
+  overscroll-behavior: contain;
+}
+
+.zm-shot {
+  width: 100%;
+  max-width: 60rem;
+  height: fit-content;
+  border-radius: 0.75rem;
+  background: #fff;
+  box-shadow: 0 30px 60px -30px var(--shadow);
+  animation: zm-fadein 0.5s both;
+}
+
+.zm-shot--phone {
+  max-width: 21.25rem;
+  border: 6px solid var(--navy);
+  border-radius: 1.875rem;
+}
+
+.zm-shot img {
+  width: 100%;
+  height: auto;
+  border-radius: inherit;
+}
+
+.zm-mfoot > div {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.zm-mfoot span {
+  color: var(--muted);
+  font-size: var(--t-small);
+}
+
+.zm-navbtn {
   display: grid;
   flex: none;
   place-items: center;
-  box-sizing: border-box;
-  inline-size: 24px;
-  block-size: 24px;
+  width: 2.625rem;
+  height: 2.625rem;
+  min-width: 36px;
+  min-height: 36px;
+  border: 1px solid var(--line);
   border-radius: 50%;
-  background: var(--lz-ok);
+  background: var(--card);
+  color: var(--text);
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.zm-navbtn:hover {
+  border-color: var(--blue);
+  background: var(--blue);
   color: #fff;
 }
 
-.zx-ship__road li.is-next i {
-  border: 2px dashed color-mix(in srgb, var(--lz-ink) 32%, transparent);
-  background: var(--lz-paper);
+.zm .zm-arr--back {
+  transform: scaleX(-1);
 }
 
-.zx-order__lines u {
-  display: block;
-  block-size: 7px;
-  border-radius: 7px;
-  background: color-mix(in srgb, var(--lz-ink) 11%, transparent);
-  text-decoration: none;
+.zm:is([dir="rtl"] *) .zm-arr.zm-arr--back {
+  transform: none;
 }
 
-.zx-order__lines u:last-child {
-  inline-size: 62%;
+/* The page behind the open viewer holds still. */
+html:has(.zm-viewer[open]) {
+  overflow: hidden;
 }
 
-/* ══ Night panels ════════════════════════════════════════════════════
-   The same night blue as the stage, in both themes. Inside one the kit's
-   colours are light ones, so titles, labels, pills and arrows follow. */
-.zx-sec--night {
-  padding-block: 0;
+/* ══ Features ════════════════════════════════════════════════════════ */
+.zm-fgrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.125rem;
 }
 
-.zx-night {
-  --lz-ink: #fff;
-  --lz-text: rgb(255 255 255 / 0.72);
-  --lz-line: rgb(255 255 255 / 0.12);
-  --lz-card: rgb(255 255 255 / 0.05);
-  --lz-paper: rgb(255 255 255 / 0.04);
-  --lz-accent: var(--zx-volt);
-  --lz-solid: #fff;
-  --lz-solid-hover: #cfeeff;
-  --lz-on-solid: #060a14;
-  --lz-ic-a: #a6edff;
-  --lz-ic-b: #5fbcff;
-  --lz-ok: #34c77b;
-  --color-primary: var(--zx-volt);
-  --primary-foreground: #04142e;
+.zm-fc {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  height: 100%;
+  min-height: 15.625rem;
+  padding: 1.625rem 1.5rem 1.75rem;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 1.5rem;
+  background: var(--card);
+  transition:
+    transform 0.4s var(--ease),
+    box-shadow 0.4s,
+    border-color 0.3s;
+}
+
+.zm-fc:hover {
+  border-color: rgb(22 93 255 / 0.4);
+  box-shadow: 0 36px 50px -28px var(--shadow);
+  transform: translateY(-0.5rem);
+}
+
+.zm-spot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(16rem circle at var(--sx, 50%) var(--sy, 0%), rgb(22 93 255 / 0.14), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.zm-spot:hover::before {
+  opacity: 1;
+}
+
+.zm-i3 {
+  width: 4rem;
+  height: 4rem;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 12px rgb(13 27 62 / 0.25));
+  transition: transform 0.5s var(--ease);
+}
+
+.zm-fc:hover .zm-i3 {
+  transform: translateY(-0.5rem) rotate(-8deg) scale(1.12);
+}
+
+.zm-fc h3 {
+  margin-block-start: auto;
+  font-size: max(15px, 1.25rem);
+  font-weight: 700;
+}
+
+.zm-fc p,
+.zm-gc p,
+.zm-step p {
+  color: var(--muted);
+  font-size: var(--t-small);
+}
+
+.zm-fc .zm-go {
+  position: absolute;
+  inset-block-start: 1.375rem;
+  inset-inline-end: 1.25rem;
+  opacity: 0.5;
+  rotate: -45deg;
+  transition:
+    transform 0.3s,
+    opacity 0.3s,
+    color 0.3s;
+}
+
+.zm:is([dir="rtl"] *) .zm-fc .zm-go {
+  rotate: 45deg;
+}
+
+.zm-fc:hover .zm-go {
+  color: var(--blue);
+  opacity: 1;
+  transform: translateX(0.25rem);
+}
+
+.zm:is([dir="rtl"] *) .zm-fc:hover .zm-go {
+  transform: translateX(-0.25rem) scaleX(-1);
+}
+
+.zm-fgrid + .zm-ctas,
+.zm-ggrid + .zm-ctas {
+  margin-block-start: 2.75rem;
+}
+
+/* ══ Steps ═══════════════════════════════════════════════════════════ */
+.zm-steps-wrap {
+  position: relative;
+}
+
+.zm-steps {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.375rem;
+}
+
+.zm-stepline {
+  position: absolute;
+  inset-block-start: 3.75rem;
+  inset-inline: 12%;
+  z-index: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  opacity: 0.35;
+  transform-origin: left;
+}
+
+.zm:is([dir="rtl"] *) .zm-stepline {
+  transform-origin: right;
+}
+
+.zm-fx .zm-stepline {
+  transition: transform 1.8s 0.4s var(--ease);
+}
+
+.zm-fx .zm-stepline:not(.is-in) {
+  transform: scaleX(0);
+}
+
+.zm-step {
+  position: relative;
+  min-height: 15.625rem;
+  padding: 1.875rem 1.75rem 2rem;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 1.625rem;
+  background: var(--card);
+  transition:
+    transform 0.4s var(--ease),
+    box-shadow 0.4s;
+}
+
+.zm-step:hover {
+  box-shadow: 0 36px 50px -28px var(--shadow);
+  transform: translateY(-0.375rem);
+}
+
+.zm-step .n {
+  position: absolute;
+  inset-block-start: -0.375rem;
+  inset-inline-end: 1.125rem;
+  color: var(--blue);
+  font-family: var(--font-display);
+  font-size: 8.125rem;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  opacity: 0.08;
+  transition:
+    transform 0.6s var(--ease),
+    opacity 0.4s;
+}
+
+.zm-step:hover .n {
+  opacity: 0.16;
+  transform: translateY(0.5rem) scale(1.06);
+}
+
+.zm-step .zm-i3 {
+  animation: zm-bob 5s ease-in-out infinite;
+  animation-delay: calc(var(--d, 0) * 0.5s);
+}
+
+@keyframes zm-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(-0.4375rem) rotate(-4deg);
+  }
+}
+
+.zm-step h3 {
+  margin: 1.625rem 0 0.5rem;
+  font-size: max(16px, 1.375rem);
+  font-weight: 700;
+}
+
+/* ══ Night panels (the order's journey, the dashboard) ═══════════════ */
+.zm-night {
   position: relative;
   isolation: isolate;
+  margin: var(--gut);
   overflow: hidden;
-  margin-inline: 12px;
-  padding-block: clamp(72px, 9vw, 128px);
-  border-radius: 30px;
-  background: var(--zx-night);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
+  border-radius: 2.5rem;
+  background: var(--night);
   color: #fff;
 }
 
-.zx-night::before {
+.zm-night::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(52% 44% at 50% 0%, rgb(30 84 226 / 0.42), transparent 72%),
-    radial-gradient(36% 40% at 100% 100%, rgb(0 174 255 / 0.14), transparent 70%);
-  pointer-events: none;
+    radial-gradient(60% 40% at 50% 0%, rgb(43 108 255 / 0.38), transparent 70%),
+    radial-gradient(40% 30% at 90% 100%, rgb(0 190 255 / 0.16), transparent 70%);
 }
 
-.zx-night--plain::before {
-  background:
-    radial-gradient(46% 40% at 12% 0%, rgb(30 84 226 / 0.4), transparent 72%),
-    radial-gradient(40% 44% at 100% 60%, rgb(0 174 255 / 0.12), transparent 70%);
+.zm-cap {
+  margin-block-start: 2.5rem;
+  color: rgb(231 236 245 / 0.55);
+  font-size: var(--t-tiny);
+  text-align: center;
 }
 
-.zx-cap--night {
-  margin-block-start: 26px;
-  color: rgb(255 255 255 / 0.55);
-}
-
-/* ══ The order's journey ═════════════════════════════════════════════ */
-.zx-journey {
+/* ── The order's journey ── */
+.zm-jgrid {
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
-  gap: clamp(28px, 5vw, 76px);
+  gap: 3.5rem;
 }
 
-.zx-jsteps {
-  display: grid;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  border-block-end: 1px solid var(--lz-line);
+.zm-jlist {
+  border-block-start: 1px solid rgb(255 255 255 / 0.14);
 }
 
-.zx-jstep {
+.zm-js {
   position: relative;
-  border-block-start: 1px solid var(--lz-line);
+  border-block-end: 1px solid rgb(255 255 255 / 0.14);
 }
 
-.zx-jstep button {
+.zm-js > button {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  gap: 0.25rem 0.5rem;
+  width: 100%;
+  padding: 1.375rem 0.25rem;
+  border: 0;
+  background: transparent;
+  color: rgb(255 255 255 / 0.5);
+  text-align: start;
+  transition: color 0.3s;
+}
+
+.zm-js > button:hover {
+  color: rgb(255 255 255 / 0.85);
+}
+
+.zm-js .n {
+  padding-block-start: 0.375rem;
+  font-size: var(--t-small);
+  font-weight: 700;
+}
+
+.zm-js small {
+  display: block;
+  color: inherit;
+  font-size: var(--t-tiny);
+  font-weight: 600;
+}
+
+.zm-js b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: max(17px, clamp(1.25rem, 2vw, 1.75rem));
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.zm:is([dir="rtl"] *) .zm-js b {
+  letter-spacing: 0;
+}
+
+.zm-js p {
+  margin-inline-start: 3.25rem;
+  padding: 0.625rem 0.25rem 1.375rem;
+  color: rgb(231 236 245 / 0.75);
+  font-size: var(--t-small);
+  animation: zm-fade 0.5s both;
+}
+
+.zm-js p[hidden] {
+  display: none;
+}
+
+.zm-js.on > button {
+  padding-block-end: 0;
+  color: #fff;
+}
+
+.zm-js.on .n {
+  color: var(--cyan);
+}
+
+.zm-js .bar {
+  position: absolute;
+  inset-block-start: -1px;
+  inset-inline: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  transform-origin: left;
+  animation: zm-bar var(--dur, 6.5s) linear both;
+}
+
+.zm:is([dir="rtl"] *) .zm-js .bar {
+  transform-origin: right;
+}
+
+.zm-jlist:hover .bar,
+.zm-jlist:focus-within .bar,
+.zm-jlist.is-held .bar {
+  animation-play-state: paused;
+}
+
+@keyframes zm-bar {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.zm-jstage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 44rem;
+  padding: 2.125rem 1.25rem;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 1.75rem;
+  background: linear-gradient(160deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.02));
+}
+
+.zm-jstage::before {
+  content: "";
+  position: absolute;
+  inset-block-start: -6rem;
+  inset-inline-end: -5rem;
+  width: 26rem;
+  height: 26rem;
+  border-radius: 50%;
+  background: rgb(43 108 255 / 0.35);
+  filter: blur(80px);
+}
+
+.zm-jph {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, max(21.5rem, 236px));
+  aspect-ratio: 9 / 18.5;
+  padding: 1rem 0.875rem 0.875rem;
+  overflow: hidden;
+  border: 7px solid #0a0f1c;
+  border-radius: 2.375rem;
+  background: #fff;
+  box-shadow:
+    0 40px 80px -20px #000,
+    0 0 0 1px rgb(255 255 255 / 0.2);
+  color: #0d1b3e;
+  animation: zm-bob2 7s ease-in-out infinite;
+}
+
+@keyframes zm-bob2 {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.5rem);
+  }
+}
+
+.zm-jph::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 7px;
+  left: 50%;
+  z-index: 3;
+  width: 4.375rem;
+  height: 1.125rem;
+  margin-left: -2.1875rem;
+  border-radius: 0.75rem;
+  background: #0a0f1c;
+}
+
+.zm-jin {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.625rem;
+  min-height: 0;
+  padding-block-start: 1.125rem;
+  font-size: max(10.5px, 0.8rem);
+  line-height: 1.45;
+  animation: zm-fade 0.6s both;
+}
+
+.zm-jin .who {
   display: flex;
   align-items: center;
-  gap: 20px;
-  inline-size: 100%;
-  padding: 20px 4px;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: start;
-  cursor: pointer;
+  gap: 0.5625rem;
 }
 
-.zx-jstep__n {
+.zm-jin .who i {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
   flex: none;
-  font-size: 14px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: rgb(255 255 255 / 0.42);
-  transition: color 0.2s;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
 }
 
-.zx-jstep__words {
+.zm-jin .who b {
+  display: block;
+}
+
+.zm-jin .who small,
+.zm-jin .site {
+  color: #7a859e;
+  font-size: max(10px, 0.6875rem);
+}
+
+.zm-jin .img {
+  aspect-ratio: 16 / 11;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: #eaf0ff;
+}
+
+.zm-jin .img--short {
+  aspect-ratio: 16 / 9;
+}
+
+.zm-jin .img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+.zm-jin .cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5625rem 0.625rem;
+  border-radius: 0.75rem;
+  background: #f0f4fb;
+}
+
+.zm-jin .cta > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zm-jin .cta em {
+  flex: none;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  background: #0d1b3e;
+  color: #fff;
+  font-style: normal;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.zm-jin .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.zm-jin .title {
+  font-weight: 700;
+}
+
+.zm-fld {
+  position: relative;
+  overflow: hidden;
+  padding: 0.5625rem 0.6875rem;
+  border: 1px solid #d8e0ee;
+  border-radius: 0.5625rem;
+  color: #56627e;
+}
+
+.zm-fld::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgb(22 93 255 / 0.1);
+  transform-origin: left;
+  animation: zm-fill 1.2s calc(var(--k, 0) * 0.55s + 0.3s) both;
+}
+
+.zm:is([dir="rtl"] *) .zm-fld::after {
+  transform-origin: right;
+}
+
+@keyframes zm-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.zm-bump {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5625rem;
+  border: 1.5px dashed var(--blue);
+  border-radius: 0.625rem;
+  background: #eaf0ff;
+  font-weight: 600;
+}
+
+.zm-bump i {
+  display: grid;
+  width: 0.9375rem;
+  height: 0.9375rem;
+  flex: none;
+  place-items: center;
+  border-radius: 4px;
+  background: var(--blue);
+  color: #fff;
+  animation: zm-tickp 2.2s 1.5s both;
+}
+
+@keyframes zm-tickp {
+  from {
+    transform: scale(0);
+  }
+}
+
+.zm-order {
+  margin-block-start: auto;
+  padding: 0.75rem;
+  border-radius: 0.6875rem;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+}
+
+.zm-q {
+  display: grid;
+  gap: 0.5625rem;
+  padding: 0.75rem;
+  border: 1px solid #e3e9f3;
+  border-radius: 0.75rem;
+}
+
+.zm-q .soft {
+  color: #56627e;
+}
+
+.zm-risk {
+  padding: 0.1875rem 0.5625rem;
+  border-radius: 999px;
+  background: #e5f0e9;
+  color: #357150;
+  font-size: max(10px, 0.6875rem);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.zm-acts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.375rem;
+}
+
+.zm-acts span {
+  padding: 0.5625rem 0.25rem;
+  border: 1px solid #d8e0ee;
+  border-radius: 0.5625rem;
+  background: #fff;
+  font-weight: 700;
+  text-align: center;
+}
+
+.zm-acts .ok {
+  border-color: #357150;
+  background: #357150;
+  color: #fff;
+  animation: zm-okp 1.2s 0.8s both;
+}
+
+@keyframes zm-okp {
+  from {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+.zm-trk {
+  padding: 0.5625rem;
+  border-radius: 0.5625rem;
+  background: #f0f4fb;
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.zm-tl {
+  position: relative;
+  display: grid;
+  gap: 0.875rem;
+  margin-block-start: 0.375rem;
+  padding-inline-start: 1.375rem;
+}
+
+.zm-tl::before,
+.zm-tl::after {
+  content: "";
+  position: absolute;
+  inset-block: 0.375rem;
+  inset-inline-start: 0.375rem;
+  width: 2px;
+  background: #e3e9f3;
+}
+
+.zm-tl::after {
+  background: var(--blue);
+  transform-origin: top;
+  animation: zm-tlg 3.2s 0.4s both;
+}
+
+@keyframes zm-tlg {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+.zm-tl li {
+  position: relative;
+  font-weight: 600;
+}
+
+.zm-tl li::before,
+.zm-tl li::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 0.1875rem;
+  inset-inline-start: -1.375rem;
+  z-index: 1;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 50%;
+}
+
+.zm-tl li::before {
+  border: 2px solid #d8e0ee;
+  background: #fff;
+}
+
+.zm-tl li::after {
+  background: var(--blue);
+  animation: zm-dot 0.4s calc(var(--k, 0) * 1.4s + 0.4s) both;
+}
+
+@keyframes zm-dot {
+  from {
+    transform: scale(0);
+  }
+}
+
+.zm-pf {
   display: grid;
   gap: 2px;
 }
 
-.zx-jstep__words small {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: rgb(255 255 255 / 0.5);
-  transition: color 0.2s;
+.zm-pf .row {
+  padding: 0.5625rem 0;
+  border-block-end: 1px dashed #d8e0ee;
+  animation: zm-fade 0.5s calc(var(--k, 0) * 0.28s + 0.2s) both;
 }
 
-.zx-jstep__words b {
-  font-family: var(--font-display);
-  font-size: clamp(19px, 2vw, 26px);
-  font-weight: 500;
-  line-height: 1.45;
-  color: rgb(255 255 255 / 0.56);
-  transition: color 0.2s;
-}
-
-.zx-jstep button:hover .zx-jstep__words b,
-.zx-jstep.is-open .zx-jstep__words b {
-  color: #fff;
-}
-
-.zx-jstep.is-open .zx-jstep__n,
-.zx-jstep.is-open .zx-jstep__words small {
-  color: var(--zx-volt);
-}
-
-.zx-jstep__body {
-  max-inline-size: 31rem;
-  margin: -6px 0 0;
-  padding-block-end: 24px;
-  /* Under the title, past the number and its gap. */
-  padding-inline-start: calc(4px + 1.25em + 20px);
-  font-size: 15.5px;
-  line-height: 1.8;
-  color: rgb(255 255 255 / 0.74);
-}
-
-/* The open step's top rule, filling until the next one opens. */
-.zx-jstep__line {
-  position: absolute;
-  inset-block-start: -1px;
-  inset-inline: 0;
-  block-size: 2px;
-  background: var(--zx-volt);
-  transform-origin: 0 50%;
-}
-
-[dir="rtl"] .zx-jstep__line {
-  transform-origin: 100% 50%;
-}
-
-.zx-jstep__line.is-playing {
-  animation: zx-fill 6.5s linear forwards;
-}
-
-@keyframes zx-fill {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
-.zx-jstage {
-  position: relative;
-  display: grid;
-  place-items: center;
-  min-block-size: 560px;
-  padding: 30px;
-  overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 0.09);
-  border-radius: 26px;
-  background: rgb(255 255 255 / 0.03);
-}
-
-.zx-jstage__glow {
-  position: absolute;
-  inline-size: 460px;
-  block-size: 460px;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(63 141 255 / 0.36), transparent);
-}
-
-.zx-mock {
-  position: relative;
-  z-index: 1;
-  text-align: start;
-  animation: zx-rise 0.5s var(--lz-ease) both;
-}
-
-.zx-mock[hidden] {
-  display: none;
-}
-
-@keyframes zx-rise {
-  from {
-    opacity: 0;
-    transform: translateY(14px) scale(0.98);
-  }
-}
-
-/* A phone's screen, drawn light whatever the theme: it is a store's page. */
-.zx-mphone {
-  display: grid;
-  gap: 12px;
-  inline-size: min(100%, 300px);
-  padding: 18px 15px;
-  border-radius: 34px;
-  background: #fff;
-  box-shadow:
-    0 0 0 7px #05080f,
-    0 0 0 8px rgb(255 255 255 / 0.18),
-    0 40px 80px -30px #000;
-  color: #0c1424;
-}
-
-.zx-ad__head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.zx-ad__head i {
-  display: grid;
-  flex: none;
-  place-items: center;
-  inline-size: 36px;
-  block-size: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #0a3cff, #0a9cff);
-  --lz-ic-a: #fff;
-  --lz-ic-b: #fff;
-}
-
-.zx-ad__head span,
-.zx-ad__cta span {
-  display: grid;
-}
-
-.zx-ad__head b,
-.zx-ad__cta b {
-  font-size: 13.5px;
-  line-height: 1.5;
-}
-
-.zx-ad__head small,
-.zx-ad__cta small,
-.zx-page__top small {
-  font-size: 11.5px;
-  color: #6b7280;
-}
-
-.zx-ad__text {
-  margin: 0;
-  font-size: 13.5px;
-  line-height: 1.75;
-  color: #1f2937;
-}
-
-.zx-ad__media {
-  aspect-ratio: 1;
-  overflow: hidden;
-  border-radius: 14px;
-  background: #e8efff;
-}
-
-.zx-ad__media--short {
-  aspect-ratio: 16 / 9;
-}
-
-/* The capture's own picture of the product, not its menu: the picture is
-   drawn larger than its box and moved so the product fills it (the capture
-   is a left-to-right page, so the offsets are physical). */
-.zx-ad__media {
-  position: relative;
-}
-
-.zx-ad__media img {
-  position: absolute;
-  inset-block-start: -11%;
-  left: -52%;
-  inline-size: 171%;
-  max-inline-size: none;
-  block-size: auto;
-}
-
-.zx-ad__media--short img {
-  inset-block-start: -39%;
-  left: -48%;
-  inline-size: 150%;
-}
-
-.zx-ad__cta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: #f1f3f6;
-}
-
-.zx-ad__cta em {
-  flex: none;
-  padding: 8px 14px;
-  border-radius: 9px;
-  background: #0c1424;
-  font-size: 12.5px;
-  font-style: normal;
-  font-weight: 600;
-  color: #fff;
-}
-
-.zx-page__top,
-.zx-page__title {
+.zm-pf .net {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 10px;
-}
-
-.zx-page__top {
-  padding-block-end: 10px;
-  border-block-end: 1px solid #eceef2;
-  font-size: 14px;
-}
-
-.zx-page__title b {
-  font-size: 15.5px;
-}
-
-.zx-page__title em {
-  font-size: 14.5px;
-  font-style: normal;
+  padding-block-start: 0.75rem;
   font-weight: 700;
-  color: #165dff;
 }
 
-.zx-page__form {
-  display: grid;
-  gap: 7px;
+.zm-pf .net strong {
+  color: #357150;
+  font-size: max(22px, 1.875rem);
+  letter-spacing: -0.03em;
 }
 
-.zx-page__form span {
-  display: flex;
-  align-items: center;
-  min-block-size: 34px;
-  padding-inline: 12px;
-  border: 1px solid #e2e5ea;
-  border-radius: 9px;
-  font-size: 12px;
-  color: #9097a3;
-}
-
-.zx-page__bump {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 10px;
-  border: 1.5px dashed #f0b44c;
-  border-radius: 10px;
-  background: #fff8ea;
-  font-size: 12px;
+.zm-pf .net small {
+  font-size: max(10px, 0.75rem);
   font-weight: 600;
-  color: #7a5412;
 }
 
-.zx-page__bump i {
-  display: grid;
-  flex: none;
-  place-items: center;
-  inline-size: 16px;
-  block-size: 16px;
-  border-radius: 4px;
-  background: #e59a1a;
-  color: #fff;
-}
-
-.zx-page__go {
+/* ── The dashboard ── */
+.zm-dhead {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  min-block-size: 42px;
-  border-radius: 11px;
-  background: #165dff;
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-}
-
-/* A card of the dashboard, on the night panel's glass. */
-.zx-mcard {
-  display: grid;
-  gap: 16px;
-  inline-size: min(100%, 410px);
-  padding: 22px;
-  border: 1px solid rgb(255 255 255 / 0.13);
-  border-radius: 22px;
-  background: rgb(15 23 41 / 0.92);
-  box-shadow: 0 40px 80px -30px #000;
-}
-
-.zx-mcard__head {
-  display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 10px;
-  font-size: 14.5px;
-  font-weight: 600;
-  color: #fff;
+  gap: 1.5rem;
+  margin-block-end: 2.125rem;
 }
 
-.zx-mcard__head span {
-  display: inline-flex;
+.zm-dhead h2 {
+  max-width: 15ch;
+  margin-block-start: 0.875rem;
+  font-size: clamp(2rem, 4.2vw, 3.5rem);
+}
+
+.zm-dhead > div > p:not(.zx-label) {
+  max-width: 46ch;
+  margin-block-start: 1rem;
+  color: rgb(231 236 245 / 0.72);
+}
+
+.zm-dnav {
+  display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.75rem;
+  color: rgb(255 255 255 / 0.7);
+  font-weight: 700;
 }
 
-.zx-mpill {
-  padding: 4px 11px;
-  border-radius: 999px;
+.zm-dnav .zm-navbtn {
+  border-color: rgb(255 255 255 / 0.2);
   background: rgb(255 255 255 / 0.08);
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 600;
-  white-space: nowrap;
-  color: rgb(255 255 255 / 0.8);
-}
-
-.zx-mpill--ok {
-  background: rgb(52 199 123 / 0.16);
-  color: #62e3a2;
-}
-
-.zx-order,
-.zx-ship__code {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px;
-  border-radius: 14px;
-  background: rgb(255 255 255 / 0.05);
-}
-
-.zx-order b {
-  display: block;
-  font-size: 15px;
-}
-
-.zx-order small {
-  display: block;
-  font-size: 12.5px;
-  color: rgb(255 255 255 / 0.62);
-}
-
-.zx-order em {
-  font-style: normal;
-  font-weight: 700;
-  white-space: nowrap;
   color: #fff;
 }
 
-.zx-order__lines {
-  display: grid;
-  gap: 8px;
+.zm-dnav .zm-navbtn--w {
+  border-color: #fff;
+  background: #fff;
+  color: var(--navy);
 }
 
-.zx-order__acts {
-  display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr;
-  gap: 8px;
+.zm-dtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  margin-block-end: 1.5rem;
 }
 
-.zx-order__acts span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-block-size: 42px;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  border-radius: 11px;
-  background: rgb(255 255 255 / 0.06);
-  font-size: 13px;
-  font-weight: 600;
-  color: rgb(255 255 255 / 0.86);
+.zm-dtab {
+  min-height: 2.75rem;
+  padding: 0.6875rem 1.375rem;
+  border: 1px solid rgb(255 255 255 / 0.22);
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-size: var(--t-small);
+  font-weight: 700;
+  white-space: nowrap;
+  transition:
+    background-color 0.25s,
+    color 0.25s,
+    border-color 0.25s;
 }
 
-.zx-order__acts .is-go {
-  border-color: transparent;
-  background: linear-gradient(180deg, #97e8ff, #4fc4ff);
-  color: #04142e;
+.zm-dtab:hover {
+  background: rgb(255 255 255 / 0.1);
 }
 
-.zx-ship__road {
-  display: grid;
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.zm-dtab[aria-selected="true"] {
+  border-color: #fff;
+  background: #fff;
+  color: var(--navy);
 }
 
-.zx-ship__road li {
+.zm-dwin {
   position: relative;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 1.25rem;
+  background: #eef2fa;
+  box-shadow: 0 60px 100px -30px #000;
+  transform: perspective(1800px) rotateX(calc(var(--ry, 0) * -1deg)) rotateY(calc(var(--rx, 0) * 1deg));
+  transition: transform 0.25s ease-out;
+}
+
+.zm-dbar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding-block: 10px;
-  font-size: 14px;
-  color: rgb(255 255 255 / 0.88);
+  gap: 0.4375rem;
+  padding: 0.6875rem 0.875rem;
+  background: #e5eaf5;
 }
 
-.zx-ship__road li.is-next {
-  color: rgb(255 255 255 / 0.56);
+.zm-dbar i {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  background: #c3cde2;
 }
 
-.zx-ship__road li.is-next i {
-  background: transparent;
+.zm-dbar span {
+  margin-inline: auto;
+  padding: 0.1875rem 2.5rem;
+  border-radius: 999px;
+  background: #fff;
+  color: #56627e;
+  font-size: max(10px, 0.6875rem);
 }
 
-.zx-ship__road li + li::before {
-  content: "";
+.zm-dview {
+  position: relative;
+  aspect-ratio: 16 / 10;
+}
+
+.zm-dview img {
   position: absolute;
-  inset-block-start: -10px;
-  inset-inline-start: 11px;
-  inline-size: 2px;
-  block-size: 20px;
-  background: var(--lz-ok);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  opacity: 0;
+  transform: scale(1.02);
+  transition:
+    opacity 0.6s,
+    transform 0.8s var(--ease);
 }
 
-.zx-ship__road li.is-next::before {
-  background: rgb(255 255 255 / 0.2);
+.zm-dview img.on {
+  opacity: 1;
+  transform: none;
+}
+
+/* The timer of the tabs' own turn: an invisible line that runs out. */
+.zm-dclock {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  transform-origin: left;
+  animation: zm-bar 7s linear both;
+}
+
+.zm:is([dir="rtl"] *) .zm-dclock {
+  transform-origin: right;
+}
+
+.zm-dwin:hover .zm-dclock,
+.zm-dwrap:focus-within .zm-dclock {
+  animation-play-state: paused;
+}
+
+.zm-dcap {
+  display: flex;
+  align-items: center;
+  gap: 1.125rem;
+  margin-block-start: 1.375rem;
+}
+
+.zm-dcap .n {
+  color: var(--cyan);
+  font-size: max(24px, 2.125rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.zm-dcap b {
+  display: block;
+  font-size: max(15px, 1.25rem);
+}
+
+.zm-dcap span {
+  color: rgb(231 236 245 / 0.72);
+  font-size: var(--t-small);
+}
+
+.zm-dcap > div {
+  animation: zm-fade 0.5s both;
 }
 
 /* ══ Growth tools ════════════════════════════════════════════════════ */
-.zx-tools {
+.zm-ggrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-  list-style: none;
-  margin: 0 0 28px;
-  padding: 0;
+  gap: 1.25rem;
 }
 
-.zx-tool {
-  padding: 14px 14px 30px;
-  border: 1px solid var(--lz-line);
-  border-radius: 26px;
-  background: var(--lz-card);
+.zm-gc {
+  position: relative;
+  height: 100%;
+  padding: 0.875rem 0.875rem 1.75rem;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 1.625rem;
+  background: var(--card);
+  transition:
+    transform 0.4s var(--ease),
+    box-shadow 0.4s;
 }
 
-.zx-tool__art {
-  display: flex;
-  flex-direction: column;
+.zm-gc:hover {
+  box-shadow: 0 36px 50px -28px var(--shadow);
+  transform: translateY(-0.5rem);
+}
+
+.zm-gpic {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.875rem;
+  height: 11.875rem;
+  overflow: hidden;
+  border-radius: 1.125rem;
+  background:
+    radial-gradient(70% 90% at 50% 20%, var(--soft), transparent 80%),
+    var(--soft);
+}
+
+.zm-gpic .zm-i3 {
+  width: 4.875rem;
+  height: 4.875rem;
+}
+
+.zm-gc:hover .zm-gpic .zm-i3 {
+  transform: scale(1.2) rotate(-8deg);
+}
+
+.zm-tag {
+  position: relative;
+  padding: 0.4375rem 1rem;
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: 0 8px 18px -8px var(--shadow);
+  font-size: var(--t-small);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.zm-gc h3 {
+  margin: 1.375rem 0.625rem 0.5rem;
+  font-size: max(15px, 1.1875rem);
+  font-weight: 700;
+}
+
+.zm-gc p {
+  margin-inline: 0.625rem;
+}
+
+.zm-gpic .prog {
+  position: relative;
+  width: 9.375rem;
+  height: 0.4375rem;
+  overflow: hidden;
+  border-radius: 0.5625rem;
+  background: rgb(13 27 62 / 0.12);
+}
+
+.dark .zm-gpic .prog {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.zm-gpic .prog i {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.5625rem;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  transform: scaleX(0.75);
+  transform-origin: left;
+  transition: transform 1.4s var(--ease);
+}
+
+.zm:is([dir="rtl"] *) .zm-gpic .prog i {
+  transform-origin: right;
+}
+
+.zm-fx .zm-gc:not(.is-in) .prog i {
+  transform: scaleX(0.3);
+}
+
+.zm-gc:hover .prog i {
+  transform: scaleX(0.9);
+}
+
+.a-ring {
+  transform-origin: 50% 0;
+  animation: zm-ringb 2.6s ease-in-out infinite;
+}
+
+@keyframes zm-ringb {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0);
+  }
+  10% {
+    transform: rotate(14deg);
+  }
+  20% {
+    transform: rotate(-12deg);
+  }
+  30% {
+    transform: rotate(9deg);
+  }
+  40% {
+    transform: rotate(-6deg);
+  }
+}
+
+.a-float {
+  animation: zm-bob 4s ease-in-out infinite;
+}
+
+.a-tick {
+  animation: zm-tk 3s ease-in-out infinite;
+}
+
+@keyframes zm-tk {
+  0%,
+  100% {
+    transform: rotate(-6deg) scale(1);
+  }
+  50% {
+    transform: rotate(6deg) scale(1.08);
+  }
+}
+
+.a-roll {
+  animation: zm-roll 5s ease-in-out infinite;
+}
+
+@keyframes zm-roll {
+  0%,
+  100% {
+    transform: translateX(-0.625rem);
+  }
+  50% {
+    transform: translateX(0.625rem);
+  }
+}
+
+.zm-gnote,
+.zm-pnote {
+  margin-block-start: 2.125rem;
+  color: var(--muted);
+  font-size: var(--t-small);
+  text-align: center;
+}
+
+.zm-gnote a,
+.zm-pnote a,
+.zm-tp a {
+  color: var(--blue);
+  font-weight: 600;
+}
+
+.dark :is(.zm-gnote, .zm-pnote, .zm-tp) a {
+  color: #8db1ff;
+}
+
+/* ══ Pricing ═════════════════════════════════════════════════════════ */
+.zm-tog {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 1.75rem auto 0;
+  padding: 0.3125rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--soft);
+}
+
+.zm-tog legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.zm-tog label {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
-  block-size: 196px;
-  margin-block-end: 24px;
-  overflow: hidden;
-  border: 1px solid var(--lz-line);
-  border-radius: 16px;
-  background:
-    radial-gradient(120% 90% at 50% 0%, var(--lz-soft), transparent 72%),
-    var(--lz-paper);
-}
-
-/* What the tool looks like to the customer, in a few words. */
-.zx-tool__tag {
-  padding: 7px 15px;
-  border: 1px solid var(--lz-line);
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.625rem 1.625rem;
   border-radius: 999px;
-  background: var(--lz-card);
-  box-shadow: 0 12px 22px -18px rgb(var(--lz-sh) / 0.6);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.5;
-  color: var(--lz-ink);
+  font-size: var(--t-small);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.3s;
 }
 
-.zx-tool h3 {
-  margin: 0 14px 8px;
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1.45;
-  color: var(--lz-ink);
+.zm-tog input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
 }
 
-.zx-tool p {
-  margin: 0 14px;
-  font-size: 15.5px;
-  line-height: 1.8;
-  color: var(--lz-text);
+.zm-tog label:has(:focus-visible) {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 
-/* ══ The dashboard ═══════════════════════════════════════════════════ */
-.zx-kinds--night .zx-kind:hover {
-  border-color: rgb(255 255 255 / 0.5);
+.zm-tog label:has(:checked) {
+  color: #fff;
 }
 
-.zx-screen {
-  margin: 0;
-  padding: 14px 14px 0;
-  border: 1px solid rgb(255 255 255 / 0.1);
-  border-radius: 28px;
-  background: rgb(255 255 255 / 0.04);
+.zm-tog .pill {
+  position: absolute;
+  inset-block: 0.3125rem;
+  inset-inline-start: 0.3125rem;
+  width: calc(50% - 0.3125rem);
+  border-radius: 999px;
+  background: var(--blue);
+  transition: transform 0.45s var(--ease);
 }
 
-.zx-screen .zx-browser {
-  box-shadow: 0 40px 90px -40px #000;
+.zm-pricing:has(.cycle-yearly:checked) .zm-tog .pill {
+  transform: translateX(100%);
 }
 
-.zx-screen__shot img {
-  display: block;
-  inline-size: 100%;
-  block-size: auto;
+.zm:is([dir="rtl"] *) .zm-pricing:has(.cycle-yearly:checked) .zm-tog .pill {
+  transform: translateX(-100%);
 }
 
-.zx-screen__shot img[hidden] {
+.zm-tog em {
+  padding: 2px 0.5rem;
+  border-radius: 999px;
+  background: rgb(79 195 255 / 0.28);
+  font-size: var(--t-tiny);
+  font-style: normal;
+}
+
+/* Monthly by default; the yearly figures once that switch is on. Both are in the HTML. */
+.zm-y {
   display: none;
 }
 
-.zx-screen figcaption {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 20px 12px 22px;
-  font-size: 15.5px;
-  line-height: 1.7;
-  color: rgb(255 255 255 / 0.72);
+.zm-pricing:has(.cycle-yearly:checked) .zm-m {
+  display: none;
 }
 
-.zx-screen figcaption b {
+.zm-pricing:has(.cycle-yearly:checked) .zm-y {
   display: block;
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 600;
-  color: #fff;
 }
 
-.zx-screen__n {
-  flex: none;
-  font-family: var(--font-display);
-  font-size: 36px;
-  font-weight: 500;
-  line-height: 1;
-  color: var(--zx-volt);
-}
-
-/* ══ Getting started ═════════════════════════════════════════════════ */
-.zx-steps {
+.zm-plans {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
+  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+  align-items: stretch;
+  gap: 1.375rem;
+  margin-block-start: 3rem;
 }
 
-.zx-step {
+.zm-plan {
   position: relative;
-  overflow: hidden;
-  padding: 30px;
-  border: 1px solid var(--lz-line);
-  border-radius: 26px;
-  background: var(--lz-card);
-}
-
-/* The step's number, large and faint in the card's corner. */
-.zx-step em {
-  position: absolute;
-  inset-block-start: 4px;
-  inset-inline-end: 24px;
-  font-family: var(--font-display);
-  font-size: 124px;
-  font-style: normal;
-  font-weight: 600;
-  line-height: 1;
-  color: color-mix(in srgb, var(--lz-ink) 6%, transparent);
-}
-
-.zx-step h3 {
-  margin: 28px 0 8px;
-  font-family: var(--font-display);
-  font-size: 21px;
-  font-weight: 600;
-  line-height: 1.45;
-  color: var(--lz-ink);
-}
-
-.zx-step p {
-  margin: 0;
-  font-size: 15.5px;
-  line-height: 1.8;
-  color: var(--lz-text);
-}
-
-/* ══ Narrower screens ════════════════════════════════════════════════ */
-@media (max-width: 1080px) {
-  .zx-tools {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .zx-float--c {
-    display: none;
-  }
-}
-
-@media (max-width: 960px) {
-  .zx-journey {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  /* One column: the drawing first, so it stays in sight above the steps that change it. */
-  .zx-jstage {
-    order: -1;
-    min-block-size: 500px;
-  }
-
-  .zx-steps {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-/* The laptop steps aside: three phones take the stage as a fan, the two
-   cards over their shoulders. */
-@media (max-width: 760px) {
-  .zx-hero__photo {
-    background-image: url("/photos/store-interior-960.webp");
-  }
-
-  .zx-stage {
-    --bw: 0px;
-    block-size: 330px;
-    margin-block-end: 0;
-    overflow: hidden;
-  }
-
-  .zx-stage__frame,
-  .zx-float--c {
-    display: none;
-  }
-
-  .zx-fan .zx-phone {
-    inset-block: 0 auto;
-    inline-size: 154px;
-    border-radius: 26px;
-  }
-
-  .zx-fan .zx-phone img {
-    border-radius: 20px;
-  }
-
-  .zx-fan .zx-phone:nth-child(1) {
-    z-index: 1;
-    translate: calc(-50% - 112px) 44px;
-    rotate: -8deg;
-  }
-
-  .zx-fan .zx-phone:nth-child(2) {
-    display: block;
-    translate: -50% 0;
-  }
-
-  .zx-fan .zx-phone:nth-child(3) {
-    z-index: 1;
-    translate: calc(-50% + 112px) 44px;
-    rotate: 8deg;
-  }
-
-  .zx-float {
-    gap: 9px;
-    padding-block: 7px;
-    padding-inline: 7px 12px;
-    border-radius: 13px;
-  }
-
-  .zx-float b {
-    font-size: 12.5px;
-  }
-
-  .zx-float small {
-    font-size: 11px;
-  }
-
-  .zx-float--a {
-    inset-block-start: 96px;
-    left: 8px;
-  }
-
-  .zx-float--b {
-    inset-block-start: 186px;
-    right: 8px;
-  }
-
-  .zx-hero__cap {
-    padding-block: 14px 18px;
-  }
-}
-
-@media (max-width: 700px) {
-  .zx-tools {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 14px;
-  }
-
-  .zx-points {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 600px) {
-  .zx-sec {
-    padding-block: 64px;
-  }
-
-  .zx-sec--night {
-    padding-block: 0;
-  }
-
-  .zx-hero {
-    margin: -64px 8px 0;
-    padding-block-start: calc(64px + 44px);
-    border-radius: 24px;
-  }
-
-  .zx-pill {
-    margin-block-end: 20px;
-    font-size: 13.5px;
-  }
-
-  .zx-hero__body {
-    margin-block-end: 26px;
-  }
-
-  .zx-ctas {
-    inline-size: 100%;
-  }
-
-  .zx-ctas .zx-btn {
-    flex: 1 1 100%;
-  }
-
-  .zx-ticks {
-    gap: 8px 18px;
-    margin-block-start: 22px;
-    font-size: 13.5px;
-  }
-
-  .zx-night {
-    margin-inline: 8px;
-    padding-block: 60px;
-    border-radius: 24px;
-  }
-
-  .zx-head--split {
-    align-items: flex-start;
-  }
-
-  .zx-round {
-    inline-size: 46px;
-    block-size: 46px;
-  }
-
-  /* The kinds of store in one row that scrolls, not a wrapped block. */
-  .zx-stores .zx-kinds {
-    flex-wrap: nowrap;
-    margin-inline: -20px;
-    padding-inline: 20px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .zx-stores .zx-kinds::-webkit-scrollbar {
-    display: none;
-  }
-
-  .zx-kind {
-    flex: none;
-  }
-
-  .zx-jstage {
-    min-block-size: 0;
-    padding: 26px 16px;
-  }
-
-  .zx-jstep button {
-    gap: 14px;
-    padding-block: 16px;
-  }
-
-  .zx-jstep__body {
-    padding-inline-start: calc(4px + 1.25em + 14px);
-  }
-
-  .zx-screen {
-    padding: 8px 8px 0;
-    border-radius: 20px;
-  }
-
-  .zx-screen .zx-browser {
-    border-radius: 13px;
-  }
-
-  .zx-screen .zx-browser__bar {
-    block-size: 30px;
-  }
-
-  .zx-screen figcaption {
-    gap: 14px;
-    padding: 16px 8px 18px;
-    font-size: 14.5px;
-  }
-
-  .zx-step {
-    padding: 24px 22px;
-  }
-
-  .zx-step em {
-    font-size: 96px;
-  }
-}
-
-/* ══ Big screens: wider and larger type, not a column in the middle ══ */
-@media (min-width: 1680px) {
-  .zx-stage {
-    --bw: min(840px, 50vw);
-  }
-
-  .zx-tool p,
-  .zx-step p,
-  .zx-points p {
-    font-size: 16.5px;
-  }
-}
-
-/* ══ Less motion ═════════════════════════════════════════════════════ */
-@media (prefers-reduced-motion: reduce) {
-  .zx-glow,
-  .zx-cycle img,
-  .zx-float,
-  .zx-mock,
-  .zx-jstep__line.is-playing {
-    animation: none;
-  }
-
-  .zx-btn {
-    transition: none;
-  }
-}
-
-/* Asked for less motion or less transparency: the stage's cards and glass drop the blur behind them. */
-@media (prefers-reduced-motion: reduce), (prefers-reduced-transparency: reduce) {
-  .zx-float,
-  .zx-pill,
-  .zx-btn--glass {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-}
-
-/*
- * On a phone the stage's lights stand still, its cards sit without the blur
- * behind them, and what moves for good — the crossfade, the cards' bob —
- * waits for the page to finish loading (`html.lz-loaded`, set by
- * components/landing-motion.tsx), held on its first frame until then, so
- * the first paint is the same. A computer is unchanged.
- */
-@media (max-width: 600px) {
-  .zx-hero .zx-glow {
-    animation: none;
-  }
-
-  .zx-hero .zx-float {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-
-  html:not(.lz-loaded) .lz-home .zx-glow,
-  html:not(.lz-loaded) .lz-home .zx-cycle img,
-  html:not(.lz-loaded) .lz-home .zx-float {
-    animation-play-state: paused;
-  }
-}
-
-/* ══ Why ZIMOS — what goes wrong, and what closes it ═════════════════ */
-
-/* ══ A store's card: its tag and the way to look through it ══════════ */
-
-.zx-btn--sm {
-  min-block-size: 44px;
-  padding: 0 20px;
-  font-size: 14.5px;
-}
-
-/* ══ The viewer — one store, large, on the device you pick ═══════════ */
-.zx-viewer {
-  inline-size: min(1180px, calc(100vw - 24px));
-  max-inline-size: none;
-  max-block-size: calc(100dvh - 24px);
-  padding: 0;
-  overflow: hidden;
-  border: 0;
-  border-radius: 26px;
-  background: var(--zx-night);
-  box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 0.1),
-    0 40px 120px -20px #000;
-  color: #fff;
-}
-
-.zx-viewer::backdrop {
-  background: rgb(4 8 16 / 0.74);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-}
-
-.zx-viewer__in {
   display: flex;
   flex-direction: column;
-  max-block-size: calc(100dvh - 24px);
+  padding: 2rem 1.875rem;
+  border: 1.5px solid var(--line);
+  border-radius: 1.75rem;
+  background: var(--card);
+  transition:
+    transform 0.4s var(--ease),
+    box-shadow 0.4s;
 }
 
-.zx-viewer__bar {
+.zm-plan:hover {
+  box-shadow: 0 40px 60px -30px var(--shadow);
+  transform: translateY(-0.5rem);
+}
+
+.zm-plan h3 {
+  font-size: max(19px, 1.625rem);
+}
+
+.zm-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.5rem;
+  margin: 1.25rem 0 0.25rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.zm-price strong {
+  font-family: var(--font-display);
+  font-size: max(34px, 3.375rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.zm-price small {
+  font-size: var(--t-small);
+  font-weight: 600;
+  letter-spacing: 0;
+  opacity: 0.6;
+}
+
+.zm-psub {
+  min-height: 1.3rem;
+  color: var(--muted);
+  font-size: var(--t-small);
+}
+
+.zm-psub s {
+  text-decoration-thickness: 2px;
+}
+
+.zm-trial {
+  margin-block-start: 0.5rem;
+  color: var(--blue);
+  font-size: var(--t-small);
+  font-weight: 600;
+}
+
+.zm-lim {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.25rem 0;
+}
+
+.zm-lim span {
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--blue);
+  font-size: var(--t-tiny);
+  font-weight: 700;
+}
+
+.dark :is(.zm-lim span, .zm-trial) {
+  color: #8db1ff;
+}
+
+.zm-plan ul {
+  display: grid;
+  gap: 0.625rem;
+  margin-block-end: 1.75rem;
+  font-size: var(--t-small);
+}
+
+.zm-plan li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+}
+
+.zm-plan li svg {
+  flex: none;
+  margin-block-start: 0.1875rem;
+  color: var(--blue);
+}
+
+.zm-plan .zm-buy {
+  margin-block-start: auto;
+}
+
+.zm-plan .zm-btn {
+  width: 100%;
+}
+
+.zm-ppo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1.625rem;
+  margin-block-start: 1.5rem;
+  padding: 1.625rem 2rem;
+  border: 1px solid var(--line);
+  border-radius: 1.625rem;
+  background: var(--soft);
+}
+
+.zm-ppo > strong {
+  color: var(--blue);
+  font-family: var(--font-display);
+  font-size: max(28px, 2.625rem);
+  letter-spacing: -0.05em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.dark .zm-ppo > strong {
+  color: #8db1ff;
+}
+
+.zm-ppo > strong small {
+  font-size: var(--t-small);
+  letter-spacing: 0;
+}
+
+.zm-ppo h3 {
+  font-size: max(15px, 1.25rem);
+  font-weight: 700;
+}
+
+.zm-ppo p {
+  margin-block-start: 0.25rem;
+  color: var(--muted);
+  font-size: var(--t-small);
+}
+
+.zm-ppo .badge {
+  display: inline-block;
+  margin-block-end: 0.375rem;
+  padding: 0.125rem 0.625rem;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--blue);
+  font-size: var(--t-tiny);
+  font-weight: 700;
+}
+
+.zm-ppo .zm-buy {
+  display: grid;
+  justify-items: end;
+  gap: 0.5rem;
+}
+
+.zm-ppo .zm-buy small {
+  max-width: 28ch;
+  color: var(--muted);
+  font-size: var(--t-tiny);
+  text-align: end;
+}
+
+.zm-pall {
+  display: flex;
+  justify-content: center;
+  margin-block-start: 1.75rem;
+}
+
+.zm-trust {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.375rem;
+  margin-block-start: 4rem;
+}
+
+.zm-tp {
+  position: relative;
+  padding-block-start: 1.375rem;
+  border-block-start: 1px solid var(--line);
+}
+
+.zm-tp::before {
+  content: "";
+  position: absolute;
+  inset-block-start: -1px;
+  inset-inline: 0;
+  height: 2px;
+  background: var(--blue);
+  transform-origin: left;
+  transition: transform 1s 0.3s var(--ease);
+}
+
+.zm:is([dir="rtl"] *) .zm-tp::before {
+  transform-origin: right;
+}
+
+.zm-fx .zm-tp:not(.is-in)::before {
+  transform: scaleX(0);
+}
+
+.zm-tp .zm-i3 {
+  width: 3rem;
+  height: 3rem;
+  margin-block-end: 0.875rem;
+}
+
+.zm-tp h3 {
+  margin-block-end: 0.5rem;
+  font-size: max(14px, 1rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.zm-tp p {
+  color: var(--muted);
+  font-size: var(--t-small);
+}
+
+/* ══ Questions ═══════════════════════════════════════════════════════ */
+.zm-faqg {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  align-items: start;
+  gap: 4rem;
+}
+
+.zm-faqg h2 {
+  max-width: 11ch;
+  margin-block-start: 0.875rem;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+}
+
+.zm-faqg .t {
+  display: inline-block;
+  margin-block-start: 1.375rem;
+  border-block-end: 2px solid var(--blue);
+  font-weight: 700;
+}
+
+.zm-fq {
+  border-block-start: 1px solid var(--line);
+}
+
+.zm-fq:last-child {
+  border-block-end: 1px solid var(--line);
+}
+
+.zm-fq summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.375rem 0;
+  font-size: max(15px, 1.125rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  list-style: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.zm:is([dir="rtl"] *) .zm-fq summary {
+  letter-spacing: 0;
+}
+
+.zm-fq summary::-webkit-details-marker {
+  display: none;
+}
+
+.zm-fq summary:hover {
+  color: var(--blue);
+}
+
+.zm-fq .pm {
+  display: grid;
+  width: 2.125rem;
+  height: 2.125rem;
+  min-width: 28px;
+  min-height: 28px;
+  flex: none;
+  place-items: center;
+  border: 1.5px solid var(--line);
+  border-radius: 50%;
+  transition:
+    transform 0.4s var(--ease),
+    background-color 0.3s,
+    color 0.3s,
+    border-color 0.3s;
+}
+
+.zm-fq[open] .pm {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+  transform: rotate(135deg);
+}
+
+.zm-fq p {
+  padding-block-end: 1.5rem;
+  padding-inline-end: 3.375rem;
+  color: var(--muted);
+  font-size: var(--t-body);
+}
+
+/* An answer comes in softly as it opens. */
+.zm-fq[open] p {
+  animation: zm-fade 0.45s var(--ease) both;
+}
+
+/* ══ The closing band ════════════════════════════════════════════════ */
+.zm-end {
+  position: relative;
+  isolation: isolate;
+  margin: 2.5rem var(--gut) var(--gut);
+  overflow: hidden;
+  border-radius: 2.5rem;
+  background: var(--night);
+  color: #fff;
+}
+
+.zm-end-photo {
+  position: absolute;
+  inset: -6% 0;
+  z-index: -2;
+  width: 100%;
+  max-width: none !important;
+  height: 112%;
+  object-fit: cover;
+  opacity: 0.55;
+  translate: 0 var(--py, 0px);
+}
+
+.zm-end::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgb(10 30 100 / 0.7), rgb(7 11 20 / 0.88)),
+    radial-gradient(50% 60% at 50% 0%, rgb(43 108 255 / 0.5), transparent 70%);
+}
+
+.zm-end-c {
+  max-width: 50rem;
+  margin-inline: auto;
+  padding: 7.5rem 1.5rem;
+  text-align: center;
+}
+
+.zm-end h2 {
+  font-size: clamp(2.25rem, 5.4vw, 4.75rem);
+  line-height: 1;
+}
+
+.zm-end-c > p {
+  max-width: 52ch;
+  margin: 1.375rem auto 0;
+  color: rgb(255 255 255 / 0.82);
+  font-size: max(14px, clamp(1rem, 1.4vw, 1.1875rem));
+}
+
+.zm-end .zm-ctas {
+  margin-block-start: 1.75rem;
+}
+
+.zm-orbit {
+  position: absolute;
+  inset-block-start: 50%;
+  left: 50%;
+  z-index: -1;
+  border: 1px dashed rgb(255 255 255 / 0.18);
+  border-radius: 50%;
+  translate: -50% -50%;
+}
+
+.zm-orbit--1 {
+  width: 56rem;
+  height: 56rem;
+  animation: zm-rot 80s linear infinite;
+}
+
+.zm-orbit--2 {
+  width: 38.75rem;
+  height: 38.75rem;
+  animation: zm-rot 55s linear infinite reverse;
+}
+
+@keyframes zm-rot {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.zm-orbit i {
+  position: absolute;
+  inset-block-start: -6px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 18px var(--cyan);
+}
+
+/* ══ Footer ══════════════════════════════════════════════════════════ */
+.zm-ft {
+  padding: 2.75rem 0 2.25rem;
+}
+
+.zm-ft-r {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 12px;
-  padding: 14px 16px;
-  border-block-end: 1px solid rgb(255 255 255 / 0.1);
+  gap: 1.375rem;
+  padding-block-end: 1.625rem;
+  border-block-end: 1px solid var(--line);
 }
 
-.zx-viewer__bar p {
-  display: grid;
-  margin: 0;
+.zm-ft-r .zimos-logo {
+  height: 1.75rem !important;
+}
+
+.zm-ft-r .t {
   margin-inline-end: auto;
-  text-align: start;
+  color: var(--muted);
+  font-size: var(--t-small);
 }
 
-.zx-viewer__bar p b {
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 600;
-  line-height: 1.5;
+.zm-ft-r nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  color: var(--muted);
+  font-size: var(--t-small);
 }
 
-.zx-viewer__bar p span {
-  font-size: 12.5px;
-  color: rgb(255 255 255 / 0.6);
+.zm-ft-r nav a:hover {
+  color: var(--blue);
 }
 
-.zx-viewer__devices {
-  display: inline-flex;
-  padding: 4px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.08);
-}
-
-.zx-viewer__devices button {
-  display: inline-flex;
+.zm-ft-b {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 7px;
-  min-block-size: 38px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 999px;
-  background: none;
-  color: rgb(255 255 255 / 0.76);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block-start: 1.375rem;
+  color: var(--muted);
+  font-size: var(--t-tiny);
 }
 
-.zx-viewer__devices button[aria-pressed="true"] {
-  background: #fff;
-  color: #0c1424;
+.zm-ft-b > p {
+  max-width: 70ch;
 }
 
-.zx-viewer__close {
-  inline-size: 44px;
-  block-size: 44px;
-  border-color: rgb(255 255 255 / 0.26);
-  color: #fff;
+.zm-ft-b > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.625rem;
 }
 
-.zx-viewer__close:hover {
-  border-color: #fff;
-}
-
-.zx-viewer__stage {
-  display: grid;
-  flex: 1;
-  min-block-size: 0;
-  place-items: center;
-  padding: clamp(14px, 3vw, 34px);
-  overflow: auto;
-  background: radial-gradient(60% 60% at 50% 0%, rgb(30 84 226 / 0.36), transparent 70%);
-}
-
-/* The device between the two arrows to the stores beside it. */
-.zx-viewer__stage {
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: clamp(8px, 1.6vw, 22px);
-}
-
-.zx-viewer__step {
-  border-color: rgb(255 255 255 / 0.26);
-  color: #fff;
-}
-
-.zx-viewer__step:hover {
-  border-color: #fff;
-}
-
-.zx-viewer__laptop {
-  inline-size: min(100%, 980px);
-  justify-self: center;
-}
-
-.zx-viewer__phone {
-  justify-self: center;
-}
-
-.zx-viewer__scroll:focus-visible {
-  outline: 2px solid var(--zx-volt);
-  outline-offset: -2px;
-}
-
-/* The store's page inside the screen: there to scroll through, as far as the capture goes. */
-.zx-viewer .zx-viewer__scroll {
-  max-block-size: min(60dvh, 620px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  background: #fff;
-  scrollbar-width: thin;
-}
-
-.zx-viewer__scroll img {
-  display: block;
-  inline-size: 100%;
-  block-size: auto;
-}
-
-.zx-viewer__phone {
-  inline-size: min(100%, 340px);
-  padding: 8px;
-  border-radius: 40px;
-}
-
-.zx-viewer__phone .zx-viewer__scroll {
-  max-block-size: min(64dvh, 660px);
-  border-radius: 32px;
-}
-
-.zx-viewer__phone img {
-  aspect-ratio: auto;
-  object-fit: fill;
-  border-radius: 0;
-}
-
-.zx-viewer__cap {
-  margin: 0;
-  padding: 10px 16px 14px;
-  font-size: 12px;
-  text-align: center;
-  color: rgb(255 255 255 / 0.55);
-}
-
-/* ══ What it costs — the plans, then what should reassure you ════════ */
-.zx-pricing__plans {
-  margin-block-end: 26px;
-}
-
-.zx-pricing__all {
-  margin: 0 0 clamp(40px, 5vw, 68px);
-  text-align: center;
-}
-
-.zx-points {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0 28px;
-}
-
-.zx-points article {
-  padding-block: 26px 0;
-  border-block-start: 1px solid var(--zx-rule);
-}
-
-.zx-points h3 {
-  margin: 16px 0 6px;
-  font-family: var(--font-display);
-  font-size: 19px;
-  font-weight: 600;
-  line-height: 1.5;
-  color: var(--lz-ink);
-}
-
-.zx-points p {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.8;
-  color: var(--lz-text);
-}
-
-.zx-points a {
-  color: var(--lz-accent);
-  text-underline-offset: 3px;
+.zm-ft-b .lz-top__icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 36px;
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--card);
 }
 
 /* ══ WhatsApp, at the corner ═════════════════════════════════════════ */
-.zx-wa {
+.zm .zx-wa {
   position: fixed;
-  inset-block-end: 18px;
-  inset-inline-start: 18px;
+  inset-block-end: 1.125rem;
+  inset-inline-start: 1.125rem;
   z-index: 60;
   display: grid;
   place-items: center;
-  inline-size: 56px;
-  block-size: 56px;
+  width: 3.5rem;
+  height: 3.5rem;
+  min-width: 48px;
+  min-height: 48px;
   border-radius: 50%;
   background: #25d366;
   box-shadow: 0 14px 30px -10px rgb(37 211 102 / 0.7);
   color: #fff;
-  transition: translate 0.25s var(--lz-ease);
+  transition: translate 0.25s var(--ease);
 }
 
-.zx-wa:hover {
+.zm .zx-wa:hover {
   translate: 0 -3px;
 }
 
-@media (max-width: 1080px) {
-  .zx-points {
+/* ══ Narrower screens ════════════════════════════════════════════════ */
+@media (max-width: 1023.98px) {
+  .zm-sgrid,
+  .zm-ggrid,
+  .zm-fgrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 26px 28px;
   }
-}
 
-@media (max-width: 600px) {
-  .zx-points {
+  .zm-steps,
+  .zm-plans {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .zx-viewer {
-    border-radius: 20px;
+  .zm-jgrid,
+  .zm-faqg {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.25rem;
   }
 
-  .zx-viewer__bar .zx-btn {
-    order: 3;
-    flex: 1 1 100%;
+  .zm-trust {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .zx-wa {
-    inline-size: 50px;
-    block-size: 50px;
-    inset-block-end: 14px;
-    inset-inline-start: 14px;
+  .zm-ppo {
+    grid-template-columns: minmax(0, 1fr);
   }
+
+  .zm-ppo .zm-buy {
+    justify-items: start;
+  }
+
+  .zm-ppo .zm-buy small {
+    text-align: start;
+  }
+
+  .zm-stepline {
+    display: none;
+  }
+}
+
+@media (max-width: 639.98px) {
+  .zm-sec {
+    padding-block: 4.5rem;
+  }
+
+  .zm-sec--tight {
+    padding-block-start: 2.5rem;
+  }
+
+  .zm-night,
+  .zm-end {
+    border-radius: 1.75rem;
+  }
+
+  .zm-sgrid,
+  .zm-ggrid,
+  .zm-fgrid,
+  .zm-trust {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .zm-works-l {
+    display: none;
+  }
+
+  .zm-jstage {
+    min-height: 33.75rem;
+  }
+
+  .zm-viewer[open] {
+    padding: 0.75rem;
+  }
+
+  .zm-mbox {
+    max-height: calc(100dvh - 1.5rem);
+    border-radius: 1.25rem;
+  }
+
+  .zm-mbody {
+    padding: 0.875rem;
+  }
+
+  .zm-fq p {
+    padding-inline-end: 0;
+  }
+
+  .zm-end-c {
+    padding-block: 5rem;
+  }
+
+  .zm .zx-wa {
+    inset-block-end: 0.875rem;
+    inset-inline-start: 0.875rem;
+  }
+}
+
+/* ══ Motion: off when asked, held while out of view ══════════════════ */
+.zm .is-off,
+.zm .is-off *,
+.zm .is-off::before,
+.zm .is-off::after {
+  animation-play-state: paused !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .zx-wa {
-    transition: none;
-  }
-}
-
-@media (max-width: 1080px) {
-  .zx-shops {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 700px) {
-  .zx-shops {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
-  }
-
-  /* The kinds in one row that scrolls, not a wrapped block. */
-  .zx-stores .zx-kinds {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    margin-inline: -20px;
-    padding-inline: 20px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .zx-stores .zx-kinds::-webkit-scrollbar {
-    display: none;
-  }
-
-  .zx-kind {
-    flex: none;
-  }
-
-  .zx-viewer__step {
-    display: none;
-  }
-
-  .zx-viewer__stage {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .zx-viewer__devices span:not(.ci) {
-    display: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .zx-shop__open,
-  .zx-shop__shot img {
-    transition: none;
-  }
-}
-
-/* ══ What a merchant gets — eight cards, each a picture ══════════════ */
-.zx-feats__grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.zx-feat {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  block-size: 100%;
-  padding: 26px 24px 24px;
-  border: 1px solid var(--lz-line);
-  border-radius: 24px;
-  background: var(--lz-card);
-  color: inherit;
-  text-decoration: none;
-  transition:
-    translate 0.35s var(--lz-ease),
-    box-shadow 0.35s var(--lz-ease),
-    border-color 0.2s;
-}
-
-.zx-feat:hover {
-  translate: 0 -4px;
-  border-color: color-mix(in srgb, var(--lz-accent) 40%, var(--lz-line));
-  box-shadow: 0 28px 54px -36px rgb(var(--lz-sh) / 0.5);
-}
-
-.zx-feat .i3d {
-  margin-block-end: 18px;
-  transition: scale 0.35s var(--lz-ease);
-}
-
-.zx-feat:hover .i3d {
-  scale: 1.08;
-}
-
-.zx-feat h3 {
-  margin: 0 0 6px;
-  font-family: var(--font-display);
-  font-size: 19px;
-  font-weight: 600;
-  line-height: 1.5;
-  color: var(--lz-ink);
-}
-
-.zx-feat p {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.8;
-  color: var(--lz-text);
-}
-
-/* The arrow at the card's top corner, opposite the picture. */
-.zx-feat__go {
-  position: absolute;
-  inset-block-start: 26px;
-  inset-inline-end: 24px;
-  color: var(--lz-text);
-}
-
-.zx-feat:hover .zx-feat__go {
-  color: var(--lz-accent);
-}
-
-.zx-feats__acts {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px 14px;
-  margin-block-start: clamp(30px, 3.6vw, 46px);
-}
-
-/* The growth tools, the steps and the reassurances: the picture first. */
-.zx-tool__art .i3d {
-  filter: drop-shadow(0 16px 18px rgb(var(--lz-sh) / 0.2));
-}
-
-.zx-step .i3d {
-  margin-block-end: 4px;
-}
-
-.zx-points .i3d {
-  margin-block-end: 2px;
-}
-
-@media (max-width: 1080px) {
-  .zx-feats__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 600px) {
-  .zx-feats__grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
-  }
-
-  /* A phone: the picture beside the words. */
-  .zx-feat {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    column-gap: 16px;
-    padding: 20px 20px 20px;
-  }
-
-  .zx-feat .i3d {
-    grid-row: span 2;
-    inline-size: 52px;
-    block-size: 52px;
-    margin: 0;
-  }
-
-  .zx-feat__go {
-    display: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .zx-feat,
-  .zx-feat .i3d {
-    transition: none;
+  .zm *,
+  .zm *::before,
+  .zm *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

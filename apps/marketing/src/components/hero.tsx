@@ -5,71 +5,78 @@ import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionary";
 import { REGISTER_URL } from "@/lib/urls";
 import { HERO_LOOKS, HERO_PHONES, galleryShot } from "@/lib/store-shots";
-import { Icon3D } from "./icon-3d";
 import { Arrow, Check } from "./duo-icons";
 
-const turn = (i: number) => ({ "--k": i }) as CSSProperties;
+const nth = (name: "--i" | "--k", i: number) => ({ [name]: i }) as CSSProperties;
+
+/** The phones at the laptop's two sides: the first and the last of HERO_PHONES. */
+const PHONES = [HERO_PHONES[0], HERO_PHONES[HERO_PHONES.length - 1]] as const;
 
 /**
- * Up to this width the computer frame is hidden (home.css, max-width 760px)
- * and only the phones show: its captures are not downloaded there.
- */
-const FRAME_HIDDEN = "(max-width: 760px)";
-/** A 1x1 transparent GIF: what the hidden frame's pictures resolve to on a phone, with no request. */
-const NOTHING = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-
-/**
- * The page's opening: a night-blue stage that reaches up behind the floating
- * header, over a photograph of a shop (public/photos, darkened so the words
- * read). The words stand in the middle — a pill, the title in two colours,
- * one paragraph, the two ways in — and under them real stores on real
- * devices: a laptop crossfading from one store to the next, and a store on a
- * phone at each side of it. Three cards float over them with what happens to
- * an order. On a phone screen the laptop steps aside and three phones take
- * the stage. The cards and the phones are decoration (aria-hidden); the
- * first picture's alt says what they are.
+ * The page's opening, one screen high: a night-blue stage over a darkened
+ * photograph of a shop, with the words in their own block at the top — the
+ * pill, the title in two lines, one paragraph, the two ways in, three ticks
+ * — and under them, in the space left (home.css `.zm-stage`, a size
+ * container), real stores on real devices: a laptop turning from one store
+ * to the next (CSS only), a store on a phone at each side, and three cards
+ * with what happens to an order, floating at the laptop's edges. The
+ * devices are drawn to fit that space, so nothing ever covers the words or
+ * the buttons. The first capture's alt says what they are; the rest is
+ * decoration. The pointer gives the stage some depth (home-effects.tsx).
  */
 export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Locale }) {
   const { chips } = copy;
-  // The first capture is the page's largest picture on a computer: fetched
-  // early there, and not at all on a phone.
-  preload(galleryShot(HERO_LOOKS[0], locale, "desk", "card"), { as: "image", fetchPriority: "high", media: "(min-width: 761px)" });
+  // The laptop's first store is the page's largest picture: fetched first, and not on a phone, where the laptop is small.
+  preload(galleryShot(HERO_LOOKS[0], locale, "desk", "card"), { as: "image", fetchPriority: "high", media: "(min-width: 640px)" });
+  const lines = [...copy.lines, copy.accent];
 
   return (
-    <section className="zx-hero" aria-labelledby="zx-h1" data-section="hero">
-      <div className="zx-hero__bg" aria-hidden>
-        <i className="zx-hero__photo" />
-        <i className="zx-glow zx-glow--a" />
-        <i className="zx-glow zx-glow--b" />
-        <i className="zx-hero__grid" />
+    <section className="zm-hero" aria-labelledby="zm-h1" data-section="hero">
+      <div className="zm-hero-bg" aria-hidden>
+        <img
+          className="zm-hero-photo"
+          src="/photos/store-interior-1920.webp"
+          srcSet="/photos/store-interior-960.webp 960w, /photos/store-interior-1920.webp 1920w"
+          sizes="100vw"
+          width={1920}
+          height={1080}
+          alt=""
+          decoding="async"
+          fetchPriority="low"
+        />
       </div>
+      <i className="zm-glow zm-glow--a" aria-hidden />
+      <i className="zm-glow zm-glow--b" aria-hidden />
+      <i className="zm-glow zm-glow--c" aria-hidden />
+      <i className="zm-grid" aria-hidden />
 
-      <div className="lz-in zx-hero__copy">
-        <p className="zx-pill">
+      <div className="zm-hero-copy">
+        <p className="zm-pill">
           <i aria-hidden />
           {copy.badge}
         </p>
-        <h1 className="zx-h1" id="zx-h1">
-          {copy.lines.map((line) => (
-            <span key={line} className="zx-h1__line">
-              {line}
+        <h1 className="zm-h1" id="zm-h1">
+          {lines.map((line, i) => (
+            <span key={line} className="ln">
+              <span className={i === lines.length - 1 ? "acc" : undefined} style={nth("--i", i)}>
+                {line}
+              </span>
             </span>
           ))}
-          <span className="zx-h1__line zx-volt">{copy.accent}</span>
         </h1>
-        <p className="zx-hero__body">{copy.body}</p>
+        <p className="zm-hero-sub">{copy.body}</p>
 
-        <div className="zx-ctas">
-          <a className="zx-btn zx-btn--volt" href={REGISTER_URL}>
+        <div className="zm-ctas">
+          <a className="zm-btn zm-btn--volt" href={REGISTER_URL} data-mag="">
             {copy.primaryCta}
-            <Arrow size={18} className="lz-arrow" />
+            <Arrow size={18} className="zm-arr" />
           </a>
-          <a className="zx-btn zx-btn--glass" href="#templates">
+          <a className="zm-btn zm-btn--glass" href="#templates" data-mag="">
             {copy.secondaryCta}
           </a>
         </div>
 
-        <ul className="zx-ticks">
+        <ul className="zm-ticks">
           {copy.ticks.map((tick) => (
             <li key={tick}>
               <Check size={14} />
@@ -79,63 +86,64 @@ export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Local
         </ul>
       </div>
 
-      <div className="zx-stage">
-        <div className="zx-fan" aria-hidden>
-          {HERO_PHONES.map((look) => (
-            <span key={look} className="zx-phone">
-              <img src={galleryShot(look, locale, "phone", "card")} width={300} height={600} alt="" decoding="async" />
-            </span>
-          ))}
-        </div>
+      <div className="zm-stage">
+        {/* Hidden on a phone (the cards under 1024px): lazy, so a hidden picture is never fetched. */}
+        <span className="zm-ph zm-ph--l" aria-hidden>
+          <img src={galleryShot(PHONES[0], locale, "phone", "card")} width={260} height={520} alt="" loading="lazy" decoding="async" />
+        </span>
 
-        <figure className="zx-laptop zx-stage__frame">
-          <div className="zx-laptop__lid">
-            <div className="zx-cycle">
-            {HERO_LOOKS.map((look, i) => (
-              <picture key={look}>
-                <source media={FRAME_HIDDEN} srcSet={NOTHING} />
+        <figure className="zm-laptop">
+          <div className="zm-lid">
+            <div className="zm-scr">
+              {HERO_LOOKS.map((look, i) => (
                 <img
+                  key={look}
                   src={galleryShot(look, locale, "desk", "card")}
-                  width={960}
-                  height={600}
+                  width={720}
+                  height={450}
                   alt={i === 0 ? copy.imageAlt : ""}
                   fetchPriority={i === 0 ? "high" : "low"}
+                  loading={i === 0 ? undefined : "lazy"}
                   decoding="async"
-                  style={turn(i)}
+                  style={nth("--k", i)}
                 />
-              </picture>
-            ))}
+              ))}
             </div>
           </div>
-          <div className="zx-laptop__base" aria-hidden />
+          <div className="zm-base" aria-hidden />
         </figure>
 
-        <div className="zx-floats" aria-hidden>
-          <div className="zx-float zx-float--a">
-            <Icon3D name="package" size={40} />
-            <span>
-              <b>{chips.order.title}</b>
-              <small>{chips.order.detail}</small>
-            </span>
-          </div>
-          <div className="zx-float zx-float--b">
-            <Icon3D name="check" size={40} />
-            <span>
-              <b>{chips.confirmed.title}</b>
-              <small>{chips.confirmed.detail}</small>
-            </span>
-          </div>
-          <div className="zx-float zx-float--c">
-            <Icon3D name="money" size={40} />
-            <span>
-              <b>{chips.delivered.title}</b>
-              <small>{chips.delivered.detail}</small>
-            </span>
-          </div>
+        <span className="zm-ph zm-ph--r" aria-hidden>
+          <img src={galleryShot(PHONES[1], locale, "phone", "card")} width={260} height={520} alt="" loading="lazy" decoding="async" />
+        </span>
+
+        <div className="zm-fl zm-fl--a" aria-hidden>
+          <img src="/icons/3d/package.webp" width={40} height={40} alt="" loading="lazy" decoding="async" />
+          <span>
+            <b>{chips.order.title}</b>
+            <small>{chips.order.detail}</small>
+          </span>
+        </div>
+        <div className="zm-fl zm-fl--b" aria-hidden>
+          <img src="/icons/3d/check.webp" width={40} height={40} alt="" loading="lazy" decoding="async" />
+          <span>
+            <b>{chips.confirmed.title}</b>
+            <small>{chips.confirmed.detail}</small>
+          </span>
+        </div>
+        <div className="zm-fl zm-fl--c" aria-hidden>
+          <img src="/icons/3d/money.webp" width={40} height={40} alt="" loading="lazy" decoding="async" />
+          <span>
+            <b>{chips.delivered.title}</b>
+            <small>{chips.delivered.detail}</small>
+          </span>
         </div>
       </div>
 
-      <p className="zx-hero__cap">{copy.caption}</p>
+      <div className="zm-hero-foot">
+        <p>{copy.caption}</p>
+        <span className="zm-scroll" aria-hidden />
+      </div>
     </section>
   );
 }

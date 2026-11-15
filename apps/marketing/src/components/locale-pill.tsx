@@ -16,9 +16,10 @@ const SHORT = { ar: "ع", en: "EN" } as const;
  * The language switch in the header, beside the theme switch: the translate
  * mark and the other language in two letters at most, to the same page in
  * it, at the same place (lib/keep-place.ts). Its full name is what a screen
- * reader hears.
+ * reader hears. `prefetch={false}` keeps Next from fetching the other
+ * language's page ahead of a click (the home page's header).
  */
-export function LocalePill() {
+export function LocalePill({ prefetch }: { prefetch?: boolean } = {}) {
   const { locale, dict } = useI18n();
   const pathname = usePathname() || `/${locale}`;
   const target = otherLocale(locale);
@@ -27,6 +28,7 @@ export function LocalePill() {
   return (
     <Link
       href={href}
+      prefetch={prefetch}
       scroll={false}
       onClick={(event) => keepPlaceOnClick(event, href)}
       hrefLang={target}

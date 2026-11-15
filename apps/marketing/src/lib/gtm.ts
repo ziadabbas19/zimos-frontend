@@ -91,8 +91,8 @@ export function pageSections(root: ParentNode = document): Element[] {
 
 /** Where on the page an element is: header, header_menu, footer, a section's name, or page. */
 export function placeOf(el: Element): string {
-  if (el.closest(".lz-sheet")) return "header_menu";
-  if (el.closest(".lz-top")) return "header";
+  if (el.closest(".lz-sheet, .zm-sheet")) return "header_menu";
+  if (el.closest(".lz-top, .zm-hdr")) return "header";
   if (el.closest("footer")) return "footer";
   const section = sectionOf(el);
   return section ? sectionName(section) : "page";

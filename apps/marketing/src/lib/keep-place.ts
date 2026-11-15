@@ -22,7 +22,7 @@ const MAX_AGE_MS = 30_000;
 const ROOTS = "section[id], main, footer";
 
 /** The header and the corner buttons float over the page; never anchors. */
-const FLOATING = ".lz-top, .lz-corner";
+const FLOATING = ".lz-top, .lz-corner, .zm-hdr, .zx-wa";
 
 type Spot = { top: true } | { end: true } | { root: string; trail: number[]; fraction: number };
 
@@ -58,7 +58,7 @@ export function isPlainClick(event: {
 
 /** The line just below the header's bar. */
 function lineY(): number {
-  const bar = document.querySelector(".lz-top__in");
+  const bar = document.querySelector(".lz-top__in, .zm-hdr-in");
   const y = bar ? bar.getBoundingClientRect().bottom + 8 : 0;
   return Math.min(Math.max(y, 0), window.innerHeight - 1);
 }
@@ -101,7 +101,7 @@ function atEnd(): boolean {
 }
 
 function sheetOpen(): boolean {
-  const sheet = document.querySelector(".lz-sheet");
+  const sheet = document.querySelector(".lz-sheet, .zm-sheet");
   return sheet !== null && !sheet.hasAttribute("hidden");
 }
 
