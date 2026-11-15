@@ -99,10 +99,22 @@ describe("the console's theme is the merchant dashboard's", () => {
   });
 });
 
+/**
+ * The dashboard's script, without the part only its sign-in screens run: the theme of the
+ * marketing site, from a cookie (merchant-dashboard/src/lib/siteTheme.ts). The console's
+ * own sign-in keeps its look as it was.
+ */
+const SIGN_IN_ONLY = /\n {10}\/\/ Sign-in screens only[\s\S]*?\/\/ End of the sign-in screens\./;
+
 describe("the look before first paint", () => {
   it("is set by the dashboard's own script, word for word", () => {
     assert.ok(script(adminPage), "no inline script in index.html");
-    assert.equal(script(adminPage), script(dashboardPage));
+    assert.match(script(dashboardPage), SIGN_IN_ONLY);
+    assert.equal(script(adminPage), script(dashboardPage).replace(SIGN_IN_ONLY, ""));
+  });
+
+  it("leaves out what only the dashboard's sign-in screens read", () => {
+    assert.doesNotMatch(script(adminPage), /zimos-theme|document\.cookie/);
   });
 
   it("covers the three looks, the tone, the glass switch and the glow colours", () => {

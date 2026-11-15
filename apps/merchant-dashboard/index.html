@@ -29,6 +29,18 @@
             s = get("theme");
             if (s !== "light" && s !== "dark") s = null;
           }
+          // Sign-in screens only (not in the console's copy of this script): with nothing chosen here, the
+          // light or dark chosen on the marketing site. The same paths and cookie as src/lib/siteTheme.ts.
+          if (!s && /^\/(login|register|forgot-password|reset-password|verify-email|invites|auth\/callback)\/?$/i.test(location.pathname)) {
+            var site = null;
+            try {
+              site = /(?:^|;\s*)zimos-theme=([^;]*)/.exec(document.cookie);
+            } catch (_) {}
+            site = site && site[1];
+            if (site === "light") s = "light";
+            else if (site === "dark") s = get("zimos.darkLook") === "black" ? "black" : "dark";
+          }
+          // End of the sign-in screens.
           // Nothing chosen: follow the device, into the dark look that was chosen last.
           if (!s)
             s = window.matchMedia("(prefers-color-scheme: dark)").matches
