@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { GlassToggle } from "@/components/GlassToggle";
@@ -52,8 +52,7 @@ const variable = (name: string) => html.style.getPropertyValue(name);
 function kept() {
   return Object.fromEntries(
     Object.keys(localStorage)
-      // The language and the background are kept beside the look, not in it.
-      .filter((key) => key !== "zimos.locale" && key !== "zimos.wallpaper")
+      .filter((key) => key !== "zimos.locale")
       .sort()
       .map((key) => [key, localStorage.getItem(key)])
   );
@@ -97,21 +96,7 @@ describe("Language and look: the three looks", () => {
 
   it("offers Light, Black and Dark, and each one marks the page and is remembered", async () => {
     const { user } = renderWithProviders(<AppearanceSection />);
-    // The language, the three looks, then the backgrounds behind the glass.
-    expect(screen.getAllByRole("radio").map((radio) => radio.textContent)).toEqual([
-      "عربي",
-      "English",
-      "Light",
-      "Black",
-      "Dark",
-      "Blue waves",
-      "Violet waves",
-      "Glass ribbons",
-      "Soft colours",
-      "Neon",
-      "Night",
-      "Calm",
-    ]);
+    expect(screen.getAllByRole("radio").map((radio) => radio.textContent)).toEqual(["عربي", "English", "Light", "Black", "Dark"]);
 
     await user.click(look("Black"));
     expect(look("Black")).toHaveAttribute("aria-checked", "true");
@@ -358,8 +343,6 @@ describe("Language and look: glass", () => {
 });
 
 describe("Language and look: glow colours", () => {
-  // The glows colour the calm ground: they are offered with the "Calm" background (lib/wallpaper.ts).
-  beforeEach(() => localStorage.setItem("zimos.wallpaper", "calm"));
   const glow = () => screen.queryByRole("group", { name: "Glow colours" });
   const leftPicker = () => screen.getByLabelText("Left glow");
   const rightPicker = () => screen.getByLabelText("Right glow");
@@ -547,43 +530,15 @@ describe("Language and look: glow colours", () => {
   });
 });
 
-describe("Language and look: the background", () => {
-  it("starts on the blue waves, and keeps the picture chosen on this device", async () => {
-    const { user } = renderWithProviders(<AppearanceSection />);
-    expect(screen.getByRole("radio", { name: "Blue waves" })).toHaveAttribute("aria-checked", "true");
-    // The glows belong to the calm ground: not offered over a picture.
-    expect(screen.queryByRole("group", { name: "Glow colours" })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("radio", { name: "Night" }));
-    expect(screen.getByRole("radio", { name: "Night" })).toHaveAttribute("aria-checked", "true");
-    expect(localStorage.getItem("zimos.wallpaper")).toBe("night");
-    await user.click(screen.getByRole("radio", { name: "Calm" }));
-    expect(screen.getByRole("group", { name: "Glow colours" })).toBeInTheDocument();
-  });
-});
-
 describe("Language and look: words", () => {
   it("switches the whole dashboard to Arabic, in formal Arabic", async () => {
-    localStorage.setItem("zimos.wallpaper", "calm");
     const { user } = renderWithProviders(<AppearanceSection />);
     await user.click(look("Dark"));
     await user.click(screen.getByRole("radio", { name: "عربي" }));
     expect(localStorage.getItem("zimos.locale")).toBe("ar");
     expect(screen.getByRole("switch", { name: "الأسطح الزجاجية" })).toBeInTheDocument();
     expect(screen.getByText("هذه الخيارات محفوظة على هذا الجهاز.")).toBeInTheDocument();
-    expect(screen.getAllByRole("radio").map((radio) => radio.textContent)).toEqual([
-      "عربي",
-      "English",
-      "فاتح",
-      "أسود",
-      "داكن",
-      "موج أزرق",
-      "موج بنفسجي",
-      "شرائط زجاج",
-      "ألوان ناعمة",
-      "نيون",
-      "ليل",
-      "هادئة",
-    ]);
+    expect(screen.getAllByRole("radio").map((radio) => radio.textContent)).toEqual(["عربي", "English", "فاتح", "أسود", "داكن"]);
     expect(screen.getByRole("slider", { name: "درجة اللون" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "ليلي" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "أردوازي" })).toBeInTheDocument();

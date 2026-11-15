@@ -19,7 +19,6 @@ import { StoreOverview } from "@/pages/home/StoreOverview";
 import { SetupGuideCard } from "@/pages/home/SetupGuideCard";
 import { SiteAnalytics } from "@/pages/home/SiteAnalytics";
 import { QuickActions } from "@/pages/home/QuickActions";
-import { NeedsYouCard } from "@/pages/home/NeedsYouCard";
 import { LockedOrdersBanner } from "@/components/OrdersLock";
 import { PushPrompt } from "@/components/push/PushPrompt";
 import { fmt, useCommon, useT, type Messages } from "@/i18n/LocaleContext";
@@ -193,15 +192,14 @@ export function DashboardHomePage() {
     <div className="min-w-0 max-w-6xl">
       {/* Device notifications in one press (VITE_PUSH_ENABLED); here only, never on other pages. */}
       <PushPrompt className="mb-6" />
-      <h1 className="font-display text-2xl font-bold tracking-[-0.015em] text-ink md:text-[28px]">
+      <h1 className="font-display text-2xl font-medium text-ink">
         {currentWorkspace ? fmt(t.welcomeNamed, { name: currentWorkspace.name }) : t.welcome}
       </h1>
+      <QuickActions awaiting={queue.data ?? null} />
       {/* Orders whose customer details are hidden until the store renews or tops up. */}
       <LockedOrdersBanner className="mt-6" />
 
-      {/* In order (owner, 2026-11-15): the figures first, what needs finishing right under
-          them, then the rest by priority (AnalyticsOverview). */}
-      <div className="mt-6">
+      <div className="mt-8">
         {loading ? (
           <div className="flex min-h-[7rem] items-center justify-center text-ink-soft">
             <ZLoader />
@@ -226,7 +224,6 @@ export function DashboardHomePage() {
             pair={analytics}
             recent={extra.data?.recent ?? null}
             extraLoading={extra.loading}
-            awaiting={queue.data ?? null}
           />
         ) : legacy.data && legacy.data.totalOrders === 0 ? (
           <div className="rounded-[var(--radius-card)] border border-dashed border-line px-6 py-10 text-center text-sm text-ink-soft">
@@ -234,8 +231,6 @@ export function DashboardHomePage() {
           </div>
         ) : legacy.data ? (
           <>
-            <QuickActions awaiting={queue.data ?? null} />
-            <NeedsYouCard className="my-6" />
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
               <LegacyStatCard label={t.totalOrders} value={legacy.data.totalOrders} />
               <LegacyStatCard label={t.totalRevenue} value={formatMoney(legacy.data.totalRevenue, legacy.data.currency)} />
@@ -262,12 +257,10 @@ function AnalyticsOverview({
   pair,
   recent,
   extraLoading,
-  awaiting,
 }: {
   pair: AnalyticsPair;
   recent: Order[] | null;
   extraLoading: boolean;
-  awaiting: number | null;
 }) {
   const t = useT(STRINGS);
   const { current } = pair;
@@ -276,17 +269,9 @@ function AnalyticsOverview({
 
   return (
     <>
+      <SetupGuideCard />
       <div className="mb-8">
-        <StoreOverview
-          between={
-            <div className="mt-6 space-y-6">
-              {/* What is left to set up, then the work waiting, then the pages used most. */}
-              <SetupGuideCard />
-              <NeedsYouCard />
-              <QuickActions awaiting={awaiting} />
-            </div>
-          }
-        />
+        <StoreOverview />
       </div>
 
       <div className="grid grid-cols-1 gap-6">

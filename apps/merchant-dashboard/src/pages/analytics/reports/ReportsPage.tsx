@@ -86,7 +86,7 @@ type Tab = "overview" | "products" | "delivery" | "customers";
 const TABS: Tab[] = ["overview", "products", "delivery", "customers"];
 
 const TONE: Record<ReportsInsight["tone"], { icon: LucideIcon; className: string }> = {
-  good: { icon: TrendingUp, className: "bg-primary-soft text-primary" },
+  good: { icon: TrendingUp, className: "bg-success-soft text-success" },
   bad: { icon: TrendingDown, className: "bg-danger-soft text-danger" },
   warn: { icon: AlertTriangle, className: "bg-accent-soft text-accent-dark" },
   info: { icon: Info, className: "bg-primary-soft text-primary" },

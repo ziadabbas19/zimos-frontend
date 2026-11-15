@@ -22,10 +22,8 @@ import { OverlayRoot } from "@/components/overlayRoot";
 import { AccountMenu } from "@/components/shell/AccountMenu";
 import { Breadcrumbs } from "@/components/shell/Breadcrumbs";
 import { PhoneMenu } from "@/components/shell/PhoneMenu";
-import { PlaceDock } from "@/components/shell/PlaceDock";
 import { SidebarNav } from "@/components/shell/SidebarNav";
 import { useScrollRestoration } from "@/lib/scrollRestore";
-import { useWallpaper, wallpaperFrame } from "@/lib/wallpaper";
 
 const STRINGS = {
   en: {
@@ -49,8 +47,7 @@ const SIDE_MENU_ID = "zimos-side-menu";
  *   - the side menu (components/shell/SidebarNav.tsx), from `md` up;
  *   - the toolbar: hide/show the side menu, where you are, then search, the
  *     store's link, the language, light or dark, alerts and the account;
- *   - the page, with the dock of the dashboard's places floating over its
- *     bottom (components/shell/PlaceDock.tsx).
+ *   - the page.
  *
  * On a phone the side menu is the dock (components/MobileTabBar.tsx) and,
  * behind its last slot, the whole menu as a sheet (components/shell/PhoneMenu.tsx).
@@ -61,8 +58,6 @@ export function DashboardLayout() {
   useScrollRestoration();
   const location = useLocation();
   const t = useT(STRINGS);
-  // The picture behind the glass, chosen in Settings → Language and look (lib/wallpaper.ts).
-  const wallpaper = wallpaperFrame(useWallpaper());
 
   // Full screen: the side menu steps aside so the page has the whole width.
   const [focus, setFocus] = useState(() => {
@@ -110,7 +105,7 @@ export function DashboardLayout() {
   }, [location.pathname]);
 
   return (
-    <div className="glass-app flex min-h-screen" data-focus={focus ? "on" : undefined} {...wallpaper}>
+    <div className="glass-app flex min-h-screen" data-focus={focus ? "on" : undefined}>
       <KeyboardShortcuts />
       <aside
         id={SIDE_MENU_ID}
@@ -187,8 +182,6 @@ export function DashboardLayout() {
           </RouteErrorBoundary>
           <OverlayRoot />
         </main>
-        {/* From md up: every place as a coloured tile, floating over the bottom of the page. */}
-        <PlaceDock />
       </div>
       <MobileTabBar onMore={openMobile} moreOpen={mobileOpen} editor={dockEditor} onEditorOpenChange={setDockEditorOpen} />
     </div>

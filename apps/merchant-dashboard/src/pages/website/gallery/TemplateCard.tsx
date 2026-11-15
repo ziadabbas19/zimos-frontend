@@ -4,11 +4,10 @@ import { cn } from "@store-builder/ui";
 import { IconCheck } from "@/components/icons";
 import { TemplateLivePreview } from "@/components/TemplateLivePreview";
 import { useMediaQuery } from "@/components/report/useMediaQuery";
-import { fmt, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
+import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { useCodeLabel } from "./codes";
 import { TemplatePlaceholder } from "./TemplatePlaceholder";
-import { templateName, templatePicture } from "./templateNames";
 import { useTemplatePreviewTheme, withTemplateTheme } from "./templateLook";
 
 const STRINGS = {
@@ -21,10 +20,9 @@ const WIDE_CARD_QUERY = "(min-width: 64rem)";
 
 /**
  * A template's picture in a box of a fixed shape, so the grid never moves
- * when a picture arrives: 3:4 below `lg`, 16:10 from it. The template's
- * picture when it has one — the console's thumbnail, else ours
- * (templateNames.ts), taken in the box's own shape — asked for only near the
- * viewport; otherwise the top of its home page as the
+ * when a picture arrives: 3:4 below `lg`, 16:10 from it. The template's own
+ * thumbnail when it has one and it loads (asked for only near the viewport,
+ * cropped from the top to the box); otherwise the top of its home page as the
  * storefront renders it — on a phone in the 3:4 box, on a desktop in the
  * 16:10 one — lazily, a couple at a time (TemplateLivePreview), over a sketch
  * that stays if neither can be had.
@@ -33,8 +31,7 @@ function TemplateThumb({ template }: { template: WebsiteTemplateSummary }) {
   const workspaceId = useWorkspaceId();
   const theme = useTemplatePreviewTheme(template);
   const wide = useMediaQuery(WIDE_CARD_QUERY);
-  // A picture, the console's or ours (templateNames.ts), shows at once; only a template without one is drawn live.
-  const url = templatePicture(template, wide ? "desktop" : "mobile");
+  const url = template.thumbnailUrl;
   const [image, setImage] = useState<"loading" | "ok" | "broken">(url ? "loading" : "broken");
   const imageRef = useRef<HTMLImageElement>(null);
 
@@ -51,7 +48,6 @@ function TemplateThumb({ template }: { template: WebsiteTemplateSummary }) {
           {image === "loading" && <TemplatePlaceholder color={template.primaryColor} title={template.name} className="absolute inset-0" />}
           {/* Decorative: the card's button names the template. */}
           <img
-            key={url}
             ref={imageRef}
             src={url}
             alt=""
@@ -102,9 +98,7 @@ export function TemplateCard({
   onOpen: () => void;
 }) {
   const t = useT(STRINGS);
-  const { locale } = useLocale();
   const codeLabel = useCodeLabel();
-  const name = templateName(template, locale);
 
   return (
     <li
@@ -135,10 +129,10 @@ export function TemplateCard({
           type="button"
           onClick={onOpen}
           aria-haspopup="dialog"
-          aria-label={fmt(t.previewOf, { name })}
+          aria-label={fmt(t.previewOf, { name: template.name })}
           className="block w-full min-w-0 cursor-pointer truncate text-start text-sm leading-5 font-semibold text-ink outline-none after:absolute after:inset-0 after:content-['']"
         >
-          {name}
+          {template.name}
         </button>
         {template.category && (
           <span data-slot="template-kind" className="block truncate text-xs leading-4 text-ink-soft">

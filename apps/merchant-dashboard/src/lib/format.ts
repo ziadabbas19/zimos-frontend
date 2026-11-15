@@ -4,20 +4,15 @@ import { getIntlLocale, getLocale } from "@/i18n/LocaleContext";
 
 export { formatMoneyRange, parseMoney };
 
-/** Arabic, with Western digits: the dashboard's own figures. */
-export const AR_FIGURES = "ar-EG-u-nu-latn";
-
 /**
- * Integer minor units -> display string, in the app's language, in Western
- * digits under both (owner, 2026-11-15: the figures as Net Profit's system
- * writes them, drawn in Inter). Both use the Egyptian region
- * (ar-EG-u-nu-latn / en-EG). An explicit `locale` still wins: a message to a
- * shopper (lib/whatsapp.ts) keeps "ar-EG".
+ * Integer minor units -> display string, in the app's language: Arabic
+ * digits under "ar", Latin digits under "en". Both use the Egyptian region
+ * (ar-EG / en-EG). An explicit `locale` still wins.
  */
 export function formatMoney(
   amountMinorUnits: number | string | null | undefined,
   currency = "EGP",
-  locale: string = getLocale() === "ar" ? AR_FIGURES : "en-EG"
+  locale: string = getLocale() === "ar" ? "ar-EG" : "en-EG"
 ): string {
   return formatMoneyIn(amountMinorUnits, currency, locale);
 }
@@ -45,7 +40,7 @@ function minorUnitDigits(currency: string): number {
  */
 export function formatMinorMoney(minor: number | string | null | undefined, currency: string): string {
   const value = parseMoney(minor) / 10 ** minorUnitDigits(currency);
-  const locale = getLocale() === "ar" ? AR_FIGURES : "en-EG";
+  const locale = getLocale() === "ar" ? "ar-EG" : "en-EG";
   try {
     return new Intl.NumberFormat(locale, {
       style: "currency",

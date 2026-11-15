@@ -24,7 +24,7 @@ export interface ReportTakeawayProps {
 // The strip on its own (glass off): the soft token fills with a hairline of the tone.
 // glass/reports.css lays the tint over glass through data-tone.
 const TONE: Record<ReportTone, { icon: IconComponent; box: string; ink: string }> = {
-  good: { icon: IconTrendUp, box: "bg-primary-soft ring-primary/20", ink: "text-primary" },
+  good: { icon: IconTrendUp, box: "bg-success-soft ring-success/20", ink: "text-success" },
   bad: { icon: IconTrendDown, box: "bg-danger-soft ring-danger/20", ink: "text-danger" },
   warn: { icon: IconWarning, box: "bg-accent-soft ring-accent/30", ink: "text-accent-dark" },
   info: { icon: IconTip, box: "bg-primary-soft ring-primary/20", ink: "text-primary" },

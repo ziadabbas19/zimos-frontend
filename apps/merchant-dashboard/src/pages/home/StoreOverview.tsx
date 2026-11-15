@@ -7,7 +7,6 @@ import {
   type InsightsDay,
   type InsightsMetricKey,
   type InsightsOverview,
-  type WebAnalyticsStats,
 } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useAsync } from "@/lib/useAsync";
@@ -18,10 +17,8 @@ import { DataState } from "@/components/DataState";
 import { RangeSwitch } from "@/components/RangeSwitch";
 import { Section } from "@/components/Section";
 import { Select } from "@/components/Select";
-import { HBarList, LineAreaChart, Sparkline } from "@/components/charts";
-import { toneOf } from "@/lib/chartTone";
-import { IconCaretDown } from "@/components/icons";
-import { fmt, getIntlLocale, useT, type Messages } from "@/i18n/LocaleContext";
+import { HBarList, Sparkline } from "@/components/charts";
+import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 
 const STRINGS = {
   en: {
@@ -46,17 +43,12 @@ const STRINGS = {
     leads: "Leads",
     confirmationRate: "Confirmation rate",
     deliveryRate: "Delivery rate",
-    allNumbers: "All the numbers ({n})",
-    chartSummary: "{label} for each day of {window}.",
-    bounceRate: "Bounce rate",
-    fullReport: "Full report",
-    customize: "Change the figures",
-    customizeDone: "Done",
-    customizeHint: "Choose up to {n} figures for this box.",
     hintOrders: "Test and unpaid online orders are left out",
     hintNewOrders: "Still waiting for someone to open them",
     hintLost: "Checkouts started and never finished",
     hintProfit: "Delivered orders, after product cost and refunds",
+    hintConfirmation: "Confirmed ÷ cash-on-delivery orders",
+    hintDelivery: "Delivered ÷ handed to the courier",
     hintLeads: "From sign-up and newsletter forms",
     funnelTitle: "Conversion funnel",
     funnelDesc: "Sessions that reached each step in {window}.",
@@ -112,17 +104,12 @@ const STRINGS = {
     leads: "عملاء محتملون",
     confirmationRate: "نسبة التأكيد",
     deliveryRate: "نسبة التسليم",
-    allNumbers: "كل الأرقام ({n})",
-    chartSummary: "{label} لكل يوم خلال {window}.",
-    bounceRate: "معدل الارتداد",
-    fullReport: "التقرير الكامل",
-    customize: "غيّر الأرقام",
-    customizeDone: "تم",
-    customizeHint: "اختر حتى {n} أرقام لهذا المربع.",
     hintOrders: "بدون الطلبات التجريبية وطلبات الدفع الإلكتروني غير المدفوعة",
     hintNewOrders: "لم يفتحها أحد بعد",
     hintLost: "بدأ العميل إتمام الطلب ولم يكمله",
     hintProfit: "الطلبات المسلَّمة بعد تكلفة المنتج والمرتجعات المالية",
+    hintConfirmation: "المؤكَّد ÷ طلبات الدفع عند الاستلام",
+    hintDelivery: "المسلَّم ÷ ما خرج مع شركة الشحن",
     hintLeads: "من نماذج الاشتراك والنشرة البريدية",
     funnelTitle: "قمع التحويل",
     funnelDesc: "الجلسات التي وصلت لكل خطوة خلال {window}.",
@@ -163,7 +150,7 @@ type Kind = "count" | "money" | "rate";
 interface Tile {
   key: InsightsMetricKey;
   kind: Kind;
-  hint?: "hintOrders" | "hintNewOrders" | "hintLost" | "hintProfit" | "hintLeads";
+  hint?: "hintOrders" | "hintNewOrders" | "hintLost" | "hintProfit" | "hintConfirmation" | "hintDelivery" | "hintLeads";
   spark?: keyof Omit<InsightsDay, "date">;
   to?: string;
   /** Lower is better: a rise is shown in red. */
@@ -175,6 +162,8 @@ const TILES: Tile[] = [
   { key: "orders", kind: "count", spark: "orders", hint: "hintOrders", to: "/orders" },
   { key: "netProfit", kind: "money", hint: "hintProfit", to: "/profit" },
   { key: "averageOrderValue", kind: "money" },
+  { key: "confirmationRate", kind: "rate", hint: "hintConfirmation", to: "/confirmation-queue" },
+  { key: "deliveryRate", kind: "rate", hint: "hintDelivery" },
   { key: "visits", kind: "count", spark: "visits", to: "/analytics/web" },
   { key: "conversionRate", kind: "rate" },
   { key: "addToCart", kind: "count", spark: "addToCart" },
@@ -189,66 +178,15 @@ const TILES: Tile[] = [
 ];
 
 /**
- * The figures the box at the top of the home page shows (StatsCard), chosen by
- * the merchant and kept on this device; the rest of TILES sit under "All the
- * numbers". A store builder's figures (owner, 2026-11-15: "we measure the
- * bounce rate and the conversion rate; confirmation and delivery are the
- * fulfilment's"): by default what was sold, how many orders, how many visits,
- * how many of them bought, and how many left from the first page. The bounce
- * rate is the site analytics' (one read beside the overview's).
- */
-type StatKey = InsightsMetricKey | "bounceRate";
-const STATS_KEY = "zimos.home.stats.v2";
-const STATS_MAX = 5;
-const STATS_DEFAULT: StatKey[] = ["sales", "orders", "visits", "conversionRate", "bounceRate"];
-/** Every figure the box can show, in the order the chooser lists them. */
-const STAT_KEYS: StatKey[] = [...TILES.slice(0, 3).map((tile) => tile.key), "bounceRate", ...TILES.slice(3).map((tile) => tile.key)];
-
-function readStats(): StatKey[] {
-  try {
-    const raw = JSON.parse(localStorage.getItem(STATS_KEY) ?? "null") as unknown;
-    if (Array.isArray(raw)) {
-      const keys = raw.filter((key): key is StatKey => STAT_KEYS.includes(key as StatKey)).slice(0, STATS_MAX);
-      if (keys.length > 0) return keys;
-    }
-  } catch {
-    /* private mode or malformed: the default */
-  }
-  return STATS_DEFAULT;
-}
-
-/** The day-by-day line a figure is drawn with: its own, or for a rate the count it comes from. */
-const LINE_OF: Partial<Record<InsightsMetricKey, keyof Omit<InsightsDay, "date">>> = {
-  sales: "sales",
-  orders: "orders",
-  newOrders: "orders",
-  visits: "visits",
-  addToCart: "addToCart",
-  checkouts: "checkouts",
-  crossSellAdds: "crossSell",
-  lostOrders: "lost",
-  leads: "leads",
-};
-
-/**
  * The store at a glance (SPEC §15.1): every KPI for the chosen period against
  * the one before, the conversion funnel, what the offers added, and the top
  * sources, governorates, devices, products and funnels — one request.
  */
-export function StoreOverview({ actions, between }: { actions?: ReactNode; between?: ReactNode }) {
+export function StoreOverview({ actions }: { actions?: ReactNode }) {
   const t = useT(STRINGS);
   const workspaceId = useWorkspaceId();
   const [range, setRange] = useState<AnalyticsRange>("7d");
   const [funnelId, setFunnelId] = useState("");
-  const [chosen, setChosen] = useState<StatKey[]>(readStats);
-  const choose = (next: StatKey[]) => {
-    setChosen(next);
-    try {
-      localStorage.setItem(STATS_KEY, JSON.stringify(next));
-    } catch {
-      /* private mode: kept for this visit */
-    }
-  };
 
   const funnels = useAsync(() => funnelsList(apiClient, workspaceId).catch(() => []), [workspaceId]);
   const overview = useAsync<InsightsOverview>(
@@ -259,11 +197,6 @@ export function StoreOverview({ actions, between }: { actions?: ReactNode; betwe
         funnelId: funnelId || undefined,
       }),
     [workspaceId, range, funnelId]
-  );
-  // The bounce rate, for the same period, from the site analytics; a store without them shows "—".
-  const web = useAsync<WebAnalyticsStats | null>(
-    () => apiClient.getWebAnalyticsStats(workspaceId, { ...rangeWindows(range).current, compare: "prev", unit: "day" }).catch(() => null),
-    [workspaceId, range]
   );
   const data = overview.data;
 
@@ -290,16 +223,13 @@ export function StoreOverview({ actions, between }: { actions?: ReactNode; betwe
       </div>
 
       <DataState loading={overview.loading && !data} error={overview.error} onRetry={() => void overview.refresh()}>
-        {data && <StatsCard data={data} web={web.data ?? null} chosen={chosen} onChoose={choose} busy={overview.loading} />}
+        {data && <OverviewBody data={data} busy={overview.loading} />}
       </DataState>
-      {/* What needs finishing, right under the figures (the home page passes it). */}
-      {between}
-      {data && <OverviewBody data={data} chosen={chosen} busy={overview.loading} />}
     </div>
   );
 }
 
-function OverviewBody({ data, chosen, busy }: { data: InsightsOverview; chosen: readonly StatKey[]; busy: boolean }) {
+function OverviewBody({ data, busy }: { data: InsightsOverview; busy: boolean }) {
   const t = useT(STRINGS);
   const money = (v: number | null) => (v === null ? "—" : formatMoney(v, data.currency));
   const show = (kind: Kind, v: number | null) =>
@@ -309,35 +239,28 @@ function OverviewBody({ data, chosen, busy }: { data: InsightsOverview; chosen: 
   const stepLabel = { visits: t.stepVisits, cart: t.stepCart, checkout: t.stepCheckout, purchase: t.stepPurchase };
   const deviceLabel: Record<string, string> = { mobile: t.mobile, desktop: t.desktop, tablet: t.tablet, unknown: t.unknown };
   const empty = <p className="text-sm text-ink-soft">{t.nothing}</p>;
-  const others = TILES.filter((tile) => !chosen.includes(tile.key));
-  const metricTile = (tile: Tile) => {
-    const metric = data.metrics[tile.key];
-    return (
-      <MetricTile
-        key={tile.key}
-        label={t[tile.key]}
-        hint={tile.hint ? t[tile.hint] : undefined}
-        value={show(tile.kind, metric.value)}
-        delta={deltaBasisPoints(metric.value, metric.previous)}
-        inverse={tile.inverse}
-        vsLabel={t.vsPrevious}
-        spark={tile.spark ? data.series.map((d) => d[tile.spark!]) : undefined}
-        to={tile.to}
-      />
-    );
-  };
 
   return (
-    <div className={cn("mt-6 space-y-6 transition-opacity", busy && "opacity-60")}>
-
-      {/* The other figures, folded: a merchant opens them when looking for one. */}
-      <details className="group/more">
-        <summary className="flex min-h-11 w-fit cursor-pointer list-none items-center gap-1.5 rounded-full border border-line bg-paper-raised px-4 text-sm font-medium text-ink transition-colors hover:border-primary/40 [&::-webkit-details-marker]:hidden">
-          {fmt(t.allNumbers, { n: String(others.length) })}
-          <IconCaretDown className="size-4 text-ink-soft transition-transform group-open/more:rotate-180 motion-reduce:transition-none" aria-hidden />
-        </summary>
-        <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">{others.map((tile) => metricTile(tile))}</div>
-      </details>
+    <div className={cn("space-y-6 transition-opacity", busy && "opacity-60")}>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
+        {TILES.map((tile) => {
+          const metric = data.metrics[tile.key];
+          const delta = deltaBasisPoints(metric.value, metric.previous);
+          return (
+            <MetricTile
+              key={tile.key}
+              label={t[tile.key]}
+              hint={tile.hint ? t[tile.hint] : undefined}
+              value={show(tile.kind, metric.value)}
+              delta={delta}
+              inverse={tile.inverse}
+              vsLabel={t.vsPrevious}
+              spark={tile.spark ? data.series.map((d) => d[tile.spark!]) : undefined}
+              to={tile.to}
+            />
+          );
+        })}
+      </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Section title={t.funnelTitle} description={fmt(t.funnelDesc, { window })}>
@@ -455,190 +378,6 @@ function OverviewBody({ data, chosen, busy }: { data: InsightsOverview; chosen: 
   );
 }
 
-/**
- * The box at the top of the home page (owner, 2026-11-15: "sales first, a
- * simple wide box with the main figures, that I can change"): up to four
- * figures side by side, each with its change against the period before; the
- * one chosen is drawn day by day under them. "Change the figures" picks which ones, kept on this device. Shopify
- * leads its home with such a box; its default here is a store builder's:
- * sales, orders, visits, the conversion rate and the bounce rate.
- */
-function StatsCard({
-  data,
-  web,
-  chosen,
-  onChoose,
-  busy,
-}: {
-  data: InsightsOverview;
-  web: WebAnalyticsStats | null;
-  chosen: StatKey[];
-  onChoose: (next: StatKey[]) => void;
-  busy: boolean;
-}) {
-  const t = useT(STRINGS);
-  const money = (v: number | null) => (v === null ? "—" : formatMoney(v, data.currency));
-  const show = (kind: Kind, v: number | null) =>
-    kind === "money" ? money(v) : kind === "rate" ? formatPercentValue(percentToRatio(v)) : formatCount(v);
-  // Each chosen figure: its label, its kind, now and before. The bounce rate is the site analytics'; lower is better.
-  const figures = chosen.map((key) => {
-    if (key === "bounceRate") {
-      return { key, label: t.bounceRate, kind: "rate" as Kind, value: web?.bounceRate ?? null, previous: web?.comparison?.bounceRate ?? null, inverse: true };
-    }
-    const tile = TILES.find((x) => x.key === key)!;
-    const metric = data.metrics[key];
-    return { key, label: t[key], kind: tile.kind, value: metric.value, previous: metric.previous, inverse: Boolean(tile.inverse) };
-  });
-  const lineOf = (key: StatKey) => (key === "bounceRate" ? undefined : LINE_OF[key]);
-  const [drawn, setDrawn] = useState<StatKey>(() => chosen.find((key) => lineOf(key)) ?? "sales");
-  const [editing, setEditing] = useState(false);
-  const shownKey = chosen.includes(drawn) && lineOf(drawn) ? drawn : (chosen.find((key) => lineOf(key)) ?? null);
-  const line = shownKey ? lineOf(shownKey)! : null;
-  const window = formatWindow(data.range.from, data.range.to);
-  const day = new Intl.DateTimeFormat(getIntlLocale(), { day: "numeric", month: "short" });
-  const lineLabel = shownKey ? (shownKey === "bounceRate" ? t.bounceRate : t[shownKey]) : "";
-  const lineKind: Kind = shownKey && TILES.find((tile) => tile.key === shownKey)?.kind === "money" ? "money" : "count";
-  const drawnFigure = figures.find((figure) => figure.key === shownKey);
-  const drawnTone = drawnFigure ? toneOf(deltaBasisPoints(drawnFigure.value, drawnFigure.previous), drawnFigure.inverse) : "good";
-
-  function toggle(key: StatKey) {
-    if (chosen.includes(key)) {
-      if (chosen.length > 1) onChoose(chosen.filter((k) => k !== key));
-    } else if (chosen.length < STATS_MAX) {
-      onChoose([...chosen, key]);
-    }
-  }
-
-  return (
-    <Card data-slot="stats-card" className={cn("gap-0 overflow-hidden p-0 transition-opacity", busy && "opacity-60")}>
-      {/* The figures side by side; the one drawn below is marked. */}
-      <div
-        className={cn(
-          "grid grid-cols-2 divide-line max-lg:[&>*:nth-child(n+3)]:border-t max-lg:[&>*:nth-child(odd)]:border-e lg:divide-x lg:rtl:divide-x-reverse",
-          ["", "lg:grid-cols-1", "lg:grid-cols-2", "lg:grid-cols-3", "lg:grid-cols-4", "lg:grid-cols-5"][figures.length]
-        )}
-      >
-        {figures.map((tile) => {
-          const delta = deltaBasisPoints(tile.value, tile.previous);
-          const drawable = Boolean(lineOf(tile.key));
-          const selected = tile.key === shownKey;
-          const body = (
-            <>
-              <span className="block truncate text-sm font-medium text-ink-soft">{tile.label}</span>
-              <span className="tabular-nums mt-1 block text-2xl leading-tight font-bold tracking-tight text-ink sm:text-[1.75rem]">
-                <bdi dir="ltr">{show(tile.kind, tile.value)}</bdi>
-              </span>
-              {delta !== null && (
-                <span className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
-                  <DeltaChip delta={delta} inverse={tile.inverse} />
-                </span>
-              )}
-            </>
-          );
-          const frame = cn(
-            "relative block min-w-0 px-4 py-4 text-start sm:px-5",
-            selected && "bg-primary-soft/50 after:absolute after:inset-x-0 after:top-0 after:h-[3px] after:bg-primary"
-          );
-          return drawable ? (
-            <button
-              key={tile.key}
-              type="button"
-              aria-pressed={selected}
-              data-stat={tile.key}
-              onClick={() => setDrawn(tile.key)}
-              className={cn(frame, "cursor-pointer transition-colors hover:bg-paper-sunken/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary")}
-            >
-              {body}
-            </button>
-          ) : (
-            <div key={tile.key} data-stat={tile.key} className={frame}>
-              {body}
-            </div>
-          );
-        })}
-      </div>
-
-      {line && (
-        <div className="border-t border-line p-3 sm:p-4" dir="ltr">
-          {/* Blue when the drawn figure moved the good way against the period before, red when not. */}
-          <LineAreaChart
-            points={data.series.map((d) => ({ label: day.format(new Date(`${d.date}T12:00:00`)), value: d[line] ?? 0 }))}
-            format={(v) => (lineKind === "money" ? money(v) : formatCount(v))}
-            height={210}
-            summary={fmt(t.chartSummary, { label: lineLabel, window })}
-            tone={drawnTone}
-          />
-        </div>
-      )}
-
-      {/* The comparison is said once, by the range picker above the box. */}
-      <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line px-4 py-1.5 sm:px-5">
-        <span className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setEditing((on) => !on)}
-            aria-expanded={editing}
-            className="inline-flex min-h-11 cursor-pointer items-center rounded-full px-3 text-sm font-medium text-ink-soft transition-colors hover:bg-paper-sunken hover:text-ink"
-          >
-            {editing ? t.customizeDone : t.customize}
-          </button>
-          <Link to="/analytics" className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-primary hover:bg-primary-soft">
-            {t.fullReport}
-          </Link>
-        </span>
-      </div>
-
-      {editing && (
-        <div className="border-t border-line px-4 py-3 sm:px-5">
-          <p className="text-xs text-ink-soft">{fmt(t.customizeHint, { n: String(STATS_MAX) })}</p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {STAT_KEYS.map((key) => {
-              const on = chosen.includes(key);
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  aria-pressed={on}
-                  disabled={(!on && chosen.length >= STATS_MAX) || (on && chosen.length === 1)}
-                  onClick={() => toggle(key)}
-                  className={cn(
-                    "min-h-9 cursor-pointer rounded-full border px-3 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40 pointer-coarse:min-h-11",
-                    on ? "border-primary bg-primary text-primary-foreground" : "border-line text-ink hover:border-primary/40"
-                  )}
-                >
-                  {key === "bounceRate" ? t.bounceRate : t[key]}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </Card>
-  );
-}
-
-/** A change against the period before, as a tinted chip: blue when it is good news, red when bad (Shopify's reading). */
-function DeltaChip({ delta, inverse = false }: { delta: number; inverse?: boolean }) {
-  const up = delta > 0;
-  const down = delta < 0;
-  const good = inverse ? down : up;
-  const bad = inverse ? up : down;
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
-        good && "bg-primary-soft text-primary",
-        bad && "bg-danger-soft text-danger",
-        !up && !down && "bg-paper-sunken text-ink-soft"
-      )}
-    >
-      <bdi dir="ltr">
-        {up ? "▲" : down ? "▼" : "•"} {formatPercentValue(Math.abs(delta) / 10000)}
-      </bdi>
-    </span>
-  );
-}
-
 function MetricTile({
   label,
   hint,
@@ -671,13 +410,13 @@ function MetricTile({
         </p>
         {spark && spark.length > 1 && (
           <div className="w-20 shrink-0" dir="ltr">
-            <Sparkline current={spark} tone={toneOf(delta, inverse)} />
+            <Sparkline current={spark} />
           </div>
         )}
       </div>
       {delta !== null ? (
         <p className="mt-1 flex flex-wrap items-center gap-1 text-xs">
-          <span className={cn("font-medium", good && "text-primary", bad && "text-danger", !up && !down && "text-ink-soft")}>
+          <span className={cn("font-medium", good && "text-success", bad && "text-danger", !up && !down && "text-ink-soft")}>
             <bdi dir="ltr">
               {up ? "▲" : down ? "▼" : "•"} {formatPercentValue(Math.abs(delta) / 10000)}
             </bdi>
