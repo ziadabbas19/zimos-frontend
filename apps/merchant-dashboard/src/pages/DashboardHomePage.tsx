@@ -19,6 +19,7 @@ import { StoreOverview } from "@/pages/home/StoreOverview";
 import { SetupGuideCard } from "@/pages/home/SetupGuideCard";
 import { SiteAnalytics } from "@/pages/home/SiteAnalytics";
 import { QuickActions } from "@/pages/home/QuickActions";
+import { NeedsYouCard } from "@/pages/home/NeedsYouCard";
 import { LockedOrdersBanner } from "@/components/OrdersLock";
 import { PushPrompt } from "@/components/push/PushPrompt";
 import { fmt, useCommon, useT, type Messages } from "@/i18n/LocaleContext";
@@ -196,6 +197,8 @@ export function DashboardHomePage() {
         {currentWorkspace ? fmt(t.welcomeNamed, { name: currentWorkspace.name }) : t.welcome}
       </h1>
       <QuickActions awaiting={queue.data ?? null} />
+      {/* The work waiting for the merchant, as counts in their places' colours. */}
+      <NeedsYouCard className="mt-6" />
       {/* Orders whose customer details are hidden until the store renews or tops up. */}
       <LockedOrdersBanner className="mt-6" />
 

@@ -2,12 +2,10 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
 import type { Workspace } from "@store-builder/api-client";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { NAV_GROUPS, NAV_LABELS, isNavItemVisible } from "@/lib/navigation";
+import { NAV_GROUPS, NAV_GROUP_LABELS, NAV_LABELS, isNavItemVisible } from "@/lib/navigation";
 import { api, authMock, fake, workspaceMock } from "@/test/mocks";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { SYSTEM_ROLE_PERMISSIONS } from "@/test/systemRoles";
-
-const GROUPS_KEY = "zimos.nav.groups.collapsed.v2";
 
 function store(role: string) {
   workspaceMock.currentWorkspace = fake<Workspace>({ id: "ws_1", name: "Nile Store", slug: "nile", role, permissions: SYSTEM_ROLE_PERMISSIONS[role] });
@@ -39,39 +37,60 @@ function rowNames(menu: HTMLElement): string[] {
     .map((row) => row.querySelector("span.min-w-0")?.textContent ?? "");
 }
 
-/** What lib/navigation.ts says this role sees, in its order, the last group at the foot. */
-function expectedRows(role: string): string[] {
-  const groups = [...NAV_GROUPS.filter((group) => group.id !== "config"), ...NAV_GROUPS.filter((group) => group.id === "config")];
-  return groups.flatMap((group) => group.items.filter((item) => isNavItemVisible(item, SYSTEM_ROLE_PERMISSIONS[role])).map((item) => NAV_LABELS.en[item.key]));
+/** The places of the side menu, in order (the rows with a coloured tile). */
+function placeNames(menu: HTMLElement): string[] {
+  return Array.from(menu.querySelectorAll<HTMLElement>("a[data-place]")).map((row) => row.querySelector("span.min-w-0")?.textContent ?? "");
 }
 
+/** The page rows of the side menu, in order: the open place's pages, then the foot group. */
+function pageNames(menu: HTMLElement): string[] {
+  return Array.from(menu.querySelectorAll<HTMLElement>('a[data-slot="menu-row"]')).map((row) => row.querySelector("span.min-w-0")?.textContent ?? "");
+}
+
+const visibleIn = (role: string, groupId: string) =>
+  NAV_GROUPS.find((group) => group.id === groupId)!.items.filter((item) => !item.under && isNavItemVisible(item, SYSTEM_ROLE_PERMISSIONS[role]));
+
+/** The places lib/navigation.ts gives this role, in its order: every group but the foot one that keeps a page. */
+function expectedPlaces(role: string): string[] {
+  return NAV_GROUPS.filter((group) => group.id !== "config" && visibleIn(role, group.id).length > 0).map((group) =>
+    group.labelKey ? NAV_GROUP_LABELS.en[group.labelKey] : NAV_LABELS.en.overview
+  );
+}
+
+const footRows = (role: string) => visibleIn(role, "config").map((item) => NAV_LABELS.en[item.key]);
+
 describe("the side menu", () => {
-  it("lists every entry of our navigation, in its order, for the owner", () => {
+  it("lists the places in their order, opens the one you are in with its pages, and keeps the foot group", () => {
     store("owner");
-    localStorage.setItem(GROUPS_KEY, "{}");
-    renderWithProviders(<DashboardLayout />, { route: "/" });
-    expect(rowNames(sideMenu())).toEqual(expectedRows("owner"));
-    expect(rowNames(sideMenu())).toContain("My Plan");
-    expect(rowNames(sideMenu())).toContain("Analytics");
+    renderWithProviders(<DashboardLayout />, { route: "/orders/ord_1" });
+    expect(placeNames(sideMenu())).toEqual(expectedPlaces("owner"));
+    expect(placeNames(sideMenu())).toContain("Analytics");
+    // Orders is open: its pages, then the foot group (My Plan, Settings…).
+    expect(pageNames(sideMenu())).toEqual([...visibleIn("owner", "orders").map((item) => NAV_LABELS.en[item.key]), ...footRows("owner")]);
+    expect(pageNames(sideMenu())).toContain("My Plan");
+    // Each place is a row beside its coloured tile, going to its first page.
+    expect(within(sideMenu()).getByRole("link", { name: /^Marketing/ })).toHaveAttribute("href", "/marketing");
+    expect(sideMenu().querySelector('a[data-place="marketing"] [data-place-tile="marketing"]')).not.toBeNull();
   });
 
   it("leaves out what a role cannot open", () => {
     store("order_operator");
-    localStorage.setItem(GROUPS_KEY, "{}");
-    renderWithProviders(<DashboardLayout />, { route: "/" });
+    renderWithProviders(<DashboardLayout />, { route: "/orders" });
+    expect(placeNames(sideMenu())).toEqual(expectedPlaces("order_operator"));
+    expect(placeNames(sideMenu())).not.toContain("Analytics");
     const rows = rowNames(sideMenu());
-    expect(rows).toEqual(expectedRows("order_operator"));
     expect(rows).not.toContain("My Plan");
-    expect(rows).not.toContain("Analytics");
     expect(rows).not.toContain("Profit");
   });
 
   it("shows no entry of a feature whose switch is off", () => {
     store("owner");
-    localStorage.setItem(GROUPS_KEY, "{}");
-    renderWithProviders(<DashboardLayout />, { route: "/" });
-    const rows = rowNames(sideMenu());
-    for (const name of ["Gift cards", "Blog", "Questions", "Size charts", "Loyalty & rewards", "AI studio"]) expect(rows).not.toContain(name);
+    for (const route of ["/catalog", "/marketing", "/website", "/customers"]) {
+      const { unmount } = renderWithProviders(<DashboardLayout />, { route });
+      const rows = rowNames(sideMenu());
+      for (const name of ["Gift cards", "Blog", "Questions", "Size charts", "Loyalty & rewards", "AI studio"]) expect(rows).not.toContain(name);
+      unmount();
+    }
   });
 
   it("lights one row: the page you are on, also from a page deeper in it", () => {
@@ -85,30 +104,45 @@ describe("the side menu", () => {
     expect(current[0]).toHaveAttribute("href", "/orders");
   });
 
-  it("keeps a group folded as it was left, and still shows the page you are on inside it", async () => {
+  it("opens only the place you are in: Marketing's pages show on a Marketing page, not on the home page", () => {
     store("owner");
-    const { user } = renderWithProviders(<DashboardLayout />, { route: "/marketing" });
-    // Marketing starts folded: only the row of the open page is there.
-    expect(rowNames(sideMenu())).toContain("Marketing");
+    const { unmount } = renderWithProviders(<DashboardLayout />, { route: "/" });
     expect(rowNames(sideMenu())).not.toContain("Offers");
+    // Home is one page: its place row is the page's own, lit.
+    expect(within(sideMenu()).getByRole("link", { name: /^Home/ })).toHaveAttribute("aria-current", "page");
+    unmount();
 
-    await user.click(within(sideMenu()).getByRole("button", { name: "Expand Marketing" }));
-    expect(rowNames(sideMenu())).toContain("Offers");
-    expect(JSON.parse(localStorage.getItem(GROUPS_KEY) ?? "{}")).toMatchObject({ marketing: false });
-
-    await user.click(within(sideMenu()).getByRole("button", { name: "Collapse Marketing" }));
-    expect(rowNames(sideMenu())).not.toContain("Offers");
+    renderWithProviders(<DashboardLayout />, { route: "/marketing" });
+    expect(pageNames(sideMenu())).toContain("Offers");
+    expect(pageNames(sideMenu())).not.toContain("Confirmation queue");
   });
 
   it("counts the work waiting on its rows, and says it in words", async () => {
     store("owner");
     waiting({ toConfirm: 4, toShip: 2, unread: 0 });
-    renderWithProviders(<DashboardLayout />, { route: "/" });
-    const orders = within(sideMenu()).getByRole("link", { name: /^Orders/ });
+    const { unmount } = renderWithProviders(<DashboardLayout />, { route: "/" });
+    // Elsewhere, a place shows its most urgent count: the calls due before the orders to ship.
+    const ordersPlace = within(sideMenu()).getByRole("link", { name: /^Orders/ });
+    await waitFor(() => expect(ordersPlace).toHaveTextContent("4"));
+    expect(ordersPlace).toHaveAccessibleName(/^Orders\s*, 4 waiting for a call$/);
+    unmount();
+
+    renderWithProviders(<DashboardLayout />, { route: "/orders" });
+    // In the place, each page has its own count; the digits are for the eye, the words for a screen reader.
+    const orders = sideMenu().querySelector<HTMLElement>('a[data-slot="menu-row"][href="/orders"]')!;
     await waitFor(() => expect(orders).toHaveTextContent("2"));
-    // The digits are for the eye; a screen reader hears the count in words.
     expect(orders).toHaveAccessibleName(/^Orders\s*, 2 ready to ship$/);
     expect(within(sideMenu()).getByRole("link", { name: /Confirmation queue/ })).toHaveTextContent("4");
+  });
+
+  it("has the dock of places over the page from md up, the current one marked", () => {
+    store("owner");
+    renderWithProviders(<DashboardLayout />, { route: "/marketing/email-campaigns" });
+    const dock = screen.getByRole("navigation", { name: "Places" });
+    const tiles = within(dock).getAllByRole("link");
+    expect(tiles.map((tile) => tile.querySelector(".sr-only")?.textContent)).toEqual(expectedPlaces("owner"));
+    expect(within(dock).getByRole("link", { name: "Marketing" })).toHaveAttribute("aria-current", "page");
+    expect(within(dock).getByRole("link", { name: "Orders" })).toHaveAttribute("href", "/orders");
   });
 
   it("carries our logo and the store's name", () => {

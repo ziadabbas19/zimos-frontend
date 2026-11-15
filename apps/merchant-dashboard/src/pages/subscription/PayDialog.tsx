@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useMemo, useState, type FormEvent } from "react";
 import { Alert, Button, Input, Label, cn, ZLoader } from "@store-builder/ui";
 import type { BillingPaymentMethod, BillingPaymentProof, OpenBillingInvoiceResult } from "@store-builder/api-client";
 import { apiErrorCode } from "@store-builder/api-client";
@@ -10,6 +10,8 @@ import { useLocale, useT, fmt } from "@/i18n/LocaleContext";
 import { PAY_STRINGS } from "./payStrings";
 import { Modal } from "@/components/Modal";
 import { CopyButton } from "@/components/CopyButton";
+import { PaymentMark } from "@/components/PaymentMark";
+import { IconUpload } from "@/components/icons";
 
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -86,9 +88,12 @@ function PayBody({
 
   return (
     <div className="space-y-5">
-      <div className="rounded-[10px] border border-line bg-paper px-4 py-3">
-        <p className="text-xs text-ink-soft">{t.amountDue}</p>
-        <p className="tabular text-lg font-medium text-ink">{amount}</p>
+      {/* The amount, large: the one thing to get right. */}
+      <div className="rounded-2xl bg-primary-soft px-4 py-4 text-center">
+        <p className="text-xs font-medium text-ink-soft">{t.amountDue}</p>
+        <p className="tabular mt-0.5 text-3xl font-bold tracking-tight text-ink">
+          <bdi>{amount}</bdi>
+        </p>
         <p className="mt-1 text-xs text-ink-soft">{t.amountFixed}</p>
       </div>
 
@@ -96,16 +101,18 @@ function PayBody({
         <legend id={groupId} className="mb-1 text-sm font-medium text-ink">
           {t.chooseMethod}
         </legend>
-        <div role="radiogroup" aria-labelledby={groupId} className="grid gap-2">
+        {/* Each way of paying as a card with its mark, recognised before it is read. */}
+        <div role="radiogroup" aria-labelledby={groupId} className="grid grid-cols-2 gap-2">
           {methods.map((m) => (
             <label
               key={m.code}
               className={cn(
-                "flex min-h-11 cursor-pointer items-center gap-3 rounded-[10px] border px-3 py-2 text-sm",
-                m.code === code ? "border-primary bg-primary-soft text-ink" : "border-line text-ink-soft"
+                "relative flex min-h-[5.5rem] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 px-3 py-3 text-center text-sm font-medium transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-primary",
+                m.code === code ? "border-primary bg-primary-soft/60 text-ink" : "border-line text-ink-soft hover:border-primary/40"
               )}
             >
-              <input type="radio" name="pay-method" value={m.code} checked={m.code === code} onChange={() => setCode(m.code)} />
+              <input type="radio" name="pay-method" value={m.code} checked={m.code === code} onChange={() => setCode(m.code)} className="sr-only" />
+              <PaymentMark code={m.code} kind={m.kind} />
               {m.label[locale] || m.label.en}
             </label>
           ))}
@@ -219,6 +226,19 @@ export function TransferPay({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const note = method.note ? method.note[locale] || method.note.en : null;
+  // The chosen picture, shown in the drop area; its URL is let go when it changes.
+  const preview = useMemo(() => {
+    if (!file || !IMAGE_TYPES.has(file.type)) return null;
+    try {
+      return URL.createObjectURL(file);
+    } catch {
+      // No preview where the browser cannot make one: the file's name still shows.
+      return null;
+    }
+  }, [file]);
+  useEffect(() => () => {
+    if (preview) URL.revokeObjectURL(preview);
+  }, [preview]);
 
   function check(): boolean {
     const next: { phone?: string; file?: string } = {};
@@ -260,10 +280,13 @@ export function TransferPay({
 
   return (
     <form onSubmit={(e) => void send(e)} noValidate className="space-y-4">
-      <div className="space-y-2 rounded-[10px] border border-line bg-paper px-4 py-3">
-        <p className="text-sm text-ink">{fmt(t.sendTo, { amount })}</p>
+      <div className="space-y-2 rounded-2xl border border-line bg-paper px-4 py-3">
+        <p className="flex items-center gap-2 text-sm text-ink">
+          <StepNumber n={1} />
+          {fmt(t.sendTo, { amount })}
+        </p>
         <div className="flex flex-wrap items-center gap-2">
-          <span dir="ltr" className="tabular rounded-md bg-paper-raised px-2 py-1 font-mono text-base text-ink">
+          <span dir="ltr" className="tabular rounded-lg bg-paper-raised px-3 py-1.5 font-mono text-xl font-semibold tracking-wide text-ink">
             {method.accountNumber}
           </span>
           <CopyButton value={method.accountNumber ?? ""} label={t.copyNumber} />
@@ -284,7 +307,11 @@ export function TransferPay({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor={phoneId}>{t.senderPhone}</Label>
+        {/* The step's number beside the label, not in it: the label stays the field's name. */}
+        <div className="flex items-center gap-2">
+          <StepNumber n={2} />
+          <Label htmlFor={phoneId}>{t.senderPhone}</Label>
+        </div>
         <Input
           id={phoneId}
           type="tel"
@@ -303,16 +330,39 @@ export function TransferPay({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor={fileId}>{t.screenshot}</Label>
-        <input
-          id={fileId}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          aria-invalid={problems.file ? true : undefined}
-          aria-describedby={`${fileId}-hint`}
-          className="block w-full text-sm text-ink file:me-3 file:min-h-10 file:cursor-pointer file:rounded-md file:border file:border-line file:bg-paper file:px-3 file:text-ink"
-        />
+        {/* The step's number beside the label, not in it: the label stays the field's name. */}
+        <div className="flex items-center gap-2">
+          <StepNumber n={3} />
+          <Label htmlFor={fileId}>{t.screenshot}</Label>
+        </div>
+        {/* The picker as a drop area: the whole box opens it, and it shows the picture chosen. */}
+        <label
+          className={cn(
+            "flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border-2 border-dashed px-4 py-3 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-primary",
+            file ? "border-primary/50 bg-primary-soft/40 text-ink" : problems.file ? "border-danger/60 text-ink-soft" : "border-line text-ink-soft hover:border-primary/40"
+          )}
+        >
+          <input
+            id={fileId}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            aria-invalid={problems.file ? true : undefined}
+            aria-describedby={`${fileId}-hint`}
+            className="sr-only"
+          />
+          {preview ? (
+            <img src={preview} alt="" className="size-12 shrink-0 rounded-lg object-cover" />
+          ) : (
+            <span aria-hidden className="grid size-12 shrink-0 place-items-center rounded-lg bg-paper-sunken text-ink-soft [&>svg]:size-5">
+              <IconUpload />
+            </span>
+          )}
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-medium text-ink">{file ? file.name : t.chooseFile}</span>
+            {file && <span className="block text-xs text-primary">{t.changeFile}</span>}
+          </span>
+        </label>
         <p id={`${fileId}-hint`} className={cn("text-xs", problems.file ? "font-medium text-danger" : "text-ink-soft")}>
           {problems.file ?? t.screenshotHint}
         </p>
@@ -328,5 +378,14 @@ export function TransferPay({
         </Button>
       </div>
     </form>
+  );
+}
+
+/** A step's number in a small filled circle (1, 2, 3 of a transfer). */
+function StepNumber({ n }: { n: number }) {
+  return (
+    <span aria-hidden className="tabular grid size-6 shrink-0 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+      {n}
+    </span>
   );
 }

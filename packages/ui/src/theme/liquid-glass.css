@@ -282,6 +282,14 @@
   .glass-app .glass-nav nav a[aria-current="page"] > span[aria-hidden] {
     display: none;
   }
+  /* A place's tile stays on the current row (the merchant dashboard's side menu,
+     components/shell/PlaceTile.tsx): white there, its glyph in the place's colour. */
+  .glass-app .glass-nav nav a[aria-current="page"] > span[data-place-tile] {
+    display: grid;
+  }
+  .glass-app .glass-nav nav a[aria-current="page"] [data-place-tile] svg {
+    color: inherit;
+  }
   /* A list that drops out of the frame (the store switcher). */
   .glass-app .zimos-glass:not(.glass-nav) {
     background-color: var(--lg-overlay);

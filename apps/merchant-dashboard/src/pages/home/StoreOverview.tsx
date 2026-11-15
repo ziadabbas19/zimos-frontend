@@ -18,6 +18,8 @@ import { RangeSwitch } from "@/components/RangeSwitch";
 import { Section } from "@/components/Section";
 import { Select } from "@/components/Select";
 import { HBarList, Sparkline } from "@/components/charts";
+import { IconCaretDown, IconCoins, IconConfirm, IconOrders, IconShipping, type IconComponent } from "@/components/icons";
+import { PLACE_COLOR, type PlaceId } from "@/lib/places";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
 
 const STRINGS = {
@@ -43,6 +45,7 @@ const STRINGS = {
     leads: "Leads",
     confirmationRate: "Confirmation rate",
     deliveryRate: "Delivery rate",
+    allNumbers: "All the numbers ({n})",
     hintOrders: "Test and unpaid online orders are left out",
     hintNewOrders: "Still waiting for someone to open them",
     hintLost: "Checkouts started and never finished",
@@ -104,6 +107,7 @@ const STRINGS = {
     leads: "عملاء محتملون",
     confirmationRate: "نسبة التأكيد",
     deliveryRate: "نسبة التسليم",
+    allNumbers: "كل الأرقام ({n})",
     hintOrders: "بدون الطلبات التجريبية وطلبات الدفع الإلكتروني غير المدفوعة",
     hintNewOrders: "لم يفتحها أحد بعد",
     hintLost: "بدأ العميل إتمام الطلب ولم يكمله",
@@ -178,6 +182,19 @@ const TILES: Tile[] = [
 ];
 
 /**
+ * The four figures a merchant looks for first, large, each with a picture in
+ * the colour of its place: what was sold, how many orders, and the two rates
+ * of cash on delivery (drawn as a bar as well as a number). The rest of
+ * TILES sit under "All the numbers", one tap away.
+ */
+const HEADLINE: Partial<Record<InsightsMetricKey, { icon: IconComponent; place: PlaceId }>> = {
+  sales: { icon: IconCoins, place: "money" },
+  orders: { icon: IconOrders, place: "orders" },
+  confirmationRate: { icon: IconConfirm, place: "orders" },
+  deliveryRate: { icon: IconShipping, place: "money" },
+};
+
+/**
  * The store at a glance (SPEC §15.1): every KPI for the chosen period against
  * the one before, the conversion funnel, what the offers added, and the top
  * sources, governorates, devices, products and funnels — one request.
@@ -239,28 +256,41 @@ function OverviewBody({ data, busy }: { data: InsightsOverview; busy: boolean })
   const stepLabel = { visits: t.stepVisits, cart: t.stepCart, checkout: t.stepCheckout, purchase: t.stepPurchase };
   const deviceLabel: Record<string, string> = { mobile: t.mobile, desktop: t.desktop, tablet: t.tablet, unknown: t.unknown };
   const empty = <p className="text-sm text-ink-soft">{t.nothing}</p>;
+  const headline = TILES.filter((tile) => HEADLINE[tile.key]).sort((a, b) => Object.keys(HEADLINE).indexOf(a.key) - Object.keys(HEADLINE).indexOf(b.key));
+  const others = TILES.filter((tile) => !HEADLINE[tile.key]);
+  const metricTile = (tile: Tile, hero?: { icon: IconComponent; place: PlaceId }) => {
+    const metric = data.metrics[tile.key];
+    return (
+      <MetricTile
+        key={tile.key}
+        label={t[tile.key]}
+        hint={tile.hint ? t[tile.hint] : undefined}
+        value={show(tile.kind, metric.value)}
+        delta={deltaBasisPoints(metric.value, metric.previous)}
+        inverse={tile.inverse}
+        vsLabel={t.vsPrevious}
+        spark={tile.spark ? data.series.map((d) => d[tile.spark!]) : undefined}
+        to={tile.to}
+        hero={hero}
+        rate={tile.kind === "rate" ? metric.value : undefined}
+      />
+    );
+  };
 
   return (
     <div className={cn("space-y-6 transition-opacity", busy && "opacity-60")}>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
-        {TILES.map((tile) => {
-          const metric = data.metrics[tile.key];
-          const delta = deltaBasisPoints(metric.value, metric.previous);
-          return (
-            <MetricTile
-              key={tile.key}
-              label={t[tile.key]}
-              hint={tile.hint ? t[tile.hint] : undefined}
-              value={show(tile.kind, metric.value)}
-              delta={delta}
-              inverse={tile.inverse}
-              vsLabel={t.vsPrevious}
-              spark={tile.spark ? data.series.map((d) => d[tile.spark!]) : undefined}
-              to={tile.to}
-            />
-          );
-        })}
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {headline.map((tile) => metricTile(tile, HEADLINE[tile.key]))}
       </div>
+
+      {/* The other figures, folded: a merchant opens them when looking for one. */}
+      <details className="group/more">
+        <summary className="flex min-h-11 w-fit cursor-pointer list-none items-center gap-1.5 rounded-full border border-line bg-paper-raised px-4 text-sm font-medium text-ink transition-colors hover:border-primary/40 [&::-webkit-details-marker]:hidden">
+          {fmt(t.allNumbers, { n: String(others.length) })}
+          <IconCaretDown className="size-4 text-ink-soft transition-transform group-open/more:rotate-180 motion-reduce:transition-none" aria-hidden />
+        </summary>
+        <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">{others.map((tile) => metricTile(tile))}</div>
+      </details>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Section title={t.funnelTitle} description={fmt(t.funnelDesc, { window })}>
@@ -387,6 +417,8 @@ function MetricTile({
   vsLabel,
   spark,
   to,
+  hero,
+  rate,
 }: {
   label: string;
   hint?: string;
@@ -396,11 +428,76 @@ function MetricTile({
   vsLabel: string;
   spark?: number[];
   to?: string;
+  /** One of the headline figures: large, with its picture in its place's colour. */
+  hero?: { icon: IconComponent; place: PlaceId };
+  /** A rate, 0-100: a headline rate is drawn as a bar under its number too. */
+  rate?: number | null;
 }) {
   const up = delta !== null && delta > 0;
   const down = delta !== null && delta < 0;
   const good = inverse ? down : up;
   const bad = inverse ? up : down;
+  const deltaChip =
+    delta !== null ? (
+      <span
+        className={cn(
+          "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
+          good && "bg-success-soft text-success",
+          bad && "bg-danger-soft text-danger",
+          !up && !down && "bg-paper-sunken text-ink-soft"
+        )}
+      >
+        <bdi dir="ltr">
+          {up ? "▲" : down ? "▼" : "•"} {formatPercentValue(Math.abs(delta) / 10000)}
+        </bdi>
+      </span>
+    ) : null;
+
+  if (hero) {
+    const color = PLACE_COLOR[hero.place];
+    const Icon = hero.icon;
+    const heroBody = (
+      <Card data-slot="headline-figure" className={cn("h-full gap-0 p-4 sm:p-5", to && "transition-colors hover:border-primary/40")} title={hint}>
+        <div className="flex items-start justify-between gap-2">
+          <span
+            aria-hidden
+            className="grid size-10 place-items-center rounded-xl [&>svg]:size-5"
+            style={{ backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)`, color }}
+          >
+            <Icon strokeWidth={2} />
+          </span>
+          {spark && spark.length > 1 && (
+            <div className="w-20 shrink-0 opacity-80" dir="ltr">
+              <Sparkline current={spark} />
+            </div>
+          )}
+        </div>
+        <p className="mt-3 text-sm font-medium text-ink-soft">{label}</p>
+        <p className="tabular-nums mt-0.5 text-[1.75rem] leading-tight font-bold tracking-tight text-ink sm:text-[2rem]">
+          <bdi dir="ltr">{value}</bdi>
+        </p>
+        {rate != null && (
+          <div aria-hidden className="mt-2 h-1.5 overflow-hidden rounded-full bg-paper-sunken">
+            <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, rate))}%`, backgroundColor: color }} />
+          </div>
+        )}
+        {deltaChip ? (
+          <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+            {deltaChip}
+            <span className="text-ink-soft">{vsLabel}</span>
+          </p>
+        ) : null}
+      </Card>
+    );
+    return to ? (
+      <Link to={to} className="block rounded-2xl">
+        {heroBody}
+      </Link>
+    ) : (
+      heroBody
+    );
+  }
+
   const body = (
     <Card className={cn("h-full gap-0 p-4", to && "transition-colors hover:border-primary/40")} title={hint}>
       <p className="text-xs font-medium text-ink-soft">{label}</p>

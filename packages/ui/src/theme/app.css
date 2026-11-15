@@ -226,7 +226,7 @@ html.dark {
   --color-paper-sunken: var(--muted);
 
   --font-display: var(--font-display);
-  --font-sans: 'Inter Variable', sans-serif;
+  --font-sans: "Inter Variable", "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
 
   --radius-card: var(--radius-card);
 
@@ -770,7 +770,7 @@ html {
    which the source shares, so only the light ones are overridden. */
 .auth-glass {
   --color-cyan: #12c8da;
-  --font-display: "Inter Variable", "Plus Jakarta Sans", "Tajawal", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter Variable", "Plus Jakarta Sans", "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
 }
 html:not(.dark) .auth-glass {
   --color-ink: #081f5c;

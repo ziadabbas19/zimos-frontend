@@ -92,7 +92,8 @@ function SubscriptionView() {
     <div className="max-w-5xl space-y-6">
       <PageHeader title={t.title} description={t.description} />
 
-      <section className="rounded-[var(--radius-card)] border border-line bg-paper-raised p-5">
+      {/* Three cards of their own (billingParts SubscriptionSummary), no frame around them. */}
+      <section aria-label={t.title}>
         <DataState loading={billing.loading && !billing.data} error={billing.error} onRetry={() => void billing.refresh()}>
           {billing.data && <SubscriptionSummary billing={billing.data} />}
         </DataState>

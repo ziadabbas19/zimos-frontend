@@ -56,8 +56,10 @@ describe("the console's frame is the merchant dashboard's", () => {
     const mine = read("./SidebarNav.tsx");
     const theirs = dashboard("shell/SidebarNav.tsx");
     for (const name of ["ROW", "ROW_RAIL", "ROW_SHEET"]) assert.equal(constant(mine, name), constant(theirs, name), name);
-    // The heading that folds a group, and the list that fades at both ends.
-    assert.equal(classAfter(mine, "onClick={() => toggle(group.id)}"), classAfter(theirs, "onClick={() => toggle(group.id)}"));
+    // The console folds its groups under their headings; the dashboard lists its places beside their
+    // coloured tiles instead (its PlaceRow, 2026-11-15). The list fades at both ends in both.
+    assert.match(classAfter(mine, "onClick={() => toggle(group.id)}"), /^zimos-menu-heading /);
+    assert.match(theirs, /<PlaceRow place=\{place\}/);
     assert.match(mine, /className="zimos-menu-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-2\.5 pt-2\.5 pb-5 \[scrollbar-width:none\] \[&::-webkit-scrollbar\]:hidden/);
     assert.match(theirs, /className="zimos-menu-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-2\.5 pt-2\.5 pb-5 \[scrollbar-width:none\] \[&::-webkit-scrollbar\]:hidden/);
     assert.match(mine, /<ZimosLogo height=\{22\} \/>/);

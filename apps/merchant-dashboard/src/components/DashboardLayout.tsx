@@ -22,6 +22,7 @@ import { OverlayRoot } from "@/components/overlayRoot";
 import { AccountMenu } from "@/components/shell/AccountMenu";
 import { Breadcrumbs } from "@/components/shell/Breadcrumbs";
 import { PhoneMenu } from "@/components/shell/PhoneMenu";
+import { PlaceDock } from "@/components/shell/PlaceDock";
 import { SidebarNav } from "@/components/shell/SidebarNav";
 import { useScrollRestoration } from "@/lib/scrollRestore";
 
@@ -47,7 +48,8 @@ const SIDE_MENU_ID = "zimos-side-menu";
  *   - the side menu (components/shell/SidebarNav.tsx), from `md` up;
  *   - the toolbar: hide/show the side menu, where you are, then search, the
  *     store's link, the language, light or dark, alerts and the account;
- *   - the page.
+ *   - the page, with the dock of the dashboard's places floating over its
+ *     bottom (components/shell/PlaceDock.tsx).
  *
  * On a phone the side menu is the dock (components/MobileTabBar.tsx) and,
  * behind its last slot, the whole menu as a sheet (components/shell/PhoneMenu.tsx).
@@ -182,6 +184,8 @@ export function DashboardLayout() {
           </RouteErrorBoundary>
           <OverlayRoot />
         </main>
+        {/* From md up: every place as a coloured tile, floating over the bottom of the page. */}
+        <PlaceDock />
       </div>
       <MobileTabBar onMore={openMobile} moreOpen={mobileOpen} editor={dockEditor} onEditorOpenChange={setDockEditorOpen} />
     </div>
