@@ -10,9 +10,10 @@ const two = (n: number) => String(n).padStart(2, "0");
 
 /**
  * Real screens of the dashboard (public/product, one set per language) on
- * the night-blue panel, one at a time in a browser frame: the screens'
- * names are tabs, a counter with two arrows moves through them too, and
- * under the frame are the open screen's number, name and line.
+ * the panel that follows the theme (light blue by day, night blue by
+ * night), one at a time in a browser frame: the screens' names are tabs,
+ * a counter with two arrows moves through them too, and under the frame
+ * are the open screen's number, name and line.
  *
  * The screens turn by themselves every seven seconds: a thin line at the
  * foot of the frame runs out (CSS), and holds while the pointer or the

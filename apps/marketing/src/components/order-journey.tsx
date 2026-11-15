@@ -4,21 +4,26 @@
 import { useId, useState, type CSSProperties } from "react";
 import type { Dictionary } from "@/i18n/dictionary";
 import { JOURNEY_SHOT } from "@/lib/store-shots";
-import { Check } from "./duo-icons";
+import { ChartBar, Check, House, Package, User } from "./duo-icons";
 import { SectionLabel } from "./section-label";
 
 const two = (n: number) => String(n).padStart(2, "0");
 const kth = (k: number) => ({ "--k": k }) as CSSProperties;
 
+/** The week's profit, day by day, as each bar's height (an example's figures). */
+const WEEK = [38, 52, 44, 66, 58, 82, 96];
+
 /** How long each step stays open while the journey plays by itself. */
 const STEP_MS = 6500;
 
 /**
- * An order's road on the night-blue panel, from the ad that brought it to
- * the profit it left: five steps down one side, and beside them a phone
- * showing the screen each one happens on — the ad, the sales page, the
- * confirmation queue, the shipment, the sum — drawn in HTML and animated
- * in CSS.
+ * An order's road on the panel that follows the theme (light blue by day,
+ * night blue by night), from the ad that brought it to the profit it left:
+ * five steps down one side, and beside them a phone showing the screen each
+ * one happens on — the ad, the sales page, the confirmation queue with its
+ * counts and the orders waiting, the shipment with its courier, its address
+ * and its road, the sum with the week's chart — drawn in HTML, animated in
+ * CSS, over the phone's own tab bar.
  *
  * The steps play one after the other by themselves: the open step's line
  * fills, and when it is full the next one opens. The line is a CSS
@@ -77,6 +82,20 @@ export function OrderJourney({ copy }: { copy: Dictionary["journey"] }) {
           <div className="zm-jstage rv" aria-hidden>
             <div className="zm-jph">
               <Demo step={step} demo={demo} />
+              <div className="zm-tabbar">
+                <i className="on">
+                  <House size={16} />
+                </i>
+                <i>
+                  <Package size={16} />
+                </i>
+                <i>
+                  <ChartBar size={16} />
+                </i>
+                <i>
+                  <User size={16} />
+                </i>
+              </div>
             </div>
           </div>
         </div>
@@ -140,8 +159,16 @@ function Demo({ step, demo }: { step: number; demo: Dictionary["journey"]["demo"
   }
   if (step === 2) {
     return (
-      <div className="zm-jin" key="confirm">
+      <div className="zm-jin zm-jin--queue" key="confirm">
         <b className="title">{demo.queue}</b>
+        <div className="zm-qcount">
+          {demo.counts.map((count) => (
+            <span key={count.label}>
+              <b className="ltr">{count.value}</b>
+              {count.label}
+            </span>
+          ))}
+        </div>
         <div className="zm-q">
           <div className="row">
             <b>{demo.orderNumber}</b>
@@ -157,6 +184,18 @@ function Demo({ step, demo }: { step: number; demo: Dictionary["journey"]["demo"
             <span>{demo.later}</span>
           </div>
         </div>
+        {demo.nextOrders.map((order, k) => (
+          <div key={order.number} className="zm-q zm-q--slim" style={kth(k)}>
+            <div className="row">
+              <b>{order.number}</b>
+              <em className="zm-risk">{demo.risk}</em>
+            </div>
+            <div className="row soft">
+              <span>{order.item}</span>
+              <span>{order.total}</span>
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -164,15 +203,28 @@ function Demo({ step, demo }: { step: number; demo: Dictionary["journey"]["demo"
     return (
       <div className="zm-jin" key="ship">
         <b className="title">{demo.shipment}</b>
+        <div>
+          {[demo.courier, demo.collect, demo.deliverTo].map((line) => (
+            <div key={line.label} className="zm-kv">
+              <span>{line.label}</span>
+              <b>{line.value}</b>
+            </div>
+          ))}
+        </div>
         <span className="site">{demo.tracking}</span>
         <div className="zm-trk ltr">ZM-20481-EG</div>
         <ul className="zm-tl">
           {demo.statuses.map((status, k) => (
             <li key={status} style={kth(k)}>
               {status}
+              <small>{demo.statusTimes[k]}</small>
             </li>
           ))}
         </ul>
+        <div className="zm-kv">
+          <span>{demo.expected.label}</span>
+          <b>{demo.expected.value}</b>
+        </div>
       </div>
     );
   }
@@ -192,6 +244,15 @@ function Demo({ step, demo }: { step: number; demo: Dictionary["journey"]["demo"
             <span className="ltr">{demo.net.value}</span> <small>{demo.currency}</small>
           </strong>
         </div>
+      </div>
+      <div className="zm-bars">
+        {WEEK.map((height, k) => (
+          <i key={k} style={{ "--h": `${height}%`, "--k": k } as CSSProperties} />
+        ))}
+      </div>
+      <div className="zm-kv">
+        <span>{demo.week.label}</span>
+        <b className="up ltr">{demo.week.value}</b>
       </div>
     </div>
   );

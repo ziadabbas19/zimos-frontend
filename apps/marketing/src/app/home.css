@@ -185,13 +185,16 @@ html:has(.zm) {
   letter-spacing: 0.04em;
 }
 
-.zm-night .zx-label b,
 .zm-end .zx-label b {
   color: var(--cyan);
 }
 
+.zm-night .zx-label b {
+  color: var(--n-accent);
+}
+
 .zm-night .zx-label {
-  color: rgb(231 236 245 / 0.62);
+  color: var(--n-label);
 }
 
 .zm-sh {
@@ -213,7 +216,7 @@ html:has(.zm) {
 }
 
 .zm-night .zm-sh > p:not(.zx-label) {
-  color: rgb(231 236 245 / 0.72);
+  color: var(--n-soft);
 }
 
 /* A title on one side and its action on the other. */
@@ -1976,15 +1979,71 @@ html:has(.zm-viewer[open]) {
   font-weight: 700;
 }
 
-/* ══ Night panels (the order's journey, the dashboard) ═══════════════ */
+/* ══ Night panels (the order's journey, the dashboard) ═══════════════
+   They follow the theme: a very light blue with navy type in the light
+   one, the night blue in the dark one (the closing band, .zm-end, stays
+   night blue in both). Every colour in them is one of the tokens below,
+   set once per theme. The phone in the journey is a device: white screen
+   and dark bezel in both. */
 .zm-night {
+  --n-bg: linear-gradient(180deg, var(--color-primary-soft), var(--bg));
+  --n-edge: color-mix(in srgb, var(--navy) 7%, transparent);
+  --n-glow: color-mix(in srgb, var(--blue) 16%, transparent);
+  --n-glow-2: color-mix(in srgb, var(--volt) 12%, transparent);
+  --n-ink: var(--navy);
+  --n-soft: var(--muted);
+  --n-label: var(--muted);
+  --n-cap: var(--muted);
+  --n-faint: color-mix(in srgb, var(--navy) 45%, transparent);
+  --n-hover: color-mix(in srgb, var(--navy) 85%, transparent);
+  --n-line: color-mix(in srgb, var(--navy) 14%, transparent);
+  --n-accent: var(--blue);
+  --n-stage: linear-gradient(160deg, color-mix(in srgb, var(--card) 90%, transparent), color-mix(in srgb, var(--card) 50%, transparent));
+  --n-stage-line: color-mix(in srgb, var(--navy) 10%, transparent);
+  --n-blob: color-mix(in srgb, var(--blue) 20%, transparent);
+  --n-phone: 0 40px 70px -26px color-mix(in srgb, var(--navy) 45%, transparent), 0 0 0 1px color-mix(in srgb, var(--navy) 10%, transparent);
+  --n-btn: var(--card);
+  --n-btn-line: color-mix(in srgb, var(--navy) 18%, transparent);
+  --n-hover-bg: color-mix(in srgb, var(--blue) 8%, transparent);
+  --n-on: var(--navy);
+  --n-on-ink: #fff;
+  --n-win-line: color-mix(in srgb, var(--navy) 12%, transparent);
+  --n-win-shadow: 0 50px 90px -40px color-mix(in srgb, var(--navy) 45%, transparent);
+
   position: relative;
   isolation: isolate;
   margin: var(--gut);
   overflow: hidden;
   border-radius: 2.5rem;
-  background: var(--night);
-  color: #fff;
+  background: var(--n-bg);
+  box-shadow: inset 0 0 0 1px var(--n-edge);
+  color: var(--n-ink);
+}
+
+.dark .zm-night {
+  --n-bg: var(--night);
+  --n-edge: transparent;
+  --n-glow: rgb(43 108 255 / 0.38);
+  --n-glow-2: rgb(0 190 255 / 0.16);
+  --n-ink: #fff;
+  --n-soft: rgb(231 236 245 / 0.72);
+  --n-label: rgb(231 236 245 / 0.62);
+  --n-cap: rgb(231 236 245 / 0.55);
+  --n-faint: rgb(255 255 255 / 0.5);
+  --n-hover: rgb(255 255 255 / 0.85);
+  --n-line: rgb(255 255 255 / 0.14);
+  --n-accent: var(--cyan);
+  --n-stage: linear-gradient(160deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.02));
+  --n-stage-line: rgb(255 255 255 / 0.12);
+  --n-blob: rgb(43 108 255 / 0.35);
+  --n-phone: 0 40px 80px -20px #000, 0 0 0 1px rgb(255 255 255 / 0.2);
+  --n-btn: rgb(255 255 255 / 0.08);
+  --n-btn-line: rgb(255 255 255 / 0.2);
+  --n-hover-bg: rgb(255 255 255 / 0.1);
+  --n-on: #fff;
+  --n-on-ink: var(--navy);
+  --n-win-line: rgb(255 255 255 / 0.16);
+  --n-win-shadow: 0 60px 100px -30px #000;
 }
 
 .zm-night::before {
@@ -1993,13 +2052,13 @@ html:has(.zm-viewer[open]) {
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(60% 40% at 50% 0%, rgb(43 108 255 / 0.38), transparent 70%),
-    radial-gradient(40% 30% at 90% 100%, rgb(0 190 255 / 0.16), transparent 70%);
+    radial-gradient(60% 40% at 50% 0%, var(--n-glow), transparent 70%),
+    radial-gradient(40% 30% at 90% 100%, var(--n-glow-2), transparent 70%);
 }
 
 .zm-cap {
   margin-block-start: 2.5rem;
-  color: rgb(231 236 245 / 0.55);
+  color: var(--n-cap);
   font-size: var(--t-tiny);
   text-align: center;
 }
@@ -2013,12 +2072,12 @@ html:has(.zm-viewer[open]) {
 }
 
 .zm-jlist {
-  border-block-start: 1px solid rgb(255 255 255 / 0.14);
+  border-block-start: 1px solid var(--n-line);
 }
 
 .zm-js {
   position: relative;
-  border-block-end: 1px solid rgb(255 255 255 / 0.14);
+  border-block-end: 1px solid var(--n-line);
 }
 
 .zm-js > button {
@@ -2029,13 +2088,13 @@ html:has(.zm-viewer[open]) {
   padding: 1.375rem 0.25rem;
   border: 0;
   background: transparent;
-  color: rgb(255 255 255 / 0.5);
+  color: var(--n-faint);
   text-align: start;
   transition: color 0.3s;
 }
 
 .zm-js > button:hover {
-  color: rgb(255 255 255 / 0.85);
+  color: var(--n-hover);
 }
 
 .zm-js .n {
@@ -2067,7 +2126,7 @@ html:has(.zm-viewer[open]) {
 .zm-js p {
   margin-inline-start: 3.25rem;
   padding: 0.625rem 0.25rem 1.375rem;
-  color: rgb(231 236 245 / 0.75);
+  color: var(--n-soft);
   font-size: var(--t-small);
   animation: zm-fade 0.5s both;
 }
@@ -2078,11 +2137,11 @@ html:has(.zm-viewer[open]) {
 
 .zm-js.on > button {
   padding-block-end: 0;
-  color: #fff;
+  color: var(--n-ink);
 }
 
 .zm-js.on .n {
-  color: var(--cyan);
+  color: var(--n-accent);
 }
 
 .zm-js .bar {
@@ -2118,9 +2177,9 @@ html:has(.zm-viewer[open]) {
   min-height: 44rem;
   padding: 2.125rem 1.25rem;
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 0.12);
+  border: 1px solid var(--n-stage-line);
   border-radius: 1.75rem;
-  background: linear-gradient(160deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.02));
+  background: var(--n-stage);
 }
 
 .zm-jstage::before {
@@ -2131,24 +2190,26 @@ html:has(.zm-viewer[open]) {
   width: 26rem;
   height: 26rem;
   border-radius: 50%;
-  background: rgb(43 108 255 / 0.35);
+  background: var(--n-blob);
   filter: blur(80px);
 }
 
+/* The phone. Its screen is a size container: what is drawn on it is in em
+   of one font size set in cqi, so the drawing scales with the phone as one
+   picture and fills it the same at every width. One part of each screen
+   (the picture, the timeline, the chart) takes the height that is left. */
 .zm-jph {
   position: relative;
   display: flex;
   flex-direction: column;
-  width: min(100%, max(21.5rem, 236px));
+  width: min(100%, max(21.5rem, 252px));
   aspect-ratio: 9 / 18.5;
-  padding: 1rem 0.875rem 0.875rem;
   overflow: hidden;
+  container-type: inline-size;
   border: 7px solid #0a0f1c;
   border-radius: 2.375rem;
   background: #fff;
-  box-shadow:
-    0 40px 80px -20px #000,
-    0 0 0 1px rgb(255 255 255 / 0.2);
+  box-shadow: var(--n-phone);
   color: #0d1b3e;
   animation: zm-bob2 7s ease-in-out infinite;
 }
@@ -2166,24 +2227,30 @@ html:has(.zm-viewer[open]) {
 .zm-jph::before {
   content: "";
   position: absolute;
-  inset-block-start: 7px;
+  inset-block-start: 2.4cqi;
   left: 50%;
   z-index: 3;
-  width: 4.375rem;
-  height: 1.125rem;
-  margin-left: -2.1875rem;
-  border-radius: 0.75rem;
+  width: 24cqi;
+  height: 6cqi;
+  margin-left: -12cqi;
+  border-radius: 999px;
   background: #0a0f1c;
+}
+
+.zm-jin,
+.zm-tabbar {
+  font-size: max(10.5px, 0.8rem);
+  font-size: max(10px, 4.4cqi);
 }
 
 .zm-jin {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: 0.7em;
   min-height: 0;
-  padding-block-start: 1.125rem;
-  font-size: max(10.5px, 0.8rem);
+  padding: 2.7em 1.1em 4.7em;
+  overflow: hidden;
   line-height: 1.45;
   animation: zm-fade 0.6s both;
 }
@@ -2191,18 +2258,15 @@ html:has(.zm-viewer[open]) {
 .zm-jin .who {
   display: flex;
   align-items: center;
-  gap: 0.5625rem;
+  gap: 0.65em;
 }
 
 .zm-jin .who i {
-  display: grid;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 2.3em;
+  height: 2.3em;
   flex: none;
-  place-items: center;
   border-radius: 50%;
   background: var(--blue);
-  color: #fff;
 }
 
 .zm-jin .who b {
@@ -2212,21 +2276,22 @@ html:has(.zm-viewer[open]) {
 .zm-jin .who small,
 .zm-jin .site {
   color: #7a859e;
-  font-size: max(10px, 0.6875rem);
+  font-size: 0.88em;
 }
 
+/* The picture takes the height the screen has left. */
 .zm-jin .img {
-  aspect-ratio: 16 / 11;
+  position: relative;
+  flex: 1 1 0;
+  min-height: 6em;
   overflow: hidden;
-  border-radius: 0.75rem;
+  border-radius: 0.9em;
   background: #eaf0ff;
 }
 
-.zm-jin .img--short {
-  aspect-ratio: 16 / 9;
-}
-
 .zm-jin .img img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -2237,9 +2302,9 @@ html:has(.zm-viewer[open]) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.5625rem 0.625rem;
-  border-radius: 0.75rem;
+  gap: 0.6em;
+  padding: 0.65em 0.75em;
+  border-radius: 0.9em;
   background: #f0f4fb;
 }
 
@@ -2252,8 +2317,8 @@ html:has(.zm-viewer[open]) {
 
 .zm-jin .cta em {
   flex: none;
-  padding: 0.375rem 0.75rem;
-  border-radius: 0.5rem;
+  padding: 0.45em 0.9em;
+  border-radius: 0.6em;
   background: #0d1b3e;
   color: #fff;
   font-style: normal;
@@ -2265,19 +2330,20 @@ html:has(.zm-viewer[open]) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.6em;
 }
 
 .zm-jin .title {
+  font-size: 1.12em;
   font-weight: 700;
 }
 
 .zm-fld {
   position: relative;
   overflow: hidden;
-  padding: 0.5625rem 0.6875rem;
+  padding: 0.7em 0.85em;
   border: 1px solid #d8e0ee;
-  border-radius: 0.5625rem;
+  border-radius: 0.7em;
   color: #56627e;
 }
 
@@ -2303,24 +2369,29 @@ html:has(.zm-viewer[open]) {
 .zm-bump {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5625rem;
+  gap: 0.6em;
+  padding: 0.7em;
   border: 1.5px dashed var(--blue);
-  border-radius: 0.625rem;
+  border-radius: 0.75em;
   background: #eaf0ff;
   font-weight: 600;
 }
 
 .zm-bump i {
   display: grid;
-  width: 0.9375rem;
-  height: 0.9375rem;
+  width: 1.2em;
+  height: 1.2em;
   flex: none;
   place-items: center;
-  border-radius: 4px;
+  border-radius: 0.3em;
   background: var(--blue);
   color: #fff;
   animation: zm-tickp 2.2s 1.5s both;
+}
+
+.zm-bump i svg {
+  width: 0.8em;
+  height: 0.8em;
 }
 
 @keyframes zm-tickp {
@@ -2330,50 +2401,104 @@ html:has(.zm-viewer[open]) {
 }
 
 .zm-order {
-  margin-block-start: auto;
-  padding: 0.75rem;
-  border-radius: 0.6875rem;
+  padding: 0.85em;
+  border-radius: 0.8em;
   background: var(--blue);
   color: #fff;
   font-weight: 700;
   text-align: center;
 }
 
+/* The confirmation queue: its three counts, the order on the call, and the
+   next three coming in one after the other. */
+/* The queue spreads its cards over the whole screen. */
+.zm-jin--queue {
+  justify-content: space-between;
+  gap: 0.85em;
+}
+
+.zm-qcount {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5em;
+}
+
+.zm-qcount span {
+  display: grid;
+  gap: 0.1em;
+  padding: 0.75em 0.8em;
+  border-radius: 0.85em;
+  background: #f0f4fb;
+  color: #56627e;
+  font-size: 0.9em;
+}
+
+.zm-qcount b {
+  color: #0d1b3e;
+  font-size: 1.8em;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
 .zm-q {
   display: grid;
-  gap: 0.5625rem;
-  padding: 0.75rem;
+  gap: 0.75em;
+  padding: 1em 0.95em;
   border: 1px solid #e3e9f3;
-  border-radius: 0.75rem;
+  border-radius: 0.9em;
+}
+
+.zm-q--slim {
+  gap: 0.35em;
+  padding: 0.85em 0.95em;
+  animation: zm-in 0.5s calc(var(--k, 0) * 0.25s + 1s) var(--ease) both;
 }
 
 .zm-q .soft {
   color: #56627e;
 }
 
+/* An entrance with both ends written out: the element itself is never
+   hidden, so with no animation (reduced motion) it simply stands there. */
+@keyframes zm-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.9em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .zm-risk {
-  padding: 0.1875rem 0.5625rem;
+  padding: 0.2em 0.65em;
   border-radius: 999px;
   background: #e5f0e9;
   color: #357150;
-  font-size: max(10px, 0.6875rem);
+  font-size: 0.85em;
   font-style: normal;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .zm-acts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.375rem;
+  gap: 0.45em;
 }
 
 .zm-acts span {
-  padding: 0.5625rem 0.25rem;
+  overflow: hidden;
+  padding: 0.75em 0.2em;
   border: 1px solid #d8e0ee;
-  border-radius: 0.5625rem;
+  border-radius: 0.65em;
   background: #fff;
+  font-size: 0.9em;
   font-weight: 700;
   text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .zm-acts .ok {
@@ -2394,29 +2519,55 @@ html:has(.zm-viewer[open]) {
   }
 }
 
+/* A label and its value, on one dashed line. */
+.zm-kv {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75em;
+  padding-block: 0.7em;
+  border-block-end: 1px dashed #d8e0ee;
+  color: #56627e;
+}
+
+.zm-kv b {
+  color: #0d1b3e;
+  text-align: end;
+}
+
+.zm-kv .up {
+  color: #357150;
+}
+
 .zm-trk {
-  padding: 0.5625rem;
-  border-radius: 0.5625rem;
+  padding: 0.8em;
+  border-radius: 0.65em;
   background: #f0f4fb;
   font-family: ui-monospace, monospace;
   letter-spacing: 0.08em;
   text-align: center;
 }
 
+/* The shipment's road, each step with its time: it spreads over the height
+   the screen has left, its line from the first dot to the last. */
 .zm-tl {
   position: relative;
-  display: grid;
-  gap: 0.875rem;
-  margin-block-start: 0.375rem;
-  padding-inline-start: 1.375rem;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.8em;
+  min-height: 9em;
+  padding-block: 0.5em;
+  padding-inline-start: 1.6em;
 }
 
 .zm-tl::before,
 .zm-tl::after {
   content: "";
   position: absolute;
-  inset-block: 0.375rem;
-  inset-inline-start: 0.375rem;
+  inset-block: 1.2em 2.4em;
+  inset-inline-start: 0.45em;
   width: 2px;
   background: #e3e9f3;
 }
@@ -2438,15 +2589,22 @@ html:has(.zm-viewer[open]) {
   font-weight: 600;
 }
 
+.zm-tl small {
+  display: block;
+  color: #7a859e;
+  font-size: 0.88em;
+  font-weight: 500;
+}
+
 .zm-tl li::before,
 .zm-tl li::after {
   content: "";
   position: absolute;
-  inset-block-start: 0.1875rem;
-  inset-inline-start: -1.375rem;
+  inset-block-start: 0.2em;
+  inset-inline-start: -1.6em;
   z-index: 1;
-  width: 0.875rem;
-  height: 0.875rem;
+  width: 1em;
+  height: 1em;
   border-radius: 50%;
 }
 
@@ -2468,32 +2626,97 @@ html:has(.zm-viewer[open]) {
 
 .zm-pf {
   display: grid;
-  gap: 2px;
 }
 
 .zm-pf .row {
-  padding: 0.5625rem 0;
+  padding-block: 0.65em;
   border-block-end: 1px dashed #d8e0ee;
-  animation: zm-fade 0.5s calc(var(--k, 0) * 0.28s + 0.2s) both;
+  animation: zm-in 0.5s calc(var(--k, 0) * 0.28s + 0.2s) var(--ease) both;
 }
 
 .zm-pf .net {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  padding-block-start: 0.75rem;
+  padding-block-start: 0.6em;
   font-weight: 700;
 }
 
 .zm-pf .net strong {
   color: #357150;
-  font-size: max(22px, 1.875rem);
+  font-size: 2.2em;
   letter-spacing: -0.03em;
+  line-height: 1.1;
 }
 
 .zm-pf .net small {
-  font-size: max(10px, 0.75rem);
+  font-size: 0.4em;
   font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* The week's profit, day by day: the bars grow from the floor. */
+.zm-bars {
+  display: flex;
+  flex: 1 1 0;
+  align-items: flex-end;
+  gap: 0.45em;
+  min-height: 4.5em;
+  padding-block-start: 0.5em;
+}
+
+.zm-bars i {
+  flex: 1;
+  height: var(--h);
+  border-radius: 0.45em 0.45em 0.2em 0.2em;
+  background: linear-gradient(180deg, #5b8df6, #165dff);
+  transform-origin: bottom;
+  animation: zm-grow 0.6s calc(var(--k, 0) * 0.08s + 0.6s) var(--ease) both;
+}
+
+@keyframes zm-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* The phone's own tab bar, fixed at its foot; the first tab is open. */
+.zm-tabbar {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 3.9em;
+  padding-block-end: 0.35em;
+  border-block-start: 1px solid #e3e9f3;
+  background: #fff;
+  color: #9aa6bd;
+  --duo: transparent;
+}
+
+.zm-tabbar i {
+  display: grid;
+  width: 2.4em;
+  height: 2.4em;
+  place-items: center;
+  border-radius: 0.75em;
+}
+
+.zm-tabbar i.on {
+  background: #eaf0ff;
+  color: var(--blue);
+  --duo: rgb(22 93 255 / 0.22);
+}
+
+.zm-tabbar svg {
+  width: 1.4em;
+  height: 1.4em;
 }
 
 /* ── The dashboard ── */
@@ -2515,27 +2738,33 @@ html:has(.zm-viewer[open]) {
 .zm-dhead > div > p:not(.zx-label) {
   max-width: 46ch;
   margin-block-start: 1rem;
-  color: rgb(231 236 245 / 0.72);
+  color: var(--n-soft);
 }
 
 .zm-dnav {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: rgb(255 255 255 / 0.7);
+  color: var(--n-soft);
   font-weight: 700;
 }
 
 .zm-dnav .zm-navbtn {
-  border-color: rgb(255 255 255 / 0.2);
-  background: rgb(255 255 255 / 0.08);
-  color: #fff;
+  border-color: var(--n-btn-line);
+  background: var(--n-btn);
+  color: var(--n-ink);
 }
 
 .zm-dnav .zm-navbtn--w {
-  border-color: #fff;
-  background: #fff;
-  color: var(--navy);
+  border-color: var(--n-on);
+  background: var(--n-on);
+  color: var(--n-on-ink);
+}
+
+.zm-dnav .zm-navbtn:hover {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
 }
 
 .zm-dtabs {
@@ -2546,12 +2775,13 @@ html:has(.zm-viewer[open]) {
 }
 
 .zm-dtab {
+  flex: none;
   min-height: 2.75rem;
   padding: 0.6875rem 1.375rem;
-  border: 1px solid rgb(255 255 255 / 0.22);
+  border: 1px solid var(--n-btn-line);
   border-radius: 999px;
   background: transparent;
-  color: #fff;
+  color: var(--n-ink);
   font-size: var(--t-small);
   font-weight: 700;
   white-space: nowrap;
@@ -2562,22 +2792,22 @@ html:has(.zm-viewer[open]) {
 }
 
 .zm-dtab:hover {
-  background: rgb(255 255 255 / 0.1);
+  background: var(--n-hover-bg);
 }
 
 .zm-dtab[aria-selected="true"] {
-  border-color: #fff;
-  background: #fff;
-  color: var(--navy);
+  border-color: var(--n-on);
+  background: var(--n-on);
+  color: var(--n-on-ink);
 }
 
 .zm-dwin {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 0.16);
+  border: 1px solid var(--n-win-line);
   border-radius: 1.25rem;
   background: #eef2fa;
-  box-shadow: 0 60px 100px -30px #000;
+  box-shadow: var(--n-win-shadow);
   transform: perspective(1800px) rotateX(calc(var(--ry, 0) * -1deg)) rotateY(calc(var(--rx, 0) * 1deg));
   transition: transform 0.25s ease-out;
 }
@@ -2658,7 +2888,7 @@ html:has(.zm-viewer[open]) {
 }
 
 .zm-dcap .n {
-  color: var(--cyan);
+  color: var(--n-accent);
   font-size: max(24px, 2.125rem);
   font-weight: 800;
   letter-spacing: -0.04em;
@@ -2670,7 +2900,7 @@ html:has(.zm-viewer[open]) {
 }
 
 .zm-dcap span {
-  color: rgb(231 236 245 / 0.72);
+  color: var(--n-soft);
   font-size: var(--t-small);
 }
 

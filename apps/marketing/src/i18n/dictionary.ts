@@ -144,18 +144,30 @@ export interface Dictionary {
       bump: string;
       orderNow: string;
       queue: string;
+      /** The queue's three counts: new, confirmed, later. */
+      counts: [Amount, Amount, Amount];
       orderNumber: string;
       risk: string;
       confirmed: string;
       refused: string;
       later: string;
+      /** The orders waiting under the one on the call. */
+      nextOrders: [QueuedOrder, QueuedOrder, QueuedOrder];
       shipment: string;
+      courier: Amount;
+      collect: Amount;
+      deliverTo: Amount;
       tracking: string;
       statuses: [string, string, string];
+      /** When each status came, under it. */
+      statusTimes: [string, string, string];
+      expected: Amount;
       profitTitle: string;
       rows: [Amount, Amount, Amount, Amount];
       net: Amount;
       currency: string;
+      /** Under the week's chart: how the week compares. */
+      week: Amount;
     };
     /** Under the drawings: they are an illustration. */
     note: string;
@@ -364,6 +376,13 @@ export interface Chip {
 export interface Amount {
   label: string;
   value: string;
+}
+
+/** An order in the journey's confirmation queue: its number, its product and its total, as written. */
+export interface QueuedOrder {
+  number: string;
+  item: string;
+  total: string;
 }
 
 export interface JourneyStep {

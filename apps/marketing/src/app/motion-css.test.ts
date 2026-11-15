@@ -108,3 +108,43 @@ describe("the home page's scale (home.css)", () => {
     for (const rule of all.filter((r) => /\.zm-btn[^ ]*:hover$/.test(r.selector))) expect(rule.body).not.toMatch(/scale/);
   });
 });
+
+describe("the night panels (home.css)", () => {
+  const all = rules(home);
+  const body = (selector: string) => all.filter((rule) => rule.selector === selector).map((rule) => rule.body).join("");
+
+  it("are light by day and night blue by night, through the site's own `.dark` class", () => {
+    expect(body(".zm-night")).toMatch(/--n-bg:\s*linear-gradient\([^;]*var\(--color-primary-soft\)/);
+    expect(body(".zm-night")).toMatch(/background:\s*var\(--n-bg\)/);
+    expect(body(".dark .zm-night")).toMatch(/--n-bg:\s*var\(--night\)/);
+    // The closing band stays night blue in both.
+    expect(body(".zm-end")).toMatch(/background:\s*var\(--night\)/);
+  });
+
+  it("colour the journey and the dashboard with the panel's tokens only", () => {
+    const parts = /^\.zm-(js|jlist|jstage|dhead|dnav|dtab|dwin|dcap|cap)\b|^\.zm-night \./;
+    const own = all.filter((rule) => parts.test(rule.selector));
+    expect(own.length).toBeGreaterThan(15);
+    // Two colours are the same in both themes on purpose: the browser frame's
+    // own grey (a device, as the phone is) and white type on the blue of a hovered button.
+    const same = new Set([".zm-dwin { background: #eef2fa }", ".zm-dnav .zm-navbtn:hover { color: #fff }"]);
+    const fixed = own.flatMap((rule) =>
+      rule.body
+        .split(";")
+        .map((declaration) => declaration.trim().replace(/\s+/g, " "))
+        .filter((declaration) => /^(?:color|background|border(?:-[a-z-]+)?|box-shadow):[^;]*(?:#[0-9a-f]{3,8}\b|rgb\()/i.test(declaration))
+        .map((declaration) => `${rule.selector} { ${declaration} }`)
+        .filter((line) => !same.has(line)),
+    );
+    expect(fixed).toEqual([]);
+  });
+
+  it("show the phone's screens coming in from a written start to a written end", () => {
+    const keyframes = (name: string) => home.match(new RegExp(`@keyframes ${name}\\s*\\{((?:[^{}]*\\{[^{}]*\\})*)\\s*\\}`))?.[1] ?? "";
+    expect(keyframes("zm-in")).toMatch(/from\s*\{[^}]*opacity:\s*0;/);
+    expect(keyframes("zm-in")).toMatch(/to\s*\{[^}]*opacity:\s*1;/);
+    expect(keyframes("zm-grow")).toMatch(/to\s*\{[^}]*scaleY\(1\)/);
+    // The cards that come in are never hidden by a rule of their own: with no animation they simply show.
+    for (const selector of [".zm-q--slim", ".zm-pf .row", ".zm-bars i"]) expect(body(selector)).not.toMatch(/opacity:\s*0/);
+  });
+});
