@@ -17,10 +17,10 @@ import { DataState } from "@/components/DataState";
 import { RangeSwitch } from "@/components/RangeSwitch";
 import { Section } from "@/components/Section";
 import { Select } from "@/components/Select";
-import { HBarList, Sparkline } from "@/components/charts";
+import { HBarList, LineAreaChart, Sparkline } from "@/components/charts";
 import { IconCaretDown, IconCoins, IconConfirm, IconOrders, IconShipping, type IconComponent } from "@/components/icons";
 import { PLACE_COLOR, type PlaceId } from "@/lib/places";
-import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
+import { fmt, getIntlLocale, useT, type Messages } from "@/i18n/LocaleContext";
 
 const STRINGS = {
   en: {
@@ -46,6 +46,14 @@ const STRINGS = {
     confirmationRate: "Confirmation rate",
     deliveryRate: "Delivery rate",
     allNumbers: "All the numbers ({n})",
+    salesSummary: "Sales for each day of {window}.",
+    fullReport: "Full report",
+    journeyTitle: "From an order to real money",
+    stepOrdered: "Orders",
+    stepConfirmed: "Confirmed",
+    stepDelivered: "Delivered",
+    stepProfit: "Net profit",
+    rateOf: "{label} {rate}",
     hintOrders: "Test and unpaid online orders are left out",
     hintNewOrders: "Still waiting for someone to open them",
     hintLost: "Checkouts started and never finished",
@@ -108,6 +116,14 @@ const STRINGS = {
     confirmationRate: "نسبة التأكيد",
     deliveryRate: "نسبة التسليم",
     allNumbers: "كل الأرقام ({n})",
+    salesSummary: "المبيعات لكل يوم خلال {window}.",
+    fullReport: "التقرير الكامل",
+    journeyTitle: "من الطلب للفلوس الحقيقية",
+    stepOrdered: "طلبات",
+    stepConfirmed: "اتأكدت",
+    stepDelivered: "اتسلّمت",
+    stepProfit: "صافي الربح",
+    rateOf: "{label} {rate}",
     hintOrders: "بدون الطلبات التجريبية وطلبات الدفع الإلكتروني غير المدفوعة",
     hintNewOrders: "لم يفتحها أحد بعد",
     hintLost: "بدأ العميل إتمام الطلب ولم يكمله",
@@ -181,18 +197,8 @@ const TILES: Tile[] = [
   { key: "leads", kind: "count", spark: "leads", hint: "hintLeads" },
 ];
 
-/**
- * The four figures a merchant looks for first, large, each with a picture in
- * the colour of its place: what was sold, how many orders, and the two rates
- * of cash on delivery (drawn as a bar as well as a number). The rest of
- * TILES sit under "All the numbers", one tap away.
- */
-const HEADLINE: Partial<Record<InsightsMetricKey, { icon: IconComponent; place: PlaceId }>> = {
-  sales: { icon: IconCoins, place: "money" },
-  orders: { icon: IconOrders, place: "orders" },
-  confirmationRate: { icon: IconConfirm, place: "orders" },
-  deliveryRate: { icon: IconShipping, place: "money" },
-};
+/** What the sales card shows itself (SalesCard): the rest of TILES sit under "All the numbers". */
+const IN_SALES_CARD: ReadonlySet<InsightsMetricKey> = new Set(["sales", "orders", "confirmationRate", "deliveryRate", "netProfit"]);
 
 /**
  * The store at a glance (SPEC §15.1): every KPI for the chosen period against
@@ -256,8 +262,7 @@ function OverviewBody({ data, busy }: { data: InsightsOverview; busy: boolean })
   const stepLabel = { visits: t.stepVisits, cart: t.stepCart, checkout: t.stepCheckout, purchase: t.stepPurchase };
   const deviceLabel: Record<string, string> = { mobile: t.mobile, desktop: t.desktop, tablet: t.tablet, unknown: t.unknown };
   const empty = <p className="text-sm text-ink-soft">{t.nothing}</p>;
-  const headline = TILES.filter((tile) => HEADLINE[tile.key]).sort((a, b) => Object.keys(HEADLINE).indexOf(a.key) - Object.keys(HEADLINE).indexOf(b.key));
-  const others = TILES.filter((tile) => !HEADLINE[tile.key]);
+  const others = TILES.filter((tile) => !IN_SALES_CARD.has(tile.key));
   const metricTile = (tile: Tile, hero?: { icon: IconComponent; place: PlaceId }) => {
     const metric = data.metrics[tile.key];
     return (
@@ -279,9 +284,7 @@ function OverviewBody({ data, busy }: { data: InsightsOverview; busy: boolean })
 
   return (
     <div className={cn("space-y-6 transition-opacity", busy && "opacity-60")}>
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        {headline.map((tile) => metricTile(tile, HEADLINE[tile.key]))}
-      </div>
+      <SalesCard data={data} money={money} show={show} />
 
       {/* The other figures, folded: a merchant opens them when looking for one. */}
       <details className="group/more">
@@ -405,6 +408,141 @@ function OverviewBody({ data, busy }: { data: InsightsOverview; busy: boolean })
         </Section>
       </div>
     </div>
+  );
+}
+
+/**
+ * Sales, the way a cash-on-delivery store has to read them (owner, 2026-11-15:
+ * "like Shopify, with our own logic"): the period's sales large, against the
+ * period before, and the day-by-day line under it, as Shopify leads its home
+ * with; then what Shopify has no need to show — the way from an order to
+ * money: how many orders came in, how many were confirmed (with the
+ * confirmation rate), how many reached the customer (with the delivery rate),
+ * and the net profit they leave. Each step opens the page where it is worked.
+ */
+function SalesCard({
+  data,
+  money,
+  show,
+}: {
+  data: InsightsOverview;
+  money: (v: number | null) => string;
+  show: (kind: Kind, v: number | null) => string;
+}) {
+  const t = useT(STRINGS);
+  const sales = data.metrics.sales;
+  const delta = deltaBasisPoints(sales.value, sales.previous);
+  const window = formatWindow(data.range.from, data.range.to);
+  const day = new Intl.DateTimeFormat(getIntlLocale(), { day: "numeric", month: "short" });
+  const sum = (key: "confirmed" | "delivered") => data.series.reduce((total, d) => total + (d[key] ?? 0), 0);
+  const steps: Array<{ key: string; label: string; value: string; note?: string; to: string; place: PlaceId; icon: IconComponent }> = [
+    { key: "orders", label: t.stepOrdered, value: show("count", data.metrics.orders.value), to: "/orders", place: "orders", icon: IconOrders },
+    {
+      key: "confirmed",
+      label: t.stepConfirmed,
+      value: formatCount(sum("confirmed")),
+      note: fmt(t.rateOf, { label: t.confirmationRate, rate: show("rate", data.metrics.confirmationRate.value) }),
+      to: "/confirmation-queue",
+      place: "orders",
+      icon: IconConfirm,
+    },
+    {
+      key: "delivered",
+      label: t.stepDelivered,
+      value: formatCount(sum("delivered")),
+      note: fmt(t.rateOf, { label: t.deliveryRate, rate: show("rate", data.metrics.deliveryRate.value) }),
+      to: "/orders?stage=delivered",
+      place: "money",
+      icon: IconShipping,
+    },
+    { key: "profit", label: t.stepProfit, value: money(data.metrics.netProfit.value), to: "/profit", place: "analytics", icon: IconCoins },
+  ];
+
+  return (
+    <Card data-slot="sales-card" className="gap-0 p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <Link to="/analytics" className="group/sales block rounded-xl focus-visible:outline-2 focus-visible:outline-primary">
+          <span className="block text-sm font-medium text-ink-soft">{t.sales}</span>
+          <span className="tabular-nums mt-0.5 block text-[2rem] leading-tight font-bold tracking-tight text-ink sm:text-[2.5rem]">
+            <bdi dir="ltr">{money(sales.value)}</bdi>
+          </span>
+          {delta !== null && (
+            <span className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+              <DeltaChip delta={delta} />
+              <span className="text-ink-soft">{t.vsPrevious}</span>
+            </span>
+          )}
+        </Link>
+        <Link to="/analytics" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:underline">
+          {t.fullReport}
+        </Link>
+      </div>
+
+      <div className="mt-4" dir="ltr">
+        <LineAreaChart
+          points={data.series.map((d) => ({ label: day.format(new Date(`${d.date}T12:00:00`)), value: d.sales }))}
+          format={(v) => money(v)}
+          height={170}
+          summary={fmt(t.salesSummary, { window })}
+        />
+      </div>
+
+      <h3 className="mt-5 text-sm font-semibold text-ink">{t.journeyTitle}</h3>
+      <ol className="mt-3 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+        {steps.map((step, i) => {
+          const color = PLACE_COLOR[step.place];
+          const Icon = step.icon;
+          return (
+            <li key={step.key} className="relative">
+              <Link
+                to={step.to}
+                data-journey-step={step.key}
+                className="flex h-full flex-col rounded-2xl border border-line p-3.5 transition-[border-color,transform] duration-150 hover:-translate-y-0.5 hover:border-primary/40 focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+              >
+                <span className="flex items-center gap-2 text-xs font-medium text-ink-soft">
+                  <span aria-hidden className="grid size-7 place-items-center rounded-lg [&>svg]:size-4" style={{ backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)`, color }}>
+                    <Icon strokeWidth={2} />
+                  </span>
+                  {step.label}
+                </span>
+                <span className="tabular-nums mt-2 text-xl font-bold text-ink">
+                  <bdi dir="ltr">{step.value}</bdi>
+                </span>
+                {step.note && <span className="mt-0.5 text-xs text-ink-soft">{step.note}</span>}
+              </Link>
+              {/* The way runs from one step to the next. */}
+              {i < steps.length - 1 && (
+                <span aria-hidden className="pointer-events-none absolute -end-2 top-1/2 z-10 hidden size-4 -translate-y-1/2 place-items-center rounded-full bg-paper-raised text-ink-soft ring-1 ring-line lg:grid">
+                  <IconCaretDown className="size-3 -rotate-90 rtl:rotate-90" />
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </Card>
+  );
+}
+
+/** A change against the period before, as a tinted chip: green up, red down. */
+function DeltaChip({ delta, inverse = false }: { delta: number; inverse?: boolean }) {
+  const up = delta > 0;
+  const down = delta < 0;
+  const good = inverse ? down : up;
+  const bad = inverse ? up : down;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
+        good && "bg-success-soft text-success",
+        bad && "bg-danger-soft text-danger",
+        !up && !down && "bg-paper-sunken text-ink-soft"
+      )}
+    >
+      <bdi dir="ltr">
+        {up ? "▲" : down ? "▼" : "•"} {formatPercentValue(Math.abs(delta) / 10000)}
+      </bdi>
+    </span>
   );
 }
 

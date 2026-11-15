@@ -54,6 +54,7 @@ import { STORE_REPORTS_ENABLED, TWO_FACTOR_ENABLED } from "@/lib/features";
 import { SummaryReportsSection } from "./SummaryReportsSection";
 import { HolidayModeSection } from "./HolidayModeSection";
 import { SETTINGS_SECTIONS, SETTINGS_SECTION_STRINGS, isSettingsSectionShown, type SettingsSectionId } from "./settingsSections";
+import { useExplain } from "@/components/ExplainToggle";
 
 const STRINGS = {
   en: {
@@ -357,8 +358,70 @@ const LOGO_STRINGS = {
   ar: { tabIcon: "شعارك هو أيضًا أيقونة متجرك في تبويب المتصفح. استخدم صورة مربعة لا تقل عن 192×192." },
 } satisfies Messages;
 
+/** The store profile card, in both languages: it was written in English only. */
+const PROFILE_STRINGS = {
+  en: {
+    title: "Store profile",
+    description: "The name, logo, and tagline shown across your dashboard and storefront.",
+    saved: "Store profile saved.",
+    name: "Name",
+    logo: "Logo",
+    logoAlt: "Store logo",
+    none: "None",
+    resizing: "Resizing…",
+    uploading: "Uploading…",
+    upload: "Upload logo",
+    remove: "Remove",
+    logoTypes: "PNG, JPEG, GIF or WEBP, up to 5MB.",
+    tagline: "Tagline",
+    taglineHint: "Optional — a short line shown under your store name.",
+    colours: "Store colours",
+    coloursHint: "Used for your storefront header, buttons and links.",
+    primary: "Primary",
+    primaryHint: "Buttons, links and highlights.",
+    secondary: "Secondary",
+    secondaryHint: "Accents and badges.",
+    preview: "Preview",
+    addToCart: "Add to cart",
+    sale: "Sale",
+    viewDetails: "View details",
+    saving: "Saving…",
+    save: "Save",
+  },
+  ar: {
+    title: "بيانات المتجر",
+    description: "الاسم والشعار والجملة التعريفية التي تظهر في لوحة التحكم وفي متجرك.",
+    saved: "تم حفظ بيانات المتجر.",
+    name: "الاسم",
+    logo: "الشعار",
+    logoAlt: "شعار المتجر",
+    none: "لا يوجد",
+    resizing: "جارٍ تصغير الصورة…",
+    uploading: "جارٍ الرفع…",
+    upload: "ارفع الشعار",
+    remove: "إزالة",
+    logoTypes: "PNG أو JPEG أو GIF أو WEBP، حتى 5 ميجابايت.",
+    tagline: "جملة تعريفية",
+    taglineHint: "اختيارية: سطر قصير يظهر تحت اسم متجرك.",
+    colours: "ألوان المتجر",
+    coloursHint: "تظهر في رأس متجرك وأزراره وروابطه.",
+    primary: "اللون الأساسي",
+    primaryHint: "الأزرار والروابط وما تريد إبرازه.",
+    secondary: "اللون الثانوي",
+    secondaryHint: "اللمسات والشارات.",
+    preview: "معاينة",
+    addToCart: "أضف للسلة",
+    sale: "تخفيض",
+    viewDetails: "عرض التفاصيل",
+    saving: "جارٍ الحفظ…",
+    save: "حفظ",
+  },
+} satisfies Messages;
+
 function WorkspaceProfileSection() {
   const logoText = useT(LOGO_STRINGS);
+  const p = useT(PROFILE_STRINGS);
+  const explain = useExplain(p.description);
   const workspaceId = useWorkspaceId();
   const { currentWorkspace } = useWorkspace();
   const saveThemeSettings = useSaveThemeSettings();
@@ -428,7 +491,7 @@ function WorkspaceProfileSection() {
         if (secondary !== initialColors.secondary) themeSettings.secondaryColor = secondary;
         return { name: name.trim(), tagline: tagline.trim() || null, logoUrl, themeSettings };
       });
-      toast.success("Store profile saved.");
+      toast.success(p.saved);
     } catch (err) {
       const fields = getFieldErrors(err);
       setFieldErrors(fields);
@@ -440,16 +503,17 @@ function WorkspaceProfileSection() {
 
   return (
     <section className="rounded-[var(--radius-card)] border border-line p-5">
-      <h2 className="font-display text-lg font-medium text-ink">Store profile</h2>
-      <p className="mt-1 text-sm text-ink-soft">
-        The name, logo, and tagline shown across your dashboard and storefront.
-      </p>
+      <h2 className="flex items-center gap-1.5 font-display text-lg font-bold text-ink">
+        {p.title}
+        {explain.button}
+      </h2>
+      {explain.text}
 
       <form onSubmit={submit} className="mt-4 space-y-4">
         {formError && <Alert variant="danger">{formError}</Alert>}
 
         <TextField
-          label="Name"
+          label={p.name}
           data-search-anchor="store-name"
           required
           value={name}
@@ -458,17 +522,17 @@ function WorkspaceProfileSection() {
         />
 
         <div className="space-y-1.5" data-search-anchor="store-logo">
-          <Label>Logo</Label>
+          <Label>{p.logo}</Label>
           <div className="flex flex-wrap items-center gap-4">
             {logoUrl ? (
               <img
                 src={logoUrl}
-                alt="Store logo"
+                alt={p.logoAlt}
                 className="size-16 rounded-[0.5rem] border border-line bg-paper object-contain"
               />
             ) : (
               <div className="flex size-16 items-center justify-center rounded-[0.5rem] border border-dashed border-line text-xs text-ink-soft">
-                None
+                {p.none}
               </div>
             )}
             <label
@@ -477,7 +541,7 @@ function WorkspaceProfileSection() {
                 uploading && "pointer-events-none opacity-50"
               )}
             >
-              {logoStage === "preparing" ? "Resizing…" : logoStage === "uploading" ? "Uploading…" : "Upload logo"}
+              {logoStage === "preparing" ? p.resizing : logoStage === "uploading" ? p.uploading : p.upload}
               <input
                 type="file"
                 accept={ACCEPTED_IMAGE_ACCEPT}
@@ -488,47 +552,45 @@ function WorkspaceProfileSection() {
             </label>
             {logoUrl && (
               <Button type="button" variant="ghost" size="sm" onClick={() => setLogoUrl(null)}>
-                Remove
+                {p.remove}
               </Button>
             )}
           </div>
-          <p className="text-xs text-ink-soft">PNG, JPEG, GIF or WEBP, up to 5MB.</p>
+          <p className="text-xs text-ink-soft">{p.logoTypes}</p>
           <p className="text-xs text-ink-soft">{logoText.tabIcon}</p>
         </div>
 
         <TextField
-          label="Tagline"
+          label={p.tagline}
           value={tagline}
           onChange={(e) => setTagline(e.target.value)}
           error={fieldErrors.tagline}
-          hint="Optional — a short line shown under your store name."
+          hint={p.taglineHint}
         />
 
         <div className="space-y-4 rounded-[0.5rem] border border-line p-4" data-search-anchor="brand-colours">
           <div>
-            <h3 className="text-sm font-medium text-ink">Store colours</h3>
-            <p className="mt-0.5 text-xs text-ink-soft">
-              Used for your storefront header, buttons and links.
-            </p>
+            <h3 className="text-sm font-medium text-ink">{p.colours}</h3>
+            <p className="mt-0.5 text-xs text-ink-soft">{p.coloursHint}</p>
           </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
             <ColorField
-              label="Primary"
-              hint="Buttons, links and highlights."
+              label={p.primary}
+              hint={p.primaryHint}
               value={primaryColor}
               onChange={setPrimaryColor}
             />
             <ColorField
-              label="Secondary"
-              hint="Accents and badges."
+              label={p.secondary}
+              hint={p.secondaryHint}
               value={secondaryColor}
               onChange={setSecondaryColor}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label>Preview</Label>
+            <Label>{p.preview}</Label>
             <div
               className="flex flex-wrap items-center gap-3 rounded-[0.5rem] border border-line p-3"
               style={{ backgroundColor: `${normalizeHex(primaryColor) ?? DEFAULT_PRIMARY}14` }}
@@ -537,19 +599,19 @@ function WorkspaceProfileSection() {
                 className="rounded-[0.5rem] px-3 py-1.5 text-sm font-medium text-white"
                 style={{ backgroundColor: normalizeHex(primaryColor) ?? DEFAULT_PRIMARY }}
               >
-                Add to cart
+                {p.addToCart}
               </span>
               <span
                 className="rounded-full px-2.5 py-1 text-xs font-medium text-white"
                 style={{ backgroundColor: normalizeHex(secondaryColor) ?? DEFAULT_SECONDARY }}
               >
-                Sale
+                {p.sale}
               </span>
               <span
                 className="text-sm font-medium"
                 style={{ color: normalizeHex(primaryColor) ?? DEFAULT_PRIMARY }}
               >
-                View details
+                {p.viewDetails}
               </span>
             </div>
           </div>
@@ -557,7 +619,7 @@ function WorkspaceProfileSection() {
 
         <div className="flex justify-end">
           <Button type="submit" disabled={saving || uploading || !name.trim() || !colorsValid}>
-            {saving ? "Saving…" : "Save"}
+            {saving ? p.saving : p.save}
           </Button>
         </div>
       </form>

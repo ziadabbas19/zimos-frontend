@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { useExplain } from "@/components/ExplainToggle";
 
 interface PageHeaderProps {
   title: string;
@@ -32,6 +33,8 @@ export function PageActionBar({ children }: { children: ReactNode }) {
 }
 
 export function PageHeader({ title, titleMeta, titleBadge, description, back, actions, primaryAction }: PageHeaderProps) {
+  // The page's explanation sits behind a «؟» beside the title: the title and the page come first.
+  const explain = useExplain(description);
   return (
     <div className="mb-6">
       {back && (
@@ -52,8 +55,9 @@ export function PageHeader({ title, titleMeta, titleBadge, description, back, ac
               </span>
             )}
             {titleBadge && <span className="ms-2 align-middle">{titleBadge}</span>}
+            {explain.button && <span className="ms-1.5 align-middle">{explain.button}</span>}
           </h1>
-          {description && <p className="mt-1 text-sm text-ink-soft">{description}</p>}
+          {explain.text}
         </div>
         {(actions || primaryAction) && (
           <div className="flex items-center gap-2">
