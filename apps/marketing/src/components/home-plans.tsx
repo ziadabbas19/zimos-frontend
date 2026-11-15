@@ -4,7 +4,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { yearlyBreakdown, yearlySaves } from "@store-builder/ui/plan-pricing";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionary";
-import { formatDays, formatNumber, formatOrderCount, formatPrice } from "@/lib/format";
+import { formatDays, formatNumber, formatOrderCount, formatPrice, priceParts } from "@/lib/format";
 import type { PublicOffer } from "@/lib/plan-offer";
 import type { PublicPlan } from "@/lib/plans";
 import { REGISTER_URL, registerUrlFor, registerUrlForPayPerOrder } from "@/lib/urls";
@@ -13,32 +13,6 @@ import { useLiveOffer } from "./use-live-offer";
 
 type Copy = Dictionary["pricing"];
 type Cycle = "monthly" | "yearly";
-
-const intlLocale = (locale: Locale) => (locale === "ar" ? "ar-EG" : "en-US");
-
-/** A price from the API (minor units) split the way the card draws it: the currency small, the number large. */
-function priceParts(minor: number, currency: string, locale: Locale) {
-  let digits = 2;
-  try {
-    digits = new Intl.NumberFormat("en", { style: "currency", currency }).resolvedOptions().maximumFractionDigits ?? 2;
-  } catch {
-    /* an unknown currency: two decimals */
-  }
-  const value = minor / 10 ** digits;
-  const fraction = Number.isInteger(value) ? 0 : digits;
-  let symbol = currency;
-  let before = true;
-  try {
-    const parts = new Intl.NumberFormat(intlLocale(locale), { style: "currency", currency, maximumFractionDigits: fraction }).formatToParts(value);
-    const at = parts.findIndex((part) => part.type === "currency");
-    symbol = at >= 0 ? parts[at].value.trim() : currency;
-    before = at >= 0 && at < parts.findIndex((part) => part.type === "integer");
-  } catch {
-    /* keep the code */
-  }
-  const number = (n: number) => new Intl.NumberFormat(intlLocale(locale), { minimumFractionDigits: fraction, maximumFractionDigits: fraction }).format(n);
-  return { value, symbol, before, number };
-}
 
 /**
  * A number that counts to its value when its cycle is switched on (`turn`
@@ -66,12 +40,13 @@ function Count({ value, from, turn, format }: { value: number; from: number; tur
  * The home page's plans, read from the API like the pricing page's
  * (use-live-offer.ts): the monthly / yearly switch over them, a card for
  * each plan with its price, limits and features, then the pay-per-order
- * plan as a wide strip when the API offers it.
+ * plan as a wide card when the API offers it. The cards' look is
+ * app/plans.css, shared with the pricing page.
  *
- * With exactly three plans the middle one is the one to look at: blue,
- * raised a little on a computer, with the badge "Most popular" and the
- * brighter button. It is picked by its place in the console's order, never
- * by its price; any other number of plans has no badge.
+ * With exactly three plans the middle one is the one to look at: a glowing
+ * blue edge, the badge "Most popular" over its top edge and the light sky
+ * button. It is picked by its place in the console's order, never by its
+ * price; any other number of plans has no badge.
  *
  * Every price of both cycles is in the HTML: the switch is two radio inputs
  * and the cards show one cycle or the other with CSS (home.css
@@ -96,9 +71,9 @@ export function HomePlans({ initial, copy, locale }: { initial: PublicOffer | nu
 
   if (plans.length === 0 && !payPerOrder) {
     return (
-      <div className="zm-plan zm-soon">
-        <h3>{copy.comingSoon}</h3>
-        <p className="zm-psub">{copy.comingSoonBody}</p>
+      <div className="zp-plan zm-soon">
+        <h3 className="zp-name">{copy.comingSoon}</h3>
+        <p className="zp-psub">{copy.comingSoonBody}</p>
         <div className="zm-ctas">
           <a className="zm-btn zm-btn--blue" href={REGISTER_URL}>
             {copy.comingSoonCta}
@@ -134,27 +109,29 @@ export function HomePlans({ initial, copy, locale }: { initial: PublicOffer | nu
         </ul>
       ) : null}
 
+      {/* Pay per order: its fee large at the start, what it is in the middle, the button at the end. */}
       {payPerOrder ? (
         <ul>
-          <li className="zm-ppo" aria-labelledby={`home-plan-${payPerOrder.id}`}>
-            <strong className="ltr">
-              {formatPrice(payPerOrder.feePerOrder, payPerOrder.currency, locale)} <small>{copy.payPerOrder.perOrder}</small>
-            </strong>
-            <div>
-              <span className="badge">{copy.payPerOrder.badge}</span>
-              <h3 id={`home-plan-${payPerOrder.id}`}>{payPerOrder.name}</h3>
-              <p>{copy.payPerOrder.tagline}</p>
+          <li className="zp-ppo zp-ppo--wide" aria-labelledby={`home-plan-${payPerOrder.id}`}>
+            <p className="zp-ppo-price">
+              <span className="ltr">{formatPrice(payPerOrder.feePerOrder, payPerOrder.currency, locale)}</span> <small>{copy.payPerOrder.perOrder}</small>
+            </p>
+            <div className="zp-ppo-body">
+              <span className="zp-ppo-tag" id={`home-plan-${payPerOrder.id}`}>
+                {payPerOrder.name}
+              </span>
+              <h3 className="zp-ppo-name">{copy.payPerOrder.title}</h3>
               <p>
                 {payPerOrder.freeOrders > 0 ? `${copy.payPerOrder.freeOrders.replace("{orders}", formatOrderCount(payPerOrder.freeOrders, locale))} · ` : ""}
                 {payPerOrder.feeChargedAt === "confirmation" ? copy.payPerOrder.feeAtConfirmation : copy.payPerOrder.feeAtPlacement}. {copy.payPerOrder.noExpiry}.
               </p>
-            </div>
-            <div className="zm-buy">
-              <a className="zm-btn zm-btn--line" href={registerUrlForPayPerOrder(payPerOrder.id)}>
-                {copy.payPerOrder.cta}
-                <Arrow size={16} className="zm-arr" />
-              </a>
               <small>{copy.payPerOrder.howToChoose}</small>
+            </div>
+            <div className="zp-ppo-buy">
+              <a className="zp-btn zp-btn--dark" href={registerUrlForPayPerOrder(payPerOrder.id)}>
+                {copy.payPerOrder.cta}
+                <Arrow size={16} className="zp-arr" />
+              </a>
             </div>
           </li>
         </ul>
@@ -178,7 +155,7 @@ function PlanCard({
   showYearly: boolean;
   turn: number;
   cycle: Cycle;
-  /** The plan to look at: blue, raised, with the "Most popular" badge. */
+  /** The plan to look at: the glowing edge, the "Most popular" badge, the sky button. */
   hot: boolean;
 }) {
   const headingId = `home-plan-${plan.id}`;
@@ -189,10 +166,10 @@ function PlanCard({
   const year = priceParts(plan.yearlyPrice, plan.currency, locale);
   const limit = (value: number | null) => (value === null ? copy.unlimited : formatNumber(value, locale));
   const features = plan.features.filter((key): key is keyof Copy["features"] => key in copy.features);
-  const button = hot ? "zm-btn zm-btn--volt" : "zm-btn zm-btn--blue";
+  const button = hot ? "zp-btn zp-btn--hot" : "zp-btn";
 
   const price = (parts: typeof month, from: number, on: boolean, per: string) => (
-    <div className="zm-price">
+    <div className="zp-price">
       {parts.before ? <small>{parts.symbol}</small> : null}
       <strong>
         <Count value={parts.value} from={from} turn={on ? turn : 0} format={parts.number} />
@@ -203,27 +180,27 @@ function PlanCard({
   );
 
   return (
-    <li className={hot ? "zm-plan zm-plan--hot" : "zm-plan"} aria-labelledby={headingId}>
-      {/* The badge beside the name, on the same row; a long name pushes it to the next one, never under it. */}
-      <div className="zm-plan-top">
-        <h3 id={headingId}>{plan.name}</h3>
-        {hot ? <span className="zm-badge">{copy.mostPopular}</span> : null}
-      </div>
+    <li className={hot ? "zp-plan zp-plan--hot" : "zp-plan"} aria-labelledby={headingId}>
+      <h3 id={headingId} className="zp-name">
+        {plan.name}
+      </h3>
+      {/* Over the card's top edge (plans.css), after the name for a reader. */}
+      {hot ? <span className="zp-badge">{copy.mostPopular}</span> : null}
 
       {free ? (
-        <div className="zm-price">
+        <div className="zp-price">
           <strong>{copy.free}</strong>
         </div>
       ) : (
         <>
           <div className={both ? "zm-m" : undefined}>
             {price(month, year.value, cycle === "monthly", copy.perMonth)}
-            <p className="zm-psub">{both ? copy.yearlyEquivalent.replace("{price}", formatPrice(plan.yearlyPrice, plan.currency, locale)) : " "}</p>
+            <p className="zp-psub">{copy.billedMonthly}</p>
           </div>
           {both ? (
             <div className="zm-y">
               {price(year, month.value, cycle === "yearly", copy.perYear)}
-              <p className="zm-psub">
+              <p className="zp-psub">
                 {yearly?.fullYear != null ? (
                   <>
                     <span className="sr-only">{copy.fullYearLabel} </span>
@@ -237,9 +214,9 @@ function PlanCard({
         </>
       )}
 
-      {plan.trialDays > 0 ? <p className="zm-trial">{copy.trial.replace("{days}", formatDays(plan.trialDays, locale))}</p> : null}
+      {plan.trialDays > 0 ? <p className="zp-trial">{copy.trial.replace("{days}", formatDays(plan.trialDays, locale))}</p> : null}
 
-      <div className="zm-lim">
+      <div className="zp-lim">
         <span>
           {copy.stores}: {limit(plan.maxStores)}
         </span>
@@ -254,7 +231,7 @@ function PlanCard({
       </div>
 
       {features.length > 0 ? (
-        <ul>
+        <ul className="zp-feats">
           {features.map((feature) => (
             <li key={feature}>
               <Check size={16} />
@@ -264,17 +241,17 @@ function PlanCard({
         </ul>
       ) : null}
 
-      <div className={both ? "zm-buy zm-m" : "zm-buy"}>
+      <div className={both ? "zp-buy zm-m" : "zp-buy"}>
         <a className={button} href={registerUrlFor(plan.id, "monthly")}>
           {copy.cta}
-          <Arrow size={16} className="zm-arr" />
+          <Arrow size={16} className="zp-arr" />
         </a>
       </div>
       {both ? (
-        <div className="zm-buy zm-y">
+        <div className="zp-buy zm-y">
           <a className={button} href={registerUrlFor(plan.id, "yearly")}>
             {copy.ctaYearly}
-            <Arrow size={16} className="zm-arr" />
+            <Arrow size={16} className="zp-arr" />
           </a>
         </div>
       ) : null}

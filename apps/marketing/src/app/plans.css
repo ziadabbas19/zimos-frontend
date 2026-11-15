@@ -1,0 +1,487 @@
+/* ══ Plan cards ═══════════════════════════════════════════════════════
+   The plans as cards, one look on the home page (components/home-plans.tsx)
+   and on /pricing (components/plan-cards.tsx), inside a `.zp` wrapper:
+   a card with large corners and a thin line on a soft gradient; the price
+   large, its currency small before it and the period small after; the
+   plan's limits as blue chips; its features with blue ticks; the button
+   at the card's foot, so the cards of a row are one height.
+
+   With exactly three plans the middle one, by its place in the console's
+   order, has a glowing blue edge, a soft glow around it that breathes
+   (and stands still under reduced motion), the "Most popular" badge over
+   its top edge and the light sky button. It is not raised or enlarged:
+   the cards of a row stay one height. The pay-per-order plan is a wide
+   card under them.
+
+   Sizes are in rem, so each page's own scale applies (home.css `--s`, the
+   site's 0.9 zoom elsewhere). Colours are the tokens below, set for the
+   light theme and again under the site's `.dark` class. */
+
+.zp {
+  --zp-blue: #165dff;
+  --zp-blue-deep: #0b46cc;
+  --zp-cyan: #6fdcff;
+  --zp-navy: #0d1b3e;
+  --zp-ink: var(--color-ink);
+  --zp-soft-ink: var(--color-ink-soft);
+  --zp-card: var(--color-paper-raised);
+  --zp-line: var(--color-line);
+  --zp-tint: var(--color-primary-soft);
+  --zp-shadow: rgb(13 27 62 / 0.14);
+  /* Chips' text, ticks, a trial, the pay-per-order price. */
+  --zp-accent: var(--zp-blue);
+  --zp-chip: color-mix(in srgb, var(--zp-blue) 9%, transparent);
+  --zp-bg: linear-gradient(170deg, var(--zp-card) 35%, color-mix(in srgb, var(--zp-tint) 55%, var(--zp-card)));
+  /* The plan to look at. */
+  --zp-hot-bg: linear-gradient(170deg, var(--zp-card) 20%, color-mix(in srgb, var(--zp-tint) 90%, var(--zp-card)));
+  --zp-hot-ink: var(--zp-ink);
+  --zp-hot-soft: var(--zp-soft-ink);
+  --zp-hot-accent: var(--zp-blue);
+  --zp-hot-chip: var(--zp-chip);
+  --zp-glow: color-mix(in srgb, var(--zp-blue) 45%, transparent);
+  /* The pay-per-order card and its dark button. */
+  --zp-ppo-bg: linear-gradient(170deg, var(--zp-tint), color-mix(in srgb, var(--zp-tint) 35%, var(--zp-card)));
+  --zp-dark-btn: var(--zp-navy);
+  --zp-dark-btn-ink: #fff;
+  --zp-dark-btn-line: var(--zp-navy);
+}
+
+.dark .zp {
+  --zp-shadow: rgb(0 0 0 / 0.5);
+  --zp-accent: #8db1ff;
+  --zp-chip: rgb(91 141 246 / 0.14);
+  --zp-bg: linear-gradient(170deg, var(--zp-card) 35%, color-mix(in srgb, var(--zp-tint) 70%, var(--zp-card)));
+  --zp-hot-bg: linear-gradient(170deg, var(--zp-navy), #070b14);
+  --zp-hot-ink: #fff;
+  --zp-hot-soft: rgb(255 255 255 / 0.7);
+  --zp-hot-accent: var(--zp-cyan);
+  --zp-hot-chip: rgb(111 220 255 / 0.14);
+  --zp-glow: rgb(22 93 255 / 0.75);
+  --zp-ppo-bg: linear-gradient(170deg, var(--zp-tint), var(--zp-card));
+  --zp-dark-btn: var(--zp-card);
+  --zp-dark-btn-ink: var(--zp-ink);
+  --zp-dark-btn-line: var(--zp-line);
+}
+
+.zp-plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 2.125rem 1.75rem 1.75rem;
+  border: 1px solid var(--zp-line);
+  border-radius: 1.5rem;
+  background: var(--zp-bg);
+  color: var(--zp-ink);
+  transition:
+    translate 0.4s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.4s;
+}
+
+@media (hover: hover) {
+  .zp-plan:hover {
+    box-shadow: 0 40px 60px -30px var(--zp-shadow);
+    translate: 0 -0.375rem;
+  }
+}
+
+.zp-plan--hot {
+  z-index: 1;
+  border-color: transparent;
+  background: var(--zp-hot-bg);
+  box-shadow: 0 32px 70px -34px var(--zp-glow);
+  color: var(--zp-hot-ink);
+}
+
+/* The glowing edge: a gradient ring, cyan to blue. */
+.zp-plan--hot::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  padding: 1.5px;
+  border-radius: inherit;
+  background: linear-gradient(160deg, var(--zp-cyan), var(--zp-blue) 45%, var(--zp-blue) 70%, var(--zp-cyan));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* The glow around it: a shadow outside the card only, so it never tints
+   what is on the card; it breathes by its opacity alone. */
+.zp-plan--hot::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: 0 0 2.75rem 0.25rem var(--zp-glow);
+  opacity: 0.55;
+  animation: zp-glow 4s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes zp-glow {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 0.85;
+  }
+}
+
+@media (hover: hover) {
+  .zp-plan.zp-plan--hot:hover {
+    box-shadow: 0 40px 80px -34px var(--zp-glow);
+  }
+}
+
+.zp-plan--hot ::selection {
+  background: rgb(22 93 255 / 0.3);
+}
+
+/* Over the card's top edge, at the start of the line. */
+.zp-badge {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 1.75rem;
+  z-index: 2;
+  padding: 0.375rem 0.875rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--zp-blue), #17b6ff);
+  box-shadow: 0 8px 20px -8px rgb(22 93 255 / 0.75);
+  color: #fff;
+  font-size: max(10.5px, 0.75rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  white-space: nowrap;
+  translate: 0 -50%;
+}
+
+.zp:is([dir="rtl"] *) .zp-badge {
+  letter-spacing: 0;
+}
+
+.zp-name {
+  font-family: var(--font-display);
+  font-size: max(19px, 1.625rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.zp:is([dir="rtl"] *) .zp-name {
+  letter-spacing: 0;
+}
+
+.zp-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.5rem;
+  margin: 1.25rem 0 0.375rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.zp-price strong {
+  font-family: var(--font-display);
+  font-size: max(36px, 3.5rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.zp-price small {
+  color: var(--zp-soft-ink);
+  font-size: max(11px, 0.875rem);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.zp-psub {
+  min-height: 1.3rem;
+  color: var(--zp-soft-ink);
+  font-size: max(11px, 0.875rem);
+}
+
+.zp-psub s {
+  text-decoration-thickness: 2px;
+}
+
+.zp-plan--hot :is(.zp-price small, .zp-psub) {
+  color: var(--zp-hot-soft);
+}
+
+.zp-trial {
+  margin-block-start: 0.5rem;
+  color: var(--zp-accent);
+  font-size: max(11px, 0.875rem);
+  font-weight: 600;
+}
+
+.zp-lim {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block: 1.25rem;
+}
+
+.zp-lim span {
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  background: var(--zp-chip);
+  color: var(--zp-accent);
+  font-size: max(10.5px, 0.78rem);
+  font-weight: 700;
+}
+
+.zp-feats {
+  display: grid;
+  gap: 0.625rem;
+  margin-block-end: 1.75rem;
+  font-size: max(11px, 0.875rem);
+}
+
+.zp-feats li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+}
+
+.zp-feats svg {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  margin-block-start: 0.1875rem;
+  color: var(--zp-accent);
+}
+
+.zp-plan--hot :is(.zp-trial, .zp-feats svg) {
+  color: var(--zp-hot-accent);
+}
+
+.zp-plan--hot .zp-lim span {
+  background: var(--zp-hot-chip);
+  color: var(--zp-hot-accent);
+}
+
+/* The button sits at the card's foot, whatever is above it. */
+.zp-buy {
+  margin-block-start: auto;
+}
+
+.zp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  width: 100%;
+  min-height: max(44px, 3rem);
+  padding: 0.75rem 1.5rem;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  background: var(--zp-blue);
+  box-shadow: 0 12px 28px -12px rgb(22 93 255 / 0.8);
+  color: #fff;
+  font-size: max(13px, 0.97rem);
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background-color 0.25s,
+    border-color 0.25s,
+    box-shadow 0.25s;
+}
+
+.zp-btn:hover {
+  background: var(--zp-blue-deep);
+}
+
+/* The plan to look at: light sky, navy type. */
+.zp-btn--hot {
+  background: linear-gradient(180deg, #8ddcff, #45adff);
+  box-shadow:
+    0 12px 34px -10px rgb(79 195 255 / 0.75),
+    inset 0 1px 0 rgb(255 255 255 / 0.6);
+  color: #05132e;
+}
+
+.zp-btn--hot:hover {
+  background: linear-gradient(180deg, #a3e3ff, #5cb8ff);
+}
+
+/* Pay per order: a dark pill (the card's own colour, edged, in the dark theme). */
+.zp-btn--dark {
+  border-color: var(--zp-dark-btn-line);
+  background: var(--zp-dark-btn);
+  box-shadow: 0 12px 26px -16px rgb(13 27 62 / 0.8);
+  color: var(--zp-dark-btn-ink);
+}
+
+.zp-btn--dark:hover {
+  border-color: var(--zp-blue);
+  background: var(--zp-dark-btn);
+}
+
+.zp-arr {
+  flex: none;
+  transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.zp-btn:hover .zp-arr {
+  transform: translateX(0.25rem);
+}
+
+.zp:is([dir="rtl"] *) .zp-arr {
+  transform: scaleX(-1);
+}
+
+.zp:is([dir="rtl"] *) .zp-btn:hover .zp-arr {
+  transform: translateX(-0.25rem) scaleX(-1);
+}
+
+/* ── Pay per order ──
+   A card of its own: on a computer, under three plans, one wide row (the
+   fee large on one side, what it is in the middle, the button on the other
+   side); anywhere else its parts stand one under the other. */
+.zp-ppo {
+  display: grid;
+  align-content: start;
+  gap: 1.25rem;
+  min-width: 0;
+  padding: 1.75rem;
+  border: 1px solid var(--zp-line);
+  border-radius: 1.5rem;
+  background: var(--zp-ppo-bg);
+  color: var(--zp-ink);
+}
+
+.zp-ppo-price {
+  color: var(--zp-accent);
+  font-family: var(--font-display);
+  font-size: max(30px, 2.75rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.zp-ppo-price small {
+  color: var(--zp-soft-ink);
+  font-size: max(11px, 0.875rem);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.zp-ppo-tag {
+  display: inline-block;
+  margin-block-end: 0.5rem;
+  padding: 0.1875rem 0.75rem;
+  border-radius: 999px;
+  background: var(--zp-chip);
+  color: var(--zp-accent);
+  font-size: max(10.5px, 0.78rem);
+  font-weight: 700;
+}
+
+.zp-ppo-name {
+  font-family: var(--font-display);
+  font-size: max(16px, 1.3rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+.zp-ppo-body > p {
+  margin-block-start: 0.375rem;
+  color: var(--zp-soft-ink);
+  font-size: max(11px, 0.875rem);
+  line-height: 1.55;
+}
+
+.zp-ppo-body > small {
+  display: block;
+  margin-block-start: 0.5rem;
+  color: var(--zp-soft-ink);
+  font-size: max(10.5px, 0.78rem);
+  line-height: 1.5;
+}
+
+.zp-ppo-body > .zp-ppo-free {
+  color: var(--zp-accent);
+  font-weight: 600;
+}
+
+.zp-ppo-facts {
+  display: grid;
+  gap: 0.5rem;
+  margin-block-start: 0.875rem;
+  color: var(--zp-soft-ink);
+  font-size: max(11px, 0.875rem);
+}
+
+.zp-ppo-facts li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+}
+
+.zp-ppo-facts svg {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  margin-block-start: 0.1875rem;
+  color: var(--zp-accent);
+}
+
+.zp-ppo-buy {
+  display: grid;
+  gap: 0.625rem;
+}
+
+.zp-ppo-buy small {
+  color: var(--zp-soft-ink);
+  font-size: max(10.5px, 0.78rem);
+  line-height: 1.5;
+}
+
+@media (min-width: 1024px) {
+  .zp-ppo--wide {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 2rem;
+    padding: 1.75rem 2rem;
+  }
+
+  .zp-ppo--wide .zp-ppo-buy {
+    justify-items: end;
+    max-width: 16rem;
+  }
+
+  .zp-ppo--wide .zp-ppo-buy .zp-btn {
+    width: auto;
+    min-width: 11rem;
+  }
+
+  .zp-ppo--wide .zp-ppo-buy small {
+    text-align: end;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zp-plan,
+  .zp-btn,
+  .zp-arr {
+    transition: none;
+  }
+
+  .zp-plan--hot::after {
+    animation: none;
+  }
+}

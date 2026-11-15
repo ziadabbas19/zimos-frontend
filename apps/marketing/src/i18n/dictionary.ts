@@ -230,8 +230,8 @@ export interface Dictionary {
     yearlySave: string;
     perMonth: string;
     perYear: string;
-    /** "{price}" */
-    yearlyEquivalent: string;
+    /** Under a monthly price, muted. */
+    billedMonthly: string;
     /** Read before the struck-out twelve monthly payments under a yearly price (screen readers only). */
     fullYearLabel: string;
     /** "{price}": the yearly price over twelve months, under it. */
@@ -267,6 +267,8 @@ export interface Dictionary {
       /** The pill above the plan's name. */
       badge: string;
       tagline: string;
+      /** The home page's wide card: what the plan is, as its title (its name, from the API, is the pill above). */
+      title: string;
       /** After the fee, like perMonth. */
       perOrder: string;
       /** "{orders}" (lib/format formatOrderCount). */

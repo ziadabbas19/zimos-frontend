@@ -17,6 +17,7 @@ const read = (file: string) =>
 
 const landing = read("landing.css");
 const home = read("home.css");
+const plans = read("plans.css");
 
 /** The innermost rules of `text`: each selector, and the body it carries. */
 function rules(text: string) {
@@ -146,5 +147,33 @@ describe("the night panels (home.css)", () => {
     expect(keyframes("zm-grow")).toMatch(/to\s*\{[^}]*scaleY\(1\)/);
     // The cards that come in are never hidden by a rule of their own: with no animation they simply show.
     for (const selector of [".zm-q--slim", ".zm-pf .row", ".zm-bars i"]) expect(body(selector)).not.toMatch(/opacity:\s*0/);
+  });
+});
+
+describe("the plan cards (plans.css)", () => {
+  const all = rules(plans);
+  const body = (selector: string) => all.filter((rule) => rule.selector === selector).map((rule) => rule.body).join("");
+
+  it("let the marked plan's glow breathe by its opacity, and stand still for someone who asked for less motion", () => {
+    expect(body(".zp-plan--hot::after")).toMatch(/animation:\s*zp-glow[^;]*infinite/);
+    expect(plans).toMatch(/@keyframes zp-glow\s*\{\s*from\s*\{\s*opacity:[^}]*\}\s*to\s*\{\s*opacity:[^}]*\}\s*\}/);
+    expect(rules(block(plans, "@media (prefers-reduced-motion: reduce)"))).toContainEqual(expect.objectContaining({ selector: ".zp-plan--hot::after", body: expect.stringMatching(/animation:\s*none/) }));
+  });
+
+  it("never raise or enlarge the marked plan, so the cards of a row stay one height", () => {
+    expect(body(".zp-plan--hot")).not.toMatch(/scale|translate|transform/);
+    expect(body(".zp-buy")).toMatch(/margin-block-start:\s*auto/);
+  });
+
+  it("set the colours for the light theme and again under `.dark`", () => {
+    expect(body(".zp")).toMatch(/--zp-hot-bg:/);
+    expect(body(".dark .zp")).toMatch(/--zp-hot-bg:\s*linear-gradient\(170deg, var\(--zp-navy\), #070b14\)/);
+  });
+
+  it("are loaded by the home page after its own stylesheet, and by the pricing page", () => {
+    const home = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "[locale]/page.tsx"), "utf8");
+    expect(home.indexOf('import "../plans.css"')).toBeGreaterThan(home.indexOf('import "../home.css"'));
+    const pricing = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "[locale]/pricing/page.tsx"), "utf8");
+    expect(pricing).toContain('import "../../plans.css"');
   });
 });

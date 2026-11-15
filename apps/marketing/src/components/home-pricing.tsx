@@ -4,7 +4,6 @@ import Link from "next/link";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionary";
 import { getPublicOffer } from "@/lib/plans";
-import { Arrow } from "./duo-icons";
 import { HomePlans } from "./home-lazy";
 import type { Icon3DName } from "./icon-3d";
 import { SectionLabel } from "./section-label";
@@ -16,8 +15,9 @@ const POINT_ICON: Icon3DName[] = ["receipt", "tools", "lock", "bank"];
  * What it costs, on the home page itself: the plans on offer with their
  * prices, limits and features, read from the API as the pricing page reads
  * them and read again in the browser on every visit (home-plans.tsx, its
- * own chunk) — so every figure is the platform's own — with the way to the
- * whole pricing page. Under them, what should reassure a merchant about
+ * own chunk) — so every figure is the platform's own — and a line under
+ * them: how payment works, the refund policy and the way to the whole
+ * pricing page. Under that, what should reassure a merchant about
  * paying: what is paid for, that the store is built before it is paid for,
  * whose data it is, and how payment works; the last point ends with the
  * refund policy link.
@@ -35,16 +35,15 @@ export async function HomePricing({ copy, trust, locale }: { copy: Dictionary["p
           <p>{copy.intro}</p>
         </header>
 
-        <div className="zm-pwrap rv">
+        <div className="zm-pwrap zp rv">
           <HomePlans initial={offer} copy={copy} locale={locale} />
         </div>
 
-        <div className="zm-pall rv">
-          <Link className="zm-btn zm-btn--line" href={`/${locale}/pricing`} data-mag="">
-            {copy.seeAll}
-            <Arrow size={18} className="zm-arr" />
-          </Link>
-        </div>
+        {/* How payment works, the refund policy, and every plan on the pricing page. */}
+        <p className="zm-pnote rv">
+          {copy.paymentNote} <Link href={`/${locale}/refund-policy`}>{copy.refundLink}</Link>.{" "}
+          <Link href={`/${locale}/pricing`}>{copy.seeAll}</Link>
+        </p>
 
         <div className="zm-trust">
           {trust.points.map((point, i) => (

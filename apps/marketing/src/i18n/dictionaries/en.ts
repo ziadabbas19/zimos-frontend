@@ -335,7 +335,7 @@ export const en: Dictionary = {
     yearlySave: "Save",
     perMonth: "/ month",
     perYear: "/ year",
-    yearlyEquivalent: "or {price} / year",
+    billedMonthly: "Billed monthly",
     fullYearLabel: "Instead of paying monthly for a year:",
     perMonthEquivalent: "= {price} / month",
     free: "Free",
@@ -378,6 +378,7 @@ export const en: Dictionary = {
     payPerOrder: {
       badge: "No subscription",
       tagline: "Pay only for each order, with no monthly or yearly subscription.",
+      title: "No subscription: pay only for each order",
       perOrder: "/ order",
       freeOrders: "Your first {orders} free",
       feeAtConfirmation: "Each order's fee is taken from your prepaid balance when the order is confirmed",

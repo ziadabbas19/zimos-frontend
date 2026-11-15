@@ -340,7 +340,7 @@ export const ar: Dictionary = {
     yearlySave: "وفّر",
     perMonth: "/ شهريا",
     perYear: "/ سنويا",
-    yearlyEquivalent: "أو {price} / سنويا",
+    billedMonthly: "يُدفع شهريا",
     fullYearLabel: "بدلا من الدفع الشهري لمدة سنة:",
     perMonthEquivalent: "= {price} / شهر",
     free: "مجانا",
@@ -383,6 +383,7 @@ export const ar: Dictionary = {
     payPerOrder: {
       badge: "دون اشتراك",
       tagline: "ادفع لكل طلب فقط، دون اشتراك شهري أو سنوي.",
+      title: "دون اشتراك: ادفع لكل طلب فقط",
       perOrder: "/ لكل طلب",
       freeOrders: "أول {orders} مجانا",
       feeAtConfirmation: "يتم خصم رسوم الطلب من رصيدك المدفوع مسبقا عند تأكيد الطلب",

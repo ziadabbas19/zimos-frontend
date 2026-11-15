@@ -72,27 +72,48 @@ describe("the home page's plans", () => {
     expect(radios[1].checked).toBe(true);
   });
 
-  it("raises the middle of three plans, with its badge and the brighter button, and no other", () => {
+  it("marks the middle of three plans, with its badge and the sky button, and no other", () => {
     const three: PublicOffer = {
       plans: [offer.plans[0], { ...offer.plans[0], id: "pro", name: "Pro", monthlyPrice: 71900, yearlyPrice: 719000 }, offer.plans[1]],
       payPerOrder: offer.payPerOrder,
     };
     const { container } = render(createElement(HomePlans, { initial: three, copy: en.pricing, locale: "en" }));
-    const hot = container.querySelectorAll(".zm-plan--hot");
+    const hot = container.querySelectorAll(".zp-plan--hot");
     expect(hot).toHaveLength(1);
+    expect([...container.querySelectorAll(".zp-plan")].indexOf(hot[0])).toBe(1);
     expect(hot[0].getAttribute("aria-labelledby")).toBe(screen.getByRole("heading", { name: "Pro" }).id);
-    expect(hot[0].querySelector(".zm-badge")?.textContent).toBe(en.pricing.mostPopular);
-    expect([...hot[0].querySelectorAll("a")].every((a) => a.classList.contains("zm-btn--volt"))).toBe(true);
-    expect(container.querySelectorAll(".zm-badge")).toHaveLength(1);
+    expect(hot[0].querySelector(".zp-badge")?.textContent).toBe(en.pricing.mostPopular);
+    expect([...hot[0].querySelectorAll("a")].every((a) => a.classList.contains("zp-btn--hot"))).toBe(true);
+    expect(container.querySelectorAll(".zp-badge")).toHaveLength(1);
+    // The others keep the blue button.
+    expect([...container.querySelectorAll(".zp-plan:not(.zp-plan--hot) a")].every((a) => a.className === "zp-btn")).toBe(true);
     cleanup();
     // Two plans: no badge at all.
     const { container: two } = render(createElement(HomePlans, { initial: offer, copy: en.pricing, locale: "en" }));
-    expect(two.querySelector(".zm-plan--hot, .zm-badge")).toBeNull();
+    expect(two.querySelector(".zp-plan--hot, .zp-badge")).toBeNull();
   });
 
-  it("offers pay per order as its own plan, and says so kindly when there is no plan", () => {
+  it("writes the price large between its currency and its period, billed monthly under it", () => {
+    const { container } = render(createElement(HomePlans, { initial: offer, copy: en.pricing, locale: "en" }));
+    const monthly = container.querySelector(".zp-plan .zm-m")!;
+    const price = monthly.querySelector(".zp-price")!;
+    expect([...price.children].map((part) => part.textContent)).toEqual(["EGP", "319", en.pricing.perMonth]);
+    expect(price.querySelector("strong")?.textContent).toBe("319");
+    expect(monthly.querySelector(".zp-psub")?.textContent).toBe(en.pricing.billedMonthly);
+    // The limits as chips, the button at the card's foot.
+    expect([...container.querySelectorAll(".zp-plan")[0].querySelectorAll(".zp-lim span")].map((chip) => chip.textContent)).toEqual(["Stores: 1", "Funnels a month: 5", "Orders a month: 1,000"]);
+    expect(container.querySelectorAll(".zp-plan")[0].lastElementChild?.classList.contains("zp-buy")).toBe(true);
+  });
+
+  it("offers pay per order as its own wide card, and says so kindly when there is no plan", () => {
     render(createElement(HomePlans, { initial: offer, copy: en.pricing, locale: "en" }));
-    expect(screen.getByRole("heading", { name: "Pay per order" }).closest("li")!.querySelector("a")!.getAttribute("href")).toBe("https://app.zimos.co/register?plan=payg");
+    const ppo = screen.getByRole("listitem", { name: "Pay per order" });
+    expect(ppo.classList.contains("zp-ppo--wide")).toBe(true);
+    expect(ppo.querySelector(".zp-ppo-price")?.textContent?.replace(/\s+/g, " ")).toBe("EGP 0.75 / order");
+    expect(screen.getByRole("heading", { name: en.pricing.payPerOrder.title }).closest("li")).toBe(ppo);
+    const link = ppo.querySelector("a")!;
+    expect(link.getAttribute("href")).toBe("https://app.zimos.co/register?plan=payg");
+    expect(link.className).toBe("zp-btn zp-btn--dark");
     cleanup();
     render(createElement(HomePlans, { initial: null, copy: en.pricing, locale: "en" }));
     expect(screen.getByText(en.pricing.comingSoon)).toBeTruthy();
