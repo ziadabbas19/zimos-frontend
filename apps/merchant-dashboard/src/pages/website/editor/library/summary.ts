@@ -79,7 +79,7 @@ export function elementSummary(element: PageElement, locale: EditorLocale): stri
     case "countdown": {
       const hours = numberOf(props.endsInHours);
       const until = str("endsAt")
-        ? new Date(str("endsAt")).toLocaleString(locale === "ar" ? "ar-EG" : "en-US")
+        ? new Date(str("endsAt")).toLocaleString(locale === "ar" ? "ar-EG-u-nu-latn" : "en-US")
         : hours !== null && hours > 0 && t.hours(hours);
       return join([str("label"), until]);
     }

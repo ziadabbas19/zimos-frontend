@@ -26,7 +26,11 @@
      (the bars) and overlay (menus, dialogs) float over arbitrary content — a
      product photo, the brand tile — so they stay near solid: below this their
      labels lose 4.5:1 over a white or a black image. */
-  --lg-fill: color-mix(in srgb, var(--color-paper-raised) 58%, transparent);
+  /* The page's sheets (cards, tables, sections) are solid white, with a soft
+     shadow under them (--lg-card-shadow): owner, 2026-11-15, "the card's
+     background white, premium". The frame around them stays glass. */
+  --lg-fill: var(--color-paper-raised);
+  --lg-card-shadow: 0 1px 2px rgb(13 27 62 / 0.05), 0 12px 32px -18px rgb(13 27 62 / 0.2);
   --lg-control: color-mix(in srgb, var(--color-paper-raised) 70%, transparent);
   --lg-control-lit: color-mix(in srgb, var(--color-paper-raised) 94%, transparent);
   --lg-frost: color-mix(in srgb, var(--color-paper-raised) 88%, transparent);
@@ -123,7 +127,8 @@
     --lg-text-danger: color-mix(in srgb, var(--color-danger) 86%, white);
     --destructive: var(--lg-text-danger);
 
-    --lg-fill: color-mix(in srgb, var(--color-paper-raised) 46%, transparent);
+    --lg-fill: color-mix(in srgb, var(--color-paper-raised) 94%, transparent);
+    --lg-card-shadow: 0 16px 36px -20px rgb(0 0 0 / 0.75);
     --lg-control: color-mix(in srgb, var(--color-paper-raised) 58%, transparent);
     --lg-control-lit: color-mix(in srgb, var(--color-paper-sunken) 92%, transparent);
     --lg-frost: color-mix(in srgb, var(--color-paper-raised) 88%, transparent);
@@ -309,12 +314,14 @@
   .glass-app [data-slot="card"] {
     --tw-ring-color: var(--lg-edge);
     --tw-inset-shadow: var(--lg-rim);
+    --tw-shadow: var(--lg-card-shadow);
     background-image: var(--lg-sheen);
   }
   .glass-app main :where([class~="bg-paper-raised"]):where([class*="rounded-[var(--radius-card)]"], [class~="rounded-2xl"], [class~="rounded-xl"]):not(.sticky, .fixed, .absolute, [class~="rounded-es-sm"]) {
     background-color: var(--lg-fill);
     background-image: var(--lg-sheen);
     --tw-inset-shadow: var(--lg-rim);
+    --tw-shadow: var(--lg-card-shadow);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
   }
   /* The same sheet where a page only gives it its surface from md up (lists that are cards on a phone). */

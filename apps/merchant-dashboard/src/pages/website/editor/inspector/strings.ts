@@ -10,7 +10,7 @@ import type { EditorLocale } from "../editorLocale";
 /** A count in the language's own digits («٣», never a stray "3" in Arabic). */
 export function inspectorNumber(n: number, locale: EditorLocale): string {
   try {
-    return new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US").format(n);
+    return new Intl.NumberFormat(locale === "ar" ? "ar-EG-u-nu-latn" : "en-US").format(n);
   } catch {
     return String(n);
   }

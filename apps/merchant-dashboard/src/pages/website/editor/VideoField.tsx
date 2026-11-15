@@ -43,7 +43,7 @@ const STRINGS = {
 function megabytes(bytes: number, locale: EditorLocale): string {
   const mb = bytes / (1024 * 1024);
   try {
-    return new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", { maximumFractionDigits: 1 }).format(mb);
+    return new Intl.NumberFormat(locale === "ar" ? "ar-EG-u-nu-latn" : "en-US", { maximumFractionDigits: 1 }).format(mb);
   } catch {
     return mb.toFixed(1);
   }

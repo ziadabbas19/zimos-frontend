@@ -410,10 +410,10 @@ describe("the side menu's group headings", () => {
   const tokens = read("ui/theme/tokens.css");
   const menuCss = read("ui/theme/glass/menu.css");
 
-  it("are drawn in the brand, in the pinned group and the phone menu; the side menu names its places beside their tiles", () => {
-    // The side menu has no group headings any more: each place is a row with its coloured tile (PlaceRow).
+  it("are drawn in the brand, in the pinned group and the phone menu; the side menu names its place beside its tile", () => {
+    // The side menu has no group headings any more: the place chosen in the dock, beside its coloured tile.
     expect(read("components/shell/SidebarNav.tsx")).not.toContain("zimos-menu-heading");
-    expect(read("components/shell/SidebarNav.tsx")).toContain("<PlaceTile place={place.id}");
+    expect(read("components/shell/SidebarNav.tsx")).toContain("<PlaceTile place={shown.id}");
     expect(read("components/SidebarShortcuts.tsx")).toContain('"min-w-0 flex-1 truncate font-semibold text-primary", sheet ? "text-[13px]" : "text-[12px]"');
     expect(read("components/shell/PhoneMenu.tsx")).toMatch(/<h3 id=\{headingId\} className="[^"]*text-\[13px\] font-semibold tracking-normal text-primary"/);
   });

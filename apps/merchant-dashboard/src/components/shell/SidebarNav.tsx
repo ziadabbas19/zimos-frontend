@@ -6,13 +6,16 @@ import { StoreLinkBar } from "@/components/StoreLinkBar";
 import { ViewLink } from "@/components/ViewLink";
 import { ZimosLogo } from "@/components/ZimosLogo";
 import { NavBadge } from "@/components/shell/NavBadge";
-import { usePlaceName } from "@/components/shell/PlaceDock";
+import { usePlaceName } from "@/components/shell/usePlaceName";
 import { PlaceTile } from "@/components/shell/PlaceTile";
 import { StoreSwitcher } from "@/components/shell/StoreSwitcher";
+import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
+import { fmt, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
 import { NAV_GROUPS, NAV_LABELS, findNavItem, isNavItemVisible, isSidebarItem, sidebarHome, type NavGroup, type NavItem } from "@/lib/navigation";
-import { FOOT_GROUP_ID, placeBadge, placeOf, placesFor, type Place } from "@/lib/places";
+import { FOOT_GROUP_ID, placeOf, placesFor } from "@/lib/places";
+import { useHomeShortcuts } from "@/lib/homeShortcuts";
+import { DEFAULT_SHORTCUT_IDS, shortcutsOf, type ShortcutBadge, type ShortcutEntry } from "@/pages/home/shortcutCatalog";
 import { prefetchProps } from "@/lib/prefetch";
 import { usePlanFeatures } from "@/lib/usePlanFeatures";
 import { useWorkCounts, type WorkCounts } from "@/lib/workCounts";
@@ -117,44 +120,42 @@ export function NavRow({ item, label, counts, current = false, variant = "rail",
   );
 }
 
+/** A Home shortcut's count, read from the shell's counts by the queue it shows. */
+const SHORTCUT_BADGE: Record<ShortcutBadge, NavItem["badge"]> = { awaiting: "toConfirm", reviews: "reviews", unread: "unread" };
+
 /**
- * One place of the dashboard in the side menu: its tile in its colour, its
- * name, and — while you are elsewhere — the count of its most urgent waiting
- * work. It goes to the place's first page. A place of one page (Home) is that
- * page's own row, lit while you are on it.
+ * One of the member's Home shortcuts (pages/home/shortcutCatalog.ts), as a row
+ * of the side menu under Home: the same row as a page's, with the shortcut's
+ * own words.
  */
-function PlaceRow({ place, name, counts, open, current }: { place: Place; name: string; counts: WorkCounts; open: boolean; current: boolean }) {
-  const badge = open ? null : placeBadge(place, counts);
+function ShortcutRow({ entry, counts, current }: { entry: ShortcutEntry; counts: WorkCounts; current: boolean }) {
+  const { locale } = useLocale();
+  const Icon = entry.icon;
+  const badge = entry.badge ? SHORTCUT_BADGE[entry.badge] : undefined;
   return (
     <ViewLink
-      to={place.to}
+      to={entry.to}
       aria-current={current ? "page" : undefined}
-      data-slot="place-row"
-      data-place={place.id}
-      data-open={open ? "" : undefined}
-      className={cn(
-        ROW,
-        "zimos-place-row h-9 ps-1.5 pe-3 pointer-coarse:h-11",
-        current ? "bg-primary text-primary-foreground" : open ? "font-semibold text-ink" : "text-ink hover:bg-paper-sunken"
-      )}
+      data-slot="menu-row"
+      className={cn(ROW, ROW_RAIL, current ? "bg-primary text-primary-foreground" : "text-ink hover:bg-paper-sunken")}
     >
-      <PlaceTile place={place.id} onBrand={current} className="size-[26px]" />
-      <span className="zimos-place-name min-w-0 flex-1 truncate">{name}</span>
-      {badge && <NavBadge kind={badge.kind} count={badge.count} />}
+      <Icon strokeWidth={current ? 2.25 : 1.75} className={cn("size-[18px] shrink-0", !current && "text-ink-soft group-hover/row:text-ink")} aria-hidden />
+      <span className="min-w-0 flex-1 truncate">{entry.title[locale]}</span>
+      {badge && <NavBadge kind={badge} count={counts[badge]} onBrand={current} />}
     </ViewLink>
   );
 }
 
 /**
  * The side menu's contents: the ZIMOS logo, the store being worked on, the
- * pinned shortcuts, then the dashboard's places in their order, each beside
- * its coloured tile (the same tiles as the dock under the page). The place
- * you are in is open under its name with its pages; the others are one row
- * each, so the menu stays short and says where you are at a glance. Under a
- * hairline at the bottom, the group that must always be in reach (My Plan,
- * Settings, support). The entries, their order and who sees each one come
- * from lib/navigation.ts. `shortcuts` is the pinned group (SidebarShortcuts),
- * passed in by the layout.
+ * pinned shortcuts, then the one place chosen in the dock under the page
+ * (components/shell/PlaceDock.tsx) — its tile and name, and its pages under
+ * them (owner, 2026-11-15: "the side menu shows only what I choose from the
+ * bottom"). Home's pages are Home itself and the member's Home shortcuts. A
+ * page of the foot group shows Home's. Under a hairline at the bottom, the
+ * group that must always be in reach (My Plan, Settings, support). The
+ * entries, their order and who sees each one come from lib/navigation.ts.
+ * `shortcuts` is the pinned group (SidebarShortcuts), passed in by the layout.
  */
 export function SidebarNav({ shortcuts }: { shortcuts?: ReactNode }) {
   const { currentWorkspace } = useWorkspace();
@@ -172,6 +173,11 @@ export function SidebarNav({ shortcuts }: { shortcuts?: ReactNode }) {
   const activeTo = sidebarHome(findNavItem(location.pathname));
   const here = placeOf(location.pathname);
   const places = placesFor(permissions, plan.gated);
+  // The place chosen in the dock; a page of the foot group (or outside the menu) shows Home's.
+  const shown = places.find((place) => place.id === here) ?? places.find((place) => place.id === "main") ?? places[0] ?? null;
+  const { user } = useAuth();
+  const homeRow = useHomeShortcuts(currentWorkspace?.id, user?.id);
+  const homeShortcuts = shortcutsOf(homeRow.answer?.shortcuts ?? homeRow.hint ?? DEFAULT_SHORTCUT_IDS, { permissions, available: homeRow.answer?.available });
 
   // The list is longer than the pane: bring the current row into view when the page changes.
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -217,23 +223,22 @@ export function SidebarNav({ shortcuts }: { shortcuts?: ReactNode }) {
           className="zimos-menu-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 pt-2.5 pb-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [@media(max-height:52rem)]:flex-none [@media(max-height:52rem)]:overflow-visible"
         >
           {shortcuts}
-          <div className="flex flex-col gap-0.5">
-            {places.map((place) => {
-              const open = place.id === here;
-              // Home is one page: its row is the page's own.
-              const single = place.items.length === 1 && place.group.labelKey === null;
-              return (
-                <div key={place.id}>
-                  <PlaceRow place={place} name={placeName(place)} counts={counts} open={open} current={single && place.to === activeTo} />
-                  {open && !single && (
-                    <div id={`zimos-nav-${place.id}`} data-reveal="" className="mt-0.5 mb-2 ms-[1.4rem] flex flex-col gap-0.5 border-s border-line ps-2">
-                      {place.items.map(row)}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          {shown && (
+            <section aria-labelledby="zimos-place-title" data-place-open={shown.id}>
+              {/* The place's name beside its tile: where you are, said once at the top. */}
+              <h2 id="zimos-place-title" className="mb-2 flex items-center gap-2.5 px-1.5 pt-1 text-[15px] font-bold text-ink">
+                <PlaceTile place={shown.id} className="size-8" />
+                <span className="min-w-0 flex-1 truncate">{placeName(shown)}</span>
+              </h2>
+              <div id={`zimos-nav-${shown.id}`} data-reveal="" className="flex flex-col gap-0.5">
+                {shown.items.map(row)}
+                {shown.id === "main" &&
+                  homeShortcuts
+                    .filter((entry) => !shown.items.some((item) => item.to === entry.to))
+                    .map((entry) => <ShortcutRow key={entry.id} entry={entry} counts={counts} current={entry.to === location.pathname} />)}
+              </div>
+            </section>
+          )}
         </div>
 
         {footItems.length > 0 && (

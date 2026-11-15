@@ -265,7 +265,7 @@ describe("a slide's background video", () => {
     expect(screen.getByText("فيديو الخلفية")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "تغيير الفيديو" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "إزالة الفيديو" })).toBeInTheDocument();
-    expect(screen.getByText(/يتأخر تحميله عند العملاء/)).toHaveTextContent("٩٫٤");
+    expect(screen.getByText(/يتأخر تحميله عند العملاء/)).toHaveTextContent("9.4");
     expect(screen.getByText(/أضف الصورة أيضًا/)).toBeInTheDocument();
   });
 });

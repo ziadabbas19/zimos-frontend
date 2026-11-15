@@ -3,11 +3,11 @@ import { cn } from "@store-builder/ui";
 import { ViewLink } from "@/components/ViewLink";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { getIntlLocale, useT, type Messages } from "@/i18n/LocaleContext";
-import { NAV_GROUP_LABELS, NAV_LABELS } from "@/lib/navigation";
-import { placeBadge, placeOf, placesFor, type Place } from "@/lib/places";
+import { placeBadge, placeOf, placesFor } from "@/lib/places";
 import { usePlanFeatures } from "@/lib/usePlanFeatures";
 import { useWorkCounts } from "@/lib/workCounts";
 import { PlaceTile } from "./PlaceTile";
+import { usePlaceName } from "./usePlaceName";
 
 const STRINGS = {
   en: { label: "Places", over: "{n}+" },
@@ -16,13 +16,6 @@ const STRINGS = {
 
 /** Above this a tile's count says «٩٩+». */
 const MAX_SHOWN = 99;
-
-/** A place's name: the main page by its own name, every other place by its group's heading. */
-export function usePlaceName() {
-  const navLabels = useT(NAV_LABELS);
-  const groupLabels = useT(NAV_GROUP_LABELS);
-  return (place: Place) => (place.group.labelKey ? groupLabels[place.group.labelKey] : navLabels.overview);
-}
 
 /**
  * The dock (from `md` up): every place of the dashboard as an app tile in its
