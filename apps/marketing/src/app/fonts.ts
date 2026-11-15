@@ -1,7 +1,7 @@
-import { Alexandria, Fraunces, IBM_Plex_Sans_Arabic, Plus_Jakarta_Sans } from "next/font/google";
+import { Alexandria, IBM_Plex_Sans_Arabic, Plus_Jakarta_Sans } from "next/font/google";
 
 /**
- * All four families are declared on every route (the locale is only known
+ * All three families are declared on every route (the locale is only known
  * per-request, below the root layout). Each exposes a CSS variable; the root
  * layout puts every `.variable` class on <html> plus a `lang-*` class, and
  * `globals.css` maps `--font-heading` / `--font-body` to the right pair for
@@ -11,21 +11,15 @@ import { Alexandria, Fraunces, IBM_Plex_Sans_Arabic, Plus_Jakarta_Sans } from "n
  * preloaded one is downloaded whatever the page. next/font preloads per
  * layout, not per locale, and both locales share the root layout, so only
  * the Arabic pair — Arabic being the default locale — is preloaded. The
- * English pair (about 94 KB) is fetched when an English page asks for it
- * (Fraunces only where a title is set in it: pricing, contact and the
- * policies), and an Arabic page no longer downloads it at all.
+ * English face is fetched when an English page asks for it, and an Arabic
+ * page never downloads it.
+ *
+ * English is one family, titles and text alike: Plus Jakarta Sans, its
+ * titles in the heavy weights (the owner's pick, 2026-11-15, from the
+ * landing they sent). The serif English titles (Fraunces) are gone.
  */
 
-// English headings — display serif.
-export const fraunces = Fraunces({
-  subsets: ["latin"],
-  display: "swap",
-  axes: ["opsz"],
-  variable: "--font-fraunces",
-  preload: false,
-});
-
-// English body.
+// English titles and text: one variable file for every weight, 200 to 800.
 export const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   display: "swap",
@@ -50,9 +44,4 @@ export const plexArabic = IBM_Plex_Sans_Arabic({
 });
 
 /** Space-separated `.variable` classes for every family. */
-export const fontVariables = [
-  fraunces.variable,
-  plusJakarta.variable,
-  alexandria.variable,
-  plexArabic.variable,
-].join(" ");
+export const fontVariables = [plusJakarta.variable, alexandria.variable, plexArabic.variable].join(" ");

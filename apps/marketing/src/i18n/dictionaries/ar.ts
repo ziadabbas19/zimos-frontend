@@ -337,6 +337,7 @@ export const ar: Dictionary = {
     cta: "اشترك",
     ctaYearly: "اشترك سنويا",
     mostPopular: "الأكثر طلبًا",
+    everythingIn: "كل مزايا {plan}",
     seeAll: "عرض كل الخطط والأسعار",
     comingSoon: "ستتوفر الأسعار قريبا.",
     comingSoonBody: "نضع اللمسات الأخيرة على خططنا. أنشئ حسابك الآن وسنعرض لك الخطط فور نشرها.",

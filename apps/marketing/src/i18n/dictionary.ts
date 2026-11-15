@@ -236,6 +236,8 @@ export interface Dictionary {
     ctaYearly: string;
     /** The badge on the middle of three plans (the home page and the pricing page). */
     mostPopular: string;
+    /** "{plan}": first in a plan's features when it has every feature of the plan before it; the list then names only what it adds. */
+    everythingIn: string;
     seeAll: string;
     comingSoon: string;
     comingSoonBody: string;

@@ -332,6 +332,7 @@ export const en: Dictionary = {
     cta: "Subscribe",
     ctaYearly: "Subscribe yearly",
     mostPopular: "Most popular",
+    everythingIn: "Everything in {plan}",
     seeAll: "See all plans and prices",
     comingSoon: "Prices will be available soon.",
     comingSoonBody: "Our plans are being finalised. Create your account now and we'll show you the plans as soon as they're published.",

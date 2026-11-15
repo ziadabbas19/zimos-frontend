@@ -3173,6 +3173,11 @@ html:has(.zm-viewer[open]) {
   color: var(--blue);
 }
 
+/* "Everything in Starter": first in a plan's list when it has all of the plan before it. */
+.zm-plan li.zm-all {
+  font-weight: 700;
+}
+
 .zm-plan .zm-buy {
   margin-block-start: auto;
 }

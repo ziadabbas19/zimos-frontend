@@ -86,17 +86,24 @@
  * component.
  * ------------------------------------------------------------------ */
 .lang-en {
-  --font-heading: var(--font-fraunces), ui-serif, Georgia, "Times New Roman", serif;
   --font-body: var(--font-plus-jakarta), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", sans-serif;
-  /* The landing's titles: the body's grotesque, not the serif. */
+  /* One family in English, titles and text alike (app/fonts.ts). */
+  --font-heading: var(--font-body);
   --font-display: var(--font-body);
+  /* How heavy the titles are: Plus Jakarta Sans at its heaviest for the
+     large ones, a step lighter on cards. */
+  --title-weight: 800;
+  --title-weight-sm: 700;
 }
 
 .lang-ar {
   --font-heading: var(--font-alexandria), "Alexandria", "Segoe UI", Tahoma, sans-serif;
   --font-body: var(--font-plex-arabic), "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
   --font-display: var(--font-heading);
+  /* Alexandria is broad already: a step lighter than the English titles. */
+  --title-weight: 700;
+  --title-weight-sm: 600;
 }
 
 /* ------------------------------------------------------------------ *

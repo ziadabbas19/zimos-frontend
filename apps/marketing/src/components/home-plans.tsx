@@ -9,6 +9,7 @@ import type { PublicOffer } from "@/lib/plan-offer";
 import type { PublicPlan } from "@/lib/plans";
 import { REGISTER_URL, registerUrlFor, registerUrlForPayPerOrder } from "@/lib/urls";
 import { Arrow, Check } from "./duo-icons";
+import { planFeatures } from "./plan-features";
 import { useLiveOffer } from "./use-live-offer";
 
 type Copy = Dictionary["pricing"];
@@ -129,7 +130,17 @@ export function HomePlans({ initial, copy, locale }: { initial: PublicOffer | nu
       {plans.length > 0 ? (
         <ul className="zm-plans" style={{ "--cols": Math.min(3, plans.length) } as CSSProperties}>
           {plans.map((plan, i) => (
-            <PlanCard key={plan.id} plan={plan} copy={copy} locale={locale} showYearly={showYearly} turn={turn} cycle={cycle} hot={i === hot} />
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              before={i > 0 ? plans[i - 1] : null}
+              copy={copy}
+              locale={locale}
+              showYearly={showYearly}
+              turn={turn}
+              cycle={cycle}
+              hot={i === hot}
+            />
           ))}
         </ul>
       ) : null}
@@ -165,6 +176,7 @@ export function HomePlans({ initial, copy, locale }: { initial: PublicOffer | nu
 
 function PlanCard({
   plan,
+  before,
   copy,
   locale,
   showYearly,
@@ -173,6 +185,8 @@ function PlanCard({
   hot,
 }: {
   plan: PublicPlan;
+  /** The plan listed just before this one, if any: its features are said once, as "Everything in …". */
+  before: PublicPlan | null;
   copy: Copy;
   locale: Locale;
   showYearly: boolean;
@@ -188,7 +202,7 @@ function PlanCard({
   const month = priceParts(plan.monthlyPrice, plan.currency, locale);
   const year = priceParts(plan.yearlyPrice, plan.currency, locale);
   const limit = (value: number | null) => (value === null ? copy.unlimited : formatNumber(value, locale));
-  const features = plan.features.filter((key): key is keyof Copy["features"] => key in copy.features);
+  const { inherits, own: features } = planFeatures(plan, before, copy);
   const button = hot ? "zm-btn zm-btn--volt" : "zm-btn zm-btn--blue";
 
   const price = (parts: typeof month, from: number, on: boolean, per: string) => (
@@ -253,8 +267,14 @@ function PlanCard({
         ) : null}
       </div>
 
-      {features.length > 0 ? (
+      {inherits || features.length > 0 ? (
         <ul>
+          {inherits ? (
+            <li className="zm-all">
+              <Check size={16} />
+              {copy.everythingIn.replace("{plan}", inherits)}
+            </li>
+          ) : null}
           {features.map((feature) => (
             <li key={feature}>
               <Check size={16} />

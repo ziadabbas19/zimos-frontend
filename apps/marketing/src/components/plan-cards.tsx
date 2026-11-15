@@ -5,6 +5,7 @@ import { formatDays, formatNumber, formatOrderCount, formatPrice } from "@/lib/f
 import type { PayPerOrderPlan, PublicPlan } from "@/lib/plans";
 import { REGISTER_URL, registerUrlFor, registerUrlForPayPerOrder } from "@/lib/urls";
 import { CheckIcon } from "./icons";
+import { planFeatures } from "./plan-features";
 import { btnPrimary, btnSecondary } from "./ui";
 
 type Copy = Dictionary["pricing"];
@@ -71,10 +72,10 @@ export function PlanCards({
   const limit = (value: number | null) => (value === null ? copy.unlimited : formatNumber(value, locale));
   const showYearly = plans.some((plan) => plan.yearlyPrice > 0);
   const saves = yearlySaves(plans);
-  // The features the console switched on, in its order, each by the name this
-  // site gives it. A key the site has no name for yet (one added to the
-  // platform after this page) is left out rather than shown as a raw key.
-  const named = (features: readonly string[]) => features.filter((key): key is keyof Copy["features"] => key in copy.features);
+  // Each plan's features as its card lists them: "Everything in <the plan
+  // before>" and what it adds, or all of them (plan-features.ts).
+  const lists = plans.map((plan, i) => planFeatures(plan, i > 0 ? plans[i - 1] : null, copy));
+  const listed = (i: number) => lists[i].own.length + (lists[i].inherits ? 1 : 0);
   const cards = plans.length + (payPerOrder ? 1 : 0);
   // The middle of three subscription plans, by its place in the list (pay per order is not one of them).
   const hot = plans.length === 3 ? 1 : -1;
@@ -202,9 +203,15 @@ export function PlanCards({
                       </>
                     ) : null}
                   </dl>
-                  {named(plan.features).length > 0 ? (
+                  {listed(i) > 0 ? (
                     <ul className="plan-features mt-6 space-y-3 border-t border-white/20 pt-6">
-                      {named(plan.features).map((feature) => (
+                      {lists[i].inherits ? (
+                        <li className="flex gap-3 text-sm font-semibold text-white">
+                          <CheckIcon width="1.1rem" height="1.1rem" className="mt-px shrink-0 text-[#9fe3ff]" />
+                          <span className="leading-relaxed">{copy.everythingIn.replace("{plan}", lists[i].inherits ?? "")}</span>
+                        </li>
+                      ) : null}
+                      {lists[i].own.map((feature) => (
                         <li key={feature} className="flex gap-3 text-sm text-white/90">
                           <CheckIcon width="1.1rem" height="1.1rem" className="mt-px shrink-0 text-[#9fe3ff]" />
                           <span className="leading-relaxed">{copy.features[feature]}</span>
@@ -213,10 +220,10 @@ export function PlanCards({
                     </ul>
                   ) : null}
                   {/* On a phone a long list stops at six, the rest one tap away (landing.css `.plan-more`); a computer shows it whole. */}
-                  {named(plan.features).length > FEATURES_FIRST ? (
+                  {listed(i) > FEATURES_FIRST ? (
                     <label className="plan-more">
                       <input type="checkbox" className="plan-more__box sr-only" />
-                      {copy.moreFeatures.replace("{n}", String(named(plan.features).length - FEATURES_FIRST))}
+                      {copy.moreFeatures.replace("{n}", String(listed(i) - FEATURES_FIRST))}
                     </label>
                   ) : null}
                 </>
