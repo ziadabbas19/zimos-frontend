@@ -242,6 +242,8 @@ export interface Dictionary {
     paymentNote: string;
     refundLink: string;
     features: Record<PlanFeatureKey, string>;
+    /** On a phone, under a plan's first six features: "{n}" more. */
+    moreFeatures: string;
     /**
      * The pay-per-order card and its questions, shown only while the API
      * sends that plan (lib/plans `payPerOrder`). Every number in them — the

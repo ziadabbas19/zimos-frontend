@@ -81,6 +81,24 @@ describe("the store's site", () => {
     expect(await screen.findByText("1 page")).toBeTruthy();
   });
 
+  it("fills the card with the running store, its facts on a pane of glass over it", async () => {
+    const live = site("w1", "Nile Store", "published");
+    api.listWebsites.mockResolvedValue([live]);
+    const same = tree("a");
+    api.getWebsite.mockResolvedValue(fake<WebsiteDetail>({ website: live, pages: [page("home", same, same)], publishedRevision: null }));
+    const { container } = renderWithProviders(<WebsitePage />, { route: "/website" });
+
+    const name = await screen.findByRole("heading", { name: "Nile Store" });
+    const thumb = container.querySelector<HTMLElement>('[data-slot="site-thumb"]')!;
+    // The store takes the card's whole width (a portrait window onto its desktop layout on a phone).
+    expect(thumb).toHaveClass("w-full");
+    expect(thumb.querySelector('[class~="aspect-[3/4]"]')).not.toBeNull();
+    // The name, state and ways in sit on glass laid over it.
+    const facts = container.querySelector<HTMLElement>('[data-slot="site-facts"]')!;
+    expect(facts).toContainElement(name);
+    expect(facts).toHaveClass("absolute", "backdrop-blur-xl");
+  });
+
   it("says when saved edits are not published yet", async () => {
     const live = site("w1", "Nile Store", "published");
     api.listWebsites.mockResolvedValue([live]);

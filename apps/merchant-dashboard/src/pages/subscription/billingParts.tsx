@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Alert, cn } from "@store-builder/ui";
 import { yearlyBreakdown } from "@store-builder/ui/plan-pricing";
@@ -9,6 +9,8 @@ import { useErrorMessage } from "@/lib/errorMessages";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useT, fmt } from "@/i18n/LocaleContext";
 import { useToast } from "@/components/Toast";
+import { IconCard, IconClock, IconCoins, type IconComponent } from "@/components/icons";
+import { PLACE_COLOR } from "@/lib/places";
 import { BILLING_STRINGS, type ReturnHint } from "./billingText";
 
 /**
@@ -115,50 +117,94 @@ function returnMessage(
   }
 }
 
-/** The plan, its status and period, and the next charge priced with the store's code, with the way to pay it. */
+/** A status's colour: green running, blue on trial, amber to pay, red stopped. */
+const STATUS_TONE: Record<string, string> = {
+  active: "bg-success-soft text-success",
+  trialing: "bg-primary-soft text-primary-dark dark:text-primary",
+  past_due: "bg-accent-soft text-accent-dark",
+  suspended: "bg-danger-soft text-danger",
+  cancelled: "bg-danger-soft text-danger",
+  ended: "bg-accent-soft text-accent-dark",
+};
+
+/** One fact of the summary as a card: its picture in a tint, a small label, then the value large. */
+function SummaryTile({ icon: Icon, tint, label, children }: { icon: IconComponent; tint: string; label: string; children: ReactNode }) {
+  return (
+    <div className="flex h-full flex-col rounded-[var(--radius-card)] border border-line bg-paper-raised p-4">
+      <dt className="flex items-center gap-2 text-sm font-medium text-ink-soft">
+        <span aria-hidden className="grid size-9 place-items-center rounded-xl [&>svg]:size-[18px]" style={{ backgroundColor: `color-mix(in srgb, ${tint} 14%, transparent)`, color: tint }}>
+          <Icon strokeWidth={2} />
+        </span>
+        {label}
+      </dt>
+      <dd className="mt-3 flex flex-1 flex-col">{children}</dd>
+    </div>
+  );
+}
+
+/**
+ * The subscription in three cards, to be seen at a glance: the plan and its
+ * cycle; the status as a coloured word with its date (a trial or a period
+ * whose date has passed says it ended, not that it ends); and the next charge,
+ * large, with the plan's price struck out when the store's code takes some
+ * off, and the way to pay it — or, when nothing is left to pay, the way to
+ * the invoices.
+ */
 export function SubscriptionSummary({ billing }: { billing: WorkspaceBilling }) {
   const t = useT(BILLING_STRINGS);
   const { subscription, nextCharge } = billing;
   const plan = subscription.plan;
+  const trialEnd = subscription.status === "trialing" ? subscription.trialEndsAt : null;
+  const dateShown = trialEnd ?? subscription.currentPeriodEnd;
+  // The moment the page was opened: a date before it has passed.
+  const [now] = useState(() => Date.now());
+  const passed = Boolean(dateShown && new Date(dateShown).getTime() < now);
+  const trialOver = Boolean(trialEnd) && passed;
+  const statusLabel = billing.draft ? t.draft : trialOver ? t.trialEnded : (t[subscription.status as keyof typeof t] ?? subscription.status);
+  const tone = billing.draft ? "bg-paper-sunken text-ink-soft" : trialOver ? STATUS_TONE.ended : (STATUS_TONE[subscription.status] ?? "bg-paper-sunken text-ink-soft");
+  const toPay = nextCharge ? nextCharge.amount > 0 : false;
 
   return (
-    <dl className="grid gap-4 sm:grid-cols-3">
-      <div>
-        <dt className="text-xs text-ink-soft">{t.plan}</dt>
-        <dd className="mt-0.5 text-sm font-medium text-ink">{plan ? `${plan.name} · ${t[subscription.billingCycle]}` : t.noPlan}</dd>
-      </div>
-      <div>
-        <dt className="text-xs text-ink-soft">{t.status}</dt>
-        <dd className="mt-0.5 text-sm font-medium text-ink">
-          {billing.draft ? t.draft : (t[subscription.status as keyof typeof t] ?? subscription.status)}
-          {!billing.draft && (
-            <span className="block text-xs font-normal text-ink-soft">
-              {subscription.status === "trialing" && subscription.trialEndsAt
-                ? fmt(t.trialEnds, { date: formatDate(subscription.trialEndsAt) })
-                : fmt(t.renews, { date: formatDate(subscription.currentPeriodEnd) })}
-            </span>
-          )}
-        </dd>
-      </div>
+    <dl className="grid gap-3 sm:grid-cols-3">
+      <SummaryTile icon={IconCard} tint={PLACE_COLOR.main} label={t.plan}>
+        <p className="text-2xl font-bold tracking-tight text-ink">{plan ? plan.name : t.noPlan}</p>
+        {plan && (
+          <span className="mt-1.5 w-fit rounded-full bg-paper-sunken px-2.5 py-0.5 text-xs font-medium text-ink-soft">{t[subscription.billingCycle]}</span>
+        )}
+      </SummaryTile>
+
+      <SummaryTile icon={IconClock} tint={PLACE_COLOR.orders} label={t.status}>
+        <span className={cn("w-fit rounded-full px-3 py-1 text-sm font-semibold", tone)}>{statusLabel}</span>
+        {!billing.draft && dateShown && (
+          <span className="mt-2 block text-xs text-ink-soft">
+            {passed ? fmt(t.endedOn, { date: formatDate(dateShown) }) : fmt(trialEnd ? t.trialEnds : t.renews, { date: formatDate(dateShown) })}
+          </span>
+        )}
+      </SummaryTile>
+
       {nextCharge && (
-        <div>
-          <dt className="text-xs text-ink-soft">{t.nextCharge}</dt>
-          <dd className="mt-0.5 text-sm font-medium text-ink">
-            {nextCharge.discountAmount > 0
-              ? fmt(t.nextChargeDiscount, {
-                  amount: formatMoney(nextCharge.amount, nextCharge.currency),
-                  gross: formatMoney(nextCharge.grossAmount, nextCharge.currency),
-                  discount: formatMoney(nextCharge.discountAmount, nextCharge.currency),
-                })
-              : formatMoney(nextCharge.amount, nextCharge.currency)}
-            <Link
-              to="/subscription?tab=invoices"
-              className="flex min-h-11 w-fit items-center text-sm font-medium text-primary underline-offset-2 hover:underline"
-            >
-              {t.paymentLink}
-            </Link>
-          </dd>
-        </div>
+        <SummaryTile icon={IconCoins} tint={PLACE_COLOR.money} label={t.nextCharge}>
+          <p className="tabular text-2xl font-bold tracking-tight text-ink">
+            <bdi>{formatMoney(nextCharge.amount, nextCharge.currency)}</bdi>
+          </p>
+          {nextCharge.discountAmount > 0 && (
+            <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+              <s className="tabular text-ink-soft">
+                <bdi>{formatMoney(nextCharge.grossAmount, nextCharge.currency)}</bdi>
+              </s>
+              <span className="rounded-full bg-success-soft px-2 py-0.5 font-semibold text-success">
+                {fmt(t.codeDiscount, { discount: formatMoney(nextCharge.discountAmount, nextCharge.currency) })}
+              </span>
+            </p>
+          )}
+          {!toPay && <p className="mt-1.5 text-xs text-ink-soft">{nextCharge.discountAmount > 0 ? t.codeCovers : t.nothingToPay}</p>}
+          <Link
+            to="/subscription?tab=invoices"
+            className="mt-auto flex min-h-11 w-fit items-center pt-1 text-sm font-semibold text-primary underline-offset-2 hover:underline"
+          >
+            {toPay ? t.paymentLink : t.seeInvoices}
+          </Link>
+        </SummaryTile>
       )}
     </dl>
   );

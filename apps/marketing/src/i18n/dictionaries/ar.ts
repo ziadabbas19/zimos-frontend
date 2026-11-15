@@ -342,6 +342,7 @@ export const ar: Dictionary = {
     comingSoonCta: "أنشئ حسابك",
     paymentNote: "الدفع حاليا بالتحويل اليدوي، والاسترجاع وفق",
     refundLink: "سياسة الاسترجاع",
+    moreFeatures: "اعرض كل المميزات (+{n})",
     features: {
       custom_domain: "نطاق خاص",
       funnels: "مسارات البيع",

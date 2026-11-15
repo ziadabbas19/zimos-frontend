@@ -285,18 +285,19 @@ describe("the glow colours of the glass backdrop", () => {
   const lightGlass = glass.slice(0, darkAt);
   const darkGlass = glass.slice(darkAt, glass.indexOf(".glass-app {", darkAt));
 
-  it("draws the pools in the colours they always had while nothing is chosen", () => {
-    expect(lightGlass).toContain("--lg-own-brand: color-mix(in srgb, var(--brand) 40%, white);");
-    expect(lightGlass).toContain("--lg-own-violet: #b9a5ff;");
-    expect(lightGlass).toContain("--lg-own-pink: #ffa8d4;");
-    expect(lightGlass).toContain("--lg-own-peach: #ffc594;");
-    expect(lightGlass).toContain("--lg-own-sky: #8fdcff;");
-    expect(lightGlass).toContain("--lg-bg-base: #d5defc;");
-    expect(darkGlass).toContain("--lg-own-brand: color-mix(in srgb, var(--brand) 60%, black);");
-    expect(darkGlass).toContain("--lg-own-violet: #43259a;");
-    expect(darkGlass).toContain("--lg-own-pink: #7a1d5c;");
-    expect(darkGlass).toContain("--lg-own-peach: #6b3414;");
-    expect(darkGlass).toContain("--lg-own-sky: #0b5578;");
+  it("draws the calm ground while nothing is chosen: a light cool grey with a faint wash of the brand, no violet, pink or peach", () => {
+    // The owner, 2026-11-15: the aurora went; a wallpaper (lib/wallpaper.ts) or this calm ground replaces it.
+    expect(lightGlass).toContain("--lg-own-brand: color-mix(in srgb, var(--brand) 16%, white);");
+    expect(lightGlass).toContain("--lg-own-violet: #e6ebf7;");
+    expect(lightGlass).toContain("--lg-own-pink: #eef2f8;");
+    expect(lightGlass).toContain("--lg-own-peach: #eef2f8;");
+    expect(lightGlass).toContain("--lg-own-sky: #e4edfb;");
+    expect(lightGlass).toContain("--lg-bg-base: #eef2f8;");
+    expect(darkGlass).toContain("--lg-own-brand: color-mix(in srgb, var(--brand) 28%, black);");
+    expect(darkGlass).toContain("--lg-own-violet: #0d1430;");
+    expect(darkGlass).toContain("--lg-own-pink: #070a16;");
+    expect(darkGlass).toContain("--lg-own-peach: #070a16;");
+    expect(darkGlass).toContain("--lg-own-sky: #0a1a33;");
 
     for (const pool of POOLS) {
       // A pool is its dimmed colour, else its picked colour, else its own: the first two are
@@ -410,10 +411,10 @@ describe("the side menu's group headings", () => {
   const tokens = read("ui/theme/tokens.css");
   const menuCss = read("ui/theme/glass/menu.css");
 
-  it("are drawn in the brand, in the side menu, the pinned group and the phone menu", () => {
-    const heading = /className="zimos-menu-heading [^"]*"/.exec(read("components/shell/SidebarNav.tsx"))?.[0] ?? "";
-    expect(heading).toContain("text-[12px] font-semibold text-primary");
-    expect(heading).not.toContain("text-ink-soft");
+  it("are drawn in the brand, in the pinned group and the phone menu; the side menu names its place beside its tile", () => {
+    // The side menu has no group headings any more: the place chosen in the dock, beside its coloured tile.
+    expect(read("components/shell/SidebarNav.tsx")).not.toContain("zimos-menu-heading");
+    expect(read("components/shell/SidebarNav.tsx")).toContain("<PlaceTile place={shown.id}");
     expect(read("components/SidebarShortcuts.tsx")).toContain('"min-w-0 flex-1 truncate font-semibold text-primary", sheet ? "text-[13px]" : "text-[12px]"');
     expect(read("components/shell/PhoneMenu.tsx")).toMatch(/<h3 id=\{headingId\} className="[^"]*text-\[13px\] font-semibold tracking-normal text-primary"/);
   });

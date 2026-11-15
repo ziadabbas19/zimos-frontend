@@ -15,6 +15,7 @@ import { PAY_STRINGS } from "./payStrings";
 import { SUBSCRIPTION_STRINGS } from "./subscriptionStrings";
 import { WALLET_STRINGS, type WalletText } from "./walletStrings";
 import { WalletRefunds } from "./WalletRefunds";
+import { PaymentMark } from "@/components/PaymentMark";
 
 const PAGE_SIZE = 10;
 
@@ -402,16 +403,18 @@ function TopupBody({ wallet, onClose, onSent }: { wallet: WalletSummary; onClose
       </div>
       <fieldset className="space-y-2">
         <legend className="mb-1 text-sm font-medium text-ink">{p.chooseMethod}</legend>
-        <div role="radiogroup" className="grid gap-2">
+        {/* The same cards with marks as the invoice's Pay window (PayDialog). */}
+        <div role="radiogroup" className="grid grid-cols-2 gap-2">
           {offered.map((m) => (
             <label
               key={m.code}
               className={cn(
-                "flex min-h-11 cursor-pointer items-center gap-3 rounded-[10px] border px-3 py-2 text-sm",
-                chosen?.code === m.code ? "border-primary bg-primary-soft text-ink" : "border-line text-ink-soft"
+                "relative flex min-h-[5.5rem] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 px-3 py-3 text-center text-sm font-medium transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-primary",
+                chosen?.code === m.code ? "border-primary bg-primary-soft/60 text-ink" : "border-line text-ink-soft hover:border-primary/40"
               )}
             >
-              <input type="radio" name="topup-method" value={m.code} checked={chosen?.code === m.code} onChange={() => setCode(m.code)} />
+              <input type="radio" name="topup-method" value={m.code} checked={chosen?.code === m.code} onChange={() => setCode(m.code)} className="sr-only" />
+              <PaymentMark code={m.code} kind={m.kind} />
               {m.label[locale] || m.label.en}
             </label>
           ))}

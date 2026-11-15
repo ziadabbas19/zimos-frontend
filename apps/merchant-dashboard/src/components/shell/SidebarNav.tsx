@@ -1,27 +1,21 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import type { PlanFeatureKey } from "@store-builder/api-client";
 import { cn } from "@store-builder/ui";
-import { IconCaretDown } from "@/components/icons";
 import { StoreLinkBar } from "@/components/StoreLinkBar";
 import { ViewLink } from "@/components/ViewLink";
 import { ZimosLogo } from "@/components/ZimosLogo";
 import { NavBadge } from "@/components/shell/NavBadge";
+import { usePlaceName } from "@/components/shell/usePlaceName";
+import { PlaceTile } from "@/components/shell/PlaceTile";
 import { StoreSwitcher } from "@/components/shell/StoreSwitcher";
+import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
-import {
-  NAV_GROUPS,
-  NAV_GROUP_LABELS,
-  NAV_LABELS,
-  NAV_OPEN_BY_DEFAULT,
-  findNavItem,
-  isNavItemVisible,
-  isSidebarItem,
-  sidebarHome,
-  type NavGroup,
-  type NavItem,
-} from "@/lib/navigation";
+import { fmt, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
+import { NAV_GROUPS, NAV_LABELS, findNavItem, isNavItemVisible, isSidebarItem, sidebarHome, type NavGroup, type NavItem } from "@/lib/navigation";
+import { FOOT_GROUP_ID, placeOf, placesFor } from "@/lib/places";
+import { useHomeShortcuts } from "@/lib/homeShortcuts";
+import { DEFAULT_SHORTCUT_IDS, shortcutsOf, type ShortcutBadge, type ShortcutEntry } from "@/pages/home/shortcutCatalog";
 import { prefetchProps } from "@/lib/prefetch";
 import { usePlanFeatures } from "@/lib/usePlanFeatures";
 import { useWorkCounts, type WorkCounts } from "@/lib/workCounts";
@@ -31,31 +25,14 @@ const STRINGS = {
     navLabel: "Main navigation",
     dashboardAria: "Zimos dashboard",
     dashboardAriaNamed: "{name} — Zimos dashboard",
-    collapseGroup: "Collapse {group}",
-    expandGroup: "Expand {group}",
   },
   ar: {
     navLabel: "القائمة الرئيسية",
     dashboardAria: "لوحة تحكم زيموس",
     dashboardAriaNamed: "{name} — لوحة تحكم زيموس",
-    collapseGroup: "طي {group}",
-    expandGroup: "توسيع {group}",
   },
 } satisfies Messages;
 
-const NAV_COLLAPSED_KEY = "zimos.nav.groups.collapsed.v2";
-/** The unheaded last group (My Plan, Settings, support…): under the list, always in reach. */
-const FOOT_GROUP_ID = "config";
-
-function readCollapsedGroups(): Record<string, boolean> {
-  try {
-    const raw = localStorage.getItem(NAV_COLLAPSED_KEY);
-    if (raw) return JSON.parse(raw) as Record<string, boolean>;
-  } catch {
-    /* private mode or malformed — fall through to the default below */
-  }
-  return Object.fromEntries(NAV_GROUPS.filter((group) => !NAV_OPEN_BY_DEFAULT.has(group.id)).map((group) => [group.id, true]));
-}
 
 /**
  * A group's rows for this member. Entries their role cannot open are left out, and
@@ -143,43 +120,64 @@ export function NavRow({ item, label, counts, current = false, variant = "rail",
   );
 }
 
+/** A Home shortcut's count, read from the shell's counts by the queue it shows. */
+const SHORTCUT_BADGE: Record<ShortcutBadge, NavItem["badge"]> = { awaiting: "toConfirm", reviews: "reviews", unread: "unread" };
+
 /**
- * The side menu's contents: the ZIMOS logo, the store being worked on, then
- * the list — pinned shortcuts first, then the groups — and, under a hairline
- * at the bottom, the group that must always be in reach (My Plan, Settings,
- * support). The entries, their order and who sees each one come from
- * lib/navigation.ts.
- *
- * A group folds from its heading and stays folded next time; a folded group
- * still shows the row of the page you are on, so the menu never loses track
- * of where you are. `shortcuts` is the pinned group (SidebarShortcuts), passed
- * in by the layout.
+ * One of the member's Home shortcuts (pages/home/shortcutCatalog.ts), as a row
+ * of the side menu under Home: the same row as a page's, with the shortcut's
+ * own words.
+ */
+function ShortcutRow({ entry, counts, current }: { entry: ShortcutEntry; counts: WorkCounts; current: boolean }) {
+  const { locale } = useLocale();
+  const Icon = entry.icon;
+  const badge = entry.badge ? SHORTCUT_BADGE[entry.badge] : undefined;
+  return (
+    <ViewLink
+      to={entry.to}
+      aria-current={current ? "page" : undefined}
+      data-slot="menu-row"
+      className={cn(ROW, ROW_RAIL, current ? "bg-primary text-primary-foreground" : "text-ink hover:bg-paper-sunken")}
+    >
+      <Icon strokeWidth={current ? 2.25 : 1.75} className={cn("size-[18px] shrink-0", !current && "text-ink-soft group-hover/row:text-ink")} aria-hidden />
+      <span className="min-w-0 flex-1 truncate">{entry.title[locale]}</span>
+      {badge && <NavBadge kind={badge} count={counts[badge]} onBrand={current} />}
+    </ViewLink>
+  );
+}
+
+/**
+ * The side menu's contents: the ZIMOS logo, the store being worked on, the
+ * pinned shortcuts, then the one place chosen in the dock under the page
+ * (components/shell/PlaceDock.tsx) — its tile and name, and its pages under
+ * them (owner, 2026-11-15: "the side menu shows only what I choose from the
+ * bottom"). Home's pages are Home itself and the member's Home shortcuts. A
+ * page of the foot group shows Home's. Under a hairline at the bottom, the
+ * group that must always be in reach (My Plan, Settings, support). The
+ * entries, their order and who sees each one come from lib/navigation.ts.
+ * `shortcuts` is the pinned group (SidebarShortcuts), passed in by the layout.
  */
 export function SidebarNav({ shortcuts }: { shortcuts?: ReactNode }) {
   const { currentWorkspace } = useWorkspace();
   const location = useLocation();
   const t = useT(STRINGS);
   const navLabels = useT(NAV_LABELS);
-  const groupLabels = useT(NAV_GROUP_LABELS);
+  const placeName = usePlaceName();
   const counts = useWorkCounts(currentWorkspace?.id);
   const storeName = currentWorkspace?.name;
   const permissions = currentWorkspace?.permissions;
   const plan = usePlanFeatures();
 
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(readCollapsedGroups);
-  useEffect(() => {
-    try {
-      localStorage.setItem(NAV_COLLAPSED_KEY, JSON.stringify(collapsed));
-    } catch {
-      /* private mode — non-fatal */
-    }
-  }, [collapsed]);
-  // The group that was just unfolded: its rows settle in (theme/glass/menu.css).
-  const [revealed, setRevealed] = useState<string | null>(null);
-
   // One entry is "here": the page's own, or the entry the page sits under (NavItem.under).
   // Same longest-match rule as the breadcrumb.
   const activeTo = sidebarHome(findNavItem(location.pathname));
+  const here = placeOf(location.pathname);
+  const places = placesFor(permissions, plan.gated);
+  // The place chosen in the dock; a page of the foot group (or outside the menu) shows Home's.
+  const shown = places.find((place) => place.id === here) ?? places.find((place) => place.id === "main") ?? places[0] ?? null;
+  const { user } = useAuth();
+  const homeRow = useHomeShortcuts(currentWorkspace?.id, user?.id);
+  const homeShortcuts = shortcutsOf(homeRow.answer?.shortcuts ?? homeRow.hint ?? DEFAULT_SHORTCUT_IDS, { permissions, available: homeRow.answer?.available });
 
   // The list is longer than the pane: bring the current row into view when the page changes.
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -192,11 +190,6 @@ export function SidebarNav({ shortcuts }: { shortcuts?: ReactNode }) {
     if (at.top < pane.top + 12) scroller.scrollTop -= pane.top + 12 - at.top;
     else if (at.bottom > pane.bottom - 24) scroller.scrollTop += at.bottom - (pane.bottom - 24);
   }, [activeTo]);
-
-  function toggle(groupId: string) {
-    setRevealed(collapsed[groupId] ? groupId : null);
-    setCollapsed((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
-  }
 
   const row = (item: NavItem) => (
     <NavRow key={item.to} item={item} label={navLabels[item.key]} counts={counts} current={item.to === activeTo} />
@@ -230,49 +223,22 @@ export function SidebarNav({ shortcuts }: { shortcuts?: ReactNode }) {
           className="zimos-menu-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 pt-2.5 pb-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [@media(max-height:52rem)]:flex-none [@media(max-height:52rem)]:overflow-visible"
         >
           {shortcuts}
-          {NAV_GROUPS.map((group) => {
-            if (group.id === FOOT_GROUP_ID) return null;
-            const heading = group.labelKey ? groupLabels[group.labelKey] : null;
-            // A group without a heading has nothing to click, so it is never folded away.
-            const isClosed = Boolean(heading && collapsed[group.id]);
-            // Entries this role cannot use are left out; a group left empty goes too.
-            const visible = visibleNavItems(group, permissions, undefined, plan.gated);
-            if (visible.length === 0) return null;
-            // Folding hides everything in the group except the page you are on.
-            const items = isClosed ? visible.filter((item) => item.to === activeTo) : visible;
-            const rowsId = `zimos-nav-${group.id}`;
-
-            return (
-              <div key={group.id} className="mt-3 first:mt-0">
-                {heading && (
-                  <button
-                    type="button"
-                    onClick={() => toggle(group.id)}
-                    aria-expanded={!isClosed}
-                    aria-controls={rowsId}
-                    aria-label={fmt(isClosed ? t.expandGroup : t.collapseGroup, { group: heading })}
-                    className="zimos-menu-heading group/heading flex h-7 w-full cursor-pointer items-center gap-1 rounded-full ps-3 pe-2 text-start text-[12px] font-semibold text-primary transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none pointer-coarse:h-11"
-                  >
-                    <span className="min-w-0 flex-1 truncate">{heading}</span>
-                    {/* The caret shows when the heading is pointed at or focused. A finger has
-                        no hover, and a folded group has to say there is more inside. */}
-                    <IconCaretDown
-                      className={cn(
-                        "size-3 shrink-0 transition-[opacity,rotate] duration-150 motion-reduce:transition-none pointer-coarse:opacity-100",
-                        isClosed
-                          ? "-rotate-90 opacity-70 rtl:rotate-90"
-                          : "opacity-0 group-hover/heading:opacity-100 group-focus-visible/heading:opacity-100"
-                      )}
-                      aria-hidden
-                    />
-                  </button>
-                )}
-                <div id={rowsId} data-reveal={revealed === group.id ? "" : undefined} className="flex flex-col gap-0.5">
-                  {items.map(row)}
-                </div>
+          {shown && (
+            <section aria-labelledby="zimos-place-title" data-place-open={shown.id}>
+              {/* The place's name beside its tile: where you are, said once at the top. */}
+              <h2 id="zimos-place-title" className="mb-2 flex items-center gap-2.5 px-1.5 pt-1 text-[15px] font-bold text-ink">
+                <PlaceTile place={shown.id} className="size-8" />
+                <span className="min-w-0 flex-1 truncate">{placeName(shown)}</span>
+              </h2>
+              <div id={`zimos-nav-${shown.id}`} data-reveal="" className="flex flex-col gap-0.5">
+                {shown.items.map(row)}
+                {shown.id === "main" &&
+                  homeShortcuts
+                    .filter((entry) => !shown.items.some((item) => item.to === entry.to))
+                    .map((entry) => <ShortcutRow key={entry.id} entry={entry} counts={counts} current={entry.to === location.pathname} />)}
               </div>
-            );
-          })}
+            </section>
+          )}
         </div>
 
         {footItems.length > 0 && (

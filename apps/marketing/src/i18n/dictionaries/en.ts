@@ -337,6 +337,7 @@ export const en: Dictionary = {
     comingSoonCta: "Create your account",
     paymentNote: "Payment is currently by manual transfer, and refunds follow our",
     refundLink: "refund policy",
+    moreFeatures: "Show all features (+{n})",
     features: {
       custom_domain: "Custom domain",
       funnels: "Sales funnels",

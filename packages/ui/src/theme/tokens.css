@@ -42,10 +42,11 @@
   --color-accent-dark: #8a5300;
   --color-accent-soft: #fff3dc;
 
-  /* Type — Readex Pro draws Arabic and Latin from one family, so a mixed
-     Arabic/English line has one rhythm. Bundled via @fontsource/readex-pro. */
-  --font-sans: "Inter Variable", "Tajawal", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Inter Variable", "Tajawal", ui-sans-serif, system-ui, sans-serif;
+  /* Type — Inter for Latin and the digits, IBM Plex Sans Arabic for every
+     Arabic word: the pair Net Profit's system draws in (owner, 2026-11-15).
+     Both served with the app (packages/ui/src/fonts.css). */
+  --font-sans: "Inter Variable", "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter Variable", "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
 
   /* Shape — big soft cards, comfortable controls. */
   --radius: 0.75rem; /* controls: 12px */

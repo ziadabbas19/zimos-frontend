@@ -35,7 +35,7 @@ export function PlanSummary({ plan, billingCycle, compact = false }: { plan: Pla
   const { locale } = useLocale();
   const price = billingCycle === "yearly" ? plan.yearlyPrice : plan.monthlyPrice;
   const yearly = billingCycle === "yearly" && price > 0 ? yearlyBreakdown(plan) : null;
-  const number = (n: number) => new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US").format(n);
+  const number = (n: number) => new Intl.NumberFormat(locale === "ar" ? "ar-EG-u-nu-latn" : "en-US").format(n);
   const limit = (value: number | null | undefined) => (value === null || value === undefined ? t.unlimited : number(value));
 
   return (

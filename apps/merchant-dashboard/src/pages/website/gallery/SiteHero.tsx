@@ -2,7 +2,7 @@ import { useId, useMemo, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { DirectionProvider } from "@base-ui/react/direction-provider";
 import type { PageTree, Website } from "@store-builder/api-client";
-import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@store-builder/ui";
+import { Button, cn, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@store-builder/ui";
 import {
   IconDelete,
   IconEdit,
@@ -12,6 +12,7 @@ import {
   type IconComponent,
 } from "@/components/icons";
 import { PageActionBar } from "@/components/PageHeader";
+import { useMediaQuery } from "@/components/report/useMediaQuery";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StoreLinkBar } from "@/components/StoreLinkBar";
 import { TemplateLivePreview } from "@/components/TemplateLivePreview";
@@ -87,6 +88,7 @@ function QuietLink({ to, icon: LinkIcon, children }: { to: string; icon: IconCom
  * of the store's theme, which stays if there is no page to draw yet.
  */
 function SiteThumb({ site, facts }: { site: Website; facts: SiteFacts | null }) {
+  const wide = useMediaQuery("(min-width: 48rem)");
   const workspaceId = useWorkspaceId();
   const { currentWorkspace } = useWorkspace();
   const look = useMemo(() => readStoreLook(currentWorkspace), [currentWorkspace]);
@@ -104,19 +106,25 @@ function SiteThumb({ site, facts }: { site: Website; facts: SiteFacts | null }) 
     />
   );
 
+  // The store as a shopper's computer shows it, filling the whole card (owner, 2026-11-15: "the
+  // running store as a desktop, filling the white box, like Shopify"): its desktop layout in a
+  // portrait box on a phone, so more of the page shows above the facts laid over it, and a
+  // landscape one from md.
   return (
-    <div className="relative aspect-[3/4] w-full overflow-hidden bg-paper-sunken">
+    <div className="relative w-full overflow-hidden bg-paper-sunken">
       {facts === null ? (
-        // In its own box: the drawing fills the portrait, whatever shape it would take by itself.
-        <div className="absolute inset-0">{sketch}</div>
+        // In its own box: the drawing fills the frame, whatever shape it would take by itself.
+        <div className={cn("relative w-full", wide ? "aspect-[16/10]" : "aspect-[3/4]")}>
+          <div className="absolute inset-0">{sketch}</div>
+        </div>
       ) : (
         <TemplateLivePreview
           workspaceId={workspaceId}
           templateId={`site:${site.id}`}
           page={home}
           title={site.name}
-          aspect="3/4"
-          cardLayout="mobile"
+          aspect={wide ? "16/10" : "3/4"}
+          cardLayout="desktop"
           fallback={sketch}
         />
       )}
@@ -168,21 +176,20 @@ export function SiteHero({
       data-slot="site-hero"
       data-state={state}
       aria-labelledby={nameId}
-      className="zimos-site-hero relative min-w-0 rounded-[var(--radius-card)] bg-paper-raised p-4 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-5"
+      className="zimos-site-hero relative min-w-0 overflow-hidden rounded-[var(--radius-card)] bg-paper-raised shadow-[var(--shadow-card)] ring-1 ring-line"
     >
-      <div className="flex min-w-0 gap-3.5 sm:gap-5">
-        {/* A second way to the same place for a finger that goes for the picture; the button is the one that is named. */}
-        <Link
-          to={editTo}
-          tabIndex={-1}
-          aria-hidden="true"
-          data-slot="site-thumb"
-          className="zimos-site-thumb block w-24 shrink-0 self-start overflow-hidden rounded-2xl ring-1 ring-line transition-[translate,scale] duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.97] motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 sm:w-36"
-        >
-          <SiteThumb site={site} facts={facts} />
-        </Link>
+      {/* The store fills the card; a second way to the editor for a finger that goes for it (the button is the named one). */}
+      <Link to={editTo} tabIndex={-1} aria-hidden="true" data-slot="site-thumb" className="zimos-site-thumb block w-full">
+        <SiteThumb site={site} facts={facts} />
+      </Link>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+      {/* The site's facts and ways in, on a pane of glass over the store: across the foot on a phone,
+          a panel at the bottom start corner from md. */}
+      <div
+        data-slot="site-facts"
+        className="absolute inset-x-3 bottom-3 rounded-2xl bg-paper-raised/75 p-4 shadow-[0_12px_32px_-12px_rgb(13_27_62/0.35)] ring-1 ring-white/50 backdrop-blur-xl backdrop-saturate-150 sm:p-5 md:inset-x-auto md:bottom-5 md:start-5 md:w-[25rem] dark:ring-white/10"
+      >
+        <div className="flex min-w-0 flex-col gap-2.5">
           <div className="flex items-start gap-1">
             <div className="min-w-0 flex-1">
               <h2 id={nameId} className="line-clamp-2 font-display text-[17px] leading-6 font-semibold break-words text-ink sm:text-xl sm:leading-7">
@@ -221,24 +228,24 @@ export function SiteHero({
 
           {hint && <p className="text-[13px] leading-5 text-ink-soft">{hint}</p>}
 
-          {slug && <StoreLinkBar slug={slug} className="w-full sm:max-w-sm lg:max-w-sm" />}
+          {slug && <StoreLinkBar slug={slug} className="w-full" />}
 
-          <div className="mt-auto hidden pt-1 md:block">
+          <div className="hidden pt-0.5 md:block">
             <Button asChild size="lg" className="rounded-full px-5">
               <ViewLink to={editTo}>{editLabel}</ViewLink>
             </Button>
           </div>
         </div>
-      </div>
 
-      <nav aria-label={t.more} className="mt-3.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 border-t border-line pt-2.5 sm:mt-5">
-        <QuietLink to="/store-settings" icon={IconStoreSettings}>
-          {t.settings}
-        </QuietLink>
-        <QuietLink to="/store-settings/pages" icon={IconPage}>
-          {t.pages}
-        </QuietLink>
-      </nav>
+        <nav aria-label={t.more} className="mt-3 flex flex-wrap items-center gap-x-1 gap-y-0.5 border-t border-line/70 pt-2">
+          <QuietLink to="/store-settings" icon={IconStoreSettings}>
+            {t.settings}
+          </QuietLink>
+          <QuietLink to="/store-settings/pages" icon={IconPage}>
+            {t.pages}
+          </QuietLink>
+        </nav>
+      </div>
 
       {/* The phone's home of the one main action: above the dock, within the thumb's reach. */}
       <PageActionBar>

@@ -15,6 +15,13 @@ type Copy = Dictionary["pricing"];
 const WHEN_MONTHLY = "group-has-[.cycle-yearly:checked]/pricing:hidden";
 const WHEN_YEARLY_BLOCK = "hidden group-has-[.cycle-yearly:checked]/pricing:block";
 
+/** The button on a blue plan card: white, the blue its text. */
+const btnOnBlue =
+  "inline-flex items-center justify-center gap-2 rounded-lg bg-white font-semibold text-[#0b46cc] shadow-sm transition-colors duration-200 hover:bg-white/90 active:bg-white/80";
+
+/** How many of a plan's features a phone shows before "show all". */
+export const FEATURES_FIRST = 6;
+
 /**
  * The plans as cards, rendered on the server: every price — monthly and
  * yearly — is in the page's HTML, so a reader, a payment provider's reviewer
@@ -26,6 +33,9 @@ const WHEN_YEARLY_BLOCK = "hidden group-has-[.cycle-yearly:checked]/pricing:bloc
  * Under a yearly price: twelve monthly payments struck out (only while the
  * yearly price is less) and what the year comes to a month — both from the
  * plan's two prices, so a price changed in the console changes them too.
+ *
+ * The plans' cards are ZIMOS blue (landing.css `.plan-card`), white type on
+ * them, so they stand out on the page; the pay-per-order card is a soft blue.
  *
  * `compact` leaves out the limits and features. The home page and the pricing
  * page both show everything (components/live-plans.tsx keeps it current).
@@ -102,42 +112,42 @@ export function PlanCards({
             <li
               key={plan.id}
               aria-labelledby={`${idPrefix}-plan-${plan.id}`}
-              className="relative flex flex-col overflow-hidden rounded-3xl border border-line bg-paper-raised p-6 sm:p-8"
+              className="plan-card relative flex flex-col overflow-hidden rounded-3xl p-6 text-white sm:p-8"
             >
-              <PlanHeading id={`${idPrefix}-plan-${plan.id}`} className="text-xl font-bold text-ink">
+              <PlanHeading id={`${idPrefix}-plan-${plan.id}`} className="text-xl font-bold text-white">
                 {plan.name}
               </PlanHeading>
 
               <div className="mt-4">
                 {free ? (
-                  <p className="text-3xl font-bold text-ink">{copy.free}</p>
+                  <p className="text-3xl font-bold text-white">{copy.free}</p>
                 ) : (
                   <>
                     <div className={whenMonthly}>
-                      <p className="text-3xl font-bold text-ink">
+                      <p className="text-3xl font-bold text-white">
                         {formatPrice(plan.monthlyPrice, plan.currency, locale)}{" "}
-                        <span className="text-base font-medium text-ink-soft">{copy.perMonth}</span>
+                        <span className="text-base font-medium text-white/75">{copy.perMonth}</span>
                       </p>
                       {showYearly ? (
-                        <p className="mt-1 text-sm text-ink-soft">
+                        <p className="mt-1 text-sm text-white/75">
                           {copy.yearlyEquivalent.replace("{price}", formatPrice(plan.yearlyPrice, plan.currency, locale))}
                         </p>
                       ) : null}
                     </div>
                     {showYearly ? (
                       <div className={WHEN_YEARLY_BLOCK}>
-                        <p className="text-3xl font-bold text-ink">
+                        <p className="text-3xl font-bold text-white">
                           {formatPrice(plan.yearlyPrice, plan.currency, locale)}{" "}
-                          <span className="text-base font-medium text-ink-soft">{copy.perYear}</span>
+                          <span className="text-base font-medium text-white/75">{copy.perYear}</span>
                         </p>
                         {yearly?.fullYear != null ? (
-                          <p className="mt-1.5 text-base font-medium text-ink-soft">
+                          <p className="mt-1.5 text-base font-medium text-white/70">
                             <span className="sr-only">{copy.fullYearLabel} </span>
                             <s className="line-through decoration-2">{formatPrice(yearly.fullYear, plan.currency, locale)}</s>
                           </p>
                         ) : null}
                         {yearly ? (
-                          <p className="mt-0.5 text-sm text-ink-soft">
+                          <p className="mt-0.5 text-sm text-white/75">
                             {copy.perMonthEquivalent.replace("{price}", formatPrice(yearly.perMonth, plan.currency, locale))}
                           </p>
                         ) : null}
@@ -147,7 +157,7 @@ export function PlanCards({
                 )}
                 {/* A trial is said only when the console gives a plan one: with none on offer, a line on every card saying so is noise. */}
                 {plan.trialDays > 0 ? (
-                  <p className="mt-2 text-sm font-medium text-primary-dark dark:text-primary">
+                  <p className="mt-2 text-sm font-semibold text-white">
                     {copy.trial.replace("{days}", formatDays(plan.trialDays, locale))}
                   </p>
                 ) : null}
@@ -155,13 +165,13 @@ export function PlanCards({
 
               {/* A free plan has one button, whichever cycle is chosen. */}
               <div className={`mt-6 ${free ? "" : whenMonthly}`}>
-                <a href={registerUrlFor(plan.id, "monthly")} className={`${btnPrimary} h-11 w-full px-5 text-sm`}>
+                <a href={registerUrlFor(plan.id, "monthly")} className={`${btnOnBlue} h-11 w-full px-5 text-sm`}>
                   {copy.cta}
                 </a>
               </div>
               {showYearly && !free ? (
                 <div className={`mt-6 ${WHEN_YEARLY_BLOCK}`}>
-                  <a href={registerUrlFor(plan.id, "yearly")} className={`${btnPrimary} h-11 w-full px-5 text-sm`}>
+                  <a href={registerUrlFor(plan.id, "yearly")} className={`${btnOnBlue} h-11 w-full px-5 text-sm`}>
                     {copy.ctaYearly}
                   </a>
                 </div>
@@ -169,27 +179,34 @@ export function PlanCards({
 
               {compact ? null : (
                 <>
-                  <dl className="mt-6 grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 border-t border-line pt-6 text-sm">
-                    <dt className="text-ink-soft">{copy.stores}</dt>
-                    <dd className="text-end font-medium text-ink">{limit(plan.maxStores)}</dd>
-                    <dt className="text-ink-soft">{copy.funnels}</dt>
-                    <dd className="text-end font-medium text-ink">{limit(plan.maxFunnelsPerMonth)}</dd>
+                  <dl className="mt-6 grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 border-t border-white/20 pt-6 text-sm">
+                    <dt className="text-white/75">{copy.stores}</dt>
+                    <dd className="text-end font-semibold text-white">{limit(plan.maxStores)}</dd>
+                    <dt className="text-white/75">{copy.funnels}</dt>
+                    <dd className="text-end font-semibold text-white">{limit(plan.maxFunnelsPerMonth)}</dd>
                     {plan.softOrderQuota !== null ? (
                       <>
-                        <dt className="text-ink-soft">{copy.orders}</dt>
-                        <dd className="text-end font-medium text-ink">{formatNumber(plan.softOrderQuota, locale)}</dd>
+                        <dt className="text-white/75">{copy.orders}</dt>
+                        <dd className="text-end font-semibold text-white">{formatNumber(plan.softOrderQuota, locale)}</dd>
                       </>
                     ) : null}
                   </dl>
                   {named(plan.features).length > 0 ? (
-                    <ul className="mt-6 space-y-3 border-t border-line pt-6">
+                    <ul className="plan-features mt-6 space-y-3 border-t border-white/20 pt-6">
                       {named(plan.features).map((feature) => (
-                        <li key={feature} className="flex gap-3 text-sm text-ink-soft">
-                          <CheckIcon width="1.1rem" height="1.1rem" className="mt-px shrink-0 text-primary" />
+                        <li key={feature} className="flex gap-3 text-sm text-white/90">
+                          <CheckIcon width="1.1rem" height="1.1rem" className="mt-px shrink-0 text-[#9fe3ff]" />
                           <span className="leading-relaxed">{copy.features[feature]}</span>
                         </li>
                       ))}
                     </ul>
+                  ) : null}
+                  {/* On a phone a long list stops at six, the rest one tap away (landing.css `.plan-more`); a computer shows it whole. */}
+                  {named(plan.features).length > FEATURES_FIRST ? (
+                    <label className="plan-more">
+                      <input type="checkbox" className="plan-more__box sr-only" />
+                      {copy.moreFeatures.replace("{n}", String(named(plan.features).length - FEATURES_FIRST))}
+                    </label>
                   ) : null}
                 </>
               )}
@@ -240,10 +257,10 @@ function PayPerOrderCard({
   return (
     <li
       aria-labelledby={headingId}
-      className={`relative flex flex-col overflow-hidden rounded-3xl border border-line bg-paper-raised p-6 sm:p-8 ${wide ? "col-span-full lg:grid lg:grid-cols-2 lg:items-center lg:gap-x-10" : ""}`}
+      className={`relative flex flex-col overflow-hidden rounded-3xl border border-primary/25 bg-primary-soft p-6 sm:p-8 ${wide ? "col-span-full lg:grid lg:grid-cols-2 lg:items-center lg:gap-x-10" : ""}`}
     >
       <div>
-        <p className="inline-flex rounded-full bg-primary-soft px-3 py-1 text-xs font-semibold text-primary-dark dark:text-primary">{t.badge}</p>
+        <p className="inline-flex rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">{t.badge}</p>
         <PlanHeading id={headingId} className="mt-3 text-xl font-bold text-ink">
           {plan.name}
         </PlanHeading>
@@ -269,7 +286,7 @@ function PayPerOrderCard({
         </div>
       </div>
 
-      <ul className={`mt-6 space-y-3 border-t border-line pt-6 ${wide ? "lg:mt-0 lg:border-t-0 lg:border-s lg:pt-0 lg:ps-10" : ""}`}>
+      <ul className={`mt-6 space-y-3 border-t border-primary/20 pt-6 ${wide ? "lg:mt-0 lg:border-t-0 lg:border-s lg:pt-0 lg:ps-10" : ""}`}>
         {facts.map((fact) => (
           <li key={fact} className="flex gap-3 text-sm text-ink-soft">
             <CheckIcon width="1.1rem" height="1.1rem" className="mt-px shrink-0 text-primary" />

@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { themesList } from "@store-builder/api-client";
-import { Button } from "@store-builder/ui";
+import { Button, ZLoader } from "@store-builder/ui";
 import { Sheet } from "@/components/Sheet";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { useLocale, useT, type Messages } from "@/i18n/LocaleContext";
@@ -10,7 +10,11 @@ import { useWorkspaceId } from "@/lib/useWorkspaceId";
 import { accentOf, readStoreLook } from "../editor/storeLook";
 import { THEME_SPECS } from "../editor/storeThemes";
 import { ThemeSketch } from "../editor/ThemeSketch";
-import { ThemeGallery } from "../ThemeGallery";
+
+// Its own chunk, loaded when the sheet first opens (and warmed when «غيّر» is pointed at): the
+// gallery draws each look with the editor's blocks and words, which the page itself never needs.
+const loadThemeGallery = () => import("../ThemeGallery");
+const ThemeGallery = lazy(() => loadThemeGallery().then((module) => ({ default: module.ThemeGallery })));
 
 const STRINGS = {
   en: {
@@ -37,7 +41,17 @@ export function StoreThemeSheet({ open, onOpenChange }: { open: boolean; onOpenC
   const t = useT(STRINGS);
   return (
     <Sheet open={open} onOpenChange={onOpenChange} title={t.title} description={t.note} size="lg" className="max-sm:h-[92dvh]">
-      <ThemeGallery variant="sheet" />
+      {open && (
+        <Suspense
+          fallback={
+            <div className="flex min-h-40 items-center justify-center">
+              <ZLoader />
+            </div>
+          }
+        >
+          <ThemeGallery variant="sheet" />
+        </Suspense>
+      )}
     </Sheet>
   );
 }
@@ -90,6 +104,8 @@ export function StoreThemeRow({ className }: { className?: string }) {
         aria-label={t.changeLabel}
         className="min-h-11 shrink-0 rounded-full px-4"
         onClick={() => setOpen(true)}
+        onPointerEnter={() => void loadThemeGallery()}
+        onFocus={() => void loadThemeGallery()}
       >
         {t.change}
       </Button>

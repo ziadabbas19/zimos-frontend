@@ -25,7 +25,7 @@ const sharedLayers = (source) => [...source.matchAll(/^import '(@store-builder\/
 const layers = (source) => [...source.matchAll(/^import '([^']+\.css)'/gm)].map((m) => m[1]);
 const script = (page) => /<script>([\s\S]*?)<\/script>/.exec(page)?.[1];
 
-/** The one stylesheet both apps take Tajawal, Plus Jakarta Sans and Fraunces from, as their main.tsx names it. */
+/** The one stylesheet both apps take IBM Plex Sans Arabic, Tajawal, Plus Jakarta Sans and Fraunces from, as their main.tsx names it. */
 const FONTS_LAYER = "@store-builder/ui/fonts.css";
 const sharedFonts = read("../../../packages/ui/src/fonts.css");
 const uiPackage = JSON.parse(read("../../../packages/ui/package.json"));
@@ -126,12 +126,18 @@ describe("the console's fonts", () => {
     assert.equal(realpathSync(fromConsole), realpathSync(new URL("../../../packages/ui/src/fonts.css", import.meta.url)));
   });
 
-  it("are the dashboard's, family for family and weight for weight (Tajawal draws the Arabic)", () => {
+  it("are the dashboard's, family for family and weight for weight (IBM Plex Sans Arabic draws the Arabic)", () => {
     const fonts = loadedFonts("platform-admin");
-    assert.ok(fonts.tajawal, "no Tajawal: every Arabic word would fall back to a system font");
+    assert.ok(fonts["ibm-plex-sans-arabic"], "no IBM Plex Sans Arabic: every Arabic word would fall back to a system font");
     assert.deepEqual(fonts, loadedFonts("merchant-dashboard"));
-    // What the Google Fonts link of both apps asked for, before they were served with the apps.
-    assert.deepEqual(fonts, { tajawal: [400, 500, 700], "plus-jakarta-sans": [400, 500, 600, 700], fraunces: [500, 600, 700] });
+    // What the Google Fonts link of both apps asked for, before they were served with the apps, and since
+    // 2026-11-15 IBM Plex Sans Arabic for the apps' own Arabic (Tajawal stays for the store looks).
+    assert.deepEqual(fonts, {
+      "ibm-plex-sans-arabic": [400, 500, 600, 700],
+      tajawal: [400, 500, 700],
+      "plus-jakarta-sans": [400, 500, 600, 700],
+      fraunces: [500, 600, 700],
+    });
   });
 
   it("take nothing from Google: no stylesheet, no preconnect, no font file", () => {

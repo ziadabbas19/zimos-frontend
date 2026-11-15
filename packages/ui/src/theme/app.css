@@ -226,7 +226,7 @@ html.dark {
   --color-paper-sunken: var(--muted);
 
   --font-display: var(--font-display);
-  --font-sans: 'Inter Variable', sans-serif;
+  --font-sans: "Inter Variable", "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
 
   --radius-card: var(--radius-card);
 
@@ -319,6 +319,33 @@ html.dark {
   h1, h2, h3, h4 {
     font-family: var(--font-display);
     letter-spacing: -0.01em;
+  }
+  /* Type set the way Net Profit's system sets it (owner, 2026-11-15: "the font
+     like Net Profit's, in Arabic"): Inter and IBM Plex Sans Arabic with
+     kerning, Inter's contextual alternates (a dash or an arrow between figures
+     centred on them) and smoothed edges. */
+  html {
+    font-kerning: normal;
+    font-optical-sizing: auto;
+    font-feature-settings: "calt" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  /* Arabic is set with more air than Latin: its dots and marks sit above and
+     below the line (an explicit leading-* still wins). */
+  html[lang="ar"] {
+    --text-xs--line-height: 1.6;
+    --text-sm--line-height: 1.65;
+    --text-base--line-height: 1.7;
+    --text-lg--line-height: 1.6;
+    --text-xl--line-height: 1.5;
+    --text-2xl--line-height: 1.4;
+  }
+  /* Arabic letters join: tracking pulls them apart, so a title's Latin
+     tightening never reaches Arabic. */
+  html[lang="ar"] :is(h1, h2, h3, h4) {
+    letter-spacing: normal;
   }
   :focus-visible {
     outline: 2px solid var(--color-primary);
@@ -641,7 +668,7 @@ html {
 .glass-app main h1 {
   font-size: 1.75rem;
   line-height: 2.25rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.015em;
 }
 
@@ -770,7 +797,7 @@ html {
    which the source shares, so only the light ones are overridden. */
 .auth-glass {
   --color-cyan: #12c8da;
-  --font-display: "Inter Variable", "Plus Jakarta Sans", "Tajawal", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter Variable", "Plus Jakarta Sans", "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
 }
 html:not(.dark) .auth-glass {
   --color-ink: #081f5c;
@@ -916,4 +943,11 @@ html:not(.dark) .auth-glass {
   .auth-blob {
     display: none;
   }
+}
+
+/* Arabic letters join: no tracking utility pulls them apart (Net Profit's own
+   rule). Unlayered, so it wins over Tailwind's tracking-* utilities. */
+html[lang="ar"] :is(.tracking-tight, .tracking-tighter, [class*="tracking-[-"]),
+html[lang="ar"] .glass-app main :is(h1, h2, h3, h4) {
+  letter-spacing: normal;
 }

@@ -8,6 +8,7 @@ import { useHomeShortcuts } from "@/lib/homeShortcuts";
 import { useKnownWorkCounts } from "@/lib/workCounts";
 import { DEFAULT_SHORTCUT_IDS, shortcutsOf, type ShortcutBadge } from "@/pages/home/shortcutCatalog";
 import { fmt, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
+import { PLACE_COLOR, placeOf } from "@/lib/places";
 
 // Its own chunk, with the drag library: nothing of it loads until someone customizes the row.
 const CustomizeShortcutsDialog = lazy(() =>
@@ -30,6 +31,12 @@ const STRINGS = {
     waiting: "{count} في الانتظار",
   },
 } satisfies Messages;
+
+/** The colour of the place a shortcut's page belongs to; the brand blue for a page outside the places. */
+function placeColor(to: string): string {
+  const place = placeOf(to.split("?")[0]);
+  return place ? PLACE_COLOR[place] : PLACE_COLOR.main;
+}
 
 /**
  * The things a merchant does most, one tap from the home page, in the order
@@ -87,7 +94,18 @@ export function QuickActions({ awaiting }: { awaiting: number | null }) {
                     }
                   >
                     <span className="flex items-center justify-between gap-2">
-                      <Icon className={primary ? "size-[18px]" : "size-[18px] text-primary"} strokeWidth={1.75} aria-hidden />
+                      {primary ? (
+                        <Icon className="size-[18px]" strokeWidth={1.75} aria-hidden />
+                      ) : (
+                        // The page's picture in the colour of its place (the dock's colours), so the row is read by its colours.
+                        <span
+                          aria-hidden
+                          className="grid size-8 place-items-center rounded-[10px] [&>svg]:size-[18px]"
+                          style={{ backgroundColor: `color-mix(in srgb, ${placeColor(to)} 14%, transparent)`, color: placeColor(to) }}
+                        >
+                          <Icon strokeWidth={2} />
+                        </span>
+                      )}
                       {count !== null && count > 0 && (
                         <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-accent-dark" title={fmt(t.waiting, { count })}>
                           {count}
