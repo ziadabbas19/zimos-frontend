@@ -62,7 +62,7 @@ export function KpiCard({ label, value, deltaBasisPoints, deltaLabel, hint, to, 
       )}
       {loading ? null : delta !== null ? (
         <p className="mt-1 flex flex-wrap items-center gap-1 text-xs">
-          <span className={cn("font-medium", good && "text-success", bad && "text-danger", !up && !down && "text-ink-soft")}>
+          <span className={cn("font-medium", good && "text-primary", bad && "text-danger", !up && !down && "text-ink-soft")}>
             {up ? "▲" : down ? "▼" : "•"} {formatPercentValue(Math.abs(delta) / 10000)}
           </span>
           <span className="text-ink-soft">{deltaLabel ?? t.vsPrevious}</span>

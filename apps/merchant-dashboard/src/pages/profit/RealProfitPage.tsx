@@ -372,13 +372,15 @@ function ProfitByDay({
     [workspaceId, range]
   );
   if (!days.data) return <div className="h-[200px]" />;
-  // Bars cannot go below the axis: losses are drawn as zero and named in the tooltip.
+  // Bars cannot go below the axis: losses are drawn as zero. A period that lost money overall is drawn red.
+  const total = days.data.rows.reduce((sum, r) => sum + r[version].netProfit, 0);
   return (
     <div dir="ltr">
       <BarChart
         points={days.data.rows.map((r) => ({ label: formatAxisDate(r.key), value: Math.max(0, r[version].netProfit) }))}
         format={(v) => formatMoney(v, currency)}
         summary={summary}
+        tone={total < 0 ? "bad" : "good"}
       />
     </div>
   );

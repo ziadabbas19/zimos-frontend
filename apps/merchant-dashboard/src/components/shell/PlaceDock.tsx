@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { cn } from "@store-builder/ui";
 import { ViewLink } from "@/components/ViewLink";
@@ -6,6 +7,7 @@ import { getIntlLocale, useT, type Messages } from "@/i18n/LocaleContext";
 import { placeBadge, placeOf, placesFor } from "@/lib/places";
 import { usePlanFeatures } from "@/lib/usePlanFeatures";
 import { useWorkCounts } from "@/lib/workCounts";
+import { LiquidDrop } from "./LiquidDrop";
 import { PlaceTile } from "./PlaceTile";
 import { usePlaceName } from "./usePlaceName";
 
@@ -18,6 +20,18 @@ const STRINGS = {
 const MAX_SHOWN = 99;
 
 /**
+ * Whether this browser can bend what is behind a pane through an SVG filter
+ * (`backdrop-filter: url(#…)`): Chromium can, Safari and Firefox draw plain
+ * frosted glass. Only with a mouse: under a finger the filter would run on
+ * every scrolled frame (theme/glass/dock.css says the same of the phone dock).
+ */
+function bendsBackdrop(): boolean {
+  if (typeof window === "undefined" || typeof CSS === "undefined" || !CSS.supports?.("backdrop-filter", "url(#a)")) return false;
+  const chromium = /Chrome\/|Chromium\/|Edg\//.test(navigator.userAgent) && !/Firefox\//.test(navigator.userAgent);
+  return chromium && Boolean(window.matchMedia?.("(hover: hover) and (pointer: fine)").matches);
+}
+
+/**
  * The dock (from `md` up): every place of the dashboard as an app tile in its
  * own colour, in the side menu's order, floating over the bottom of the page.
  * A tile goes to its place's first page; its name is written under it,
@@ -25,6 +39,8 @@ const MAX_SHOWN = 99;
  * in has its name in bold ink and `aria-current`; another place carries the
  * count of its most urgent waiting work. On a phone the tab bar (MobileTabBar) is the
  * dock. Sticky at the end of the page column, so the page ends above it.
+ * A drop of water rests under the place you are in and flows to the next
+ * (LiquidDrop, after the owner's "Liquid Navbar" reference).
  */
 export function PlaceDock() {
   const t = useT(STRINGS);
@@ -34,12 +50,30 @@ export function PlaceDock() {
   const counts = useWorkCounts(currentWorkspace?.id);
   const here = placeOf(useLocation().pathname);
   const places = placesFor(currentWorkspace?.permissions, plan.gated);
+  const list = useRef<HTMLUListElement>(null);
+  const [refract] = useState(bendsBackdrop);
   if (places.length < 2) return null;
   const digits = new Intl.NumberFormat(getIntlLocale());
 
   return (
     <nav aria-label={t.label} data-slot="dock" className="pointer-events-none sticky bottom-3 z-30 hidden justify-center px-3 pb-3 md:flex">
-      <ul className="zimos-glass zimos-place-dock pointer-events-auto flex items-start gap-1 rounded-[1.25rem] px-2 pt-2 pb-1.5 lg:gap-1.5">
+      {refract && (
+        <svg aria-hidden focusable="false" width="0" height="0" className="absolute">
+          {/* The reference's refraction: what is behind the dock bends a little, like through water. */}
+          <filter id="lg-place-refract" x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
+            <feTurbulence type="fractalNoise" baseFrequency="0.006 0.02" numOctaves="2" seed="7" result="noise" />
+            <feGaussianBlur in="noise" stdDeviation="2" result="soft" />
+            <feDisplacementMap in="SourceGraphic" in2="soft" scale="48" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </svg>
+      )}
+      <ul ref={list} data-refract={refract ? "" : undefined} className="zimos-glass zimos-place-dock pointer-events-auto relative isolate flex items-start gap-1 rounded-[1.25rem] px-2 pt-2 pb-1.5 lg:gap-1.5">
+        {/* Water under the place you are in; it flows to the next one (LiquidDrop). */}
+        <LiquidDrop
+          container={list}
+          current={here}
+          target={() => (here ? list.current?.querySelector<HTMLElement>(`[data-dock-place="${here}"] [data-place-tile]`) ?? null : null)}
+        />
         {places.map((place) => {
           const name = placeName(place);
           const current = place.id === here;

@@ -43,7 +43,8 @@ describe("WebAnalyticsPage", () => {
 
     const { user } = renderWithProviders(<WebAnalyticsPage />, { route: "/analytics/web?compare=prev", path: "/analytics/web" });
 
-    expect(await screen.findByText("Visitors")).toBeInTheDocument();
+    // "Visitors" names the metric, and again the chart's legend.
+    expect((await screen.findAllByText("Visitors")).length).toBeGreaterThan(0);
     expect(screen.getByText("120")).toBeInTheDocument();
     // 120 vs 100 visitors => +20% (bounce rate 40 vs 50 is −20% too).
     expect(screen.getAllByText("20.0%").length).toBeGreaterThan(0);

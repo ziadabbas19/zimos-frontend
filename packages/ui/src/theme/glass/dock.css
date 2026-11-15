@@ -83,6 +83,26 @@
   }
 }
 
+/* The desktop dock (components/shell/PlaceDock.tsx), where the browser can bend
+   its backdrop (Chromium, with a mouse: the dock sets data-refract): clearer
+   glass, and what passes behind it bends through #lg-place-refract, after the
+   owner's "Liquid Navbar" reference. Under the same switch as the rest. */
+:root:not([data-glass="off"]) .glass-app .zimos-glass.zimos-place-dock[data-refract] {
+  background-color: color-mix(in srgb, var(--color-paper-raised) 64%, transparent);
+  -webkit-backdrop-filter: url(#lg-place-refract) blur(5px) saturate(1.45) brightness(1.04);
+  backdrop-filter: url(#lg-place-refract) blur(5px) saturate(1.45) brightness(1.04);
+}
+:root.dark:not([data-glass="off"]) .glass-app .zimos-glass.zimos-place-dock[data-refract] {
+  background-color: color-mix(in srgb, var(--color-paper-raised) 72%, transparent);
+}
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+  :root:not([data-glass="off"]) .glass-app .zimos-glass.zimos-place-dock[data-refract] {
+    background-color: var(--color-paper-raised);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
 /* The count on a slot pops in, and again each time the number changes
    (the badge is keyed by its count). Outside the switch: it is motion, not
    material, and the solid dock has it too. */

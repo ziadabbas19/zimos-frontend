@@ -5,6 +5,7 @@ import type { ReportsCompare, ReportsExportName, ReportsFunnelStep } from "@stor
 import { reportsExportCsv } from "@store-builder/api-client";
 import { Select } from "@/components/Select";
 import { Sparkline } from "@/components/charts";
+import { toneOf } from "@/lib/chartTone";
 import { apiClient } from "@/lib/apiClient";
 import { formatCount } from "@/lib/analytics";
 import { formatPercentValue } from "@/lib/format";
@@ -198,7 +199,7 @@ export function Delta({ percent, inverted, className }: { percent: number | null
     <span
       className={cn(
         "inline-flex items-center gap-0.5 text-xs font-medium tabular-nums",
-        good && "text-success",
+        good && "text-primary",
         bad && "text-danger",
         !good && !bad && "text-ink-soft",
         className
@@ -256,7 +257,7 @@ export function KpiGrid({
             <div className="mt-1.5 flex items-end justify-between gap-3">
               <p className="text-xl font-semibold tracking-tight text-ink tabular-nums">{cell.value}</p>
               {cell.spark && cell.spark.length > 1 && (
-                <Sparkline current={cell.spark} previous={cell.sparkPrevious} height={24} className="w-16 shrink-0" />
+                <Sparkline current={cell.spark} previous={cell.sparkPrevious} height={24} className="w-16 shrink-0" tone={cell.change === undefined ? undefined : toneOf(cell.change, cell.inverted)} lowerIsBetter={cell.inverted} />
               )}
             </div>
             <div className="mt-1 flex min-h-4 items-center gap-1.5">

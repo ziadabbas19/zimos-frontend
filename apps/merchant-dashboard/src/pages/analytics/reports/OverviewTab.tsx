@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { reportsGetSales, type ReportsKpiKey, type ReportsSales, type ReportsSeriesPoint } from "@store-builder/api-client";
 import { ComparisonLineChart } from "@/components/charts";
+import { toneOf } from "@/lib/chartTone";
 import { DataState } from "@/components/DataState";
 import { DataTable, type Column } from "@/components/DataTable";
 import { Section } from "@/components/Section";
@@ -185,7 +186,10 @@ export function OverviewTab({ workspaceId, range }: { workspaceId: string; range
         previousLabel: before ? formatBucket(before.bucket, data.unit) : undefined,
       };
     });
-    return { money, display, cells, points };
+    // The chart takes the verdict its figure's cell shows: blue when it rose against the period before, red when it fell.
+    const chosen = cells.find((cell) => cell.key === metric);
+    const chartTone = toneOf(chosen?.change, chosen?.inverted);
+    return { money, display, cells, points, chartTone };
   }, [data, metric, t]);
 
   const channelColumns: Column<ChannelRow>[] = [
@@ -229,8 +233,9 @@ export function OverviewTab({ workspaceId, range }: { workspaceId: string; range
                     ? `${value.toFixed(1)}%`
                     : formatCount(Math.round(value))
               }
-              height={260}
+              height={280}
               summary={t.overTime.replace("{metric}", t[metric])}
+              tone={view.chartTone}
               currentLabel={t.thisPeriod}
               previousLabel={t.comparison}
             />

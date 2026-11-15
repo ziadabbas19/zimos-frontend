@@ -19,6 +19,7 @@ import { RangeSwitch } from "@/components/RangeSwitch";
 import { Section } from "@/components/Section";
 import { Select } from "@/components/Select";
 import { HBarList, LineAreaChart, Sparkline } from "@/components/charts";
+import { toneOf } from "@/lib/chartTone";
 import { IconCaretDown } from "@/components/icons";
 import { fmt, getIntlLocale, useT, type Messages } from "@/i18n/LocaleContext";
 
@@ -497,6 +498,8 @@ function StatsCard({
   const day = new Intl.DateTimeFormat(getIntlLocale(), { day: "numeric", month: "short" });
   const lineLabel = shownKey ? (shownKey === "bounceRate" ? t.bounceRate : t[shownKey]) : "";
   const lineKind: Kind = shownKey && TILES.find((tile) => tile.key === shownKey)?.kind === "money" ? "money" : "count";
+  const drawnFigure = figures.find((figure) => figure.key === shownKey);
+  const drawnTone = drawnFigure ? toneOf(deltaBasisPoints(drawnFigure.value, drawnFigure.previous), drawnFigure.inverse) : "good";
 
   function toggle(key: StatKey) {
     if (chosen.includes(key)) {
@@ -556,12 +559,14 @@ function StatsCard({
       </div>
 
       {line && (
-        <div className="border-t border-line px-4 pt-4 pb-2 sm:px-5" dir="ltr">
+        <div className="border-t border-line p-3 sm:p-4" dir="ltr">
+          {/* Blue when the drawn figure moved the good way against the period before, red when not. */}
           <LineAreaChart
             points={data.series.map((d) => ({ label: day.format(new Date(`${d.date}T12:00:00`)), value: d[line] ?? 0 }))}
             format={(v) => (lineKind === "money" ? money(v) : formatCount(v))}
-            height={150}
+            height={210}
             summary={fmt(t.chartSummary, { label: lineLabel, window })}
+            tone={drawnTone}
           />
         </div>
       )}
@@ -612,7 +617,7 @@ function StatsCard({
   );
 }
 
-/** A change against the period before, as a tinted chip: green up, red down. */
+/** A change against the period before, as a tinted chip: blue when it is good news, red when bad (Shopify's reading). */
 function DeltaChip({ delta, inverse = false }: { delta: number; inverse?: boolean }) {
   const up = delta > 0;
   const down = delta < 0;
@@ -622,7 +627,7 @@ function DeltaChip({ delta, inverse = false }: { delta: number; inverse?: boolea
     <span
       className={cn(
         "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
-        good && "bg-success-soft text-success",
+        good && "bg-primary-soft text-primary",
         bad && "bg-danger-soft text-danger",
         !up && !down && "bg-paper-sunken text-ink-soft"
       )}
@@ -666,13 +671,13 @@ function MetricTile({
         </p>
         {spark && spark.length > 1 && (
           <div className="w-20 shrink-0" dir="ltr">
-            <Sparkline current={spark} />
+            <Sparkline current={spark} tone={toneOf(delta, inverse)} />
           </div>
         )}
       </div>
       {delta !== null ? (
         <p className="mt-1 flex flex-wrap items-center gap-1 text-xs">
-          <span className={cn("font-medium", good && "text-success", bad && "text-danger", !up && !down && "text-ink-soft")}>
+          <span className={cn("font-medium", good && "text-primary", bad && "text-danger", !up && !down && "text-ink-soft")}>
             <bdi dir="ltr">
               {up ? "▲" : down ? "▼" : "•"} {formatPercentValue(Math.abs(delta) / 10000)}
             </bdi>
