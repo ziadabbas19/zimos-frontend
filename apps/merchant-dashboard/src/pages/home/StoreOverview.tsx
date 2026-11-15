@@ -7,6 +7,7 @@ import {
   type InsightsDay,
   type InsightsMetricKey,
   type InsightsOverview,
+  type WebAnalyticsStats,
 } from "@store-builder/api-client";
 import { apiClient } from "@/lib/apiClient";
 import { useAsync } from "@/lib/useAsync";
@@ -46,8 +47,7 @@ const STRINGS = {
     deliveryRate: "Delivery rate",
     allNumbers: "All the numbers ({n})",
     chartSummary: "{label} for each day of {window}.",
-    chartConfirmed: "Orders confirmed each day",
-    chartDelivered: "Orders delivered each day",
+    bounceRate: "Bounce rate",
     fullReport: "Full report",
     customize: "Change the figures",
     customizeDone: "Done",
@@ -56,8 +56,6 @@ const STRINGS = {
     hintNewOrders: "Still waiting for someone to open them",
     hintLost: "Checkouts started and never finished",
     hintProfit: "Delivered orders, after product cost and refunds",
-    hintConfirmation: "Confirmed ÷ cash-on-delivery orders",
-    hintDelivery: "Delivered ÷ handed to the courier",
     hintLeads: "From sign-up and newsletter forms",
     funnelTitle: "Conversion funnel",
     funnelDesc: "Sessions that reached each step in {window}.",
@@ -115,8 +113,7 @@ const STRINGS = {
     deliveryRate: "نسبة التسليم",
     allNumbers: "كل الأرقام ({n})",
     chartSummary: "{label} لكل يوم خلال {window}.",
-    chartConfirmed: "الطلبات التي تأكدت كل يوم",
-    chartDelivered: "الطلبات التي تسلّمت كل يوم",
+    bounceRate: "معدل الارتداد",
     fullReport: "التقرير الكامل",
     customize: "غيّر الأرقام",
     customizeDone: "تم",
@@ -125,8 +122,6 @@ const STRINGS = {
     hintNewOrders: "لم يفتحها أحد بعد",
     hintLost: "بدأ العميل إتمام الطلب ولم يكمله",
     hintProfit: "الطلبات المسلَّمة بعد تكلفة المنتج والمرتجعات المالية",
-    hintConfirmation: "المؤكَّد ÷ طلبات الدفع عند الاستلام",
-    hintDelivery: "المسلَّم ÷ ما خرج مع شركة الشحن",
     hintLeads: "من نماذج الاشتراك والنشرة البريدية",
     funnelTitle: "قمع التحويل",
     funnelDesc: "الجلسات التي وصلت لكل خطوة خلال {window}.",
@@ -167,7 +162,7 @@ type Kind = "count" | "money" | "rate";
 interface Tile {
   key: InsightsMetricKey;
   kind: Kind;
-  hint?: "hintOrders" | "hintNewOrders" | "hintLost" | "hintProfit" | "hintConfirmation" | "hintDelivery" | "hintLeads";
+  hint?: "hintOrders" | "hintNewOrders" | "hintLost" | "hintProfit" | "hintLeads";
   spark?: keyof Omit<InsightsDay, "date">;
   to?: string;
   /** Lower is better: a rise is shown in red. */
@@ -179,8 +174,6 @@ const TILES: Tile[] = [
   { key: "orders", kind: "count", spark: "orders", hint: "hintOrders", to: "/orders" },
   { key: "netProfit", kind: "money", hint: "hintProfit", to: "/profit" },
   { key: "averageOrderValue", kind: "money" },
-  { key: "confirmationRate", kind: "rate", hint: "hintConfirmation", to: "/confirmation-queue" },
-  { key: "deliveryRate", kind: "rate", hint: "hintDelivery" },
   { key: "visits", kind: "count", spark: "visits", to: "/analytics/web" },
   { key: "conversionRate", kind: "rate" },
   { key: "addToCart", kind: "count", spark: "addToCart" },
@@ -197,18 +190,24 @@ const TILES: Tile[] = [
 /**
  * The figures the box at the top of the home page shows (StatsCard), chosen by
  * the merchant and kept on this device; the rest of TILES sit under "All the
- * numbers". The default is a cash-on-delivery store's four: what was sold, how
- * many orders, and how many were confirmed and delivered.
+ * numbers". A store builder's figures (owner, 2026-11-15: "we measure the
+ * bounce rate and the conversion rate; confirmation and delivery are the
+ * fulfilment's"): by default what was sold, how many orders, how many visits,
+ * how many of them bought, and how many left from the first page. The bounce
+ * rate is the site analytics' (one read beside the overview's).
  */
-const STATS_KEY = "zimos.home.stats.v1";
-const STATS_MAX = 4;
-const STATS_DEFAULT: InsightsMetricKey[] = ["sales", "orders", "confirmationRate", "deliveryRate"];
+type StatKey = InsightsMetricKey | "bounceRate";
+const STATS_KEY = "zimos.home.stats.v2";
+const STATS_MAX = 5;
+const STATS_DEFAULT: StatKey[] = ["sales", "orders", "visits", "conversionRate", "bounceRate"];
+/** Every figure the box can show, in the order the chooser lists them. */
+const STAT_KEYS: StatKey[] = [...TILES.slice(0, 3).map((tile) => tile.key), "bounceRate", ...TILES.slice(3).map((tile) => tile.key)];
 
-function readStats(): InsightsMetricKey[] {
+function readStats(): StatKey[] {
   try {
     const raw = JSON.parse(localStorage.getItem(STATS_KEY) ?? "null") as unknown;
     if (Array.isArray(raw)) {
-      const keys = raw.filter((key): key is InsightsMetricKey => TILES.some((tile) => tile.key === key)).slice(0, STATS_MAX);
+      const keys = raw.filter((key): key is StatKey => STAT_KEYS.includes(key as StatKey)).slice(0, STATS_MAX);
       if (keys.length > 0) return keys;
     }
   } catch {
@@ -228,8 +227,6 @@ const LINE_OF: Partial<Record<InsightsMetricKey, keyof Omit<InsightsDay, "date">
   crossSellAdds: "crossSell",
   lostOrders: "lost",
   leads: "leads",
-  confirmationRate: "confirmed",
-  deliveryRate: "delivered",
 };
 
 /**
@@ -242,8 +239,8 @@ export function StoreOverview({ actions, between }: { actions?: ReactNode; betwe
   const workspaceId = useWorkspaceId();
   const [range, setRange] = useState<AnalyticsRange>("7d");
   const [funnelId, setFunnelId] = useState("");
-  const [chosen, setChosen] = useState<InsightsMetricKey[]>(readStats);
-  const choose = (next: InsightsMetricKey[]) => {
+  const [chosen, setChosen] = useState<StatKey[]>(readStats);
+  const choose = (next: StatKey[]) => {
     setChosen(next);
     try {
       localStorage.setItem(STATS_KEY, JSON.stringify(next));
@@ -261,6 +258,11 @@ export function StoreOverview({ actions, between }: { actions?: ReactNode; betwe
         funnelId: funnelId || undefined,
       }),
     [workspaceId, range, funnelId]
+  );
+  // The bounce rate, for the same period, from the site analytics; a store without them shows "—".
+  const web = useAsync<WebAnalyticsStats | null>(
+    () => apiClient.getWebAnalyticsStats(workspaceId, { ...rangeWindows(range).current, compare: "prev", unit: "day" }).catch(() => null),
+    [workspaceId, range]
   );
   const data = overview.data;
 
@@ -287,7 +289,7 @@ export function StoreOverview({ actions, between }: { actions?: ReactNode; betwe
       </div>
 
       <DataState loading={overview.loading && !data} error={overview.error} onRetry={() => void overview.refresh()}>
-        {data && <StatsCard data={data} chosen={chosen} onChoose={choose} busy={overview.loading} />}
+        {data && <StatsCard data={data} web={web.data ?? null} chosen={chosen} onChoose={choose} busy={overview.loading} />}
       </DataState>
       {/* What needs finishing, right under the figures (the home page passes it). */}
       {between}
@@ -296,7 +298,7 @@ export function StoreOverview({ actions, between }: { actions?: ReactNode; betwe
   );
 }
 
-function OverviewBody({ data, chosen, busy }: { data: InsightsOverview; chosen: readonly InsightsMetricKey[]; busy: boolean }) {
+function OverviewBody({ data, chosen, busy }: { data: InsightsOverview; chosen: readonly StatKey[]; busy: boolean }) {
   const t = useT(STRINGS);
   const money = (v: number | null) => (v === null ? "—" : formatMoney(v, data.currency));
   const show = (kind: Kind, v: number | null) =>
@@ -456,37 +458,47 @@ function OverviewBody({ data, chosen, busy }: { data: InsightsOverview; chosen: 
  * The box at the top of the home page (owner, 2026-11-15: "sales first, a
  * simple wide box with the main figures, that I can change"): up to four
  * figures side by side, each with its change against the period before; the
- * one chosen is drawn day by day under them (a rate by the count it comes
- * from). "Change the figures" picks which ones, kept on this device. Shopify
- * leads its home with such a box; its default here is a cash-on-delivery
- * store's: sales, orders, and the confirmation and delivery rates.
+ * one chosen is drawn day by day under them. "Change the figures" picks which ones, kept on this device. Shopify
+ * leads its home with such a box; its default here is a store builder's:
+ * sales, orders, visits, the conversion rate and the bounce rate.
  */
 function StatsCard({
   data,
+  web,
   chosen,
   onChoose,
   busy,
 }: {
   data: InsightsOverview;
-  chosen: InsightsMetricKey[];
-  onChoose: (next: InsightsMetricKey[]) => void;
+  web: WebAnalyticsStats | null;
+  chosen: StatKey[];
+  onChoose: (next: StatKey[]) => void;
   busy: boolean;
 }) {
   const t = useT(STRINGS);
   const money = (v: number | null) => (v === null ? "—" : formatMoney(v, data.currency));
   const show = (kind: Kind, v: number | null) =>
     kind === "money" ? money(v) : kind === "rate" ? formatPercentValue(percentToRatio(v)) : formatCount(v);
-  const tiles = chosen.map((key) => TILES.find((tile) => tile.key === key)!).filter(Boolean);
-  const [drawn, setDrawn] = useState<InsightsMetricKey>(() => chosen.find((key) => LINE_OF[key]) ?? "sales");
+  // Each chosen figure: its label, its kind, now and before. The bounce rate is the site analytics'; lower is better.
+  const figures = chosen.map((key) => {
+    if (key === "bounceRate") {
+      return { key, label: t.bounceRate, kind: "rate" as Kind, value: web?.bounceRate ?? null, previous: web?.comparison?.bounceRate ?? null, inverse: true };
+    }
+    const tile = TILES.find((x) => x.key === key)!;
+    const metric = data.metrics[key];
+    return { key, label: t[key], kind: tile.kind, value: metric.value, previous: metric.previous, inverse: Boolean(tile.inverse) };
+  });
+  const lineOf = (key: StatKey) => (key === "bounceRate" ? undefined : LINE_OF[key]);
+  const [drawn, setDrawn] = useState<StatKey>(() => chosen.find((key) => lineOf(key)) ?? "sales");
   const [editing, setEditing] = useState(false);
-  const shownKey = chosen.includes(drawn) && LINE_OF[drawn] ? drawn : (chosen.find((key) => LINE_OF[key]) ?? null);
-  const line = shownKey ? LINE_OF[shownKey]! : null;
+  const shownKey = chosen.includes(drawn) && lineOf(drawn) ? drawn : (chosen.find((key) => lineOf(key)) ?? null);
+  const line = shownKey ? lineOf(shownKey)! : null;
   const window = formatWindow(data.range.from, data.range.to);
   const day = new Intl.DateTimeFormat(getIntlLocale(), { day: "numeric", month: "short" });
-  const lineLabel = shownKey === "confirmationRate" ? t.chartConfirmed : shownKey === "deliveryRate" ? t.chartDelivered : shownKey ? t[shownKey] : "";
+  const lineLabel = shownKey ? (shownKey === "bounceRate" ? t.bounceRate : t[shownKey]) : "";
   const lineKind: Kind = shownKey && TILES.find((tile) => tile.key === shownKey)?.kind === "money" ? "money" : "count";
 
-  function toggle(key: InsightsMetricKey) {
+  function toggle(key: StatKey) {
     if (chosen.includes(key)) {
       if (chosen.length > 1) onChoose(chosen.filter((k) => k !== key));
     } else if (chosen.length < STATS_MAX) {
@@ -497,17 +509,21 @@ function StatsCard({
   return (
     <Card data-slot="stats-card" className={cn("gap-0 overflow-hidden p-0 transition-opacity", busy && "opacity-60")}>
       {/* The figures side by side; the one drawn below is marked. */}
-      <div className={cn("grid grid-cols-2 divide-line max-lg:[&>*:nth-child(n+3)]:border-t max-lg:[&>*:nth-child(odd)]:border-e", tiles.length >= 4 ? "lg:grid-cols-4" : tiles.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2", "lg:divide-x lg:rtl:divide-x-reverse")}>
-        {tiles.map((tile) => {
-          const metric = data.metrics[tile.key];
-          const delta = deltaBasisPoints(metric.value, metric.previous);
-          const drawable = Boolean(LINE_OF[tile.key]);
+      <div
+        className={cn(
+          "grid grid-cols-2 divide-line max-lg:[&>*:nth-child(n+3)]:border-t max-lg:[&>*:nth-child(odd)]:border-e lg:divide-x lg:rtl:divide-x-reverse",
+          ["", "lg:grid-cols-1", "lg:grid-cols-2", "lg:grid-cols-3", "lg:grid-cols-4", "lg:grid-cols-5"][figures.length]
+        )}
+      >
+        {figures.map((tile) => {
+          const delta = deltaBasisPoints(tile.value, tile.previous);
+          const drawable = Boolean(lineOf(tile.key));
           const selected = tile.key === shownKey;
           const body = (
             <>
-              <span className="block truncate text-sm font-medium text-ink-soft">{t[tile.key]}</span>
+              <span className="block truncate text-sm font-medium text-ink-soft">{tile.label}</span>
               <span className="tabular-nums mt-1 block text-2xl leading-tight font-bold tracking-tight text-ink sm:text-[1.75rem]">
-                <bdi dir="ltr">{show(tile.kind, metric.value)}</bdi>
+                <bdi dir="ltr">{show(tile.kind, tile.value)}</bdi>
               </span>
               {delta !== null && (
                 <span className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
@@ -571,21 +587,21 @@ function StatsCard({
         <div className="border-t border-line px-4 py-3 sm:px-5">
           <p className="text-xs text-ink-soft">{fmt(t.customizeHint, { n: String(STATS_MAX) })}</p>
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {TILES.map((tile) => {
-              const on = chosen.includes(tile.key);
+            {STAT_KEYS.map((key) => {
+              const on = chosen.includes(key);
               return (
                 <button
-                  key={tile.key}
+                  key={key}
                   type="button"
                   aria-pressed={on}
                   disabled={(!on && chosen.length >= STATS_MAX) || (on && chosen.length === 1)}
-                  onClick={() => toggle(tile.key)}
+                  onClick={() => toggle(key)}
                   className={cn(
                     "min-h-9 cursor-pointer rounded-full border px-3 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40 pointer-coarse:min-h-11",
                     on ? "border-primary bg-primary text-primary-foreground" : "border-line text-ink hover:border-primary/40"
                   )}
                 >
-                  {t[tile.key]}
+                  {key === "bounceRate" ? t.bounceRate : t[key]}
                 </button>
               );
             })}
