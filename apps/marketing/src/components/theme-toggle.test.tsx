@@ -8,7 +8,8 @@ import { ThemeToggle } from "./theme-toggle";
 /**
  * The header's light/dark switch with its circle (@store-builder/ui/theme-reveal):
  * whether the circle is drawn or not, a press leaves the same theme on <html>
- * and the same choice in localStorage as before there was a circle.
+ * and the same choice in localStorage as before there was a circle — and in
+ * the cookie the dashboard's sign-in screens read (lib/theme-cookie.ts).
  */
 
 const dict = getDictionary("en");
@@ -22,6 +23,7 @@ const html = () => document.documentElement;
 beforeEach(() => {
   reducedMotion = false;
   localStorage.clear();
+  document.cookie = "zimos-theme=; Max-Age=0; Path=/";
   html().classList.remove("dark");
   html().style.colorScheme = "";
   vi.stubGlobal("matchMedia", (query: string) => ({
@@ -45,6 +47,7 @@ function pressAndCheck() {
   expect(html().classList.contains("dark")).toBe(true);
   expect(html().style.colorScheme).toBe("dark");
   expect(localStorage.getItem("theme")).toBe("dark");
+  expect(document.cookie).toBe("zimos-theme=dark");
   // Same button, still focused, now offering the way back.
   expect(button.getAttribute("aria-label")).toBe(dict.nav.switchToLight);
   expect(document.activeElement).toBe(button);
@@ -71,5 +74,12 @@ describe("the theme switch", () => {
     doc.startViewTransition = start;
     pressAndCheck();
     expect(start).toHaveBeenCalledTimes(1);
+  });
+
+  it("writes the way back to light to the cookie too", () => {
+    pressAndCheck();
+    fireEvent.click(screen.getByRole("button", { name: dict.nav.switchToLight }), { clientX: 40, clientY: 30, detail: 1 });
+    expect(localStorage.getItem("theme")).toBe("light");
+    expect(document.cookie).toBe("zimos-theme=light");
   });
 });

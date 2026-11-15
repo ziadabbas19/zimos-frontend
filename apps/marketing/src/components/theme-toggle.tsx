@@ -3,9 +3,10 @@
 import { useCallback, useSyncExternalStore, type MouseEvent } from "react";
 import { animateThemeChange } from "@store-builder/ui/theme-reveal";
 import { useI18n } from "@/i18n/provider";
+import { writeThemeCookie, type SiteTheme } from "@/lib/theme-cookie";
 import { ColorIcon } from "./color-icon";
 
-type Theme = "light" | "dark";
+type Theme = SiteTheme;
 
 function storedTheme(): Theme | null {
   try {
@@ -81,6 +82,8 @@ export function ThemeToggle({ className = "lz-top__icon" }: { className?: string
     } catch {
       /* private mode — the pre-paint script falls back to the system theme */
     }
+    // The dashboard's sign-in and sign-up screens (another host) open in the same theme.
+    writeThemeCookie(next);
     emit();
   }, []);
 

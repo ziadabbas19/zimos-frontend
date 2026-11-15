@@ -9,13 +9,11 @@ import { I18nProvider } from "@/i18n/provider";
 import { ogImage } from "@/lib/og";
 import { SITE_NAME } from "@/lib/seo";
 import { SITE_URL } from "@/lib/urls";
+import { themeScript } from "@/lib/theme-script";
 import { SiteAnalytics } from "@/components/site-analytics";
 import { Gtm } from "@/components/gtm";
 
 type LocaleParams = { locale: string };
-
-/** Set the theme class before first paint — no flash of the wrong theme. */
-const themeScript = `(function(){try{var e=document.documentElement,s=null;try{s=localStorage.getItem("theme")}catch(_){}var d=s==="dark"||(s!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);e.classList.toggle("dark",d);e.style.colorScheme=d?"dark":"light"}catch(_){}})();`;
 
 export function generateStaticParams(): LocaleParams[] {
   return locales.map((locale) => ({ locale }));
@@ -89,6 +87,7 @@ export default async function LocaleLayout({
       className={`${fontVariables} lang-${locale} antialiased`}
     >
       <head>
+        {/* The theme class before the first paint — no flash of the wrong theme (lib/theme-script.ts). */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-dvh bg-paper text-ink">
