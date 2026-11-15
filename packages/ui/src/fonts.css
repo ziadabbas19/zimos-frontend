@@ -1,5 +1,5 @@
 /*
- * The families the merchant dashboard's and the platform console's
+ * The three families the merchant dashboard's and the platform console's
  * index.html used to fetch from Google Fonts, served with each app instead:
  * the same font files (fontsource takes them from Google Fonts), the same
  * weights, the same family names the themes ask for, and font-display: swap
@@ -9,11 +9,8 @@
  * the theme/ layers: those are colours and shapes only, with no font file
  * (the dashboard's src/theme/theme.test.ts).
  *
- *   IBM Plex Sans Arabic  every Arabic word of both apps (after Inter, which
- *                      has no Arabic), 400 / 500 / 600 / 700 — the pair Net
- *                      Profit's system draws in (owner, 2026-11-15)
- *   Tajawal            the store looks' Arabic in the website editor and
- *                      the funnel builder, 400 / 500 / 700
+ *   Tajawal            every Arabic word of both apps (after Inter, which
+ *                      has no Arabic), 400 / 500 / 700
  *   Plus Jakarta Sans  the store looks' Latin text in the website editor,
  *                      400 to 700
  *   Fraunces           the classic look's headings in the website editor,
@@ -25,10 +22,6 @@
  * The packages are dependencies of @store-builder/ui, so the imports below
  * resolve from here whichever app is built.
  */
-@import "@fontsource/ibm-plex-sans-arabic/400.css";
-@import "@fontsource/ibm-plex-sans-arabic/500.css";
-@import "@fontsource/ibm-plex-sans-arabic/600.css";
-@import "@fontsource/ibm-plex-sans-arabic/700.css";
 @import "@fontsource/tajawal/400.css";
 @import "@fontsource/tajawal/500.css";
 @import "@fontsource/tajawal/700.css";

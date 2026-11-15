@@ -100,7 +100,7 @@ export function SetupGuideCard() {
   }
 
   return (
-    <Card className="gap-0 p-5">
+    <Card className="mb-8 gap-0 p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h2 className="text-base font-semibold text-ink">{t.title}</h2>

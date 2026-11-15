@@ -55,8 +55,7 @@ function applyToDocument(locale: Locale) {
 }
 
 export function intlLocaleOf(locale: Locale): string {
-  // Arabic with Western digits (412,880), drawn in Inter, as Net Profit's system writes its figures (owner, 2026-11-15).
-  return locale === "ar" ? "ar-EG-u-nu-latn" : "en-US";
+  return locale === "ar" ? "ar-EG" : "en-US";
 }
 
 /**

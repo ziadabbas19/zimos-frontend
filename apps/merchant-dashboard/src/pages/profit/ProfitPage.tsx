@@ -216,6 +216,7 @@ export function ProfitPage() {
                   <div dir="ltr">
                     <BarChart
                       summary={t.dailyDesc}
+                      color="var(--color-success)"
                       points={current.series.map((day) => ({
                         label: formatAxisDate(day.date),
                         value: day.delivered,

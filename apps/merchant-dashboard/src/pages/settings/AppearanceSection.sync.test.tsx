@@ -149,8 +149,6 @@ describe("Language and look: saved to the account", () => {
   });
 
   it("saves a choice of look, of glass and of glow colours the same way", async () => {
-    // The glows are offered with the "Calm" background (lib/wallpaper.ts).
-    localStorage.setItem("zimos.wallpaper", "calm");
     vi.useFakeTimers();
     const server = account(dark());
     renderWithProviders(<AppearanceSection />);

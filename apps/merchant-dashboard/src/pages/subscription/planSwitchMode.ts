@@ -55,7 +55,7 @@ export function renewalLine(preview: Pick<PlanSwitchPreview, "kind" | "nextRenew
 /** A number of hours in words (as formatDays does for days): "48 hours", "٤٨ ساعة". */
 export function formatHours(hours: number, locale: "ar" | "en"): string {
   if (locale === "en") return hours === 1 ? "1 hour" : `${hours} hours`;
-  const n = new Intl.NumberFormat("ar-EG-u-nu-latn").format(hours);
+  const n = new Intl.NumberFormat("ar-EG").format(hours);
   if (hours === 1) return "ساعة واحدة";
   if (hours === 2) return "ساعتان";
   if (hours >= 3 && hours <= 10) return `${n} ساعات`;
