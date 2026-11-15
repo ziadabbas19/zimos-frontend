@@ -34,7 +34,8 @@ describe("the sign-in page's frame is the merchant dashboard's", () => {
   it("the wallpaper, the mark at the top and the one card", () => {
     assert.match(shell, /<div className="auth-glass">/);
     assert.match(dashboardShell, /<div className="auth-glass">/);
-    assert.equal(classOf(shell, "<header"), classOf(dashboardShell, "<header"));
+    // The centred frame's header: the dashboard's sign in and sign up have a split layout of their own first.
+    assert.equal(classOf(shell, "<header className="), classOf(dashboardShell, "<header className="));
     assert.match(shell, /<main className="auth-glass-stage">/);
     assert.match(dashboardShell, /<main className="auth-glass-stage">/);
     assert.match(shell, /<ZimosLogo height=\{30\} \/>/);
