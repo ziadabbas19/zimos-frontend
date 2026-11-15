@@ -24,6 +24,7 @@ import { accentOf, readStoreLook } from "../editor/storeLook";
 import { ThemeSketch } from "../editor/ThemeSketch";
 import { useCodeLabel } from "./codes";
 import { siteStateOf, type SiteFacts, type SiteState } from "./siteFacts";
+import { storeHost } from "@/lib/storeAddress";
 
 const STRINGS = {
   en: {
@@ -86,7 +87,7 @@ function QuietLink({ to, icon: LinkIcon, children }: { to: string; icon: IconCom
  * storefront render, asked for once the page's facts are in — over a drawing
  * of the store's theme, which stays if there is no page to draw yet.
  */
-function SiteThumb({ site, facts }: { site: Website; facts: SiteFacts | null }) {
+function SiteThumb({ site, facts, address }: { site: Website; facts: SiteFacts | null; address: string | null }) {
   const workspaceId = useWorkspaceId();
   const { currentWorkspace } = useWorkspace();
   const look = useMemo(() => readStoreLook(currentWorkspace), [currentWorkspace]);
@@ -104,22 +105,38 @@ function SiteThumb({ site, facts }: { site: Website; facts: SiteFacts | null }) 
     />
   );
 
+  // The store as a shopper's computer shows it (owner, 2026-11-15: "the running store as a desktop,
+  // not a phone, and plainly seen"), in a browser's frame with the store's address.
   return (
-    <div className="relative aspect-[3/4] w-full overflow-hidden bg-paper-sunken">
-      {facts === null ? (
-        // In its own box: the drawing fills the portrait, whatever shape it would take by itself.
-        <div className="absolute inset-0">{sketch}</div>
-      ) : (
-        <TemplateLivePreview
-          workspaceId={workspaceId}
-          templateId={`site:${site.id}`}
-          page={home}
-          title={site.name}
-          aspect="3/4"
-          cardLayout="mobile"
-          fallback={sketch}
-        />
-      )}
+    <div className="overflow-hidden bg-paper-raised">
+      <div aria-hidden className="flex h-7 items-center gap-2 border-b border-line bg-paper-sunken/70 px-3" dir="ltr">
+        <span className="flex gap-1">
+          <span className="size-2 rounded-full bg-[#ff5f57]" />
+          <span className="size-2 rounded-full bg-[#febc2e]" />
+          <span className="size-2 rounded-full bg-[#28c840]" />
+        </span>
+        {address && (
+          <span className="mx-auto max-w-[70%] truncate rounded-md bg-paper-raised px-3 py-0.5 text-[11px] leading-4 text-ink-soft ring-1 ring-line">
+            {address}
+          </span>
+        )}
+      </div>
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-paper-sunken">
+        {facts === null ? (
+          // In its own box: the drawing fills the frame, whatever shape it would take by itself.
+          <div className="absolute inset-0">{sketch}</div>
+        ) : (
+          <TemplateLivePreview
+            workspaceId={workspaceId}
+            templateId={`site:${site.id}`}
+            page={home}
+            title={site.name}
+            aspect="16/10"
+            cardLayout="desktop"
+            fallback={sketch}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -170,16 +187,17 @@ export function SiteHero({
       aria-labelledby={nameId}
       className="zimos-site-hero relative min-w-0 rounded-[var(--radius-card)] bg-paper-raised p-4 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-5"
     >
-      <div className="flex min-w-0 gap-3.5 sm:gap-5">
+      {/* The store large on top on a phone; beside its facts, and the bigger of the two, from md. */}
+      <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-start md:gap-6">
         {/* A second way to the same place for a finger that goes for the picture; the button is the one that is named. */}
         <Link
           to={editTo}
           tabIndex={-1}
           aria-hidden="true"
           data-slot="site-thumb"
-          className="zimos-site-thumb block w-24 shrink-0 self-start overflow-hidden rounded-2xl ring-1 ring-line transition-[translate,scale] duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.97] motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 sm:w-36"
+          className="zimos-site-thumb block w-full shrink-0 self-start overflow-hidden rounded-2xl shadow-[var(--shadow-card)] ring-1 ring-line transition-[translate,scale] duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:-translate-y-0.5 active:scale-[0.99] motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 md:w-[56%]"
         >
-          <SiteThumb site={site} facts={facts} />
+          <SiteThumb site={site} facts={facts} address={slug ? storeHost(slug) : null} />
         </Link>
 
         <div className="flex min-w-0 flex-1 flex-col gap-2.5">
