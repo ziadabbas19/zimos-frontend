@@ -1280,26 +1280,33 @@ html:has(.zm) {
   overflow: hidden;
 }
 
+/* One centred block, as wide as the page's text (1100px at full size,
+   scaled with it): the label, then the moving track, clipped and faded at
+   both ends so the marks come and go softly. */
 .zm-works-row {
   display: flex;
   align-items: center;
-  gap: 2.125rem;
+  justify-content: center;
+  gap: 2rem;
+  max-width: 68.75rem;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
 }
 
 .zm-works-l {
   flex: none;
-  padding-inline-start: max(1.5rem, calc((100vw - 73.75rem) / 2 + 1.5rem));
   color: var(--muted);
   font-size: var(--t-small);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .zm-works-vp {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
 }
 
 .zm-works-t {
@@ -3633,8 +3640,15 @@ html:has(.zm-viewer[open]) {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* On a phone the label stands above the track, both centred. */
+  .zm-works-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
   .zm-works-l {
-    display: none;
+    text-align: center;
   }
 
   .zm-jstage {
