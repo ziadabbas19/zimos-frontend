@@ -413,10 +413,11 @@ describe("WebsitePage template card shape", () => {
     return { card, frame, box: frame.closest('[class*="aspect-"]')! };
   }
 
-  it("two columns on a phone, three from 640px, and two landscape ones from 1024px", async () => {
+  it("two columns on a phone, three from 640px, and three landscape ones from 1024px", async () => {
     const { card } = await renderCard("shape_grid");
     const grid = card.closest("ul")!;
-    expect(grid).toHaveClass("grid-cols-2", "sm:grid-cols-3", "lg:grid-cols-2");
+    expect(grid).toHaveClass("grid-cols-2", "sm:grid-cols-3");
+    expect(grid).not.toHaveClass("lg:grid-cols-2");
     expect(grid).not.toHaveClass("lg:grid-cols-4");
     // The picture's box: a portrait, a landscape from `lg`.
     expect(card.querySelector('[class~="aspect-[3/4]"]')).toHaveClass("lg:aspect-[16/10]");

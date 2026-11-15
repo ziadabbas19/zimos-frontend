@@ -7,7 +7,7 @@ import { TextField } from "@/components/Field";
 import { Sheet } from "@/components/Sheet";
 import { useToast } from "@/components/Toast";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
+import { fmt, useLocale, useT, type Messages } from "@/i18n/LocaleContext";
 import { apiClient } from "@/lib/apiClient";
 import { getErrorMessage, getFieldErrors } from "@/lib/errors";
 import { pluralOf } from "@/lib/plural";
@@ -21,6 +21,7 @@ import { TemplatePlaceholder } from "./TemplatePlaceholder";
 import { dropXsShell, storeHasOwnLook, takeTemplateLook, takeXsShell, templateColour, templateStoreTheme, templateXsLook, useTemplatePreviewTheme, withTemplateTheme } from "./templateLook";
 import { useMountedOpen } from "./useMountedOpen";
 import { addXsCatalog, addXsGroups, xsCatalogOf } from "./xsCatalog";
+import { templateName } from "./templateNames";
 
 const STRINGS = {
   en: {
@@ -162,6 +163,7 @@ export function TemplateSheet({
   inUse?: boolean;
 }) {
   const t = useT(STRINGS);
+  const { locale } = useLocale();
   const codeLabel = useCodeLabel();
   const formId = useId();
   const workspaceId = useWorkspaceId();
@@ -313,7 +315,7 @@ export function TemplateSheet({
         if (!next && saving) return;
         onOpenChange(next);
       }}
-      title={step === "preview" ? template.name : fmt(t.confirmTitle, { name: template.name })}
+      title={step === "preview" ? templateName(template, locale) : fmt(t.confirmTitle, { name: templateName(template, locale) })}
       description={step === "preview" ? (kind ? `${kind} · ${goodFor}` : goodFor) : undefined}
       size="lg"
       // The whole height on a phone; a tall dialog from 640px, so the store has room.
@@ -348,8 +350,8 @@ export function TemplateSheet({
             templateId={template.id}
             theme={theme}
             themeFrom={withTemplateTheme}
-            title={fmt(t.livePreview, { name: template.name })}
-            fallback={<TemplatePlaceholder color={template.primaryColor} title={template.name} label={t.noPreview} />}
+            title={fmt(t.livePreview, { name: templateName(template, locale) })}
+            fallback={<TemplatePlaceholder color={template.primaryColor} title={templateName(template, locale)} label={t.noPreview} />}
             // What is left of the sheet once its header, the device switch and its footer are counted.
             stageClassName="h-[calc(92dvh_-_17.5rem)] min-h-[20rem] sm:h-[calc(min(85dvh,46rem)_-_15.5rem)]"
           />

@@ -1,5 +1,6 @@
-import { XS_ONLY } from "./editor/xsBlocks";
 import { useState } from "react";
+// The flag itself, not editor/xsBlocks.ts which re-exports it: that file is every block of the editor (270 KB).
+import { XS_ONLY_ENABLED as XS_ONLY } from "@/lib/features";
 import { DirectionProvider } from "@base-ui/react/direction-provider";
 import type { Website } from "@store-builder/api-client";
 import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@store-builder/ui";
