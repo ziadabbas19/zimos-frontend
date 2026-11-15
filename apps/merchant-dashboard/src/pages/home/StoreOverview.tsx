@@ -18,8 +18,7 @@ import { RangeSwitch } from "@/components/RangeSwitch";
 import { Section } from "@/components/Section";
 import { Select } from "@/components/Select";
 import { HBarList, LineAreaChart, Sparkline } from "@/components/charts";
-import { IconCaretDown, IconCoins, IconConfirm, IconOrders, IconShipping, type IconComponent } from "@/components/icons";
-import { PLACE_COLOR, type PlaceId } from "@/lib/places";
+import { IconCaretDown } from "@/components/icons";
 import { fmt, getIntlLocale, useT, type Messages } from "@/i18n/LocaleContext";
 
 const STRINGS = {
@@ -46,14 +45,13 @@ const STRINGS = {
     confirmationRate: "Confirmation rate",
     deliveryRate: "Delivery rate",
     allNumbers: "All the numbers ({n})",
-    salesSummary: "Sales for each day of {window}.",
+    chartSummary: "{label} for each day of {window}.",
+    chartConfirmed: "Orders confirmed each day",
+    chartDelivered: "Orders delivered each day",
     fullReport: "Full report",
-    journeyTitle: "From an order to real money",
-    stepOrdered: "Orders",
-    stepConfirmed: "Confirmed",
-    stepDelivered: "Delivered",
-    stepProfit: "Net profit",
-    rateOf: "{label} {rate}",
+    customize: "Change the figures",
+    customizeDone: "Done",
+    customizeHint: "Choose up to {n} figures for this box.",
     hintOrders: "Test and unpaid online orders are left out",
     hintNewOrders: "Still waiting for someone to open them",
     hintLost: "Checkouts started and never finished",
@@ -116,14 +114,13 @@ const STRINGS = {
     confirmationRate: "نسبة التأكيد",
     deliveryRate: "نسبة التسليم",
     allNumbers: "كل الأرقام ({n})",
-    salesSummary: "المبيعات لكل يوم خلال {window}.",
+    chartSummary: "{label} لكل يوم خلال {window}.",
+    chartConfirmed: "الطلبات التي تأكدت كل يوم",
+    chartDelivered: "الطلبات التي تسلّمت كل يوم",
     fullReport: "التقرير الكامل",
-    journeyTitle: "من الطلب للفلوس الحقيقية",
-    stepOrdered: "طلبات",
-    stepConfirmed: "اتأكدت",
-    stepDelivered: "اتسلّمت",
-    stepProfit: "صافي الربح",
-    rateOf: "{label} {rate}",
+    customize: "غيّر الأرقام",
+    customizeDone: "تم",
+    customizeHint: "اختر حتى {n} أرقام لهذا المربع.",
     hintOrders: "بدون الطلبات التجريبية وطلبات الدفع الإلكتروني غير المدفوعة",
     hintNewOrders: "لم يفتحها أحد بعد",
     hintLost: "بدأ العميل إتمام الطلب ولم يكمله",
@@ -197,19 +194,63 @@ const TILES: Tile[] = [
   { key: "leads", kind: "count", spark: "leads", hint: "hintLeads" },
 ];
 
-/** What the sales card shows itself (SalesCard): the rest of TILES sit under "All the numbers". */
-const IN_SALES_CARD: ReadonlySet<InsightsMetricKey> = new Set(["sales", "orders", "confirmationRate", "deliveryRate", "netProfit"]);
+/**
+ * The figures the box at the top of the home page shows (StatsCard), chosen by
+ * the merchant and kept on this device; the rest of TILES sit under "All the
+ * numbers". The default is a cash-on-delivery store's four: what was sold, how
+ * many orders, and how many were confirmed and delivered.
+ */
+const STATS_KEY = "zimos.home.stats.v1";
+const STATS_MAX = 4;
+const STATS_DEFAULT: InsightsMetricKey[] = ["sales", "orders", "confirmationRate", "deliveryRate"];
+
+function readStats(): InsightsMetricKey[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem(STATS_KEY) ?? "null") as unknown;
+    if (Array.isArray(raw)) {
+      const keys = raw.filter((key): key is InsightsMetricKey => TILES.some((tile) => tile.key === key)).slice(0, STATS_MAX);
+      if (keys.length > 0) return keys;
+    }
+  } catch {
+    /* private mode or malformed: the default */
+  }
+  return STATS_DEFAULT;
+}
+
+/** The day-by-day line a figure is drawn with: its own, or for a rate the count it comes from. */
+const LINE_OF: Partial<Record<InsightsMetricKey, keyof Omit<InsightsDay, "date">>> = {
+  sales: "sales",
+  orders: "orders",
+  newOrders: "orders",
+  visits: "visits",
+  addToCart: "addToCart",
+  checkouts: "checkouts",
+  crossSellAdds: "crossSell",
+  lostOrders: "lost",
+  leads: "leads",
+  confirmationRate: "confirmed",
+  deliveryRate: "delivered",
+};
 
 /**
  * The store at a glance (SPEC §15.1): every KPI for the chosen period against
  * the one before, the conversion funnel, what the offers added, and the top
  * sources, governorates, devices, products and funnels — one request.
  */
-export function StoreOverview({ actions }: { actions?: ReactNode }) {
+export function StoreOverview({ actions, between }: { actions?: ReactNode; between?: ReactNode }) {
   const t = useT(STRINGS);
   const workspaceId = useWorkspaceId();
   const [range, setRange] = useState<AnalyticsRange>("7d");
   const [funnelId, setFunnelId] = useState("");
+  const [chosen, setChosen] = useState<InsightsMetricKey[]>(readStats);
+  const choose = (next: InsightsMetricKey[]) => {
+    setChosen(next);
+    try {
+      localStorage.setItem(STATS_KEY, JSON.stringify(next));
+    } catch {
+      /* private mode: kept for this visit */
+    }
+  };
 
   const funnels = useAsync(() => funnelsList(apiClient, workspaceId).catch(() => []), [workspaceId]);
   const overview = useAsync<InsightsOverview>(
@@ -246,13 +287,16 @@ export function StoreOverview({ actions }: { actions?: ReactNode }) {
       </div>
 
       <DataState loading={overview.loading && !data} error={overview.error} onRetry={() => void overview.refresh()}>
-        {data && <OverviewBody data={data} busy={overview.loading} />}
+        {data && <StatsCard data={data} chosen={chosen} onChoose={choose} busy={overview.loading} />}
       </DataState>
+      {/* What needs finishing, right under the figures (the home page passes it). */}
+      {between}
+      {data && <OverviewBody data={data} chosen={chosen} busy={overview.loading} />}
     </div>
   );
 }
 
-function OverviewBody({ data, busy }: { data: InsightsOverview; busy: boolean }) {
+function OverviewBody({ data, chosen, busy }: { data: InsightsOverview; chosen: readonly InsightsMetricKey[]; busy: boolean }) {
   const t = useT(STRINGS);
   const money = (v: number | null) => (v === null ? "—" : formatMoney(v, data.currency));
   const show = (kind: Kind, v: number | null) =>
@@ -262,8 +306,8 @@ function OverviewBody({ data, busy }: { data: InsightsOverview; busy: boolean })
   const stepLabel = { visits: t.stepVisits, cart: t.stepCart, checkout: t.stepCheckout, purchase: t.stepPurchase };
   const deviceLabel: Record<string, string> = { mobile: t.mobile, desktop: t.desktop, tablet: t.tablet, unknown: t.unknown };
   const empty = <p className="text-sm text-ink-soft">{t.nothing}</p>;
-  const others = TILES.filter((tile) => !IN_SALES_CARD.has(tile.key));
-  const metricTile = (tile: Tile, hero?: { icon: IconComponent; place: PlaceId }) => {
+  const others = TILES.filter((tile) => !chosen.includes(tile.key));
+  const metricTile = (tile: Tile) => {
     const metric = data.metrics[tile.key];
     return (
       <MetricTile
@@ -276,15 +320,12 @@ function OverviewBody({ data, busy }: { data: InsightsOverview; busy: boolean })
         vsLabel={t.vsPrevious}
         spark={tile.spark ? data.series.map((d) => d[tile.spark!]) : undefined}
         to={tile.to}
-        hero={hero}
-        rate={tile.kind === "rate" ? metric.value : undefined}
       />
     );
   };
 
   return (
-    <div className={cn("space-y-6 transition-opacity", busy && "opacity-60")}>
-      <SalesCard data={data} money={money} show={show} />
+    <div className={cn("mt-6 space-y-6 transition-opacity", busy && "opacity-60")}>
 
       {/* The other figures, folded: a merchant opens them when looking for one. */}
       <details className="group/more">
@@ -412,114 +453,145 @@ function OverviewBody({ data, busy }: { data: InsightsOverview; busy: boolean })
 }
 
 /**
- * Sales, the way a cash-on-delivery store has to read them (owner, 2026-11-15:
- * "like Shopify, with our own logic"): the period's sales large, against the
- * period before, and the day-by-day line under it, as Shopify leads its home
- * with; then what Shopify has no need to show — the way from an order to
- * money: how many orders came in, how many were confirmed (with the
- * confirmation rate), how many reached the customer (with the delivery rate),
- * and the net profit they leave. Each step opens the page where it is worked.
+ * The box at the top of the home page (owner, 2026-11-15: "sales first, a
+ * simple wide box with the main figures, that I can change"): up to four
+ * figures side by side, each with its change against the period before; the
+ * one chosen is drawn day by day under them (a rate by the count it comes
+ * from). "Change the figures" picks which ones, kept on this device. Shopify
+ * leads its home with such a box; its default here is a cash-on-delivery
+ * store's: sales, orders, and the confirmation and delivery rates.
  */
-function SalesCard({
+function StatsCard({
   data,
-  money,
-  show,
+  chosen,
+  onChoose,
+  busy,
 }: {
   data: InsightsOverview;
-  money: (v: number | null) => string;
-  show: (kind: Kind, v: number | null) => string;
+  chosen: InsightsMetricKey[];
+  onChoose: (next: InsightsMetricKey[]) => void;
+  busy: boolean;
 }) {
   const t = useT(STRINGS);
-  const sales = data.metrics.sales;
-  const delta = deltaBasisPoints(sales.value, sales.previous);
+  const money = (v: number | null) => (v === null ? "—" : formatMoney(v, data.currency));
+  const show = (kind: Kind, v: number | null) =>
+    kind === "money" ? money(v) : kind === "rate" ? formatPercentValue(percentToRatio(v)) : formatCount(v);
+  const tiles = chosen.map((key) => TILES.find((tile) => tile.key === key)!).filter(Boolean);
+  const [drawn, setDrawn] = useState<InsightsMetricKey>(() => chosen.find((key) => LINE_OF[key]) ?? "sales");
+  const [editing, setEditing] = useState(false);
+  const shownKey = chosen.includes(drawn) && LINE_OF[drawn] ? drawn : (chosen.find((key) => LINE_OF[key]) ?? null);
+  const line = shownKey ? LINE_OF[shownKey]! : null;
   const window = formatWindow(data.range.from, data.range.to);
   const day = new Intl.DateTimeFormat(getIntlLocale(), { day: "numeric", month: "short" });
-  const sum = (key: "confirmed" | "delivered") => data.series.reduce((total, d) => total + (d[key] ?? 0), 0);
-  const steps: Array<{ key: string; label: string; value: string; note?: string; to: string; place: PlaceId; icon: IconComponent }> = [
-    { key: "orders", label: t.stepOrdered, value: show("count", data.metrics.orders.value), to: "/orders", place: "orders", icon: IconOrders },
-    {
-      key: "confirmed",
-      label: t.stepConfirmed,
-      value: formatCount(sum("confirmed")),
-      note: fmt(t.rateOf, { label: t.confirmationRate, rate: show("rate", data.metrics.confirmationRate.value) }),
-      to: "/confirmation-queue",
-      place: "orders",
-      icon: IconConfirm,
-    },
-    {
-      key: "delivered",
-      label: t.stepDelivered,
-      value: formatCount(sum("delivered")),
-      note: fmt(t.rateOf, { label: t.deliveryRate, rate: show("rate", data.metrics.deliveryRate.value) }),
-      to: "/orders?stage=delivered",
-      place: "money",
-      icon: IconShipping,
-    },
-    { key: "profit", label: t.stepProfit, value: money(data.metrics.netProfit.value), to: "/profit", place: "analytics", icon: IconCoins },
-  ];
+  const lineLabel = shownKey === "confirmationRate" ? t.chartConfirmed : shownKey === "deliveryRate" ? t.chartDelivered : shownKey ? t[shownKey] : "";
+  const lineKind: Kind = shownKey && TILES.find((tile) => tile.key === shownKey)?.kind === "money" ? "money" : "count";
+
+  function toggle(key: InsightsMetricKey) {
+    if (chosen.includes(key)) {
+      if (chosen.length > 1) onChoose(chosen.filter((k) => k !== key));
+    } else if (chosen.length < STATS_MAX) {
+      onChoose([...chosen, key]);
+    }
+  }
 
   return (
-    <Card data-slot="sales-card" className="gap-0 p-5 sm:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <Link to="/analytics" className="group/sales block rounded-xl focus-visible:outline-2 focus-visible:outline-primary">
-          <span className="block text-sm font-medium text-ink-soft">{t.sales}</span>
-          <span className="tabular-nums mt-0.5 block text-[2rem] leading-tight font-bold tracking-tight text-ink sm:text-[2.5rem]">
-            <bdi dir="ltr">{money(sales.value)}</bdi>
-          </span>
-          {delta !== null && (
-            <span className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
-              <DeltaChip delta={delta} />
-              <span className="text-ink-soft">{t.vsPrevious}</span>
-            </span>
-          )}
-        </Link>
-        <Link to="/analytics" className="inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:underline">
-          {t.fullReport}
-        </Link>
-      </div>
-
-      <div className="mt-4" dir="ltr">
-        <LineAreaChart
-          points={data.series.map((d) => ({ label: day.format(new Date(`${d.date}T12:00:00`)), value: d.sales }))}
-          format={(v) => money(v)}
-          height={170}
-          summary={fmt(t.salesSummary, { window })}
-        />
-      </div>
-
-      <h3 className="mt-5 text-sm font-semibold text-ink">{t.journeyTitle}</h3>
-      <ol className="mt-3 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-        {steps.map((step, i) => {
-          const color = PLACE_COLOR[step.place];
-          const Icon = step.icon;
-          return (
-            <li key={step.key} className="relative">
-              <Link
-                to={step.to}
-                data-journey-step={step.key}
-                className="flex h-full flex-col rounded-2xl border border-line p-3.5 transition-[border-color,transform] duration-150 hover:-translate-y-0.5 hover:border-primary/40 focus-visible:outline-2 focus-visible:outline-primary motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-              >
-                <span className="flex items-center gap-2 text-xs font-medium text-ink-soft">
-                  <span aria-hidden className="grid size-7 place-items-center rounded-lg [&>svg]:size-4" style={{ backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)`, color }}>
-                    <Icon strokeWidth={2} />
-                  </span>
-                  {step.label}
-                </span>
-                <span className="tabular-nums mt-2 text-xl font-bold text-ink">
-                  <bdi dir="ltr">{step.value}</bdi>
-                </span>
-                {step.note && <span className="mt-0.5 text-xs text-ink-soft">{step.note}</span>}
-              </Link>
-              {/* The way runs from one step to the next. */}
-              {i < steps.length - 1 && (
-                <span aria-hidden className="pointer-events-none absolute -end-2 top-1/2 z-10 hidden size-4 -translate-y-1/2 place-items-center rounded-full bg-paper-raised text-ink-soft ring-1 ring-line lg:grid">
-                  <IconCaretDown className="size-3 -rotate-90 rtl:rotate-90" />
+    <Card data-slot="stats-card" className={cn("gap-0 overflow-hidden p-0 transition-opacity", busy && "opacity-60")}>
+      {/* The figures side by side; the one drawn below is marked. */}
+      <div className={cn("grid grid-cols-2 divide-line max-lg:[&>*:nth-child(n+3)]:border-t max-lg:[&>*:nth-child(odd)]:border-e", tiles.length >= 4 ? "lg:grid-cols-4" : tiles.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2", "lg:divide-x lg:rtl:divide-x-reverse")}>
+        {tiles.map((tile) => {
+          const metric = data.metrics[tile.key];
+          const delta = deltaBasisPoints(metric.value, metric.previous);
+          const drawable = Boolean(LINE_OF[tile.key]);
+          const selected = tile.key === shownKey;
+          const body = (
+            <>
+              <span className="block truncate text-sm font-medium text-ink-soft">{t[tile.key]}</span>
+              <span className="tabular-nums mt-1 block text-2xl leading-tight font-bold tracking-tight text-ink sm:text-[1.75rem]">
+                <bdi dir="ltr">{show(tile.kind, metric.value)}</bdi>
+              </span>
+              {delta !== null && (
+                <span className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+                  <DeltaChip delta={delta} inverse={tile.inverse} />
                 </span>
               )}
-            </li>
+            </>
+          );
+          const frame = cn(
+            "relative block min-w-0 px-4 py-4 text-start sm:px-5",
+            selected && "bg-primary-soft/50 after:absolute after:inset-x-0 after:top-0 after:h-[3px] after:bg-primary"
+          );
+          return drawable ? (
+            <button
+              key={tile.key}
+              type="button"
+              aria-pressed={selected}
+              data-stat={tile.key}
+              onClick={() => setDrawn(tile.key)}
+              className={cn(frame, "cursor-pointer transition-colors hover:bg-paper-sunken/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary")}
+            >
+              {body}
+            </button>
+          ) : (
+            <div key={tile.key} data-stat={tile.key} className={frame}>
+              {body}
+            </div>
           );
         })}
-      </ol>
+      </div>
+
+      {line && (
+        <div className="border-t border-line px-4 pt-4 pb-2 sm:px-5" dir="ltr">
+          <LineAreaChart
+            points={data.series.map((d) => ({ label: day.format(new Date(`${d.date}T12:00:00`)), value: d[line] ?? 0 }))}
+            format={(v) => (lineKind === "money" ? money(v) : formatCount(v))}
+            height={150}
+            summary={fmt(t.chartSummary, { label: lineLabel, window })}
+          />
+        </div>
+      )}
+
+      {/* The comparison is said once, by the range picker above the box. */}
+      <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line px-4 py-1.5 sm:px-5">
+        <span className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setEditing((on) => !on)}
+            aria-expanded={editing}
+            className="inline-flex min-h-11 cursor-pointer items-center rounded-full px-3 text-sm font-medium text-ink-soft transition-colors hover:bg-paper-sunken hover:text-ink"
+          >
+            {editing ? t.customizeDone : t.customize}
+          </button>
+          <Link to="/analytics" className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-primary hover:bg-primary-soft">
+            {t.fullReport}
+          </Link>
+        </span>
+      </div>
+
+      {editing && (
+        <div className="border-t border-line px-4 py-3 sm:px-5">
+          <p className="text-xs text-ink-soft">{fmt(t.customizeHint, { n: String(STATS_MAX) })}</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {TILES.map((tile) => {
+              const on = chosen.includes(tile.key);
+              return (
+                <button
+                  key={tile.key}
+                  type="button"
+                  aria-pressed={on}
+                  disabled={(!on && chosen.length >= STATS_MAX) || (on && chosen.length === 1)}
+                  onClick={() => toggle(tile.key)}
+                  className={cn(
+                    "min-h-9 cursor-pointer rounded-full border px-3 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40 pointer-coarse:min-h-11",
+                    on ? "border-primary bg-primary text-primary-foreground" : "border-line text-ink hover:border-primary/40"
+                  )}
+                >
+                  {t[tile.key]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
@@ -555,8 +627,6 @@ function MetricTile({
   vsLabel,
   spark,
   to,
-  hero,
-  rate,
 }: {
   label: string;
   hint?: string;
@@ -566,76 +636,11 @@ function MetricTile({
   vsLabel: string;
   spark?: number[];
   to?: string;
-  /** One of the headline figures: large, with its picture in its place's colour. */
-  hero?: { icon: IconComponent; place: PlaceId };
-  /** A rate, 0-100: a headline rate is drawn as a bar under its number too. */
-  rate?: number | null;
 }) {
   const up = delta !== null && delta > 0;
   const down = delta !== null && delta < 0;
   const good = inverse ? down : up;
   const bad = inverse ? up : down;
-  const deltaChip =
-    delta !== null ? (
-      <span
-        className={cn(
-          "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
-          good && "bg-success-soft text-success",
-          bad && "bg-danger-soft text-danger",
-          !up && !down && "bg-paper-sunken text-ink-soft"
-        )}
-      >
-        <bdi dir="ltr">
-          {up ? "▲" : down ? "▼" : "•"} {formatPercentValue(Math.abs(delta) / 10000)}
-        </bdi>
-      </span>
-    ) : null;
-
-  if (hero) {
-    const color = PLACE_COLOR[hero.place];
-    const Icon = hero.icon;
-    const heroBody = (
-      <Card data-slot="headline-figure" className={cn("h-full gap-0 p-4 sm:p-5", to && "transition-colors hover:border-primary/40")} title={hint}>
-        <div className="flex items-start justify-between gap-2">
-          <span
-            aria-hidden
-            className="grid size-10 place-items-center rounded-xl [&>svg]:size-5"
-            style={{ backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)`, color }}
-          >
-            <Icon strokeWidth={2} />
-          </span>
-          {spark && spark.length > 1 && (
-            <div className="w-20 shrink-0 opacity-80" dir="ltr">
-              <Sparkline current={spark} />
-            </div>
-          )}
-        </div>
-        <p className="mt-3 text-sm font-medium text-ink-soft">{label}</p>
-        <p className="tabular-nums mt-0.5 text-[1.75rem] leading-tight font-bold tracking-tight text-ink sm:text-[2rem]">
-          <bdi dir="ltr">{value}</bdi>
-        </p>
-        {rate != null && (
-          <div aria-hidden className="mt-2 h-1.5 overflow-hidden rounded-full bg-paper-sunken">
-            <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, rate))}%`, backgroundColor: color }} />
-          </div>
-        )}
-        {deltaChip ? (
-          <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
-            {deltaChip}
-            <span className="text-ink-soft">{vsLabel}</span>
-          </p>
-        ) : null}
-      </Card>
-    );
-    return to ? (
-      <Link to={to} className="block rounded-2xl">
-        {heroBody}
-      </Link>
-    ) : (
-      heroBody
-    );
-  }
-
   const body = (
     <Card className={cn("h-full gap-0 p-4", to && "transition-colors hover:border-primary/40")} title={hint}>
       <p className="text-xs font-medium text-ink-soft">{label}</p>

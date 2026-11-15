@@ -89,7 +89,7 @@ export function NeedsYouCard({ className }: { className?: string }) {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="tabular-nums block text-2xl leading-tight font-bold text-ink">{digits.format(count)}</span>
-                    <span className="block truncate text-xs text-ink-soft">{t[kind]}</span>
+                    <span className="block text-xs leading-snug text-ink-soft">{t[kind]}</span>
                   </span>
                   <Chevron className="size-4 shrink-0 text-ink-soft transition-transform group-hover/queue:translate-x-[-2px] ltr:group-hover/queue:translate-x-[2px]" aria-hidden />
                 </Link>

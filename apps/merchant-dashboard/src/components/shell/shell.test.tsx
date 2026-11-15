@@ -45,12 +45,14 @@ function pageNames(menu: HTMLElement): string[] {
 const visibleIn = (role: string, groupId: string) =>
   NAV_GROUPS.find((group) => group.id === groupId)!.items.filter((item) => !item.under && isNavItemVisible(item, SYSTEM_ROLE_PERMISSIONS[role]));
 
-/** The places lib/navigation.ts gives this role, in its order: every group but the foot one that keeps a page. */
-function expectedPlaces(role: string): string[] {
-  return NAV_GROUPS.filter((group) => group.id !== "config" && visibleIn(role, group.id).length > 0).map((group) =>
-    group.labelKey ? NAV_GROUP_LABELS.en[group.labelKey] : NAV_LABELS.en.overview
+/** The dock's short names, where a heading is too long to sit under a tile. */
+const DOCK_SHORT: Record<string, string> = { store: "Store", money: "Money" };
+
+/** The places lib/navigation.ts gives this role, in its order, as the dock writes them under its tiles. */
+const dockNames = (role: string) =>
+  NAV_GROUPS.filter((group) => group.id !== "config" && visibleIn(role, group.id).length > 0).map(
+    (group) => DOCK_SHORT[group.id] ?? (group.labelKey ? NAV_GROUP_LABELS.en[group.labelKey] : NAV_LABELS.en.overview)
   );
-}
 
 const footRows = (role: string) => visibleIn(role, "config").map((item) => NAV_LABELS.en[item.key]);
 
@@ -88,7 +90,7 @@ describe("the side menu", () => {
     expect(rows).not.toContain("My Plan");
     expect(rows).not.toContain("Profit");
     const dock = screen.getByRole("navigation", { name: "Places" });
-    expect(within(dock).getAllByRole("link").map((tile) => tile.querySelector(".sr-only")?.textContent)).toEqual(expectedPlaces("order_operator"));
+    expect(within(dock).getAllByRole("link").map((tile) => tile.querySelector("[data-dock-label]")?.textContent)).toEqual(dockNames("order_operator"));
   });
 
   it("shows no entry of a feature whose switch is off", () => {
@@ -129,7 +131,7 @@ describe("the side menu", () => {
     renderWithProviders(<DashboardLayout />, { route: "/marketing/email-campaigns" });
     const dock = screen.getByRole("navigation", { name: "Places" });
     const tiles = within(dock).getAllByRole("link");
-    expect(tiles.map((tile) => tile.querySelector(".sr-only")?.textContent)).toEqual(expectedPlaces("owner"));
+    expect(tiles.map((tile) => tile.querySelector("[data-dock-label]")?.textContent)).toEqual(dockNames("owner"));
     expect(within(dock).getByRole("link", { name: "Marketing" })).toHaveAttribute("aria-current", "page");
     const orders = within(dock).getByRole("link", { name: "Orders" });
     expect(orders).toHaveAttribute("href", "/orders");

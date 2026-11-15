@@ -145,11 +145,13 @@ describe("DashboardHomePage", () => {
     // thread the page renders on: waited on, it held back the render it waited
     // for and, with the full suite running, ran past findBy's one second.
     await screen.findByText("Total sales");
+    // The box at the top: sales, orders and the two rates by default, sales drawn day by day.
     // 250,000 against 200,000 the period before: +25%.
-    const sales = screen.getByRole("link", { name: /Total sales/ });
-    expect(sales).toHaveAttribute("href", "/analytics");
+    const sales = screen.getByRole("button", { name: /Total sales/ });
+    expect(sales).toHaveAttribute("aria-pressed", "true");
     expect(sales).toHaveTextContent("25.0%");
-    expect(screen.getByRole("link", { name: /Confirmation rate/ })).toHaveTextContent("75.0%");
+    expect(screen.getByRole("button", { name: /Confirmation rate/ })).toHaveTextContent("75.0%");
+    expect(screen.getByRole("link", { name: "Full report" })).toHaveAttribute("href", "/analytics");
     expect(screen.getByText("Linen shirt")).toBeInTheDocument();
     expect(api.request).toHaveBeenCalledWith(expect.stringMatching(/^\/workspaces\/ws_1\/analytics\/overview\?.*compare=previous/));
 
@@ -167,6 +169,26 @@ describe("DashboardHomePage", () => {
 
     expect(await screen.findByText("/products/linen-shirt")).toBeInTheDocument();
     expect(screen.getByText("Website analytics")).toBeInTheDocument();
+  });
+
+  it("lets the merchant change the figures of the box at the top, and keeps the choice", async () => {
+    localStorage.removeItem("zimos.home.stats.v1");
+    api.getAnalyticsSummary.mockResolvedValue(summary(250000));
+    api.getConfirmationQueueCounts.mockResolvedValue(queue);
+    api.listOrders.mockResolvedValue({ orders: [order], nextCursor: null });
+    serveRequests();
+    const { user } = renderWithProviders(<DashboardHomePage />, { route: "/" });
+
+    await screen.findByRole("button", { name: /Total sales/ });
+    expect(screen.queryByRole("button", { name: /Net profit/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Change the figures" }));
+    // Four is the most: one goes before another comes in.
+    expect(screen.getByRole("button", { name: "Net profit", pressed: false })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Delivery rate", pressed: true }));
+    await user.click(screen.getByRole("button", { name: "Net profit", pressed: false }));
+    await user.click(screen.getByRole("button", { name: "Done" }));
+    expect(screen.getByText("Net profit", { selector: "[data-stat] span" })).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("zimos.home.stats.v1") ?? "[]")).toEqual(["sales", "orders", "confirmationRate", "netProfit"]);
   });
 
   it("falls back to the order roll-up for a role without analytics, and asks for no analytics", async () => {
