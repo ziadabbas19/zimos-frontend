@@ -1533,6 +1533,32 @@ html {
   }
 }
 
+/* The plans on ZIMOS blue (components/plan-cards.tsx): the cards a merchant
+   compares stand out from the white page, with white type and a white button.
+   The same blue in both themes: it reads on the night page as on the day one. */
+.plan-card {
+  background:
+    radial-gradient(90% 55% at 100% 0%, rgb(111 220 255 / 0.3), transparent 62%),
+    radial-gradient(80% 60% at 0% 100%, rgb(8 31 92 / 0.55), transparent 70%),
+    linear-gradient(160deg, #2b6dff 0%, #165dff 45%, #0b46cc 100%);
+  border: 1px solid rgb(255 255 255 / 0.16);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    0 26px 50px -28px rgb(22 93 255 / 0.75);
+}
+
+.dark .plan-card {
+  border-color: rgb(255 255 255 / 0.12);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.16),
+    0 26px 60px -30px rgb(22 93 255 / 0.6);
+}
+
+.plan-card ::selection {
+  background: rgb(255 255 255 / 0.3);
+  color: #fff;
+}
+
 /* A plan's features on a phone (components/plan-cards.tsx): the first six,
    then "show all" opens the rest — a checkbox, so it needs no script. A
    computer shows the list whole and no button. */
@@ -1551,9 +1577,9 @@ html {
     justify-content: center;
     min-block-size: 44px;
     margin-block-start: 14px;
-    border: 1px solid var(--lz-line);
+    border: 1px solid rgb(255 255 255 / 0.35);
     border-radius: 999px;
-    color: var(--lz-accent);
+    color: #fff;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -1564,7 +1590,7 @@ html {
   }
 
   .plan-more:has(.plan-more__box:focus-visible) {
-    outline: 2px solid var(--lz-accent);
+    outline: 2px solid #fff;
     outline-offset: 3px;
   }
 }
