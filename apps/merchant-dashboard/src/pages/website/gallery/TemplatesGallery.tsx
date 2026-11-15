@@ -1,4 +1,4 @@
-import { lazy, Suspense, useId, useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import type { Website, WebsiteTemplateSummary } from "@store-builder/api-client";
 import { Button, cn } from "@store-builder/ui";
 import { IconSearch } from "@/components/icons";
@@ -23,12 +23,7 @@ import {
 } from "../templateGallery";
 import { useCodeLabel } from "./codes";
 import { TemplateCard } from "./TemplateCard";
-
-// Its own chunk: loaded when a template is first opened, and warmed when the pointer comes over
-// the grid or a card takes focus, so the sheet is there by the time a card is pressed.
-const loadTemplateSheet = () => import("./TemplateSheet");
-const TemplateSheet = lazy(() => loadTemplateSheet().then((module) => ({ default: module.TemplateSheet })));
-import { templateName } from "./templateNames";
+import { TemplateSheet } from "./TemplateSheet";
 
 const STRINGS = {
   en: {
@@ -73,16 +68,15 @@ const LANGUAGE_OPTIONS: ReadonlyArray<{ value: TemplateLanguage; label: string }
   { value: "ar", label: "عربي" },
 ];
 
-/** How many cards the page shows before «اعرض الكل»: three full rows of three from 640px. */
-const FIRST_CARDS = 9;
+/** How many cards the page shows before «اعرض الكل»: four rows of two on a phone and on a desktop. */
+const FIRST_CARDS = 8;
 
 /**
  * Two columns on a phone — the cards are portraits, so two fit — and three
- * from 640px. From 1024px the cards are landscape (TemplateCard) and still
- * three: each is a picture now (templateNames.ts), clear at that size, so a
- * screen shows more of them to compare.
+ * from 640px. From 1024px the cards are landscape (TemplateCard), so two again:
+ * the page is at most 56rem wide, and four would make them thumbnails.
  */
-const GRID = "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4";
+const GRID = "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-2";
 
 /** Was the store's site made from this design: this template, or its copy in the other language? */
 function madeFrom(
@@ -193,7 +187,6 @@ export function TemplatesGallery({
       : list.filter(
           (template) =>
             normalizeSearch(template.name).includes(needle) ||
-            normalizeSearch(templateName(template, locale)).includes(needle) ||
             (template.category
               ? normalizeSearch(codeLabel("category", template.category)).includes(needle) ||
                 normalizeSearch(template.category.replace(/_/g, " ")).includes(needle)
@@ -268,10 +261,7 @@ export function TemplatesGallery({
           />
         ) : (
           <>
-            <ul
-              // Folded, a phone's two columns show eight: four full rows, not a ninth card alone.
-              className={cn(GRID, "mt-4", canFold && !expanded && "max-sm:[&>li:nth-child(9)]:hidden")}
-              onPointerEnter={() => void loadTemplateSheet()} onFocusCapture={() => void loadTemplateSheet()}>
+            <ul className={cn(GRID, "mt-4")}>
               {visible.map((template) => (
                 <TemplateCard
                   key={template.id}
@@ -302,15 +292,13 @@ export function TemplatesGallery({
       </DataState>
 
       {picked && (
-        <Suspense fallback={null}>
-          <TemplateSheet
-            template={picked}
-            open={sheetOpen}
-            onOpenChange={setSheetOpen}
-            currentSite={currentSite}
-            inUse={currentVersion !== null && picked.templateVersionId === currentVersion}
-          />
-        </Suspense>
+        <TemplateSheet
+          template={picked}
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+          currentSite={currentSite}
+          inUse={currentVersion !== null && picked.templateVersionId === currentVersion}
+        />
       )}
     </section>
   );
