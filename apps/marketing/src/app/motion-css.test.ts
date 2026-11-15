@@ -177,3 +177,51 @@ describe("the plan cards (plans.css)", () => {
     expect(pricing).toContain('import "../../plans.css"');
   });
 });
+
+describe("the home page on a phone and a tablet (home.css)", () => {
+  const phone = rules(block(home, "@media (max-width: 639.98px)"));
+  const below = rules(block(home, "@media (max-width: 1023.98px)"));
+  const at = (list: ReturnType<typeof rules>, selector: string) => list.filter((rule) => rule.selector === selector).map((rule) => rule.body).join("");
+
+  it("makes the store kinds, the stores and the dashboard's tabs rows to swipe, not stacks that wrap", () => {
+    for (const selector of [".zm-chips", ".zm-sgrid", ".zm-dtabs"]) {
+      expect(at(phone, selector)).toMatch(/flex-wrap:\s*nowrap/);
+      expect(at(phone, selector)).toMatch(/overflow-x:\s*auto/);
+      expect(at(phone, selector)).toMatch(/scroll-snap-type:\s*x/);
+    }
+    // The next store peeks in.
+    expect(at(phone, ".zm-sgrid > li")).toMatch(/flex:\s*0 0 84%/);
+  });
+
+  it("puts the features in two columns and the steps, growth tools and reassurances in compact rows", () => {
+    expect(at(phone, ".zm-fgrid")).toMatch(/grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/);
+    for (const selector of [".zm-step", ".zm-gc", ".zm-tp"]) expect(at(phone, selector)).toMatch(/grid-template-columns:\s*auto minmax\(0, 1fr\)/);
+    expect(at(phone, ".zm-sec")).toMatch(/padding-block:\s*3\.25rem/);
+  });
+
+  it("stands the journey's phone, about 290px wide, under the steps with no tall box, and lays the dashboard flat", () => {
+    expect(at(phone, ".zm-jph")).toMatch(/width:\s*min\(100%, 18\.125rem\)/);
+    expect(at(below, ".zm-jstage")).toMatch(/min-height:\s*0/);
+    expect(at(below, ".zm-dwin")).toMatch(/transform:\s*none/);
+  });
+
+  it("keeps the plans one under the other with room for the badge, and the switch centred", () => {
+    expect(at(phone, ".zm-plans")).toMatch(/gap:\s*1\.75rem/);
+    const tog = all(".zm-tog");
+    expect(tog).toMatch(/width:\s*fit-content/);
+    expect(tog).toMatch(/margin:\s*1\.75rem auto 0/);
+  });
+
+  it("keeps the header's buttons inside its pill on narrow phones", () => {
+    const narrow = rules(block(home, "@media (max-width: 399.98px)"));
+    expect(at(narrow, ".zm-hact > .zm-btn")).toMatch(/padding-inline:/);
+    expect(at(narrow, ".zm-hdr-in")).toMatch(/gap:\s*0\.5rem/);
+  });
+
+  function all(selector: string) {
+    return rules(home)
+      .filter((rule) => rule.selector === selector)
+      .map((rule) => rule.body)
+      .join("");
+  }
+});

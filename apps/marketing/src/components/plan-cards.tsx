@@ -107,7 +107,8 @@ export function PlanCards({
         </fieldset>
       ) : null}
 
-      <ul className={`mx-auto mt-10 grid max-w-6xl gap-6 ${cards >= 3 ? "lg:grid-cols-3" : cards === 2 ? "md:grid-cols-2 md:max-w-4xl" : "max-w-md"}`}>
+      {/* Below a computer's width the cards stand one under the other at a width that reads. */}
+      <ul className={`mx-auto mt-10 grid gap-6 ${cards >= 3 ? "max-w-xl lg:max-w-6xl lg:grid-cols-3" : cards === 2 ? "max-w-xl md:max-w-4xl md:grid-cols-2" : "max-w-md"}`}>
         {plans.map((plan, i) => {
           const free = plan.monthlyPrice === 0;
           const whenMonthly = showYearly ? WHEN_MONTHLY : "";

@@ -695,7 +695,18 @@ html:has(.zm) {
   }
 }
 
-@media (max-width: 359.98px) {
+/* Narrow phones (English's "Get started" is the longest): the pill keeps
+   everything inside it down to 360px. */
+@media (max-width: 399.98px) {
+  .zm-hdr-in {
+    gap: 0.5rem;
+    padding-inline: 0.875rem 0.375rem;
+  }
+
+  .zm-hact {
+    gap: 0.375rem;
+  }
+
   .zm-hact > .zm-btn {
     padding-inline: 0.875rem;
   }
@@ -1387,6 +1398,8 @@ html:has(.zm) {
 
   .zm-works-t {
     flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem 1.75rem;
     width: auto;
   }
 }
@@ -1396,7 +1409,7 @@ html:has(.zm) {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.625rem;
+  gap: max(8px, 0.625rem);
   margin-block-end: 2.375rem;
 }
 
@@ -2295,7 +2308,8 @@ html:has(.zm-viewer[open]) {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: top;
+  /* The store's own page is left to right: its headline stays in view. */
+  object-position: left top;
 }
 
 .zm-jin .cta {
@@ -2744,7 +2758,7 @@ html:has(.zm-viewer[open]) {
 .zm-dnav {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--gap-btn);
   color: var(--n-soft);
   font-weight: 700;
 }
@@ -2770,7 +2784,7 @@ html:has(.zm-viewer[open]) {
 .zm-dtabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.625rem;
+  gap: max(8px, 0.625rem);
   margin-block-end: 1.5rem;
 }
 
@@ -3091,8 +3105,9 @@ html:has(.zm-viewer[open]) {
 /* ══ Pricing ═════════════════════════════════════════════════════════ */
 .zm-tog {
   position: relative;
-  display: inline-grid;
+  display: grid;
   grid-template-columns: 1fr 1fr;
+  width: fit-content;
   margin: 1.75rem auto 0;
   padding: 0.3125rem;
   border: 0;
@@ -3546,15 +3561,312 @@ html:has(.zm-viewer[open]) {
   .zm-stepline {
     display: none;
   }
+
+  /* The journey's phone stands under the steps, with no tall box around it. */
+  .zm-jstage {
+    min-height: 0;
+    padding: 2rem 1.25rem;
+  }
+
+  /* A screen to touch: the dashboard's frame lies flat. */
+  .zm-dwin {
+    transform: none;
+  }
 }
 
+/* Tablets: the plans one under the other at a width that reads, centred. */
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .zm-plans,
+  .zm-pwrap .zp-ppo {
+    max-width: 34rem;
+    margin-inline: auto;
+  }
+}
+
+/* Phones: a page that reads in a few screens, not twenty. Less air between
+   the sections; rows to swipe for the store kinds, the stores and the
+   dashboard's screens, the next one peeking in; the features in two
+   columns; the steps, the growth tools and the reassurances as compact
+   rows with the picture beside the words (the owner's phone pass of
+   2026-11-15, brought to this page). */
 @media (max-width: 639.98px) {
   .zm-sec {
-    padding-block: 4.5rem;
+    padding-block: 3.25rem;
   }
 
   .zm-sec--tight {
-    padding-block-start: 2.5rem;
+    padding-block-start: 1.5rem;
+  }
+
+  .zm-sh {
+    margin-block-end: 2rem;
+  }
+
+  .zm-sh h2,
+  .zm-dhead h2 {
+    font-size: clamp(1.75rem, 8vw, 2rem);
+  }
+
+  .zm-sh > p:not(.zx-label),
+  .zm-dhead > div > p:not(.zx-label) {
+    font-size: 0.9375rem;
+  }
+
+  /* A row to swipe, edge to edge, with no bar. */
+  .zm-chips,
+  .zm-sgrid,
+  .zm-dtabs {
+    flex-wrap: nowrap;
+    margin-inline: -1.5rem;
+    padding-inline: 1.5rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-padding-inline: 1.5rem;
+    scrollbar-width: none;
+  }
+
+  .zm-chips::-webkit-scrollbar,
+  .zm-sgrid::-webkit-scrollbar,
+  .zm-dtabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .zm-chips {
+    justify-content: flex-start;
+    margin-block-end: 1.25rem;
+    padding-block: 0.25rem 0.5rem;
+    scroll-snap-type: x proximity;
+  }
+
+  .zm-chip,
+  .zm-dtab {
+    flex: none;
+    scroll-snap-align: start;
+  }
+
+  .zm-chip:hover {
+    transform: none;
+  }
+
+  .zm-sgrid {
+    display: flex;
+    gap: 0.75rem;
+    padding-block: 0.25rem 1rem;
+    scroll-snap-type: x mandatory;
+  }
+
+  .zm-sgrid > li {
+    flex: 0 0 84%;
+    scroll-snap-align: start;
+  }
+
+  .zm-sc-bd {
+    padding: 0.875rem 1rem 1rem;
+  }
+
+  /* What a merchant gets: two columns, the picture on top. */
+  .zm-fgrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem;
+  }
+
+  .zm-fc {
+    gap: 0.375rem;
+    min-height: 0;
+    padding: 1rem 0.875rem 1.125rem;
+    border-radius: 1.25rem;
+  }
+
+  .zm-fc .zm-i3 {
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-block-end: 0.375rem;
+  }
+
+  .zm-fc h3 {
+    margin-block-start: 0;
+    font-size: 1rem;
+  }
+
+  .zm-fc p {
+    font-size: 0.84375rem;
+    line-height: 1.6;
+  }
+
+  .zm-fc .zm-go {
+    inset-block-start: 0.875rem;
+    inset-inline-end: 0.75rem;
+  }
+
+  .zm-fgrid + .zm-ctas,
+  .zm-ggrid + .zm-ctas {
+    margin-block-start: 1.75rem;
+  }
+
+  /* The three steps: the picture beside the words, the number small. */
+  .zm-steps {
+    gap: 0.625rem;
+  }
+
+  .zm-step {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    column-gap: 0.875rem;
+    min-height: 0;
+    padding: 1.125rem;
+    border-radius: 1.25rem;
+  }
+
+  .zm-step .zm-i3 {
+    grid-row: span 2;
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .zm-step h3 {
+    margin: 0.125rem 0 0.25rem;
+    padding-inline-end: 2.5rem;
+    font-size: 1.09375rem;
+  }
+
+  .zm-step p {
+    font-size: 0.875rem;
+    line-height: 1.65;
+  }
+
+  .zm-step .n {
+    inset-block-start: 0.375rem;
+    inset-inline-end: 0.875rem;
+    font-size: 3.5rem;
+  }
+
+  /* The growth tools: the picture on a small tile beside the words. */
+  .zm-ggrid {
+    gap: 0.625rem;
+  }
+
+  .zm-gc {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    column-gap: 0.875rem;
+    padding: 0.875rem;
+    border-radius: 1.25rem;
+  }
+
+  .zm-gpic {
+    grid-row: span 2;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 1rem;
+  }
+
+  .zm-gpic .zm-i3 {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .zm-gpic :is(.zm-tag, .prog) {
+    display: none;
+  }
+
+  .zm-gc h3 {
+    margin: 0.125rem 0 0.25rem;
+    font-size: 1.0625rem;
+  }
+
+  .zm-gc p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.65;
+  }
+
+  .zm-gnote {
+    margin-block-start: 1.5rem;
+  }
+
+  /* The plans: one under the other, the same gap between them all, with
+     room for the badge over the marked one's edge. */
+  .zm-plans {
+    gap: 1.75rem;
+    margin-block-start: 2rem;
+  }
+
+  .zm-pwrap .zp-ppo {
+    margin-block-start: 1.75rem;
+  }
+
+  /* What reassures you: the picture beside the words. */
+  .zm-trust {
+    gap: 0;
+    margin-block-start: 2.5rem;
+  }
+
+  .zm-tp {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 0.875rem;
+    padding-block: 1.125rem;
+  }
+
+  .zm-tp .zm-i3 {
+    grid-row: span 2;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin: 0;
+  }
+
+  .zm-tp h3 {
+    margin-block-end: 0.25rem;
+  }
+
+  /* The night panels: a little more width inside. */
+  .zm-night .zm-in {
+    padding-inline: 1rem;
+  }
+
+  .zm-jgrid {
+    gap: 1.75rem;
+  }
+
+  .zm-js > button {
+    padding-block: 1rem;
+  }
+
+  .zm-js p {
+    margin-inline-start: 3rem;
+    padding-block-end: 1rem;
+  }
+
+  .zm-cap {
+    margin-block-start: 1.75rem;
+  }
+
+  .zm-dhead {
+    margin-block-end: 1.5rem;
+  }
+
+  .zm-dtabs {
+    margin-block-end: 1rem;
+    margin-inline: -1rem;
+    padding-block: 0.125rem 0.375rem;
+    padding-inline: 1rem;
+    scroll-padding-inline: 1rem;
+    scroll-snap-type: x proximity;
+  }
+
+  .zm-dwin {
+    border-radius: 0.875rem;
+  }
+
+  .zm-dbar span {
+    padding-inline: 1.25rem;
+  }
+
+  .zm-dcap {
+    gap: 0.875rem;
+    margin-block-start: 1rem;
   }
 
   .zm-night,
@@ -3562,9 +3874,7 @@ html:has(.zm-viewer[open]) {
     border-radius: 1.75rem;
   }
 
-  .zm-sgrid,
   .zm-ggrid,
-  .zm-fgrid,
   .zm-trust {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -3581,7 +3891,11 @@ html:has(.zm-viewer[open]) {
   }
 
   .zm-jstage {
-    min-height: 33.75rem;
+    padding: 1.5rem 1rem;
+  }
+
+  .zm-jph {
+    width: min(100%, 18.125rem);
   }
 
   .zm-viewer[open] {
@@ -3601,8 +3915,12 @@ html:has(.zm-viewer[open]) {
     padding-inline-end: 0;
   }
 
+  .zm-end {
+    margin-block-start: 0.5rem;
+  }
+
   .zm-end-c {
-    padding-block: 5rem;
+    padding-block: 4rem;
   }
 
   .zm .zx-wa {
