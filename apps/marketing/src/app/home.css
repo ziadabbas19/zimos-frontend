@@ -3664,6 +3664,275 @@ html:has(.zm-viewer[open]) {
   translate: 0 -3px;
 }
 
+/* ══ Computers: the wide sections ════════════════════════════════════
+   From 1024px, where the page takes its computer scale, the stores, the
+   features and the plans spread to the header's width (the owner,
+   2026-11-16): 1240px with the bar's own 28px inside, so the cards' edges
+   line up with the bar's. In px, like the header, so the page's scale
+   leaves these alone: three stores of about 376px with a larger preview,
+   four features of about 281px with more room and larger type, and three
+   plans of about 378px that are wider than tall-ish instead of thin
+   strips. The headings above them keep their readable widths (.zm-sh).
+   Phones and tablets are untouched. */
+@media (min-width: 1024px) {
+  :where(#templates, #benefits, #pricing) > .zm-in {
+    max-width: 1240px;
+    padding-inline: 28px;
+  }
+
+  /* Stores */
+  .zm-sgrid {
+    gap: 28px 26px;
+  }
+
+  .zm-sc {
+    border-radius: 24px;
+  }
+
+  .zm-sc-pic {
+    padding: 24px 24px 0;
+  }
+
+  .zm-sc-lap {
+    border-radius: 10px 10px 0 0;
+  }
+
+  .zm-sc-ph {
+    inset-block-end: -14px;
+    inset-inline-end: 22px;
+    border-radius: 12px;
+  }
+
+  .zm-sc-bd {
+    gap: 12px;
+    padding: 18px 22px 20px;
+  }
+
+  .zm-sc-bd > div {
+    flex-basis: 150px;
+  }
+
+  .zm-sc-bd h3 {
+    font-size: 18px;
+  }
+
+  .zm-sc-bd small {
+    margin-block-start: 4px;
+    font-size: 13px;
+  }
+
+  .zm-sc-bd .zm-btn--sm {
+    min-height: 40px;
+    padding: 10px 18px;
+    font-size: 13.5px;
+  }
+
+  .zm-more {
+    gap: 18px;
+    margin-block-start: 40px;
+  }
+
+  :is(.zm-more, .zm-fgrid + .zm-ctas) > .zm-btn {
+    min-height: 46px;
+    padding: 12px 26px;
+    font-size: 15px;
+  }
+
+  /* Features */
+  .zm-fgrid {
+    gap: 20px;
+  }
+
+  .zm-fc {
+    gap: 12px;
+    min-height: 236px;
+    padding: 26px 26px 28px;
+    border-radius: 22px;
+  }
+
+  .zm-fc .zm-i3 {
+    width: 60px;
+    height: 60px;
+  }
+
+  .zm-fc h3 {
+    font-size: 19px;
+  }
+
+  .zm-fc p {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .zm-fc .zm-go {
+    inset-block-start: 22px;
+    inset-inline-end: 22px;
+  }
+
+  .zm-fgrid + .zm-ctas {
+    margin-block-start: 40px;
+  }
+
+  /* Plans: three side by side, shorter. The limits share a line where they
+     fit, and from 1200px the features stand in two columns (a long one
+     wraps under itself; nine features take five rows instead of nine). */
+  .zm-plans {
+    gap: 22px;
+    margin-block-start: 36px;
+  }
+
+  .zm-pwrap .zp-plan {
+    padding: 22px 22px 20px;
+    border-radius: 22px;
+  }
+
+  .zm-pwrap .zp-badge {
+    inset-inline-start: 22px;
+    padding: 5px 12px;
+    font-size: 11.5px;
+  }
+
+  .zm-pwrap .zp-name {
+    font-size: 21px;
+    line-height: 1.15;
+  }
+
+  .zm-pwrap .zp-price {
+    margin: 6px 0 0;
+  }
+
+  .zm-pwrap .zp-price strong {
+    font-size: 40px;
+  }
+
+  .zm-pwrap :is(.zp-price small, .zp-psub, .zp-trial) {
+    font-size: 13px;
+  }
+
+  .zm-pwrap .zp-psub {
+    min-height: 0;
+    line-height: 1.4;
+  }
+
+  .zm-pwrap .zp-trial {
+    margin-block-start: 4px;
+  }
+
+  .zm-pwrap .zp-lim {
+    gap: 6px;
+    margin-block: 12px;
+  }
+
+  .zm-pwrap .zp-lim span {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+
+  .zm-pwrap .zp-feats {
+    gap: 6px 12px;
+    margin-block-end: 16px;
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .zm-pwrap .zp-feats li {
+    gap: 7px;
+    text-wrap: balance;
+  }
+
+  .zm-pwrap .zp-feats svg {
+    width: 14px;
+    height: 14px;
+    margin-block-start: 2px;
+  }
+
+  .zm-pwrap .zp-btn {
+    min-height: 44px;
+    padding: 11px 22px;
+    font-size: 14.5px;
+  }
+
+  /* Pay per order: one wide row under them, its words at a width that reads. */
+  .zm-pwrap .zp-ppo {
+    margin-block-start: 24px;
+    padding: 26px 32px;
+    border-radius: 22px;
+  }
+
+  .zm-pwrap .zp-ppo--wide {
+    gap: 40px;
+  }
+
+  .zm-pwrap .zp-ppo-price {
+    font-size: 40px;
+  }
+
+  .zm-pwrap .zp-ppo-price small {
+    font-size: 13px;
+  }
+
+  .zm-pwrap .zp-ppo-tag {
+    padding: 3px 11px;
+    font-size: 12px;
+  }
+
+  .zm-pwrap .zp-ppo-name {
+    font-size: 20px;
+  }
+
+  .zm-pwrap .zp-ppo-body {
+    max-width: 62ch;
+  }
+
+  .zm-pwrap .zp-ppo-body > p {
+    font-size: 14px;
+  }
+
+  .zm-pwrap .zp-ppo-body > small {
+    font-size: 12.5px;
+  }
+
+  .zm-pwrap .zp-ppo--wide .zp-ppo-buy .zp-btn {
+    min-width: 170px;
+  }
+
+  .zm-pricing .zm-pnote {
+    margin-block-start: 28px;
+    font-size: 13.5px;
+  }
+
+  /* The reassurances under the plans: four across the same width. */
+  .zm-trust {
+    gap: 28px;
+    margin-block-start: 52px;
+  }
+
+  .zm-tp {
+    padding-block-start: 20px;
+  }
+
+  .zm-tp .zm-i3 {
+    width: 44px;
+    height: 44px;
+    margin-block-end: 12px;
+  }
+
+  .zm-tp h3 {
+    font-size: 16px;
+  }
+
+  .zm-tp p {
+    font-size: 13.5px;
+    line-height: 1.55;
+  }
+}
+
+@media (min-width: 1200px) {
+  .zm-pwrap .zp-feats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* ══ Narrower screens ════════════════════════════════════════════════ */
 @media (max-width: 1023.98px) {
   .zm-sgrid,
