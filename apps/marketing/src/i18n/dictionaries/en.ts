@@ -43,7 +43,7 @@ export const en: Dictionary = {
     lines: ["Your online store, live in minutes."],
     accent: "Your profit on every order, clear.",
     body: "Build your store from a ready template in minutes, confirm your orders before they ship, send them with any shipping company, and see your net profit once every cost is off.",
-    primaryCta: "Create your store",
+    primaryCta: "Start free",
     secondaryCta: "See the stores",
     ticks: ["Subscribe when you publish", "Ready store templates", "Arabic and English"],
     imageAlt: "Stores built on ZIMOS from its templates, on a computer and on a phone",

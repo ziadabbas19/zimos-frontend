@@ -70,13 +70,19 @@ describe("the home page's words", () => {
   // The 7-day free trial is gone (the owner, 2026-11-14): the home page says
   // what the dashboard does — build the store, subscribe when it is ready to
   // publish. What a plan itself offers is written from the API on /pricing.
+  // Since 2026-11-16 the hero's first button says "Start free" ("ابدأ
+  // مجانا"), with no length, card or price beside it: those two words, on
+  // that button only.
   it.each([
-    ["ar", ar],
-    ["en", en],
-  ])("promise no free trial on the home page (%s)", (_, dict) => {
-    const home = [dict.nav, dict.hero, dict.templates, dict.journey, dict.growth, dict.dashboard, dict.start, dict.trust, dict.faq, dict.finalCta];
-    const trial = /تجرب\S* مجاني|free trial|\b7 أيام|7[- ]days?\b/i;
+    ["ar", ar, "ابدأ مجانا"],
+    ["en", en, "Start free"],
+  ])("promise no free trial on the home page (%s)", (_, dict, startFree) => {
+    expect(dict.hero.primaryCta).toBe(startFree);
+    const { primaryCta, ...hero } = dict.hero;
+    const home = [dict.nav, hero, dict.templates, dict.journey, dict.growth, dict.dashboard, dict.start, dict.trust, dict.faq, dict.finalCta];
+    const trial = /تجرب\S* مجاني|free trial|\b7 أيام|7[- ]days?\b|start (for )?free|try (it )?free|ابدأ مجان|جرب\S* مجان/i;
     expect(strings(home).filter((text) => trial.test(text))).toEqual([]);
+    expect(trial.test(primaryCta.replace(startFree, ""))).toBe(false);
   });
 
   it("describe the platform as a complete store in 5 minutes", () => {
