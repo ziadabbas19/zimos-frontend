@@ -3929,11 +3929,16 @@ html:has(.zm-viewer[open]) {
   }
 }
 
-/* ══ Motion: off when asked, held while out of view ══════════════════ */
+/* ══ Motion: off when asked, held while out of view ══════════════════
+   The pseudo-elements inside a section too (the plans' glow, the closing
+   band's shine): left running out of view, Chrome ticks them on the main
+   thread at every frame. */
 .zm .is-off,
 .zm .is-off *,
 .zm .is-off::before,
-.zm .is-off::after {
+.zm .is-off::after,
+.zm .is-off *::before,
+.zm .is-off *::after {
   animation-play-state: paused !important;
 }
 
