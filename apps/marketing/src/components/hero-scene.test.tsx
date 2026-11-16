@@ -81,7 +81,7 @@ describe("the hero's scene in CSS (app/hero-scene.css)", () => {
 
   it("moves by transform and opacity only, in its keyframes and its transitions", () => {
     const keyframes = [...css.matchAll(/@keyframes\s+([\w-]+)\s*\{((?:[^{}]*\{[^{}]*\})*)\s*\}/g)];
-    expect(keyframes.length).toBeGreaterThan(15);
+    expect(keyframes.length).toBeGreaterThan(10);
     const moving = ["transform", "opacity", "translate", "rotate", "scale", "animation-timing-function"];
     const other = keyframes.flatMap(([, name, body]) => [...body.matchAll(/([a-z-]+)\s*:/g)].map((m) => m[1]).filter((prop) => !moving.includes(prop)).map((prop) => `${name}: ${prop}`));
     expect(other).toEqual([]);

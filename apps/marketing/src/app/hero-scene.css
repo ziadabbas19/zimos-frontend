@@ -3,17 +3,19 @@
    request of its own. Two layers inside `.zm-hero`:
 
    - `.zs-bg`, behind everything: a soft light that drifts (`.zs-mesh`, its
-     own layer), a dashed shipping route with two dots on their way
-     (`.zs-car`), the stars, and a light under the mouse. It reaches a
-     little under the hero and fades out at its foot and its sides (mask),
-     so the page simply carries on.
+     own layer), a dashed shipping route and the stars. It reaches a little
+     under the hero and fades out at its foot and its sides (mask), so the
+     page simply carries on.
    - `.zs`, in front: the objects. Each is a <label> with a hidden checkbox:
      `:checked` plays the object's answer and its word rises from it; the
      tally counts the labels whose box is checked.
 
    Cost, by design: only transform and opacity move; `will-change` on the
-   cubes and the light alone; a tap's sparks, coins, confetti and rings are
-   one or two pseudo-elements; both layers skip their rendering off screen
+   cubes and the light alone, and 3D on the cubes alone (three faces each);
+   a tap's sparks and rings are one or two pseudo-elements; nothing moves by
+   itself before 1.2s, so the page's first frames carry none of it; the
+   cycles are seconds long (Chrome wakes the main thread at each cycle of
+   an endless animation); both layers skip their rendering off screen
    (`content-visibility`), and the page's effects pause them there too
    (`.is-off`, home-effects.tsx). On a phone and a tablet the light holds
    still and five objects stand on a shelf over the devices, two of them
@@ -53,8 +55,6 @@
 .zs,
 .zs-mesh,
 .zs-route,
-.zs-car::before,
-.zs-car::after,
 .zs-star,
 .zs-fl,
 .zs-i,
@@ -105,7 +105,7 @@
     radial-gradient(45% 45% at 70% 90%, var(--m3), #0000 70%),
     radial-gradient(35% 35% at 10% 85%, var(--m4), #0000 70%);
   will-change: transform;
-  animation: zs-mesh 22s ease-in-out infinite alternate;
+  animation: zs-mesh 22s 1.2s ease-in-out infinite alternate;
 }
 
 @keyframes zs-mesh {
@@ -114,6 +114,7 @@
   }
 }
 
+/* The route stands still: drawn once. */
 .zs-route {
   width: 100%;
   height: 100%;
@@ -121,55 +122,7 @@
   stroke-opacity: 0.55;
 }
 
-/* Two dots on the route: as large as the scene, so a translate in % is a
-   place on it; across at an even pace, and up and down through the curve's
-   turns (the points of ROUTE, hero-scene.tsx). */
-.zs-car::before,
-.zs-car::after {
-  content: "";
-  inset: -9px auto auto -9px;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(var(--h-accent) 4px, #6fdcff59 5px, #0000 9px) 0 0 / 18px 18px no-repeat;
-  animation:
-    zs-rx 9s linear infinite,
-    zs-ry 9s ease-in-out infinite;
-}
-
-.zs-car::after {
-  background-image: radial-gradient(#d9a441 3px, #d9a44159 4px, #0000 7px);
-  animation-delay: -4.5s;
-}
-
-@keyframes zs-rx {
-  from {
-    translate: -2%;
-  }
-  to {
-    translate: 102%;
-  }
-}
-
-@keyframes zs-ry {
-  0% {
-    transform: translateY(78.3%);
-    animation-timing-function: ease-out;
-  }
-  14.7% {
-    transform: translateY(69.3%);
-  }
-  34.6% {
-    transform: translateY(73.7%);
-  }
-  82.6% {
-    transform: translateY(36.3%);
-    animation-timing-function: ease-in;
-  }
-  to {
-    transform: translateY(43.3%);
-  }
-}
-
+/* Dim at rest, as the twinkle starts. */
 .zs-star {
   inset-inline-start: var(--x);
   top: var(--y);
@@ -177,11 +130,12 @@
   height: 10px;
   background: var(--h-accent);
   clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  opacity: 0.15;
+  transform: scale(0.6);
   animation: zs-tw 8s var(--d) ease-in-out infinite;
 }
 
-/* A twinkle, then a long rest: a fast endless cycle makes Chrome draw more
-   frames on the main thread, even for an animation the compositor runs. */
+/* A twinkle, then a long rest. */
 @keyframes zs-tw {
   0%,
   40%,
@@ -195,18 +149,6 @@
   }
 }
 
-/* The light under a mouse (home-effects.tsx sets --mx/--my on the hero). */
-@media (hover: hover) and (pointer: fine) {
-  .zs-bg::after {
-    content: "";
-    position: absolute;
-    inset: 20% 30% 30%;
-    background: radial-gradient(closest-side, var(--h-glow), #0000);
-    translate: calc(var(--mx, 0) * 50vw) calc(var(--my, 0) * 40vh);
-    transition: translate 0.6s;
-  }
-}
-
 /* ── In front: the objects ── */
 .zs {
   --dir: 1;
@@ -214,6 +156,7 @@
   z-index: 5;
   font-size: clamp(7px, 0.694vw, 13px);
   counter-reset: zn zv zr;
+  /* A little depth under a mouse (home-effects.tsx sets --mx/--my on the hero). */
   translate: calc(var(--mx, 0) * -8px) calc(var(--my, 0) * -6px);
   transition: translate 0.6s;
 }
@@ -250,11 +193,11 @@
 .zs-in {
   position: relative;
   display: block;
-  perspective: 900px;
   transition: scale 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.4);
 }
 
-/* Every shape floats, unless it has a motion of its own; not all in step. */
+/* Every shape floats, unless it has a motion of its own; each from its own
+   moment after 1.2s. */
 .zs-in > * {
   position: relative;
   display: block;
@@ -338,16 +281,18 @@
   scale: 0.9;
 }
 
-/* Box: four sides and a lid in 3D, with a strip of tape; the sides darker. */
+/* Box: the three faces one sees (front, side, lid) in 3D, with a strip of
+   tape; it turns back and forth so the other three never show. */
 .zs-cube {
   --f: #1d6bff, #0b2fb8;
   --t: #6fdcff, #2a8bff;
   width: var(--z);
   height: var(--z);
   transform-style: preserve-3d;
+  transform: perspective(60em) rotateX(-24deg) rotateY(-20deg);
   will-change: transform;
   animation:
-    zs-spin 18s var(--d) linear infinite,
+    zs-spin 7s var(--d) ease-in-out infinite alternate,
     zs-bob 6s var(--d) ease-in-out infinite;
 }
 
@@ -371,7 +316,7 @@
   transform: rotateY(var(--r)) translateZ(calc(var(--z) / 2));
 }
 
-.zs-cube i:nth-child(2n) {
+.zs-cube i + i {
   box-shadow: inset 0 0 0 9em #0002;
 }
 
@@ -381,11 +326,8 @@
 }
 
 @keyframes zs-spin {
-  from {
-    transform: rotateX(-24deg) rotateY(0);
-  }
   to {
-    transform: rotateX(-24deg) rotateY(1turn);
+    transform: perspective(60em) rotateX(-24deg) rotateY(-70deg);
   }
 }
 
@@ -400,26 +342,20 @@
   border-radius: 50%;
 }
 
+/* A coin turns on its edge and back: flat, its face never mirrored. */
 .zs-coin {
   background: radial-gradient(circle at 35% 30%, #ffe9a8, #e0a22c 60%, #a8721a);
   box-shadow: inset 0 0 0 0.35em #fff6;
   color: #7a4d0b;
   font: 800 calc(var(--z) * 0.28) / 1 var(--font-body);
-  transform-style: preserve-3d;
   animation:
     zs-flip 4.5s var(--d) ease-in-out infinite,
     zs-bob 5s var(--d) ease-in-out infinite;
 }
 
-/* Its face only on the front: turned over, a coin is plain gold. */
-.zs-coin::after {
-  content: attr(data-c);
-  backface-visibility: hidden;
-}
-
 @keyframes zs-flip {
   50% {
-    transform: rotateY(180deg);
+    transform: scaleX(0.08);
   }
 }
 
@@ -442,7 +378,8 @@
   inset: 0;
   border: 2px solid #27d6a0;
   border-radius: 50%;
-  animation: zs-rip 4s infinite;
+  opacity: 0;
+  animation: zs-rip 4s var(--d) infinite;
 }
 
 .zs-bell {
@@ -483,12 +420,11 @@
 }
 
 @keyframes zs-swing {
-  0%,
-  to {
-    transform: rotate(-7deg);
-  }
-  50% {
+  25% {
     transform: rotate(7deg);
+  }
+  75% {
+    transform: rotate(-7deg);
   }
 }
 
@@ -537,29 +473,6 @@
   height: 2.2em;
   border-radius: 0 0 50% 50%;
   background: linear-gradient(#ffd45e, #ff7a59 70%, #0000);
-  transform-origin: 50% 0;
-  animation: zs-flame 3s linear infinite;
-}
-
-/* Five flickers in one long cycle: Chrome wakes the main thread at each
-   cycle of an endless animation, so the scene's cycles are all seconds long. */
-@keyframes zs-flame {
-  0%,
-  20%,
-  40%,
-  60%,
-  80%,
-  to {
-    transform: none;
-  }
-  10%,
-  30%,
-  50%,
-  70%,
-  90% {
-    opacity: 0.8;
-    transform: scaleY(1.4);
-  }
 }
 
 /* Chat bubble and review: words on a card. */
@@ -608,18 +521,8 @@
   transition: opacity 0.3s calc(var(--i) * 0.09s);
 }
 
-:checked ~ .zs-in .zs-rev i {
-  animation: zs-star 0.4s calc(var(--i) * 0.09s);
-}
-
 :checked ~ .zs-in .zs-rev i::after {
   opacity: 1;
-}
-
-@keyframes zs-star {
-  50% {
-    transform: scale(1.6) rotate(20deg);
-  }
 }
 
 /* Truck: the box with the name, the cab ahead, two turning wheels. */
@@ -654,7 +557,7 @@
   border: 0.4em dashed #cfe0ff;
   border-radius: 50%;
   background: #0d1b3e;
-  animation: zs-roll 6s linear infinite;
+  animation: zs-roll 6s var(--d) linear infinite;
 }
 
 .zs-truck i + i {
@@ -672,21 +575,24 @@
 }
 
 /* ── A tap ──
-   The object's own motion, then one pseudo-element around it: a ring of
-   sparks by default (a dotted border), confetti for the tags (dashes in
-   four colours), gold for the review and the coins (falling), two rings
-   for the check, the bell and the chat. */
+   The object's own motion and its word; a ring of sparks around a box and
+   the review (a dotted border), two rings around the check, the bell and
+   the chat. */
 :checked ~ .zs-in::before,
 :checked ~ .zs-in::after {
   border-radius: 50%;
 }
 
-:checked ~ .zs-in::after {
+.zk-cube :checked ~ .zs-in::after,
+.zk-rev :checked ~ .zs-in::after {
   content: "";
   inset: -25%;
-  border: 0.45em dotted;
-  border-color: var(--fx, var(--h-accent));
+  border: 0.45em dotted var(--fx, var(--h-accent));
   animation: zs-burst 0.8s ease-out both;
+}
+
+.zk-rev {
+  --fx: #f5b942;
 }
 
 @keyframes zs-burst {
@@ -697,30 +603,6 @@
   to {
     opacity: 0;
     transform: scale(1.5) rotate(30deg);
-  }
-}
-
-.zk-tag {
-  --fx: #ff5a4a #ffd45e #27d6a0 #6fdcff;
-}
-
-.zk-tag :checked ~ .zs-in::after {
-  border-style: dashed;
-}
-
-.zk-rev,
-.zk-coin {
-  --fx: #f5b942;
-}
-
-.zk-coin :checked ~ .zs-in::after {
-  animation-name: zs-fall;
-}
-
-@keyframes zs-fall {
-  to {
-    opacity: 0;
-    transform: translateY(8em) scale(1.2);
   }
 }
 
@@ -863,15 +745,14 @@
   opacity: 0.75;
 }
 
-@supports selector(:has(*)) {
-  .zs-stat,
-  .zs:has(:checked) .zs-hint {
-    opacity: 0;
-  }
+/* Without :has() the first rule is dropped whole, and the tally simply shows. */
+.zs-stat,
+.zs:has(:checked) .zs-hint {
+  opacity: 0;
+}
 
-  .zs:has(:checked) .zs-stat {
-    opacity: 1;
-  }
+.zs:has(:checked) .zs-stat {
+  opacity: 1;
 }
 
 /* Between 1024 and 1279px the words and the devices leave room for nine. */
@@ -885,8 +766,7 @@
    The hero gives the shelf's floor (--stage, --foot) and the unit (--u)
    (home.css); each of the five objects and the four stars its place (--qx,
    --qb), and each object its size (--qz) and tilt (--qr). The light holds
-   still; no mouse light, route, tally or hints; two boxes turn and four
-   stars twinkle. */
+   still; no route, tally or hints; two boxes turn and four stars twinkle. */
 @media (max-width: 1023.98px) {
   .zs,
   .zs-bg {
@@ -899,7 +779,6 @@
 
   .zs-d,
   .zs-route,
-  .zs-car,
   .zs-stat,
   .zs-hint {
     display: none;
@@ -946,7 +825,7 @@
   }
 
   .zs-q .zs-cube {
-    animation: zs-spin 18s linear infinite;
+    animation: zs-spin 7s var(--d) ease-in-out infinite alternate;
   }
 }
 

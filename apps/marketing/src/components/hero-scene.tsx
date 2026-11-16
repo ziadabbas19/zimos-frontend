@@ -3,7 +3,7 @@ import type { HeroScene as Copy, HeroScenePop, HeroSceneTip } from "@/i18n/dicti
 
 /**
  * The hero's scene (app/hero-scene.css): a light behind the words that
- * drifts, a shipping route with two dots on their way, a few stars, and
+ * drifts, a dashed shipping route, a few stars, and
  * sixteen objects a visitor can tap — boxes, coins, price tags, a bag, a
  * check, a rocket, a bell, a chat, a review and a truck. Each tap plays the
  * object's own answer and its word, and a small tally counts the orders, the
@@ -78,7 +78,7 @@ const STARS: ["s" | "e", number, number, number?, number?][] = [
   ["s", 3, 30],
 ];
 
-/** The route across the scene, in a 1000 × 600 box stretched to it; the dots follow it in CSS (`zs-ry`). */
+/** The route across the scene, in a 1000 × 600 box stretched to it. */
 const ROUTE = "M-20 470C160 330 300 520 470 400S760 150 1020 260";
 
 const vars = (values: Record<string, string | number | undefined>) => values as CSSProperties;
@@ -91,12 +91,11 @@ export function HeroScene({ copy }: { copy: Copy }) {
         <svg className="zs-route" viewBox="0 0 1000 600" preserveAspectRatio="none">
           <path d={ROUTE} fill="none" strokeWidth="2" strokeDasharray="3 9" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
         </svg>
-        <i className="zs-car" />
         {STARS.map(([side, x, y, qx, qb], i) => (
           <i
             key={i}
             className={`zs-star${side === "e" ? " zs-e" : ""}${qx === undefined ? " zs-d" : ""}`}
-            style={vars({ "--x": `${x}%`, "--y": `${y}%`, "--d": `${(-i * 0.9).toFixed(1)}s`, "--qx": qx !== undefined ? `${qx}%` : undefined, "--qb": qb !== undefined ? `${qb}em` : undefined })}
+            style={vars({ "--x": `${x}%`, "--y": `${y}%`, "--d": `${(1.2 + i * 0.8).toFixed(1)}s`, "--qx": qx !== undefined ? `${qx}%` : undefined, "--qb": qb !== undefined ? `${qb}em` : undefined })}
           />
         ))}
       </div>
@@ -112,7 +111,7 @@ export function HeroScene({ copy }: { copy: Copy }) {
               data-pop={copy.pops[thing.pop]}
               data-tip={copy.tips[thing.tip]}
               style={vars({
-                "--d": `${(-(i * 1.7) % 6).toFixed(1)}s`,
+                "--d": `${(1.2 + ((i * 0.53) % 2.2)).toFixed(2)}s`,
                 "--x": `${at[1]}%`,
                 "--y": `${at[2]}%`,
                 "--z": kind === "cube" || kind === "coin" ? `${size}em` : undefined,
@@ -143,13 +142,13 @@ function shape(thing: Thing, copy: Copy): ReactNode {
     case "cube":
       return (
         <span className="zs-cube">
-          {[0, 1, 2, 3].map((face) => (
+          {[0, 1].map((face) => (
             <i key={face} style={vars({ "--r": `${face * 90}deg` })} />
           ))}
         </span>
       );
     case "coin":
-      return <i className="zs-coin" data-c={copy.coin} />;
+      return <i className="zs-coin">{copy.coin}</i>;
     case "tag":
       // dir="auto": "-20%" reads left to right on the Arabic page too.
       return (
