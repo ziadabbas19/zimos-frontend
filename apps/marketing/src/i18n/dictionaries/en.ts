@@ -2,9 +2,9 @@ import type { Dictionary } from "../dictionary";
 
 export const en: Dictionary = {
   meta: {
-    title: "Zimos — Online Store Builder for Cash on Delivery",
+    title: "Zimos — Online Store Builder to Run and Grow Your Store",
     description:
-      "Zimos lets you build a complete online store in 5 minutes and sell with cash on delivery: orders confirmed before shipping, every shipping company, real profit per order.",
+      "Zimos lets you build a complete online store in 5 minutes: confirm orders before shipping, accept every payment method, ship with any shipping company, and see your real profit on every order.",
   },
 
   brand: {
@@ -39,11 +39,11 @@ export const en: Dictionary = {
   },
 
   hero: {
-    badge: "One platform for selling with cash on delivery",
+    badge: "One platform to build, run and grow your store",
     lines: ["Your online store, live in minutes."],
     accent: "Your profit on every order, clear.",
     body: "Build your store from a ready template in minutes, confirm your orders before they ship, send them with any shipping company, and see your net profit once every cost is off.",
-    primaryCta: "Create your store",
+    primaryCta: "Start free",
     secondaryCta: "See the stores",
     ticks: ["Subscribe when you publish", "Ready store templates", "Arabic and English"],
     imageAlt: "Stores built on ZIMOS from its templates, on a computer and on a phone",
@@ -53,6 +53,44 @@ export const en: Dictionary = {
       delivered: { title: "Delivered", detail: "Counted in your profit" },
     },
     caption: "Real screenshots of ZIMOS stores — demo products and pictures.",
+    scene: {
+      hint: "Tap the objects",
+      pops: {
+        order1: "New order · EGP 1,250",
+        order2: "New order · EGP 890",
+        order3: "New order · EGP 1,650",
+        order4: "New order · EGP 450",
+        profit1: "+EGP 120 profit",
+        profit2: "+EGP 85 profit",
+        profit3: "+EGP 240 profit",
+        tag1: "Discount code applied",
+        tag2: "Price updated",
+        bag: "Added to cart",
+        ok: "Order confirmed",
+        rocket: "Your store is live",
+        bell: "New order notification",
+        chat: "Customer confirmed on WhatsApp",
+        review: "New 5-star review",
+        truck: "Shipped · tracking code ready",
+      },
+      tips: {
+        box: "Open the box",
+        profit: "Your profit",
+        discount: "Discount code",
+        price: "Change the price",
+        cart: "Add to cart",
+        confirm: "Confirm",
+        publish: "Publish",
+        notifications: "Notifications",
+        message: "Confirm by message",
+        reviews: "Reviews",
+        ship: "Ship it",
+      },
+      coin: "E£",
+      tags: ["-20%", "EGP 450"],
+      chat: { title: "Order #1042 confirmed", detail: "Delivery tomorrow" },
+      stat: { today: "Today", orders: "orders", reviews: "reviews", before: "EGP ", after: "" },
+    },
   },
 
   integrations: {

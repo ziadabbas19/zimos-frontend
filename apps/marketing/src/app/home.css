@@ -17,6 +17,8 @@
    `from` keyframes, so with reduced motion everything simply stands still
    where it belongs. Only transform and opacity are animated. */
 
+@import "./hero-scene.css";
+
 html:has(.zm) {
   --s: 1;
   zoom: 1;
@@ -382,7 +384,7 @@ html:has(.zm) {
 
 /* ══ Header ══════════════════════════════════════════════════════════
    A pill floating over the page: logo · the sections · language, theme,
-   sign in and the way in. Nothing in it wraps; from 1024px up it is one
+   sign in and the way in. Nothing in it wraps; from 1021px up it is one
    line in both languages, below that the sections fold into a sheet. */
 .zm-hdr {
   position: fixed;
@@ -645,7 +647,88 @@ html:has(.zm) {
   color: var(--blue);
 }
 
-@media (max-width: 1023.98px) {
+/* Computers: a larger bar (the owner, 2026-11-16), about 78px tall and
+   1240px wide, in px so the page's scale leaves it alone; one line in both
+   languages from 1021px up, the narrowest of them without "Sign in". */
+@media (min-width: 1021px) {
+  .zm-hdr {
+    inset-block-start: 14px;
+    padding-inline: 14px;
+  }
+
+  .zm-hdr-in {
+    gap: 28px;
+    width: min(100%, 1240px);
+    min-width: 0;
+    min-height: 78px;
+    padding: 12px;
+    padding-inline: 28px 14px;
+  }
+
+  .zm-logo .zimos-logo {
+    height: 40px !important;
+  }
+
+  .zm-nav {
+    gap: 2px;
+  }
+
+  .zm-nav a {
+    padding: 11px 15px;
+    font-size: 15.5px;
+  }
+
+  .zm-hdr .lz-lang-pill,
+  .zm-ic {
+    block-size: 46px;
+    min-inline-size: 46px;
+  }
+
+  .zm-ic {
+    inline-size: 46px;
+  }
+
+  .zm-hdr .lz-lang-pill {
+    padding: 0 15px;
+    font-size: 14.5px;
+  }
+
+  .zm-hdr .ci {
+    inline-size: 18px !important;
+    block-size: 18px !important;
+  }
+
+  .zm-signin {
+    padding-inline: 12px;
+    font-size: 15.5px;
+  }
+
+  .zm-hact > .zm-btn {
+    min-height: 46px;
+    padding: 14px 26px;
+    font-size: 15.5px;
+  }
+}
+
+@media (min-width: 1021px) and (max-width: 1180px) {
+  .zm-hdr-in {
+    gap: 14px;
+    padding-inline-start: 20px;
+  }
+
+  .zm-nav a {
+    padding: 10px 11px;
+    font-size: 14.5px;
+  }
+
+  .zm-signin {
+    display: none;
+  }
+}
+
+/* Tablets and phones: a 64px bar, the sections in the sheet, and no blur
+   behind the bar (opaque instead), so the scene under it costs nothing. */
+@media (max-width: 1020.98px) {
   .zm-nav {
     display: none;
   }
@@ -664,6 +747,19 @@ html:has(.zm) {
 
   .zm-hdr-in {
     gap: 0.75rem;
+    min-height: 64px;
+    padding-block: 9px;
+    background: rgb(245 248 253 / 0.96);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .dark .zm-hdr-in {
+    background: rgb(17 24 39 / 0.96);
+  }
+
+  .zm-logo .zimos-logo {
+    height: 34px !important;
   }
 }
 
@@ -675,10 +771,6 @@ html:has(.zm) {
 
   .zm-hdr-in {
     padding-inline: 1rem 0.375rem;
-  }
-
-  .zm-logo .zimos-logo {
-    height: 1.75rem !important;
   }
 
   .zm-hact > .zm-signin,
@@ -713,105 +805,42 @@ html:has(.zm) {
 }
 
 /* ══ Hero ════════════════════════════════════════════════════════════
-   One screen, top to bottom: the words in their own block, then the stage
-   of devices in the space left under them (a size container, so the laptop
-   and the phones are drawn to fit it), then a line of caption. The floating
-   cards live on the stage, so they can never cover a word or a button. */
+   The page's opening, edge to edge and from the very top (the header
+   floats over it): the scene behind and around (hero-scene.css), the
+   words in their own block, then the stage of devices in the space left
+   under them (a size container, so the laptop and the phones are drawn to
+   fit it), then a line of caption. The scene fades into the page at its
+   foot, the devices sink into it over a glow, and the strip under the hero
+   has no background of its own: no box, no seam. Light by day and night
+   blue by night, through the hero's own tokens (`--h-*`). */
 .zm-hero {
+  --h-ink: var(--color-ink);
+  --h-soft: #46557a;
+  --h-faint: var(--color-ink-soft);
+  --h-accent: #165dff;
+  --h-glow: #165dff1f;
+  --h-under: rgb(22 93 255 / 0.2);
+  --h-card: rgb(255 255 255 / 0.85);
+  --h-line: rgb(22 93 255 / 0.25);
+  --h-title: linear-gradient(95deg, #165dff, #0b46cc 55%, #2f7bff);
   position: relative;
   isolation: isolate;
   display: flex;
   flex-direction: column;
-  height: max(calc(100svh - 2 * var(--gut)), 40rem);
-  margin: var(--gut);
-  overflow: hidden;
-  border-radius: 2.5rem;
-  background: var(--night);
-  color: #fff;
+  height: max(100svh, 40rem);
+  color: var(--h-ink);
 }
 
-.zm-hero-bg {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-}
-
-.zm-hero-photo {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  max-width: none !important;
-  object-fit: cover;
-  opacity: 0.5;
-  filter: saturate(0.7);
-  transform: scale(1.08);
-  translate: calc(var(--mx, 0) * -14px) calc(var(--my, 0) * -10px);
-}
-
-.zm-hero-bg::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgb(10 22 70 / 0.82) 0%, rgb(7 11 20 / 0.6) 45%, rgb(7 11 20 / 0.96) 100%);
-}
-
-.zm-glow {
-  position: absolute;
-  z-index: 0;
-  border-radius: 50%;
-  filter: blur(80px);
-  pointer-events: none;
-}
-
-.zm-glow--a {
-  inset-block-start: -16rem;
-  left: 50%;
-  width: 38rem;
-  height: 38rem;
-  margin-left: -19rem;
-  background: rgb(43 108 255 / 0.55);
-  animation: zm-drift 14s ease-in-out infinite;
-}
-
-.zm-glow--b {
-  inset-block-end: 5rem;
-  inset-inline-end: -7.5rem;
-  width: 30rem;
-  height: 30rem;
-  background: rgb(0 190 255 / 0.3);
-  animation: zm-drift 18s -6s ease-in-out infinite reverse;
-}
-
-.zm-glow--c {
-  inset-block-end: -4rem;
-  inset-inline-start: -7.5rem;
-  width: 26rem;
-  height: 26rem;
-  background: rgb(22 93 255 / 0.4);
-  animation: zm-drift 16s -3s ease-in-out infinite;
-}
-
-@keyframes zm-drift {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(3rem, 2.25rem) scale(1.12);
-  }
-}
-
-.zm-grid {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background-image:
-    linear-gradient(rgb(160 190 255 / 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(160 190 255 / 0.07) 1px, transparent 1px);
-  background-size: 3.5rem 3.5rem;
-  -webkit-mask-image: radial-gradient(70% 60% at 50% 30%, #000, transparent);
-  mask-image: radial-gradient(70% 60% at 50% 30%, #000, transparent);
+.dark .zm-hero {
+  --h-ink: #fff;
+  --h-soft: rgb(255 255 255 / 0.82);
+  --h-faint: rgb(255 255 255 / 0.6);
+  --h-accent: #6fdcff;
+  --h-glow: #6fdcff1f;
+  --h-under: rgb(79 163 255 / 0.36);
+  --h-card: rgb(14 26 62 / 0.9);
+  --h-line: rgb(130 180 255 / 0.3);
+  --h-title: linear-gradient(95deg, #7dd6ff, #4fa3ff 55%, #7dd6ff);
 }
 
 .zm-hero-copy {
@@ -830,14 +859,17 @@ html:has(.zm) {
   align-items: center;
   gap: 0.625rem;
   padding: 0.5rem 1.125rem;
-  border: 1px solid rgb(255 255 255 / 0.2);
+  border: 1px solid var(--h-line);
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.08);
+  background: var(--h-card);
   font-size: var(--t-small);
   font-weight: 600;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
   animation: zm-fade 1s 0.05s both;
+}
+
+.dark .zm-pill {
+  border-color: rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.08);
 }
 
 .zm-pill i {
@@ -846,7 +878,7 @@ html:has(.zm) {
   height: 0.5625rem;
   flex: none;
   border-radius: 50%;
-  background: var(--volt);
+  background: var(--h-accent);
 }
 
 .zm-pill i::after {
@@ -854,7 +886,7 @@ html:has(.zm) {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: var(--volt);
+  background: var(--h-accent);
   opacity: 0;
   animation: zm-pulse 2s infinite;
 }
@@ -898,7 +930,7 @@ html:has(.zm) {
 }
 
 .zm-h1 .acc {
-  background: linear-gradient(95deg, #7dd6ff, #4fa3ff 55%, #7dd6ff);
+  background: var(--h-title);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -907,7 +939,7 @@ html:has(.zm) {
 .zm-hero-sub {
   max-width: 62ch;
   margin: 1.25rem auto 0;
-  color: rgb(255 255 255 / 0.82);
+  color: var(--h-soft);
   font-size: max(14px, clamp(0.9375rem, 1.25vw, 1.125rem));
   animation: zm-fade 1s 0.7s both;
 }
@@ -924,13 +956,25 @@ html:has(.zm) {
   animation: zm-fade 1s 0.85s both;
 }
 
+/* By day the glass button is white glass on the light; by night as in the closing band. */
+.zm-hero .zm-btn--glass {
+  border-color: rgb(13 27 62 / 0.18);
+  background: rgb(255 255 255 / 0.8);
+  color: var(--h-ink);
+}
+
+.dark .zm-hero .zm-btn--glass {
+  border-color: rgb(255 255 255 / 0.22);
+  background: rgb(255 255 255 / 0.09);
+}
+
 .zm-ticks {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.375rem 1.375rem;
   margin-block-start: 1.375rem;
-  color: rgb(255 255 255 / 0.75);
+  color: var(--h-soft);
   font-size: var(--t-small);
   animation: zm-fade 1s 1s both;
 }
@@ -943,10 +987,15 @@ html:has(.zm) {
 
 .zm-ticks svg {
   flex: none;
-  color: var(--volt);
+  color: var(--h-accent);
 }
 
 @media (min-width: 1024px) {
+  /* Clear of the header (14px from the top, 78px tall). */
+  .zm-hero-copy {
+    padding-block-start: 116px;
+  }
+
   .zm-h1 {
     /* Arabic line one is the widest: about 20em of Alexandria. */
     font-size: min(4.6rem, 4.3vw);
@@ -970,6 +1019,14 @@ html:has(.zm) {
 .zm-stage {
   --lap: min(84rem, 62cqw, calc((100cqh - 1.5rem) * 1.6));
   --half: calc(var(--lap) / 2);
+}
+
+/* The glow the devices stand in: a light on the page, no shadow box. */
+.zm-stage::before {
+  content: "";
+  position: absolute;
+  inset: 30% 6% -10%;
+  background: radial-gradient(closest-side, var(--h-under), #0000);
 }
 
 .zm-laptop {
@@ -1047,13 +1104,15 @@ html:has(.zm) {
   }
 }
 
+/* The laptop's base sinks into the page. */
 .zm-base {
   height: 0.875rem;
   margin-inline: -3%;
   border-radius: 0 0 1.125rem 1.125rem;
-  background: linear-gradient(#cfd6e4, #8d97ad);
+  background: linear-gradient(#cfd6e4, #8d97ad 45%, #8d97ad00);
 }
 
+/* A phone: its frame is its border, its foot fades into the page (mask). */
 .zm-ph {
   --ph: min(11.875rem, 15cqw, calc(100cqh * 0.42));
   position: absolute;
@@ -1061,12 +1120,12 @@ html:has(.zm) {
   z-index: 1;
   width: var(--ph);
   overflow: hidden;
-  border: 0.3125rem solid #0a0f1c;
+  padding: 0.25rem;
+  border: 1px solid rgb(255 255 255 / 0.22);
   border-radius: 1.75rem;
   background: #0a0f1c;
-  box-shadow:
-    0 30px 70px -20px rgb(0 0 0 / 0.8),
-    0 0 0 1px rgb(255 255 255 / 0.18);
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 1.5rem), #0000);
+  mask-image: linear-gradient(#000 calc(100% - 1.5rem), #0000);
   translate: calc(var(--mx, 0) * 22px) calc(var(--my, 0) * 10px);
   rotate: var(--rot, 0deg);
 }
@@ -1074,6 +1133,7 @@ html:has(.zm) {
 .zm-ph img {
   width: 100%;
   height: auto;
+  border-radius: 1.45rem;
 }
 
 .zm-ph--l {
@@ -1096,6 +1156,7 @@ html:has(.zm) {
   --rot: -5deg;
 }
 
+/* Opaque enough to read over the stores without a blur behind them. */
 .zm-fl {
   position: absolute;
   z-index: 4;
@@ -1106,11 +1167,10 @@ html:has(.zm) {
   padding-inline: 0.75rem 1.125rem;
   border: 1px solid rgb(255 255 255 / 0.18);
   border-radius: 1rem;
-  background: rgb(13 22 48 / 0.78);
+  background: rgb(13 22 48 / 0.92);
   box-shadow: 0 20px 40px -14px rgb(0 0 0 / 0.6);
+  color: #fff;
   white-space: nowrap;
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
   animation: zm-fl 7s ease-in-out infinite;
 }
 
@@ -1208,7 +1268,7 @@ html:has(.zm) {
   min-height: 2.5rem;
   padding-inline: 1.75rem;
   text-align: end;
-  color: rgb(255 255 255 / 0.55);
+  color: var(--h-faint);
   font-size: var(--t-tiny);
 }
 
@@ -1219,7 +1279,7 @@ html:has(.zm) {
   width: 1.25rem;
   height: 2rem;
   margin: -1rem 0 0 -0.625rem;
-  border: 2px solid rgb(255 255 255 / 0.4);
+  border: 2px solid var(--h-line);
   border-radius: 0.75rem;
 }
 
@@ -1232,7 +1292,7 @@ html:has(.zm) {
   height: 0.4375rem;
   margin-left: -1.5px;
   border-radius: 3px;
-  background: #fff;
+  background: var(--h-accent);
   animation: zm-sc 1.8s infinite;
 }
 
@@ -1247,40 +1307,109 @@ html:has(.zm) {
   }
 }
 
+/* Phones and tablets: the hero is as tall as what it holds. The words,
+   then a shelf for the scene's five objects (hero-scene.css, from the
+   floor these variables give), then the laptop between its two phones,
+   tucked behind its edges as on a computer, then the caption. No floating
+   cards, and no glass: what floats over the scene is opaque. */
 @media (max-width: 1023.98px) {
+  .zm-hero {
+    --u: clamp(9px, 2.56vw, 13px);
+    --stage: min(56vw, 30rem);
+    --foot: 3rem;
+    height: auto;
+  }
+
+  .zm-hero .zm-btn--glass {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .dark .zm-hero .zm-btn--glass {
+    background: rgb(255 255 255 / 0.14);
+  }
+
+  .zm-stage {
+    --lap: min(62vw, 33rem);
+    flex: none;
+    height: var(--stage);
+    min-height: 0;
+    margin-block-start: calc(var(--u) * 12);
+  }
+
+  .zm-laptop {
+    inset-block-end: -2%;
+  }
+
+  .zm-ph {
+    --ph: min(25vw, 13.5rem);
+    inset-block-end: 0;
+    padding: 3px;
+    border-radius: 16px;
+  }
+
+  .zm-ph img {
+    border-radius: 13px;
+  }
+
   .zm-fl,
   .zm-scroll {
     display: none;
   }
 
-  .zm-stage {
-    --lap: min(45rem, 84cqw, calc((100cqh - 1.5rem) * 1.6));
+  .zm-hero-foot {
+    height: var(--foot);
+    min-height: 0;
+    line-height: 1.35;
+  }
+}
+
+/* Phones: the words compact, so the hero is a screen and a little more, not two. */
+@media (max-width: 780px) {
+  .zm-hero-copy {
+    padding: 100px 18px 0;
   }
 
-  .zm-ph {
-    --ph: min(7.5rem, 18cqw, calc(100cqh * 0.42));
+  .zm-pill {
+    gap: 8px;
+    padding: 7px 14px;
+    font-size: 12.5px;
+    white-space: nowrap;
+  }
+
+  .zm-h1 {
+    margin-block-start: 16px;
+    font-size: clamp(1.75rem, 7.4vw, 2.6rem);
+  }
+
+  .zm-hero-sub {
+    margin-block-start: 14px;
+    font-size: 14.5px;
+    line-height: 1.55;
+  }
+
+  /* The two ways in side by side, on one row. */
+  .zm-hero .zm-ctas {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    margin-block-start: 20px;
+  }
+
+  .zm-hero .zm-ctas > .zm-btn {
+    width: auto;
+    min-width: 0;
+    padding: 13px 16px;
+    font-size: 15px;
+  }
+
+  .zm-ticks {
+    gap: 6px 14px;
+    margin-block-start: 16px;
+    font-size: 12.5px;
   }
 }
 
 @media (max-width: 639.98px) {
-  .zm-hero {
-    border-radius: 1.75rem;
-  }
-
-  .zm-hero-copy {
-    padding-block-start: 6.25rem;
-    padding-inline: 1.125rem;
-  }
-
-  .zm-ph {
-    display: none;
-  }
-
-  .zm-stage {
-    --lap: min(45rem, 94cqw, calc((100cqh - 1rem) * 1.6));
-    margin-block-start: 1.5rem;
-  }
-
   /* Clear of the WhatsApp button at the start corner. */
   .zm-hero-foot {
     padding-inline: 4.75rem 1rem;
@@ -3929,11 +4058,16 @@ html:has(.zm-viewer[open]) {
   }
 }
 
-/* ══ Motion: off when asked, held while out of view ══════════════════ */
+/* ══ Motion: off when asked, held while out of view ══════════════════
+   The pseudo-elements inside a section too (the plans' glow, the closing
+   band's shine): left running out of view, Chrome ticks them on the main
+   thread at every frame. */
 .zm .is-off,
 .zm .is-off *,
 .zm .is-off::before,
-.zm .is-off::after {
+.zm .is-off::after,
+.zm .is-off *::before,
+.zm .is-off *::after {
   animation-play-state: paused !important;
 }
 

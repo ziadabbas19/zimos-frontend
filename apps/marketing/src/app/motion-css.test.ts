@@ -77,8 +77,9 @@ describe("the home page's motion (home.css)", () => {
     expect(rules(reduced)).toContainEqual(expect.objectContaining({ selector: ".zm *", body: expect.stringMatching(/animation:\s*none\s*!important/) }));
   });
 
-  it("holds the endless animations of a section out of view", () => {
-    expect(rules(home)).toContainEqual(expect.objectContaining({ selector: ".zm .is-off *", body: expect.stringMatching(/animation-play-state:\s*paused/) }));
+  it("holds the endless animations of a section out of view, its pseudo-elements' too", () => {
+    for (const selector of [".zm .is-off *", ".zm .is-off *::before", ".zm .is-off *::after"])
+      expect(rules(home)).toContainEqual(expect.objectContaining({ selector, body: expect.stringMatching(/animation-play-state:\s*paused/) }));
   });
 
   it("reveals on scroll by transform alone, and only once the effects run", () => {

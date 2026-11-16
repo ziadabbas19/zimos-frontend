@@ -1,0 +1,843 @@
+/* ══ The hero's scene (components/hero-scene.tsx) ════════════════════
+   Imported at the top of home.css, so it travels in the same file: no
+   request of its own. Two layers inside `.zm-hero`:
+
+   - `.zs-bg`, behind everything: a soft light that drifts (`.zs-mesh`, its
+     own layer), a dashed shipping route and the stars. It reaches a little
+     under the hero and fades out at its foot and its sides (mask), so the
+     page simply carries on.
+   - `.zs`, in front: the objects. Each is a <label> with a hidden checkbox:
+     `:checked` plays the object's answer and its word rises from it; the
+     tally counts the labels whose box is checked.
+
+   Cost, by design: only transform and opacity move; `will-change` on the
+   cubes and the light alone, and 3D on the cubes alone (three faces each);
+   a tap's sparks and rings are one or two pseudo-elements; nothing moves by
+   itself before 1.2s, so the page's first frames carry none of it; the
+   cycles are seconds long (Chrome wakes the main thread at each cycle of
+   an endless animation); both layers skip their rendering off screen
+   (`content-visibility`), and the page's effects pause them there too
+   (`.is-off`, home-effects.tsx). On a phone and a tablet the light holds
+   still and five objects stand on a shelf over the devices, two of them
+   turning, with four stars: six animations in all.
+
+   Colours: the hero's tokens (home.css, `--h-*`, light and `.dark`) and a
+   few of the scene's below. Sizes: the objects are in `em` of the layer's
+   font size, 10px on a 1440px screen and scaled with it; words keep sizes
+   of their own. */
+
+.zm-hero {
+  --zs-base: linear-gradient(#dfe9ff, #edf3ff 55%, #0000);
+  --m1: #165dff38;
+  --m2: #12c8da38;
+  --m3: #8c78ff2e;
+  --m4: #d9a44138;
+  /* The tags and the bag: blue by day, white by night; and what is written on them. */
+  --zs-p: linear-gradient(135deg, #165dff, #0b2fb8);
+  --zs-pi: #fff;
+  /* A review's unlit star. */
+  --zs-off: #c4cde6;
+}
+
+.dark .zm-hero {
+  --zs-base: linear-gradient(#0b1a4f, #0a1022 50%, #0000);
+  --m1: #165dff8c;
+  --m2: #12c8da61;
+  --m3: #785aff59;
+  --m4: #d9a4412e;
+  --zs-p: linear-gradient(135deg, #fff, #dce8ff);
+  --zs-pi: #0d1b3e;
+  --zs-off: #4b5a82;
+}
+
+/* What stands on its own place in the scene. */
+.zs-bg,
+.zs,
+.zs-mesh,
+.zs-route,
+.zs-star,
+.zs-fl,
+.zs-i,
+.zs-fl::before,
+.zs-fl::after,
+.zs-cube i,
+.zs-cube::before,
+.zs-ok::before,
+.zs-bell::after,
+.zs-tag::before,
+.zs-bag::before,
+.zs-bag::after,
+.zs-rocket::before,
+.zs-rocket::after,
+.zs-truck::before,
+.zs-truck i,
+.zs-rev i::after,
+:checked ~ .zs-in::before,
+:checked ~ .zs-in::after,
+.zs-stat,
+.zs-hint {
+  position: absolute;
+}
+
+.zs-bg,
+.zs {
+  inset: 0;
+  pointer-events: none;
+  contain: layout paint style;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
+
+/* ── Behind: the light, the route, the stars ──
+   One mask for the foot and the sides: opaque under the words, gone at the
+   bottom and toward the lower corners. */
+.zs-bg {
+  bottom: -6rem;
+  background: var(--zs-base);
+  mask: radial-gradient(120% 100% at 50% 0, #000 62%, #0000);
+}
+
+.zs-mesh {
+  inset: -10%;
+  background:
+    radial-gradient(40% 45% at 20% 25%, var(--m1), #0000 70%),
+    radial-gradient(35% 40% at 80% 20%, var(--m2), #0000 70%),
+    radial-gradient(45% 45% at 70% 90%, var(--m3), #0000 70%),
+    radial-gradient(35% 35% at 10% 85%, var(--m4), #0000 70%);
+  will-change: transform;
+  animation: zs-mesh 22s 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes zs-mesh {
+  to {
+    transform: translate(3%, -2%) scale(1.08) rotate(2deg);
+  }
+}
+
+/* The route stands still: drawn once. */
+.zs-route {
+  width: 100%;
+  height: 100%;
+  stroke: var(--h-accent);
+  stroke-opacity: 0.55;
+}
+
+/* Dim at rest, as the twinkle starts. */
+.zs-star {
+  inset-inline-start: var(--x);
+  top: var(--y);
+  width: 10px;
+  height: 10px;
+  background: var(--h-accent);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  opacity: 0.15;
+  transform: scale(0.6);
+  animation: zs-tw 8s var(--d) ease-in-out infinite;
+}
+
+/* A twinkle, then a long rest. */
+@keyframes zs-tw {
+  0%,
+  40%,
+  to {
+    opacity: 0.15;
+    transform: scale(0.6);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.3) rotate(45deg);
+  }
+}
+
+/* ── In front: the objects ── */
+.zs {
+  --dir: 1;
+  --g: linear-gradient(135deg, #27d6a0, #0e9f78);
+  z-index: 5;
+  font-size: clamp(7px, 0.694vw, 13px);
+  counter-reset: zn zv zr;
+  /* A little depth under a mouse (home-effects.tsx sets --mx/--my on the hero). */
+  translate: calc(var(--mx, 0) * -8px) calc(var(--my, 0) * -6px);
+  transition: translate 0.6s;
+}
+
+[dir="rtl"] .zs {
+  --dir: -1;
+}
+
+.zs-fl {
+  inset-inline-start: var(--x);
+  top: max(var(--y), 120px);
+  padding: 8px;
+  margin: -8px;
+  pointer-events: auto;
+  cursor: pointer;
+  -webkit-tap-highlight-color: #0000;
+}
+
+.zs-e {
+  inset-inline: auto var(--x);
+}
+
+.zs-i {
+  width: 0;
+  opacity: 0;
+}
+
+/* On the label, not the box: Chrome recounts on a change of `:has()`, and
+   not on a checkbox's own `:checked`. */
+.zs-fl:has(:checked) {
+  counter-increment: zn var(--n, 0) zv var(--v, 0) zr var(--r, 0);
+}
+
+.zs-in {
+  position: relative;
+  display: block;
+  transition: scale 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+/* Every shape floats, unless it has a motion of its own; each from its own
+   moment after 1.2s. */
+.zs-in > * {
+  position: relative;
+  display: block;
+  animation: zs-bob 6s var(--d) ease-in-out infinite;
+}
+
+@keyframes zs-bob {
+  50% {
+    translate: 0 -1.6em;
+  }
+}
+
+/* The word a tap brings up, and the hint under a mouse: from the side that
+   faces the middle of the page. */
+.zs-fl::before,
+.zs-fl::after {
+  inset-inline-start: 0;
+  padding: 5px 10px;
+  border-radius: 99px;
+  background: #fff;
+  box-shadow: 0 8px 22px #0d1b3e33;
+  color: #0d1b3e;
+  font: 700 11.5px/1.2 var(--font-body);
+  white-space: nowrap;
+}
+
+.zs-e::before,
+.zs-e::after {
+  inset-inline: auto 0;
+}
+
+.zs-fl:has(:checked)::after {
+  content: attr(data-pop);
+  bottom: 100%;
+  padding: 7px 14px;
+  font-size: 14px;
+  font-weight: 800;
+  animation: zs-rise 1.6s both;
+}
+
+@keyframes zs-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.7);
+  }
+  15%,
+  80% {
+    opacity: 1;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-60px);
+  }
+}
+
+@media (hover: hover) {
+  .zs-fl:hover .zs-in {
+    scale: 1.14;
+  }
+
+  .zs-fl:hover .zs-cube {
+    animation-play-state: paused;
+  }
+
+  .zs-fl:hover::before {
+    content: attr(data-tip);
+    top: 100%;
+    margin-top: 6px;
+    animation: zs-tip 0.2s both;
+  }
+}
+
+@keyframes zs-tip {
+  from {
+    opacity: 0;
+  }
+}
+
+.zs-fl:active .zs-in {
+  scale: 0.9;
+}
+
+/* Box: the three faces one sees (front, side, lid) in 3D, with a strip of
+   tape; it turns back and forth so the other three never show. */
+.zs-cube {
+  --f: #1d6bff, #0b2fb8;
+  --t: #6fdcff, #2a8bff;
+  width: var(--z);
+  height: var(--z);
+  transform-style: preserve-3d;
+  transform: perspective(60em) rotateX(-24deg) rotateY(-20deg);
+  will-change: transform;
+  animation:
+    zs-spin 7s var(--d) ease-in-out infinite alternate,
+    zs-bob 6s var(--d) ease-in-out infinite;
+}
+
+.zs-gold .zs-cube {
+  --f: #f0c36a, #b8801f;
+  --t: #ffe3a6, #e0a840;
+}
+
+.zs-cyan .zs-cube {
+  --f: #27d6e6, #0b8fa8;
+  --t: #9ff0f8, #27d6e6;
+}
+
+.zs-cube i,
+.zs-cube::before {
+  content: "";
+  inset: 0;
+  border: 1px solid #fff7;
+  border-radius: 0.8em;
+  background: linear-gradient(90deg, #0000 41%, #fff5 0 59%, #0000 0), linear-gradient(135deg, var(--f));
+  transform: rotateY(var(--r)) translateZ(calc(var(--z) / 2));
+}
+
+.zs-cube i + i {
+  box-shadow: inset 0 0 0 9em #0002;
+}
+
+.zs-cube::before {
+  --f: var(--t);
+  transform: rotateX(90deg) translateZ(calc(var(--z) / 2));
+}
+
+@keyframes zs-spin {
+  to {
+    transform: perspective(60em) rotateX(-24deg) rotateY(-70deg);
+  }
+}
+
+/* Coin, check and bell: round. */
+.zs-coin,
+.zs-ok,
+.zs-bell {
+  display: grid;
+  place-items: center;
+  width: var(--z, 4.7em);
+  height: var(--z, 4.7em);
+  border-radius: 50%;
+}
+
+/* A coin turns on its edge and back: flat, its face never mirrored. */
+.zs-coin {
+  background: radial-gradient(circle at 35% 30%, #ffe9a8, #e0a22c 60%, #a8721a);
+  box-shadow: inset 0 0 0 0.35em #fff6;
+  color: #7a4d0b;
+  font: 800 calc(var(--z) * 0.28) / 1 var(--font-body);
+  animation:
+    zs-flip 4.5s var(--d) ease-in-out infinite,
+    zs-bob 5s var(--d) ease-in-out infinite;
+}
+
+@keyframes zs-flip {
+  50% {
+    transform: scaleX(0.08);
+  }
+}
+
+.zs-ok {
+  background: var(--g);
+}
+
+.zs-ok::after {
+  content: "";
+  width: 26%;
+  height: 46%;
+  margin-top: -10%;
+  border: solid #fff;
+  border-width: 0 0.35em 0.35em 0;
+  rotate: 45deg;
+}
+
+.zs-ok::before {
+  content: "";
+  inset: 0;
+  border: 2px solid #27d6a0;
+  border-radius: 50%;
+  opacity: 0;
+  animation: zs-rip 4s var(--d) infinite;
+}
+
+.zs-bell {
+  background: linear-gradient(135deg, #ff9a3c, #ff5a4a);
+}
+
+.zs-bell::after {
+  content: "";
+  top: 0.2em;
+  inset-inline-end: 0.2em;
+  width: 1.1em;
+  height: 1.1em;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #ff2d55;
+}
+
+/* Price tag on its string, with its hole; the bag. */
+.zs-tag {
+  min-width: 5.2em;
+  padding: 1.1em 1em 0.65em;
+  border-radius: 0.7em 0.7em 0.7em 1.6em;
+  background: radial-gradient(circle at 50% 0.6em, var(--zs-pi) 0.25em, #0000 0.3em), var(--zs-p);
+  color: var(--zs-pi);
+  font: 800 1.4em/1 var(--font-body);
+  text-align: center;
+  transform-origin: 50% -1em;
+  animation: zs-swing 4s var(--d) ease-in-out infinite;
+}
+
+.zs-tag::before {
+  content: "";
+  left: 50%;
+  top: -1em;
+  width: 2px;
+  height: 1.3em;
+  background: var(--h-accent);
+}
+
+@keyframes zs-swing {
+  25% {
+    transform: rotate(7deg);
+  }
+  75% {
+    transform: rotate(-7deg);
+  }
+}
+
+.zs-bag {
+  width: 5em;
+  height: 5.8em;
+}
+
+.zs-bag::before,
+.zs-bag::after {
+  content: "";
+  inset: 1.5em 0 0;
+  border-radius: 0.8em 0.8em 1.2em 1.2em;
+  background: var(--zs-p);
+}
+
+.zs-bag::after {
+  inset: 0 1.3em auto;
+  height: 2.6em;
+  border: 0.3em solid var(--h-accent);
+  border-bottom: 0;
+  border-radius: 1.4em 1.4em 0 0;
+  background: none;
+}
+
+/* Rocket: fins (its own background), the body with its window, the flame. */
+.zs-rocket {
+  width: 3.4em;
+  height: 7em;
+  font-size: calc(var(--z, 7em) / 7);
+  background:
+    linear-gradient(45deg, #165dff 50%, #0000 0) 0 4.2em / 1.2em 2em no-repeat,
+    linear-gradient(-45deg, #165dff 50%, #0000 0) 100% 4.2em / 1.2em 2em no-repeat;
+}
+
+.zs-rocket::before {
+  content: "";
+  inset: 0 0.5em 1.4em;
+  border-radius: 50% 50% 0.8em 0.8em / 70% 70% 0.8em 0.8em;
+  background: radial-gradient(circle at 50% 42%, #165dff 0.55em, #9fd2ff 0 0.85em, #0000 0), linear-gradient(90deg, #dfe9ff, #fff 45%, #b9ccf5);
+}
+
+.zs-rocket::after {
+  content: "";
+  inset: auto 1em -0.8em;
+  height: 2.2em;
+  border-radius: 0 0 50% 50%;
+  background: linear-gradient(#ffd45e, #ff7a59 70%, #0000);
+}
+
+/* Chat bubble and review: words on a card. */
+.zs-chat {
+  min-width: 150px;
+  padding: 10px 14px;
+  border-radius: 16px 16px 16px 4px;
+  background: var(--g);
+  color: #fff;
+  font-size: 11px;
+}
+
+.zs-chat b {
+  display: block;
+  font-size: 12.5px;
+}
+
+.zs-rev,
+.zs-stat {
+  border: 1px solid var(--h-line);
+  border-radius: 14px;
+  background: var(--h-card);
+  box-shadow: 0 14px 30px #0d1b3e33;
+}
+
+.zs-rev {
+  display: flex;
+  gap: 3px;
+  padding: 10px 12px;
+}
+
+/* Five stars that light one after the other on a tap. */
+.zs-rev i {
+  position: relative;
+  width: 15px;
+  height: 15px;
+  background: var(--zs-off);
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.zs-rev i::after {
+  content: "";
+  inset: 0;
+  background: #f5b942;
+  opacity: 0;
+  transition: opacity 0.3s calc(var(--i) * 0.09s);
+}
+
+:checked ~ .zs-in .zs-rev i::after {
+  opacity: 1;
+}
+
+/* Truck: the box with the name, the cab ahead, two turning wheels. */
+.zs-truck {
+  width: 6em;
+  height: 3.6em;
+  margin-inline-end: 3.2em;
+  border-radius: 0.6em;
+  background: linear-gradient(135deg, #1d6bff, #0b2fb8);
+  color: #fff;
+  font: 800 1em/3.6em var(--font-body);
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+
+.zs-truck::before {
+  content: "";
+  inset-inline-start: 6.2em;
+  top: 1em;
+  width: 2.8em;
+  height: 2.6em;
+  border-radius: 0.4em;
+  border-start-end-radius: 1.4em;
+  background: linear-gradient(135deg, #6fdcff, #2a8bff);
+}
+
+.zs-truck i {
+  top: 2.8em;
+  inset-inline-start: 0.8em;
+  width: 1.6em;
+  height: 1.6em;
+  border: 0.4em dashed #cfe0ff;
+  border-radius: 50%;
+  background: #0d1b3e;
+  animation: zs-roll 6s var(--d) linear infinite;
+}
+
+.zs-truck i + i {
+  inset-inline-start: 6.6em;
+}
+
+[dir="rtl"] .zs-truck i {
+  animation-direction: reverse;
+}
+
+@keyframes zs-roll {
+  to {
+    transform: rotate(10turn);
+  }
+}
+
+/* ── A tap ──
+   The object's own motion and its word; a ring of sparks around a box and
+   the review (a dotted border), two rings around the check, the bell and
+   the chat. */
+:checked ~ .zs-in::before,
+:checked ~ .zs-in::after {
+  border-radius: 50%;
+}
+
+.zk-cube :checked ~ .zs-in::after,
+.zk-rev :checked ~ .zs-in::after {
+  content: "";
+  inset: -25%;
+  border: 0.45em dotted var(--fx, var(--h-accent));
+  animation: zs-burst 0.8s ease-out both;
+}
+
+.zk-rev {
+  --fx: #f5b942;
+}
+
+@keyframes zs-burst {
+  0% {
+    opacity: 1;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.5) rotate(30deg);
+  }
+}
+
+.zr :checked ~ .zs-in::before,
+.zr :checked ~ .zs-in::after {
+  content: "";
+  inset: 0;
+  border: 2px solid var(--h-accent);
+  animation: zs-rip 1s both;
+}
+
+.zr :checked ~ .zs-in::after {
+  animation-delay: 0.2s;
+}
+
+@keyframes zs-rip {
+  0% {
+    opacity: 1;
+    transform: scale(0.6);
+  }
+  70%,
+  to {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+
+.zk-cube :checked ~ .zs-in {
+  animation: zs-hit 0.8s;
+}
+
+@keyframes zs-hit {
+  25% {
+    transform: scale(0.82) translateY(10px);
+  }
+  60% {
+    transform: scale(1.28) translateY(-34px) rotate(8deg);
+  }
+}
+
+.zk-coin :checked ~ .zs-in > i {
+  animation: zs-flip 0.5s 2;
+}
+
+/* The tag swings wildly from its string; the bag and the bell shake. */
+.zk-tag :checked ~ .zs-in > i {
+  animation: zs-shake 1.4s;
+}
+
+.zk-bag :checked ~ .zs-in,
+.zk-bell :checked ~ .zs-in {
+  animation: zs-shake 0.7s;
+}
+
+.zk-bell .zs-in {
+  transform-origin: 50% 0;
+}
+
+@keyframes zs-shake {
+  20% {
+    transform: rotate(-20deg);
+  }
+  40% {
+    transform: rotate(16deg);
+  }
+  60% {
+    transform: rotate(-12deg);
+  }
+  80% {
+    transform: rotate(6deg);
+  }
+}
+
+.zk-rocket :checked ~ .zs-in {
+  animation: zs-launch 1.8s ease-in-out;
+}
+
+@keyframes zs-launch {
+  25% {
+    transform: translateY(8px);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-110vh);
+  }
+  70.1% {
+    opacity: 0;
+    transform: translateY(30vh);
+  }
+}
+
+/* The truck drives off ahead and comes back from behind; ahead is left in Arabic. */
+.zk-truck :checked ~ .zs-in {
+  animation: zs-drive 2.4s ease-in-out;
+}
+
+@keyframes zs-drive {
+  35% {
+    transform: translateX(calc(var(--dir) * -14px));
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(calc(var(--dir) * 100vw));
+  }
+  70.1% {
+    opacity: 0;
+    transform: translateX(calc(var(--dir) * -40vw));
+  }
+}
+
+/* ── The tally, and the hint until the first tap ── */
+.zs-stat,
+.zs-hint {
+  inset-inline-end: 3%;
+  bottom: 8%;
+  padding: 10px 16px;
+  color: var(--h-ink);
+  font-weight: 800;
+  transition: opacity 0.3s;
+}
+
+/* Its words come with the page (data-*), its numbers from the counters. */
+.zs-stat::before {
+  content: attr(data-t);
+  display: block;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.zs-stat::after {
+  content: counter(zn) " " attr(data-o) " · " counter(zr) " " attr(data-r) " · " attr(data-b) counter(zv) attr(data-a);
+}
+
+.zs-hint {
+  padding: 6px 12px;
+  border: 1px dashed var(--h-line);
+  border-radius: 99px;
+  font-size: 12.5px;
+  opacity: 0.75;
+}
+
+/* Without :has() the first rule is dropped whole, and the tally simply shows. */
+.zs-stat,
+.zs:has(:checked) .zs-hint {
+  opacity: 0;
+}
+
+.zs:has(:checked) .zs-stat {
+  opacity: 1;
+}
+
+/* Between 1024 and 1279px the words and the devices leave room for nine. */
+@media (max-width: 1279.98px) {
+  .zs-w {
+    display: none;
+  }
+}
+
+/* ── Phones and tablets: the shelf over the devices ──
+   The hero gives the shelf's floor (--stage, --foot) and the unit (--u)
+   (home.css); each of the five objects and the four stars its place (--qx,
+   --qb), and each object its size (--qz) and tilt (--qr). The light holds
+   still; no route, tally or hints; two boxes turn and four stars twinkle. */
+@media (max-width: 1023.98px) {
+  .zs,
+  .zs-bg {
+    font-size: var(--u);
+  }
+
+  .zs {
+    translate: none;
+  }
+
+  .zs-d,
+  .zs-route,
+  .zs-stat,
+  .zs-hint {
+    display: none;
+  }
+
+  .zs-q.zs-w {
+    display: block;
+  }
+
+  .zs-mesh {
+    will-change: auto;
+    animation: none;
+  }
+
+  .zs-fl,
+  .zs-star {
+    inset-inline: var(--qx) auto;
+    top: auto;
+    bottom: calc(var(--stage) + var(--foot) + var(--qb));
+  }
+
+  /* A finger's width at least. */
+  .zs-fl {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px;
+    margin: -10px;
+  }
+
+  /* The light layer reaches 6rem under the hero. */
+  .zs-star {
+    margin-bottom: 6rem;
+  }
+
+  .zs-q .zs-in {
+    --z: var(--qz);
+    rotate: var(--qr);
+  }
+
+  .zs-q .zs-in > *,
+  .zs-q .zs-in > *::before,
+  .zs-q .zs-in > *::after {
+    animation: none;
+  }
+
+  .zs-q .zs-cube {
+    animation: zs-spin 7s var(--d) ease-in-out infinite alternate;
+  }
+}
+
+/* Less motion: nothing moves by itself; a tap still answers, standing
+   still (the object a little larger, its word shown, the stars lit). */
+@media (prefers-reduced-motion: reduce) {
+  .zs-fl:has(:checked) .zs-in {
+    scale: 1.12;
+  }
+
+  .zs .zs-fl :checked ~ .zs-in::before,
+  .zs .zs-fl :checked ~ .zs-in::after {
+    content: none;
+  }
+}

@@ -13,7 +13,7 @@ type Params = { params: Promise<{ locale: string }> };
 /**
  * The site's other free resources: the icons (components/duo-icons.tsx,
  * components/color-icon.tsx), the fonts (app/fonts.ts) and the photographs
- * (public/photos: behind the home page's opening and its closing band).
+ * (public/photos: behind the home page's closing band).
  */
 const RESOURCES = [
   { name: "Phosphor Icons", href: "https://phosphoricons.com", licence: "MIT" },
