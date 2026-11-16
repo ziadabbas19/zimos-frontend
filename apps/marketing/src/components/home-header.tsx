@@ -14,12 +14,12 @@ import { ThemeToggle, restoreTheme } from "./theme-toggle";
 import { ZimosLogo } from "./zimos-logo";
 
 /** Wider than this, the sections are in the bar; narrower, in the sheet. */
-const SHEET_BELOW = 1024;
+const SHEET_BELOW = 1021;
 
 /**
  * The home page's bar (site-header.tsx is every other page's): a pill
  * floating over the page — logo, the page's sections, then the language,
- * the theme, sign in and the way in. Nothing in it wraps: from 1024px up it
+ * the theme, sign in and the way in. Nothing in it wraps: from 1021px up it
  * is one line in both languages (home.css), and below that the sections
  * fold into a sheet that opens inside the pill from the menu button and
  * closes on a choice, Esc, a click outside, or the screen growing back. The
