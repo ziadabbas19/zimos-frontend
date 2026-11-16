@@ -13,16 +13,18 @@ const nth = (name: "--i" | "--k", i: number) => ({ [name]: i }) as CSSProperties
 const PHONES = [HERO_PHONES[0], HERO_PHONES[HERO_PHONES.length - 1]] as const;
 
 /**
- * The page's opening, one screen high: a night-blue stage over a darkened
- * photograph of a shop, with the words in their own block at the top — the
- * pill, the title in two lines, one paragraph, the two ways in, three ticks
- * — and under them, in the space left (home.css `.zm-stage`, a size
- * container), real stores on real devices: a laptop turning from one store
- * to the next (CSS only), a store on a phone at each side, and three cards
- * with what happens to an order, floating at the laptop's edges. The
- * devices are drawn to fit that space, so nothing ever covers the words or
- * the buttons. The first capture's alt says what they are; the rest is
- * decoration. The pointer gives the stage some depth (home-effects.tsx).
+ * The page's opening, one screen high on a computer, edge to edge under the
+ * floating header: the scene (hero-scene.tsx) behind and around, the words
+ * in their own block at the top — the pill, the title in two lines, one
+ * paragraph, the two ways in, three ticks — and under them, in the space
+ * left (home.css `.zm-stage`, a size container), real stores on real
+ * devices: a laptop turning from one store to the next (CSS only), a store
+ * on a phone at each side, and three cards with what happens to an order,
+ * floating at the laptop's edges. The devices are drawn to fit that space,
+ * so nothing ever covers the words or the buttons. The first capture's alt
+ * says what they are; the rest is decoration. The pointer gives the stage
+ * some depth (home-effects.tsx). On a phone the hero is as tall as what it
+ * holds, and the laptop keeps its two phones.
  */
 export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Locale }) {
   const { chips } = copy;
@@ -32,23 +34,6 @@ export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Local
 
   return (
     <section className="zm-hero" aria-labelledby="zm-h1" data-section="hero">
-      <div className="zm-hero-bg" aria-hidden>
-        <img
-          className="zm-hero-photo"
-          src="/photos/store-interior-1920.webp"
-          srcSet="/photos/store-interior-960.webp 960w, /photos/store-interior-1920.webp 1920w"
-          sizes="100vw"
-          width={1920}
-          height={1080}
-          alt=""
-          decoding="async"
-          fetchPriority="low"
-        />
-      </div>
-      <i className="zm-glow zm-glow--a" aria-hidden />
-      <i className="zm-glow zm-glow--b" aria-hidden />
-      <i className="zm-glow zm-glow--c" aria-hidden />
-      <i className="zm-grid" aria-hidden />
 
       <div className="zm-hero-copy">
         <p className="zm-pill">
@@ -87,7 +72,7 @@ export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Local
       </div>
 
       <div className="zm-stage">
-        {/* Hidden on a phone (the cards under 1024px): lazy, so a hidden picture is never fetched. */}
+        {/* Lazy: the laptop's first store comes first. */}
         <span className="zm-ph zm-ph--l" aria-hidden>
           <img src={galleryShot(PHONES[0], locale, "phone", "card")} width={260} height={520} alt="" loading="lazy" decoding="async" />
         </span>
