@@ -80,6 +80,8 @@ export interface Dictionary {
       delivered: Chip;
     };
     caption: string;
+    /** The objects around the hero (components/hero-scene.tsx): decoration, hidden from screen readers. */
+    scene: HeroScene;
   };
 
   /** The stores: every template of the library as a whole store, to open and look through. */
@@ -423,3 +425,44 @@ export interface FaqItem {
   question: string;
   answer: string;
 }
+
+/**
+ * What the hero's objects say (components/hero-scene.tsx): each object's
+ * word when it is tapped (`pops`), its hint under the pointer (`tips`), the
+ * words drawn on a few of them, and the small tally of what was tapped.
+ * Amounts are illustration, written the way the rest of the page writes them.
+ */
+export interface HeroScene {
+  /** Until the first tap. */
+  hint: string;
+  pops: Record<HeroScenePop, string>;
+  tips: Record<HeroSceneTip, string>;
+  /** On the coins. */
+  coin: string;
+  /** On the two price tags. */
+  tags: [string, string];
+  /** In the chat bubble. */
+  chat: { title: string; detail: string };
+  /** The tally: its heading, the words after its two counts, and the amount's currency before or after it. */
+  stat: { today: string; orders: string; reviews: string; before: string; after: string };
+}
+
+export type HeroScenePop =
+  | "order1"
+  | "order2"
+  | "order3"
+  | "order4"
+  | "profit1"
+  | "profit2"
+  | "profit3"
+  | "tag1"
+  | "tag2"
+  | "bag"
+  | "ok"
+  | "rocket"
+  | "bell"
+  | "chat"
+  | "review"
+  | "truck";
+
+export type HeroSceneTip = "box" | "profit" | "discount" | "price" | "cart" | "confirm" | "publish" | "notifications" | "message" | "reviews" | "ship";

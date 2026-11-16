@@ -6,6 +6,7 @@ import type { Dictionary } from "@/i18n/dictionary";
 import { REGISTER_URL } from "@/lib/urls";
 import { HERO_LOOKS, HERO_PHONES, galleryShot } from "@/lib/store-shots";
 import { Arrow, Check } from "./duo-icons";
+import { HeroScene } from "./hero-scene";
 
 const nth = (name: "--i" | "--k", i: number) => ({ [name]: i }) as CSSProperties;
 
@@ -34,6 +35,7 @@ export function Hero({ copy, locale }: { copy: Dictionary["hero"]; locale: Local
 
   return (
     <section className="zm-hero" aria-labelledby="zm-h1" data-section="hero">
+      <HeroScene copy={copy.scene} />
 
       <div className="zm-hero-copy">
         <p className="zm-pill">

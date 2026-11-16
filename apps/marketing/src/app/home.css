@@ -17,6 +17,8 @@
    `from` keyframes, so with reduced motion everything simply stands still
    where it belongs. Only transform and opacity are animated. */
 
+@import "./hero-scene.css";
+
 html:has(.zm) {
   --s: 1;
   zoom: 1;
