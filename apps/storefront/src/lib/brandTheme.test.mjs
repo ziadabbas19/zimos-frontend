@@ -198,3 +198,23 @@ describe("previewBootScript", () => {
     assert.equal(readColorMode(undefined), null);
   });
 });
+
+describe("readPreviewTheme — whose colour it is", () => {
+  it("keeps the mark of a colour a template brought", () => {
+    assert.equal(readPreviewTheme({ primaryColor: "#112233", primaryColorSource: TEMPLATE_COLOR_SOURCE }).primaryColorSource, TEMPLATE_COLOR_SOURCE);
+  });
+
+  it("drops the mark without a colour, and any other value", () => {
+    assert.equal(readPreviewTheme({ primaryColorSource: TEMPLATE_COLOR_SOURCE }).primaryColorSource, undefined);
+    assert.equal(readPreviewTheme({ primaryColor: "#112233", primaryColorSource: "x" }).primaryColorSource, undefined);
+  });
+});
+
+describe("previewBootScript — a template's own dark mode", () => {
+  it("puts the asked-for mode on a template's wrapper, except the looks that are dark already", () => {
+    const script = previewBootScript(null, "dark");
+    assert.match(script, /data-xs-shell/);
+    assert.match(script, /data-color-mode/);
+    assert.match(script, /\["19","22"\]/);
+  });
+});

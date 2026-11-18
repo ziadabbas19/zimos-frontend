@@ -1,3 +1,4 @@
+import { XsDarkStyles } from "@/components/xs/XsLookStyles";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
@@ -66,6 +67,8 @@ export default async function StorePreviewPage({
       {themeCss && <style id="zimos-preview-theme" dangerouslySetInnerHTML={{ __html: themeCss }} />}
       {/* Every theme's font stacks, so the editor can switch theme without a reload. */}
       <style dangerouslySetInnerHTML={{ __html: THEME_FONT_CSS }} />
+      {/* The editor's light / dark switch works on any template, whatever shoppers are offered. */}
+      <XsDarkStyles />
       {empty ? (
         <div className="px-6 py-16 text-center text-sm text-ink-soft">
           <p>

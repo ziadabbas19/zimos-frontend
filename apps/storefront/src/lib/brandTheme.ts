@@ -5,7 +5,7 @@
  * Pure on purpose: the store layout (server) and the editor preview's bridge
  * (client, applying unsaved changes live) both need exactly the same mapping,
  * so it lives here rather than beside the server-only API helpers. It imports
- * nothing, so Node's own test runner can load it (brandTheme.test.mjs).
+ * only plain JavaScript, so Node's own test runner can load it (brandTheme.test.mjs).
  *
  * Every key is optional and read defensively — themeSettings is an opaque blob
  * the backend stores as-is. Anything missing or malformed is simply left out,
@@ -30,6 +30,8 @@
  *  - `fontFamily` — one of THEME_FONTS' keys (original look only);
  *  - `cornerRadius` — one of THEME_RADII's keys (original look only).
  */
+
+import { NATIVE_DARK_LOOKS } from "./xsDarkPalette.mjs";
 
 /** Matches the keys the dashboard's Settings page writes into themeSettings. */
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -222,6 +224,8 @@ export interface PreviewTheme {
   /** A theme key, or ORIGINAL_LOOK. Undefined leaves the store's saved theme alone. */
   storeTheme?: string;
   primaryColor?: string;
+  /** TEMPLATE_COLOR_SOURCE while `primaryColor` is the one a template brought. */
+  primaryColorSource?: string;
   primaryColorDark?: string;
   secondaryColor?: string;
   fontFamily?: string;
@@ -241,6 +245,7 @@ export function readPreviewTheme(raw: unknown): PreviewTheme | null {
   const primaryDark = hex(input, "primaryColorDark");
   const secondary = hex(input, "secondaryColor");
   if (primary) theme.primaryColor = primary;
+  if (primary && input.primaryColorSource === TEMPLATE_COLOR_SOURCE) theme.primaryColorSource = TEMPLATE_COLOR_SOURCE;
   if (primaryDark) theme.primaryColorDark = primaryDark;
   if (secondary) theme.secondaryColor = secondary;
   const font = choice(input, "fontFamily", THEME_FONTS);
@@ -291,7 +296,9 @@ export function previewBootScript(theme: PreviewTheme | null, colorMode: ColorMo
     key === undefined ? "keep" : key
   )};var m=${JSON.stringify(colorMode)};if(w&&k!=="keep"){if(k)w.setAttribute("data-store-theme",k);else w.removeAttribute("data-store-theme");${JSON.stringify(
     vars
-  )}.forEach(function(n){w.style.removeProperty(n)})}if(m){var e=document.documentElement;e.classList.toggle("dark",m==="dark");e.style.colorScheme=m}}catch(_){}})();`;
+  )}.forEach(function(n){w.style.removeProperty(n)})}if(m){var e=document.documentElement;e.classList.toggle("dark",m==="dark");e.style.colorScheme=m;if(w&&w.hasAttribute("data-xs-shell")&&${JSON.stringify(
+    NATIVE_DARK_LOOKS
+  )}.indexOf(w.getAttribute("data-xs-shell"))<0){if(m==="dark")w.setAttribute("data-color-mode","dark");else w.removeAttribute("data-color-mode")}}}catch(_){}})();`;
 }
 
 /**

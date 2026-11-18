@@ -56,6 +56,16 @@
   font-family: var(--xs-sans);
 }
 
+/* The store's colours (globals.css) as the look it wears paints them. */
+.brand-theme[data-xs-shell] {
+  --store-accent: var(--xs-accent, var(--color-primary));
+  --store-background: var(--xs-ground);
+  --store-surface: var(--xs-tint, var(--xs-ground));
+  --store-text: var(--xs-ink);
+  --store-muted: var(--xs-muted, var(--xs-ink-soft));
+  --store-border: var(--xs-line);
+}
+
 /* On a store that wears the shell, the footer carries the attribution. */
 .brand-theme[data-xs-shell] .xs-credit {
   display: none;
@@ -414,10 +424,16 @@
 /*
  * A store that picked its own brand colour (Store look → Brand colour) wears
  * it wherever a look would use its accent: buttons, links, badges, the
- * coloured grounds. A store still on the colour the template brought keeps
- * the look's own palette exactly.
+ * coloured grounds, on the wrapper too (the shop pages read the look's tokens
+ * there). Each mode answers for itself: a merchant who only picked a dark-mode
+ * colour keeps the template's palette in light mode. What a look wrote down as
+ * a plain colour follows in its own file (scripts/xs-accent.mjs). A store still
+ * on the colour the template brought keeps the look's own palette exactly.
  */
-.brand-theme[data-xs-own-accent] [data-xs-look] {
+.brand-theme[data-xs-own-accent][data-xs-shell]:not([data-color-mode="dark"]),
+.brand-theme[data-xs-own-accent]:not([data-color-mode="dark"]) [data-xs-look],
+.brand-theme[data-xs-own-accent-dark][data-xs-shell][data-color-mode="dark"],
+.brand-theme[data-xs-own-accent-dark][data-color-mode="dark"] [data-xs-look] {
   --xs-accent: var(--color-primary);
   --xs-brand: var(--color-primary);
   --xs-button: var(--color-primary);

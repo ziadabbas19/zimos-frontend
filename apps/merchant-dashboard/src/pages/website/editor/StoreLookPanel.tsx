@@ -483,34 +483,32 @@ function ContrastNote({
   const check = checkAccent(accent, grounds);
   if (check.ok) {
     return (
-      <p className="flex items-start gap-1.5 text-xs text-success">
-        <IconSuccess className="mt-px size-3.5 shrink-0" aria-hidden />
-        {ui.contrastOk(ratio(check.label, locale), ratio(Math.min(check.onPage, check.onCard), locale))}
+      <p className="flex items-start gap-1.5 text-sm leading-6 text-ink">
+        <IconSuccess className="mt-1 size-4 shrink-0 text-success" aria-hidden />
+        <span className="min-w-0">{ui.contrastOk(ratio(check.label, locale), ratio(Math.min(check.onPage, check.onCard), locale))}</span>
       </p>
     );
   }
   const suggestion = suggestAccent(accent, grounds, mode);
   return (
-    <div role="status" className="space-y-1.5 rounded-[0.75rem] border border-accent/50 bg-accent-soft px-2.5 py-2 text-xs text-ink">
-      <p className="flex items-center gap-1.5 font-semibold">
-        <IconWarning className="size-3.5 shrink-0 text-accent-dark" aria-hidden />
-        {ui.contrastLow(mode)}
+    <div role="status" data-slot="contrast-warning" className="space-y-2 rounded-[0.75rem] border border-line-strong bg-paper-raised p-3 text-sm leading-6 text-ink">
+      <p className="flex items-start gap-1.5 font-semibold">
+        <IconWarning className="mt-1 size-4 shrink-0 text-accent-dark" aria-hidden />
+        <span className="min-w-0">{ui.contrastLow(mode)}</span>
       </p>
-      <ul className="space-y-0.5 ps-5 text-ink-soft">
+      <ul className="list-disc space-y-1 ps-5">
         {check.failing.includes("label") && <li>{ui.contrastLabel(ratio(check.label, locale))}</li>}
-        {check.failing.includes("text") && (
-          <li>{ui.contrastText(ratio(Math.min(check.onPage, check.onCard), locale))}</li>
-        )}
+        {check.failing.includes("text") && <li>{ui.contrastText(ratio(Math.min(check.onPage, check.onCard), locale))}</li>}
       </ul>
-      <p className="text-ink-soft">{ui.contrastTarget}</p>
+      <p>{ui.contrastTarget}</p>
       {suggestion ? (
         <button
           type="button"
           onClick={() => onUse(suggestion)}
           aria-label={ui.contrastUseAria(suggestion, mode)}
-          className="inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-full bg-paper-raised px-2.5 font-medium text-ink ring-1 ring-line transition-[scale] duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:ring-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.97] pointer-coarse:min-h-11 motion-reduce:transition-none"
+          className="flex min-h-11 w-full cursor-pointer flex-wrap items-center justify-center gap-x-2 gap-y-0.5 rounded-[0.625rem] bg-paper px-3 py-2 text-sm font-semibold text-ink ring-1 ring-line-strong transition-[scale] duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:ring-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.97] motion-reduce:transition-none"
         >
-          <span className="size-3.5 rounded-full ring-1 ring-line" style={{ backgroundColor: suggestion }} aria-hidden />
+          <span className="size-4 shrink-0 rounded-full ring-1 ring-line-strong" style={{ backgroundColor: suggestion }} aria-hidden />
           {ui.contrastUse}
           {/* Isolated: after Arabic words the digits of a hex code would otherwise reorder ("B00 … #826"). */}
           <bdi dir="ltr" className="font-mono">
@@ -518,7 +516,7 @@ function ContrastNote({
           </bdi>
         </button>
       ) : (
-        <p className="text-ink-soft">{ui.contrastNoSuggestion}</p>
+        <p>{ui.contrastNoSuggestion}</p>
       )}
     </div>
   );

@@ -155,6 +155,23 @@ export function xsOwnAccent(themeSettings: Record<string, unknown> | null | unde
   return typeof colour === "string" && colour.trim() !== "" && themeSettings?.primaryColorSource !== "template";
 }
 
+/**
+ * The same for dark mode: a dark-mode colour of the merchant's own, or a
+ * light-mode one, which dark mode follows until it is given its own.
+ */
+export function xsOwnAccentDark(themeSettings: Record<string, unknown> | null | undefined): boolean {
+  const dark = themeSettings?.primaryColorDark;
+  return (typeof dark === "string" && dark.trim() !== "") || xsOwnAccent(themeSettings);
+}
+
+/** The colour dark mode paints with, when the merchant chose one. */
+export function xsDarkAccentOf(themeSettings: Record<string, unknown> | null | undefined): string | null {
+  if (!xsOwnAccentDark(themeSettings)) return null;
+  const dark = themeSettings?.primaryColorDark;
+  const colour = typeof dark === "string" && dark.trim() !== "" ? dark : themeSettings?.primaryColor;
+  return typeof colour === "string" ? colour.trim() : null;
+}
+
 export function xsShellOf(themeSettings: Record<string, unknown> | null | undefined): string | null {
   const raw = themeSettings?.xsLook;
   return typeof raw === "string" && Object.hasOwn(XS_CREDITS, raw) ? raw : null;
