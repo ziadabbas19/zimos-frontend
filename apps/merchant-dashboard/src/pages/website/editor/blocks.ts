@@ -185,7 +185,7 @@ export const ELEMENT_SPECS: Record<PageElementType, ElementSpec> = {
     defaultProps: { src: "", alt: "" },
     fields: [
       { key: "src", label: "Image", kind: "image" },
-      { key: "alt", label: "Alt text", kind: "text", hint: "Describes the image to screen readers." },
+      { key: "alt", label: "Picture description", kind: "text", hint: "Describes the image to screen readers." },
       { key: "href", label: "Links to", kind: "text", placeholder: "/products" },
       {
         key: "size",
@@ -298,7 +298,7 @@ export const ELEMENT_SPECS: Record<PageElementType, ElementSpec> = {
     ],
   },
   spacer: {
-    label: "Spacer",
+    label: "Empty space",
     icon: IconMoveVertical,
     defaultProps: { height: 48 },
     fields: [{ key: "height", label: "Height (px)", kind: "number", min: 4, max: 400 }],
@@ -338,7 +338,7 @@ export const ELEMENT_SPECS: Record<PageElementType, ElementSpec> = {
     ],
   },
   accordion: {
-    label: "Accordion",
+    label: "Fold-out list",
     icon: IconCaretDown,
     defaultProps: { title: "", items: [] },
     fields: [
@@ -615,7 +615,7 @@ export const ELEMENT_SPECS: Record<PageElementType, ElementSpec> = {
     ],
   },
   carousel: {
-    label: "Carousel",
+    label: "Sliding gallery",
     icon: IconCarousel,
     defaultProps: { title: "", images: [], autoplay: true },
     fields: [
@@ -1068,7 +1068,7 @@ const CORE_PRESETS: BlockPreset[] = [
           {
             span: 12,
             elements: ["text"],
-            content: [{ text: "اكتب هنا الجملة التي تريد أن يراها كل زائر أولًا" }],
+            content: [{ text: "اكتب هنا الجملة التي تريد أن يراها كل زائر أولا" }],
             settings: { align: "center" },
           },
         ],
@@ -1077,7 +1077,7 @@ const CORE_PRESETS: BlockPreset[] = [
   }),
   {
     key: "hero",
-    label: "Hero",
+    label: "Main banner",
     description: "Big heading, a line of text and a call-to-action button.",
     icon: IconSparkle,
     group: "hero",
@@ -1085,7 +1085,7 @@ const CORE_PRESETS: BlockPreset[] = [
   },
   {
     key: "hero-trust",
-    label: "Hero with trust line",
+    label: "Main banner with trust line",
     description: "An opening screen plus the few reasons a first-time shopper should trust you.",
     icon: IconShield,
     group: "hero",
@@ -1094,7 +1094,7 @@ const CORE_PRESETS: BlockPreset[] = [
     content: [
       { text: "اكتب هنا جملة تصف متجرك في سطر واحد", level: 1 },
       { text: "اشرح في سطرين ماذا تبيع ولمن، واترك الباقي للمنتجات." },
-      { label: "تسوّق الآن", href: "/products", variant: "primary" },
+      { label: "تسوق الآن", href: "/products", variant: "primary" },
       {
         title: "",
         items: [
@@ -1107,7 +1107,7 @@ const CORE_PRESETS: BlockPreset[] = [
   },
   multiColumn({
     key: "hero-split",
-    label: "Hero with picture",
+    label: "Main banner with picture",
     description: "Title, a line of text and a button on one side, your picture on the other.",
     icon: IconLayoutSplit,
     group: "hero",
@@ -1121,7 +1121,7 @@ const CORE_PRESETS: BlockPreset[] = [
             content: [
               { text: "اكتب هنا جملة تصف متجرك في سطر واحد", level: 1 },
               { text: "اشرح في سطرين ماذا تبيع ولمن، واترك الباقي للصورة." },
-              { label: "تسوّق الآن", href: "/products", variant: "primary" },
+              { label: "تسوق الآن", href: "/products", variant: "primary" },
             ],
             settings: { verticalAlign: "center" },
           },
@@ -1132,7 +1132,7 @@ const CORE_PRESETS: BlockPreset[] = [
   }),
   multiColumn({
     key: "hero-gallery",
-    label: "Hero with photo row",
+    label: "Main banner with photo row",
     description: "A centred opening line and button, with three of your photos underneath.",
     icon: IconCarousel,
     group: "hero",
@@ -1145,8 +1145,8 @@ const CORE_PRESETS: BlockPreset[] = [
             elements: ["heading", "text", "button"],
             content: [
               { text: "اكتب هنا عنوان الواجهة", level: 1 },
-              { text: "اكتب سطرًا واحدًا يوضّح ما يميّز متجرك." },
-              { label: "تسوّق الآن", href: "/products", variant: "primary" },
+              { text: "اكتب سطرا واحدا يوضح ما يميز متجرك." },
+              { label: "تسوق الآن", href: "/products", variant: "primary" },
             ],
             settings: { align: "center" },
           },
@@ -1184,8 +1184,8 @@ const CORE_PRESETS: BlockPreset[] = [
     content: [
       {
         title: "اكتب هنا عنوان الواجهة",
-        subtitle: "اكتب سطرًا واحدًا يوضّح ما يميّز متجرك.",
-        ctaLabel: "تسوّق الآن",
+        subtitle: "اكتب سطرا واحدا يوضح ما يميز متجرك.",
+        ctaLabel: "تسوق الآن",
         ctaHref: "/products",
         height: 520,
       },
@@ -1207,8 +1207,8 @@ const CORE_PRESETS: BlockPreset[] = [
             elements: ["heading", "text", "button"],
             content: [
               { text: "اكتب هنا عنوان الفيديو", level: 1 },
-              { text: "اكتب سطرًا يخبر العميل بما سيراه في الفيديو." },
-              { label: "تسوّق الآن", href: "/products", variant: "primary" },
+              { text: "اكتب سطرا يخبر العميل بما سيراه في الفيديو." },
+              { label: "تسوق الآن", href: "/products", variant: "primary" },
             ],
             settings: { align: "center" },
           },
@@ -1261,7 +1261,7 @@ const CORE_PRESETS: BlockPreset[] = [
             span: 12,
             elements: ["heading", "marquee"],
             content: [
-              { text: "اكتب هنا عنوانًا قصيرًا", level: 3 },
+              { text: "اكتب هنا عنوانا قصيرا", level: 3 },
               {
                 items: ["اكتب هنا جملة قصيرة عن خدمتك", "اكتب هنا جملة ثانية", "اكتب هنا جملة ثالثة"],
                 speed: "normal",
@@ -1330,7 +1330,7 @@ const CORE_PRESETS: BlockPreset[] = [
           {
             span: 12,
             elements: ["heading", "text"],
-            content: [{ text: "آراء العملاء", level: 2 }, { text: "اكتب سطرًا عن مصدر هذه الآراء." }],
+            content: [{ text: "آراء العملاء", level: 2 }, { text: "اكتب سطرا عن مصدر هذه الآراء." }],
             settings: { align: "center" },
           },
         ],
@@ -1383,9 +1383,9 @@ const CORE_PRESETS: BlockPreset[] = [
         // Column names, not verdicts. Every cell is starting copy the merchant
         // replaces: nothing here claims anything about anybody else.
         rows: [
-          { label: "اكتب هنا النقطة التي تقارن فيها", us: "اكتب هنا ما تقدّمه", them: "اكتب هنا البديل" },
-          { label: "اكتب هنا نقطة ثانية", us: "اكتب هنا ما تقدّمه", them: "اكتب هنا البديل" },
-          { label: "اكتب هنا نقطة ثالثة", us: "اكتب هنا ما تقدّمه", them: "اكتب هنا البديل" },
+          { label: "اكتب هنا النقطة التي تقارن فيها", us: "اكتب هنا ما تقدمه", them: "اكتب هنا البديل" },
+          { label: "اكتب هنا نقطة ثانية", us: "اكتب هنا ما تقدمه", them: "اكتب هنا البديل" },
+          { label: "اكتب هنا نقطة ثالثة", us: "اكتب هنا ما تقدمه", them: "اكتب هنا البديل" },
         ],
       },
     ],
@@ -1405,8 +1405,8 @@ const CORE_PRESETS: BlockPreset[] = [
             elements: ["heading", "text", "button"],
             content: [
               { text: "قارن بنفسك", level: 2 },
-              { text: "اكتب سطرًا يخبر العميل بما ينظر إليه في الجدول." },
-              { label: "تسوّق الآن", href: "/products", variant: "primary" },
+              { text: "اكتب سطرا يخبر العميل بما ينظر إليه في الجدول." },
+              { label: "تسوق الآن", href: "/products", variant: "primary" },
             ],
             settings: { verticalAlign: "center" },
           },
@@ -1419,9 +1419,9 @@ const CORE_PRESETS: BlockPreset[] = [
                 usLabel: "لدينا",
                 themLabel: "في مكان آخر",
                 rows: [
-                  { label: "اكتب هنا النقطة التي تقارن فيها", us: "اكتب هنا ما تقدّمه", them: "اكتب هنا البديل" },
-                  { label: "اكتب هنا نقطة ثانية", us: "اكتب هنا ما تقدّمه", them: "اكتب هنا البديل" },
-                  { label: "اكتب هنا نقطة ثالثة", us: "اكتب هنا ما تقدّمه", them: "اكتب هنا البديل" },
+                  { label: "اكتب هنا النقطة التي تقارن فيها", us: "اكتب هنا ما تقدمه", them: "اكتب هنا البديل" },
+                  { label: "اكتب هنا نقطة ثانية", us: "اكتب هنا ما تقدمه", them: "اكتب هنا البديل" },
+                  { label: "اكتب هنا نقطة ثالثة", us: "اكتب هنا ما تقدمه", them: "اكتب هنا البديل" },
                 ],
               },
             ],
@@ -1471,8 +1471,8 @@ const CORE_PRESETS: BlockPreset[] = [
             span: 12,
             elements: ["heading", "text", "collection_list"],
             content: [
-              { text: "تسوّق حسب المجموعة", level: 2 },
-              { text: "اكتب سطرًا يساعد العميل على اختيار نقطة البداية." },
+              { text: "تسوق حسب المجموعة", level: 2 },
+              { text: "اكتب سطرا يساعد العميل على اختيار نقطة البداية." },
               { title: "", limit: 6, columns: 3 },
             ],
           },
@@ -1519,7 +1519,7 @@ const CORE_PRESETS: BlockPreset[] = [
             elements: ["heading", "text", "product_list"],
             content: [
               { text: "اكتب هنا عنوان المجموعة", level: 2 },
-              { text: "اكتب سطرًا عن هذه المنتجات." },
+              { text: "اكتب سطرا عن هذه المنتجات." },
               { title: "", source: "newest", limit: 8, columns: 4 },
             ],
           },
@@ -1563,7 +1563,7 @@ const CORE_PRESETS: BlockPreset[] = [
           {
             span: 12,
             elements: ["heading", "text"],
-            content: [{ text: "اختر العرض المناسب لك", level: 2 }, { text: "اكتب سطرًا يوضّح الفرق بين العروض الثلاثة." }],
+            content: [{ text: "اختر العرض المناسب لك", level: 2 }, { text: "اكتب سطرا يوضح الفرق بين العروض الثلاثة." }],
             settings: { align: "center" },
           },
         ],
@@ -1594,8 +1594,8 @@ const CORE_PRESETS: BlockPreset[] = [
     elements: ["heading", "text", "product_3d"],
     settings: { background: "paper", padding: "roomy" },
     content: [
-      { text: "أدِره بإصبعك", level: 2 },
-      { text: "اكتب سطرًا يشجّع العميل على تقليب المنتج بنفسه." },
+      { text: "أدره بإصبعك", level: 2 },
+      { text: "اكتب سطرا يشجع العميل على تقليب المنتج بنفسه." },
       { title: "", productId: "", modelUrl: "" },
     ],
   },
@@ -1640,7 +1640,7 @@ const CORE_PRESETS: BlockPreset[] = [
     settings: { background: "paper" },
     content: [
       { text: "لماذا تختارنا", level: 2 },
-      { text: "اكتب سطرًا تمهيديًا قصيرًا عمّا تقدّمه." },
+      { text: "اكتب سطرا تمهيديا قصيرا عما تقدمه." },
       {
         title: "",
         items: ["اكتب الميزة الأولى", "اكتب الميزة الثانية", "اكتب الميزة الثالثة"],
@@ -1656,7 +1656,7 @@ const CORE_PRESETS: BlockPreset[] = [
     elements: ["heading", "accordion"],
     settings: { background: "primary-soft", padding: "roomy" },
     content: [
-      { text: "لماذا تشتري منّا؟", level: 2 },
+      { text: "لماذا تشتري منا؟", level: 2 },
       {
         title: "",
         items: [
@@ -1664,7 +1664,7 @@ const CORE_PRESETS: BlockPreset[] = [
             q: "اكتب هنا ما يقلق العميل قبل الشراء",
             a: "اكتب هنا إجابتك أنت — دون مقارنة بأحد بالاسم.",
           },
-          { q: "اكتب هنا نقطة ثانية تميّزك", a: "اكتب هنا تفاصيلها." },
+          { q: "اكتب هنا نقطة ثانية تميزك", a: "اكتب هنا تفاصيلها." },
           { q: "اكتب هنا نقطة ثالثة", a: "اكتب هنا تفاصيلها." },
         ],
       },
@@ -1838,8 +1838,8 @@ const CORE_PRESETS: BlockPreset[] = [
             span: 12,
             elements: ["heading", "text", "scroll_story"],
             content: [
-              { text: "كيف يُصنع؟", level: 2 },
-              { text: "اكتب سطرًا يمهّد للخطوات التالية." },
+              { text: "كيف يصنع؟", level: 2 },
+              { text: "اكتب سطرا يمهد للخطوات التالية." },
               {
                 title: "",
                 steps: [
@@ -1868,7 +1868,7 @@ const CORE_PRESETS: BlockPreset[] = [
           elements: ["heading", "text"] as PageElementType[],
           // The number itself is a claim, so it ships as an instruction and
           // the merchant types the real one.
-          content: [{ text: "اكتب الرقم", level: 2 }, { text: "اكتب هنا ما يعبّر عنه هذا الرقم." }],
+          content: [{ text: "اكتب الرقم", level: 2 }, { text: "اكتب هنا ما يعبر عنه هذا الرقم." }],
           settings: { align: "center" },
         })),
       },
@@ -1886,7 +1886,7 @@ const CORE_PRESETS: BlockPreset[] = [
           {
             span: 12,
             elements: ["heading", "text"],
-            content: [{ text: "كيف يعمل؟", level: 2 }, { text: "اكتب سطرًا يمهّد للخطوات." }],
+            content: [{ text: "كيف يعمل؟", level: 2 }, { text: "اكتب سطرا يمهد للخطوات." }],
             settings: { align: "center" },
           },
         ],
@@ -1917,7 +1917,7 @@ const CORE_PRESETS: BlockPreset[] = [
           {
             span: 12,
             elements: ["heading", "text"],
-            content: [{ text: "قصتنا", level: 2 }, { text: "اكتب سطرًا عن رحلتك منذ البداية حتى الآن." }],
+            content: [{ text: "قصتنا", level: 2 }, { text: "اكتب سطرا عن رحلتك منذ البداية حتى الآن." }],
           },
         ],
       },
@@ -1949,7 +1949,7 @@ const CORE_PRESETS: BlockPreset[] = [
           {
             span: 12,
             elements: ["heading", "text"],
-            content: [{ text: "الفريق", level: 2 }, { text: "اكتب سطرًا عمّن يقف وراء المتجر." }],
+            content: [{ text: "الفريق", level: 2 }, { text: "اكتب سطرا عمن يقف وراء المتجر." }],
             settings: { align: "center" },
           },
         ],
@@ -1966,7 +1966,7 @@ const CORE_PRESETS: BlockPreset[] = [
   }),
   {
     key: "lookbook",
-    label: "Lookbook",
+    label: "Photo story",
     description: "A titled grid of photos for a collection or a season.",
     icon: IconCamera,
     group: "story",
@@ -1974,7 +1974,7 @@ const CORE_PRESETS: BlockPreset[] = [
     settings: { width: "wide" },
     content: [
       { text: "كتالوج الإطلالات", level: 2 },
-      { text: "اكتب سطرًا عن هذه المجموعة، وارفع صورها بالأسفل." },
+      { text: "اكتب سطرا عن هذه المجموعة، وارفع صورها بالأسفل." },
       { title: "", images: [], columns: 3 },
     ],
   },
@@ -1992,7 +1992,7 @@ const CORE_PRESETS: BlockPreset[] = [
   }),
   multiColumn({
     key: "bento",
-    label: "Bento grid",
+    label: "Mixed photo grid",
     description: "Four cards of two sizes — a picture and a line in each, the way app sites show features.",
     icon: IconDashboard,
     group: "story",
@@ -2138,7 +2138,7 @@ const CORE_PRESETS: BlockPreset[] = [
   },
   {
     key: "carousel",
-    label: "Carousel",
+    label: "Sliding gallery",
     description: "Images that slide one after another.",
     icon: IconCarousel,
     group: "story",
@@ -2185,7 +2185,7 @@ const CORE_PRESETS: BlockPreset[] = [
             elements: ["heading", "text"],
             content: [
               { text: "الأسئلة الشائعة", level: 2 },
-              { text: "اكتب سطرًا يخبر العميل بما سيجده هنا، وكيف يصل إليك إن لم يجد سؤاله." },
+              { text: "اكتب سطرا يخبر العميل بما سيجده هنا، وكيف يصل إليك إن لم يجد سؤاله." },
             ],
           },
           {
@@ -2195,9 +2195,9 @@ const CORE_PRESETS: BlockPreset[] = [
               {
                 title: "",
                 items: [
-                  { q: "اكتب هنا سؤالًا يتكرر من العملاء", a: "اكتب هنا إجابتك." },
-                  { q: "اكتب هنا سؤالًا ثانيًا", a: "اكتب هنا إجابتك." },
-                  { q: "اكتب هنا سؤالًا ثالثًا", a: "اكتب هنا إجابتك." },
+                  { q: "اكتب هنا سؤالا يتكرر من العملاء", a: "اكتب هنا إجابتك." },
+                  { q: "اكتب هنا سؤالا ثانيا", a: "اكتب هنا إجابتك." },
+                  { q: "اكتب هنا سؤالا ثالثا", a: "اكتب هنا إجابتك." },
                 ],
               },
             ],
@@ -2218,9 +2218,9 @@ const CORE_PRESETS: BlockPreset[] = [
       {
         title: "الأسئلة الشائعة",
         items: [
-          { q: "اكتب هنا سؤالًا يتكرر من العملاء", a: "اكتب هنا إجابتك." },
-          { q: "اكتب هنا سؤالًا ثانيًا", a: "اكتب هنا إجابتك." },
-          { q: "اكتب هنا سؤالًا ثالثًا", a: "اكتب هنا إجابتك." },
+          { q: "اكتب هنا سؤالا يتكرر من العملاء", a: "اكتب هنا إجابتك." },
+          { q: "اكتب هنا سؤالا ثانيا", a: "اكتب هنا إجابتك." },
+          { q: "اكتب هنا سؤالا ثالثا", a: "اكتب هنا إجابتك." },
         ],
       },
       { text: "هل ما زال لديك سؤال؟ نحن هنا." },
@@ -2229,7 +2229,7 @@ const CORE_PRESETS: BlockPreset[] = [
   },
   {
     key: "accordion",
-    label: "Accordion",
+    label: "Fold-out list",
     description: "Collapsible rows of content.",
     icon: IconCaretDown,
     group: "convert",
@@ -2302,7 +2302,7 @@ const CORE_PRESETS: BlockPreset[] = [
             elements: ["heading", "text", "form"],
             content: [
               { text: "اكتب هنا دعوة للعميل ليبقى على تواصل معك", level: 2 },
-              { text: "اكتب سطرًا يوضّح ما الذي سيصله وكم مرة." },
+              { text: "اكتب سطرا يوضح ما الذي سيصله وكم مرة." },
               { title: "", submitLabel: "اشترك" },
             ],
             settings: { align: "center" },
@@ -2327,7 +2327,7 @@ const CORE_PRESETS: BlockPreset[] = [
             elements: ["heading", "text", "form"],
             content: [
               { text: "اكتب هنا دعوة للعميل ليبقى على تواصل معك", level: 2 },
-              { text: "اكتب سطرًا يوضّح ما الذي سيصله وكم مرة." },
+              { text: "اكتب سطرا يوضح ما الذي سيصله وكم مرة." },
               { title: "", submitLabel: "اشترك" },
             ],
             settings: { verticalAlign: "center" },
@@ -2351,7 +2351,7 @@ const CORE_PRESETS: BlockPreset[] = [
             elements: ["heading", "text", "button"],
             content: [
               { text: "اكتب هنا الجملة التي تدعو العميل إلى الشراء", level: 2 },
-              { text: "اكتب سطرًا يوضّح لماذا الآن." },
+              { text: "اكتب سطرا يوضح لماذا الآن." },
               { label: "ابدأ الآن", href: "/products", variant: "primary" },
             ],
             settings: { align: "center" },
@@ -2372,7 +2372,7 @@ const CORE_PRESETS: BlockPreset[] = [
       { text: "عرض لفترة محدودة", level: 2 },
       { label: "ينتهي العرض خلال", endsInHours: 48 },
       { text: "اكتب هنا تفاصيل العرض ومدته وشروطه." },
-      { label: "اشترِ الآن", href: "/products", variant: "primary" },
+      { label: "اشتر الآن", href: "/products", variant: "primary" },
     ],
   },
   multiColumn({
@@ -2391,7 +2391,7 @@ const CORE_PRESETS: BlockPreset[] = [
             content: [
               { text: "اكتب هنا اسم العرض", level: 2 },
               { label: "ينتهي العرض خلال", endsInHours: 48 },
-              { label: "اشترِ الآن", href: "/products", variant: "primary" },
+              { label: "اشتر الآن", href: "/products", variant: "primary" },
             ],
             settings: { align: "center" },
           },
@@ -2530,7 +2530,7 @@ const CORE_PRESETS: BlockPreset[] = [
   },
   {
     key: "spacer",
-    label: "Spacer",
+    label: "Empty space",
     description: "Vertical breathing room.",
     icon: IconMoveVertical,
     group: "basics",
@@ -2619,7 +2619,7 @@ const STORE_KIT_PRESETS: BlockPreset[] = [
               {
                 items: [
                   "اكتب هنا العرض الذي تريد أن يراه كل زائر",
-                  "اكتب هنا سببًا ثانيًا يدفع العميل إلى المتابعة",
+                  "اكتب هنا سببا ثانيا يدفع العميل إلى المتابعة",
                   "اكتب هنا ميزة ثالثة في سطر قصير",
                 ],
                 speed: "normal",
@@ -2653,7 +2653,7 @@ const STORE_KIT_PRESETS: BlockPreset[] = [
             content: [
               { text: "اكتب هنا جملة تصف متجرك في سطر واحد", level: 1 },
               { text: "اشرح في سطرين ماذا تبيع ولمن، واترك الباقي للصور." },
-              { label: "تسوّق الآن", href: "/products", variant: "primary" },
+              { label: "تسوق الآن", href: "/products", variant: "primary" },
             ],
             settings: { align: "center" },
           },
@@ -2675,8 +2675,8 @@ const STORE_KIT_PRESETS: BlockPreset[] = [
             span: 12,
             elements: ["heading", "text"],
             content: [
-              { text: "تسوّق حسب القسم", level: 2 },
-              { text: "اكتب سطرًا يساعد العميل على معرفة من أين يبدأ." },
+              { text: "تسوق حسب القسم", level: 2 },
+              { text: "اكتب سطرا يساعد العميل على معرفة من أين يبدأ." },
             ],
             settings: { align: "center" },
           },
@@ -2735,7 +2735,7 @@ const STORE_KIT_PRESETS: BlockPreset[] = [
             elements: ["image", "text"],
             content: [
               { src: "", alt: "صورة القسم", href: "/products" },
-              { text: "وصل حديثًا" },
+              { text: "وصل حديثا" },
             ],
             settings: { align: "center" },
           },
@@ -2758,7 +2758,7 @@ const STORE_KIT_PRESETS: BlockPreset[] = [
             elements: ["heading", "text", "product_list"],
             content: [
               { text: "منتجات مختارة", level: 2 },
-              { text: "اكتب سطرًا يوضّح لماذا اخترت هذه المنتجات تحديدًا." },
+              { text: "اكتب سطرا يوضح لماذا اخترت هذه المنتجات تحديدا." },
               { title: "", source: "featured", limit: 8, columns: 4 },
             ],
             settings: { align: "center" },
@@ -2783,7 +2783,7 @@ const STORE_KIT_PRESETS: BlockPreset[] = [
             content: [
               { src: "", alt: "صورة العرض", href: "/products" },
               { text: "اكتب هنا عنوان العرض الأول", level: 3 },
-              { text: "اكتب سطرًا قصيرًا عن هذا العرض." },
+              { text: "اكتب سطرا قصيرا عن هذا العرض." },
             ],
             settings: { align: "center" },
           },
@@ -2793,7 +2793,7 @@ const STORE_KIT_PRESETS: BlockPreset[] = [
             content: [
               { src: "", alt: "صورة العرض", href: "/products" },
               { text: "اكتب هنا عنوان العرض الثاني", level: 3 },
-              { text: "اكتب سطرًا قصيرًا عن هذا العرض." },
+              { text: "اكتب سطرا قصيرا عن هذا العرض." },
             ],
             settings: { align: "center" },
           },
@@ -2822,9 +2822,9 @@ const STORE_KIT_PRESETS: BlockPreset[] = [
             span: 6,
             elements: ["text", "heading", "text", "button"],
             content: [
-              { text: "اكتب هنا سطرًا تمهيديًا قصيرًا" },
+              { text: "اكتب هنا سطرا تمهيديا قصيرا" },
               { text: "اكتب هنا العنوان الرئيسي للعرض", level: 2 },
-              { text: "اشرح في سطرين ما يُباع هنا، ولمن، ولماذا يستحق." },
+              { text: "اشرح في سطرين ما يباع هنا، ولمن، ولماذا يستحق." },
               { label: "عرض التفاصيل", href: "/products", variant: "primary" },
             ],
             settings: { verticalAlign: "center" },
@@ -2876,8 +2876,8 @@ const STORE_KIT_PRESETS: BlockPreset[] = [
             span: 12,
             elements: ["heading", "text"],
             content: [
-              { text: "من المدوّنة", level: 2 },
-              { text: "اكتب سطرًا يخبر العميل بما سيجده هنا." },
+              { text: "من المدونة", level: 2 },
+              { text: "اكتب سطرا يخبر العميل بما سيجده هنا." },
             ],
             settings: { align: "center" },
           },
@@ -2891,7 +2891,7 @@ const STORE_KIT_PRESETS: BlockPreset[] = [
             content: [
               { src: "", alt: "صورة المقال", href: "" },
               { text: "اكتب هنا عنوان المقال", level: 4 },
-              { text: "اكتب سطرًا يلخّص المقال." },
+              { text: "اكتب سطرا يلخص المقال." },
             ],
           },
           {
@@ -2900,7 +2900,7 @@ const STORE_KIT_PRESETS: BlockPreset[] = [
             content: [
               { src: "", alt: "صورة المقال", href: "" },
               { text: "اكتب هنا عنوان المقال", level: 4 },
-              { text: "اكتب سطرًا يلخّص المقال." },
+              { text: "اكتب سطرا يلخص المقال." },
             ],
           },
           {
@@ -2909,7 +2909,7 @@ const STORE_KIT_PRESETS: BlockPreset[] = [
             content: [
               { src: "", alt: "صورة المقال", href: "" },
               { text: "اكتب هنا عنوان المقال", level: 4 },
-              { text: "اكتب سطرًا يلخّص المقال." },
+              { text: "اكتب سطرا يلخص المقال." },
             ],
           },
           {
@@ -2918,7 +2918,7 @@ const STORE_KIT_PRESETS: BlockPreset[] = [
             content: [
               { src: "", alt: "صورة المقال", href: "" },
               { text: "اكتب هنا عنوان المقال", level: 4 },
-              { text: "اكتب سطرًا يلخّص المقال." },
+              { text: "اكتب سطرا يلخص المقال." },
             ],
           },
         ],
@@ -3066,7 +3066,7 @@ const STORE_KIT_PRESETS: BlockPreset[] = [
             elements: ["heading", "text"],
             content: [
               { text: "اكتب هنا عنوان المجموعة", level: 2 },
-              { text: "اكتب سطرًا يصف هذه المجموعة." },
+              { text: "اكتب سطرا يصف هذه المجموعة." },
             ],
             settings: { align: "center" },
           },
@@ -3154,7 +3154,7 @@ const STORE_KIT_PRESETS: BlockPreset[] = [
           {
             span: 3,
             elements: ["text", "social_icons"],
-            content: [{ text: "اكتب هنا سطرين عن متجرك وما يقدّمه." }, { links: [] }],
+            content: [{ text: "اكتب هنا سطرين عن متجرك وما يقدمه." }, { links: [] }],
           },
           {
             span: 3,
@@ -3309,7 +3309,7 @@ export function createStarterSections(pageTitle: string, locale: EditorLocale = 
   return [
     setElementProp(heading, titleElement, "text", pageTitle),
     createSection(
-      { ...presetByKey("text"), content: [{ text: "اكتب سطرًا يخبر العميل بما سيجده هنا." }] },
+      { ...presetByKey("text"), content: [{ text: "اكتب سطرا يخبر العميل بما سيجده هنا." }] },
       locale
     ),
     createSection(presetByKey("image"), locale),

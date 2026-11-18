@@ -156,9 +156,9 @@ describe("the publish sheet", () => {
   it("reads in the dashboard's own Arabic", async () => {
     serveRevisions();
     renderSheet({}, "ar");
-    expect(await screen.findByText("ما سيتغيّر في متجرك")).toBeTruthy();
+    expect(await screen.findByText("ما سيتغير في متجرك")).toBeTruthy();
     expect(screen.getByRole("button", { name: "انشر الآن" })).toBeTruthy();
-    expect(screen.getByText("عُدّلت")).toBeTruthy();
+    expect(screen.getByText("عدلت")).toBeTruthy();
   });
 });
 

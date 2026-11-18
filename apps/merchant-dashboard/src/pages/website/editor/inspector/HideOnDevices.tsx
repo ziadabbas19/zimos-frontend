@@ -99,7 +99,7 @@ export function HideOnDevices({
         })}
       </div>
       {everywhere && (
-        <p role="status" className="text-xs leading-5 font-medium text-accent-dark">
+        <p role="status" className="text-sm leading-5 font-medium text-accent-dark">
           {t.hiddenEverywhere}
         </p>
       )}

@@ -173,10 +173,10 @@ describe("a slide of the picture slider", () => {
         <Slides start={[{ image: PICTURE }]} onChange={() => undefined} />
       </EditorLocaleContext.Provider>
     );
-    const upDown = screen.getByRole("radiogroup", { name: "الجزء الظاهر من الصورة (رأسيًا)" });
+    const upDown = screen.getByRole("radiogroup", { name: "الجزء الظاهر من الصورة (رأسيا)" });
     expect(within(upDown).getByRole("radio", { name: "الأعلى" })).toBeInTheDocument();
     expect(within(upDown).getByRole("radio", { name: "الوسط" })).toBeChecked();
-    const across = screen.getByRole("radiogroup", { name: "الجزء الظاهر من الصورة (أفقيًا)" });
+    const across = screen.getByRole("radiogroup", { name: "الجزء الظاهر من الصورة (أفقيا)" });
     expect(within(across).getByRole("radio", { name: "البداية" })).toBeInTheDocument();
   });
 

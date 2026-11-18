@@ -35,7 +35,7 @@ const STRINGS = {
     remove: "إزالة الفيديو",
     pickerTitle: "اختيار فيديو الخلفية",
     heavy: (mb: string) => `حجم هذا الفيديو ${mb} ميجابايت. ما يزيد على 8 ميجابايت يتأخر تحميله عند العملاء؛ الملف الأقصر أو الأصغر يبدأ أسرع.`,
-    posterNeeded: "أضف الصورة أيضًا: تظهر قبل أن يبدأ الفيديو، وهي كل ما يظهر على الموبايل.",
+    posterNeeded: "أضف الصورة أيضا: تظهر قبل أن يبدأ الفيديو، وهي كل ما يظهر على الموبايل.",
   },
 } satisfies Record<EditorLocale, unknown>;
 
@@ -51,7 +51,7 @@ function megabytes(bytes: number, locale: EditorLocale): string {
 
 function Warning({ children }: { children: string }) {
   return (
-    <p role="status" className="flex items-start gap-1.5 text-xs leading-5 text-accent-dark">
+    <p role="status" className="flex items-start gap-1.5 text-sm leading-5 text-accent-dark">
       <IconWarning className="mt-[3px] size-3.5 shrink-0" aria-hidden />
       <span className="min-w-0">{children}</span>
     </p>
@@ -107,7 +107,7 @@ export function VideoField({
               </Button>
             )}
           </div>
-          {hint && <p className="text-xs leading-5 text-ink-soft">{hint}</p>}
+          {hint && <p className="text-sm leading-5 text-ink-soft">{hint}</p>}
         </div>
       </div>
       {value && posterMissing && <Warning>{t.posterNeeded}</Warning>}

@@ -14,7 +14,7 @@ const STRINGS = {
   },
   ar: {
     pages: "الصفحات",
-    homeHint: "الصفحة الرئيسية لا تُحذف — متجرك يفتح عليها.",
+    homeHint: "الصفحة الرئيسية لا تحذف — متجرك يفتح عليها.",
     homeBadge: "الرئيسية",
     deletePage: "حذف «{name}»",
     newPage: "صفحة جديدة",
@@ -90,14 +90,14 @@ export function PageTabs({
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1.5">
-                      <span className="truncate text-sm font-medium text-ink">{page.title}</span>
+                      <span className="break-words text-sm font-medium text-ink">{page.title}</span>
                       {home && (
-                        <span className="shrink-0 rounded-full bg-paper-sunken px-1.5 py-px text-[11px] font-medium text-ink-soft">
+                        <span className="shrink-0 rounded-full bg-paper-sunken px-1.5 py-px text-xs font-medium text-ink-soft">
                           {t.homeBadge}
                         </span>
                       )}
                     </span>
-                    <span className="block truncate text-xs text-ink-soft">
+                    <span className="block break-words text-sm text-ink-soft">
                       <bdi dir="ltr">{page.path}</bdi>
                     </span>
                   </span>

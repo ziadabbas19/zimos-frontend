@@ -42,6 +42,7 @@ import { EditorCanvas } from "./shell/EditorCanvas";
 import { EditorPageSettings } from "./shell/EditorPageSettings";
 import { CanvasTips, EditorStage, GuideStrip, LookBar } from "./shell/EditorStage";
 import type { FocusItem } from "./inspector/env";
+import { DemoLanguageBar } from "./shell/DemoLanguageBar";
 import { EditorToolbar, type EditorMenuItem, type SiteStatus } from "./shell/EditorToolbar";
 import { EndPanel, LookIntro } from "./shell/EndPanel";
 import { PageSwitcher } from "./shell/PageSwitcher";
@@ -123,6 +124,9 @@ function WebsiteEditor() {
   // own pages in the page list, copy and paste — on a store that wears one of those templates (or while
   // XS_ONLY is on). Any other store's editor is as it was.
   const xsEditor = xsLook !== null || XS_ONLY;
+  // The language shoppers get first: the merchant's choice, else the store's own, Arabic (storefront lib/shopperDisplay).
+  const shopperDisplay = currentWorkspace?.themeSettings?.shopperDisplay as { locale?: unknown } | undefined;
+  const storeLanguage = shopperDisplay?.locale === "en" ? "en" : "ar";
   const toast = useToast();
   const locale = useEditorLocale();
   const ui = editorUi(locale);
@@ -208,7 +212,7 @@ function WebsiteEditor() {
   const [sectionsOpen, setSectionsOpen] = useState(false);
   const [lookOpen, setLookOpen] = useState(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
-  /** Below lg, the first-run «لوّنه بهويتك»: the ready styles alone, in a short sheet under the store. */
+  /** Below lg, the first-run «لونه بهويتك»: the ready styles alone, in a short sheet under the store. */
   const [brandOpen, setBrandOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -713,6 +717,18 @@ function WebsiteEditor() {
       {firstRun && (
         <GuideStrip brandDone={doc.lookSaves > 0} onBrand={openBrand} onPublish={publish.start} onDismiss={dismissGuide} />
       )}
+
+      {/* The template's sample words in the other language than the store's: one press puts them right. */}
+      <DemoLanguageBar
+        xsLook={xsLook}
+        language={storeLanguage}
+        sections={doc.sections}
+        look={doc.look}
+        onApply={(sections, next) => {
+          doc.setSections(() => sections);
+          doc.updateLook(next);
+        }}
+      />
 
       {/* A failed save says so in words, with the reason and the way out. The changes stay in memory. */}
       {doc.saveState === "failed" && (

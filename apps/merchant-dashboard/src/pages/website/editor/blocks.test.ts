@@ -628,12 +628,12 @@ describe("columnTitle", () => {
     );
     expect(columnTitle(column([{ type: "image", props: { src: "/a.png", alt: "صورة القسم" } }]))).toBe("صورة القسم");
     expect(columnTitle(column([{ type: "image", props: { src: "/a.png" } }, { type: "text", props: { text: "تخفيضات" } }]))).toBe("تخفيضات");
-    expect(columnTitle(column([{ type: "button", props: { label: "تسوّق دلوقتي" } }]))).toBe("تسوّق دلوقتي");
+    expect(columnTitle(column([{ type: "button", props: { label: "تسوق دلوقتي" } }]))).toBe("تسوق دلوقتي");
   });
 
   it("skips elements with nothing to read and trims what is left", () => {
-    expect(columnTitle(column([{ type: "spacer", props: { height: 48 } }, { type: "heading", props: { text: "  من   المدوّنة " } }]))).toBe(
-      "من المدوّنة"
+    expect(columnTitle(column([{ type: "spacer", props: { height: 48 } }, { type: "heading", props: { text: "  من   المدونة " } }]))).toBe(
+      "من المدونة"
     );
     const long = columnTitle(column([{ type: "heading", props: { text: "ا".repeat(60) } }]), 10);
     expect(long).toHaveLength(10);

@@ -30,8 +30,8 @@ export function StorePageList({ current, onSelect }: { current: StorePath | null
   const ar = locale === "ar";
   return (
     <section aria-label={ar ? "صفحات المتجر" : "Store pages"} className="mt-3 border-t border-line pt-3">
-      <h3 className="px-2 pb-1 text-xs font-semibold text-ink-soft">{ar ? "صفحات المتجر" : "Store pages"}</h3>
-      <p className="px-2 pb-2 text-xs text-ink-soft">
+      <h3 className="px-2 pb-1 text-sm font-semibold text-ink-soft">{ar ? "صفحات المتجر" : "Store pages"}</h3>
+      <p className="px-2 pb-2 text-sm text-ink-soft">
         {ar ? "شوف صفحات المتجر نفسها بالشكل اللي لسه ما اتحفظش." : "See the store's own pages in the look you haven't saved yet."}
       </p>
       <ul className="space-y-0.5">

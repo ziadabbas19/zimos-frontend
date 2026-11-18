@@ -56,7 +56,7 @@ describe("ThemeGallery", () => {
     store({});
     renderWithProviders(<ThemeGallery />, { locale: "ar" });
     expect(screen.getByRole("button", { name: "جرّب ثيم زجاجي" })).toBeInTheDocument();
-    expect(screen.getByText("ألواح شفافة كالزجاج تطفو فوق توهّج لوني ناعم.")).toBeInTheDocument();
+    expect(screen.getByText("ألواح شفافة كالزجاج تطفو فوق توهج لوني ناعم.")).toBeInTheDocument();
     expect(screen.getByText("الأصلي")).toBeInTheDocument();
   });
 

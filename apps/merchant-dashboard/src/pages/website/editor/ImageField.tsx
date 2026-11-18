@@ -313,7 +313,7 @@ export function ImageListField({
           e.target.value = "";
         }}
       />
-      {hint && <p className="text-xs text-ink-soft">{hint}</p>}
+      {hint && <p className="text-sm text-ink-soft">{hint}</p>}
       {error && <Alert variant="danger">{error}</Alert>}
     </div>
   );

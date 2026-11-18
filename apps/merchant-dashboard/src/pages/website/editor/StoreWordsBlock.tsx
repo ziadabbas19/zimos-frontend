@@ -86,7 +86,7 @@ export const STORE_WORD_DEFAULTS: Record<string, [string, string]> = {
   ],
   "catalog.sort": [
     "Sort by",
-    "رتّب حسب"
+    "رتب حسب"
   ],
   "catalog.filters": [
     "Filters",
@@ -110,7 +110,7 @@ export const STORE_WORD_DEFAULTS: Record<string, [string, string]> = {
   ],
   "cart.emptyHint": [
     "Browse the store and add something you love.",
-    "تصفّح المتجر وضيف اللي يعجبك."
+    "تصفح المتجر وضيف اللي يعجبك."
   ],
   "cart.checkout": [
     "Checkout",
@@ -239,7 +239,7 @@ function StoreWordsFields({ saved, onChange }: { saved: unknown; onChange: (next
               const fallback = STORE_WORD_DEFAULTS[path][lang === "ar" ? 1 : 0];
               return (
                 <label key={path} className="block space-y-1">
-                  <span className="text-xs text-ink-soft" dir={lang === "ar" ? "rtl" : "ltr"}>
+                  <span className="text-sm text-ink-soft" dir={lang === "ar" ? "rtl" : "ltr"}>
                     {fallback}
                   </span>
                   <Input

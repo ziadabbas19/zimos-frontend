@@ -129,7 +129,7 @@ export function PublishSheet({
           <p className="text-sm leading-6 text-ink">{t.publishNothing}</p>
         ) : (
           <section>
-            <h3 className="text-xs font-semibold text-ink-soft">{t.publishWhat}</h3>
+            <h3 className="text-sm font-semibold text-ink-soft">{t.publishWhat}</h3>
             <ul className="mt-2 space-y-1">
               {changes.map(({ page, change }) => {
                 const PageIcon = page.pageType === "home" ? IconHome : IconPage;
@@ -137,8 +137,8 @@ export function PublishSheet({
                   <li key={page.id} className="flex min-h-11 items-center gap-2.5 rounded-[0.875rem] bg-paper-sunken px-2.5 py-1.5">
                     <PageIcon className="size-4 shrink-0 text-ink-soft" aria-hidden />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-ink">{page.title}</span>
-                      <span className="block truncate text-xs text-ink-soft">
+                      <span className="block break-words text-sm font-medium text-ink">{page.title}</span>
+                      <span className="block break-all text-sm text-ink-soft">
                         <bdi dir="ltr">{page.path}</bdi>
                       </span>
                     </span>
@@ -217,7 +217,7 @@ export function PublishSheet({
 
         {error && <Alert variant="danger">{error}</Alert>}
 
-        <p className="text-xs leading-5 text-ink-soft">
+        <p className="text-sm leading-5 text-ink-soft">
           {t.publishAll} {t.publishSeoNote}
         </p>
       </div>

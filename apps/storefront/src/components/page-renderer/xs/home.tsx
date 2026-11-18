@@ -137,9 +137,15 @@ export async function XsShowcaseElement({ props, look, workspaceId, currency, lo
 
 const FEATURE_ICONS = new Set(["truck", "bag", "support", "return"]);
 
+/** A card's words: a lone letter left behind by an edit says nothing, so it counts as empty. */
+function cardWords(item: Props, key: string): string {
+  const words = str(item, key).trim();
+  return /^\p{L}$/u.test(words) ? "" : words;
+}
+
 /** `xs_features` — reasons in a two-column list with the look's line icons, beside a rounded picture. */
 export function XsFeaturesElement({ props, look }: XsHomeProps): ReactNode {
-  const features = listed(props, "items", 8).filter(({ item }) => str(item, "title") || str(item, "text"));
+  const features = listed(props, "items", 8).filter(({ item }) => cardWords(item, "title") || cardWords(item, "text"));
   const heading = str(props, "heading");
   const image = safeUrl(str(props, "image"));
   if (!heading && features.length === 0) return null;
@@ -159,8 +165,9 @@ export function XsFeaturesElement({ props, look }: XsHomeProps): ReactNode {
                   <span className="xs-features__icon">
                     <XsPicture src={own ?? `/xs/${look}/${FEATURE_ICONS.has(icon) ? icon : "truck"}.svg`} alt="" width={40} height={40} pic={`items.${at}.image`} size={pictureSize(feature, "image")} />
                   </span>
-                  <h3>{str(feature, "title")}</h3>
-                  <p>{str(feature, "text")}</p>
+                  {/* A card with one line of words shows it as its title. */}
+                  <h3>{cardWords(feature, "title") || cardWords(feature, "text")}</h3>
+                  {cardWords(feature, "title") && cardWords(feature, "text") ? <p>{cardWords(feature, "text")}</p> : null}
                 </div>
               );
             })}

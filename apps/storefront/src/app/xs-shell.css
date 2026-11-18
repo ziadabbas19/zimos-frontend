@@ -228,6 +228,7 @@
   height: 100% !important;
   max-width: min(260px, 46vw) !important;
   max-height: var(--xs-logo-h, 40px) !important;
+  margin-block: 0 !important;
   object-fit: contain !important;
 }
 .xs-footer__logo:not([data-xs-logo="template"]) {

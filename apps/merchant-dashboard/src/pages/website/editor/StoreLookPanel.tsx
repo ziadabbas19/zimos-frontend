@@ -161,10 +161,10 @@ export function StoreLookPanel({
 
   return (
     <div data-slot="store-look" data-variant={variant} style={gutters} className="zimos-look">
-      <p className="px-[var(--look-gutter)] pt-3 text-xs text-ink-soft">{ui.lookHint}</p>
+      <p className="px-[var(--look-gutter)] pt-3 text-sm text-ink-soft">{ui.lookHint}</p>
 
       {/* The store's identity first: its logo (the same one the header's panel changes), then its colour and type. */}
-      <LookBlock>
+      <LookBlock title={ui.logo}>
         <LogoField
           value={look.logoUrl}
           size={look.header.logoSize}
@@ -175,7 +175,7 @@ export function StoreLookPanel({
 
       {/* Zimos's own ready styles and themes: not offered while the editor offers only the imported templates (XS_ONLY). */}
       {!XS_ONLY && (
-      <LookBlock title={t.presets} hint={t.presetsHint}>
+      <LookBlock title={t.presets} hint={t.presetsHint} defaultOpen={false}>
         <ThemePresetRow
           look={look}
           onChange={onChange}
@@ -308,7 +308,7 @@ export function StoreLookPanel({
         </LookBlock>
       )}
 
-      <LookBlock title={ui.corners}>
+      <LookBlock title={ui.corners} defaultOpen={false}>
         {original ? (
           <Segmented
             value={look.cornerRadius}
@@ -324,12 +324,12 @@ export function StoreLookPanel({
           />
         ) : (
           // A theme owns its corners and its buttons: nothing here would reach the store.
-          <p className="text-xs text-ink-soft">{t.cornersFromTheme(catalog.name(theme, locale))}</p>
+          <p className="text-sm text-ink-soft">{t.cornersFromTheme(catalog.name(theme, locale))}</p>
         )}
       </LookBlock>
 
       {!XS_ONLY && (
-      <LookBlock title={ui.theme}>
+      <LookBlock title={ui.theme} defaultOpen={false}>
         <div
           role="radiogroup"
           aria-label={ui.theme}
@@ -362,10 +362,10 @@ export function StoreLookPanel({
                   corners={look.cornerRadius}
                   secondary={look.secondaryColor}
                 />
-                <span className="flex min-h-9 items-center gap-1.5 border-t border-line px-2.5 py-1.5 text-xs font-medium text-ink">
-                  <span className="min-w-0 flex-1 truncate">{name}</span>
+                <span className="flex min-h-9 items-center gap-1.5 border-t border-line px-2.5 py-1.5 text-sm font-medium text-ink">
+                  <span className="min-w-0 flex-1 break-words">{name}</span>
                   {price && (
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-accent-soft px-1.5 py-0.5 text-[11px] font-medium text-ink">
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-accent-soft px-1.5 py-0.5 text-xs font-medium text-ink">
                       <IconLock className="size-3" aria-hidden />
                       {formatMoney(price.amount, price.currency)}
                     </span>
@@ -376,11 +376,11 @@ export function StoreLookPanel({
             );
           })}
         </div>
-        <p className="text-xs text-ink-soft">
+        <p className="text-sm text-ink-soft">
           <span className="font-medium text-ink">{catalog.name(theme, locale)}</span> —{" "}
           {catalog.description(theme, locale)}
         </p>
-        <p className="text-xs text-ink-soft">{original ? ui.themeOriginalHint : ui.themeHint}</p>
+        <p className="text-sm text-ink-soft">{original ? ui.themeOriginalHint : ui.themeHint}</p>
       </LookBlock>
       )}
 
@@ -438,11 +438,11 @@ export function StoreLookPanel({
                 onClick={() => onEditShell(part)}
                 className={cn(
                   lookCardClass,
-                  "flex min-h-[4.25rem] flex-col items-center justify-center gap-1.5 px-1.5 py-2 text-center text-xs font-medium text-ink"
+                  "flex min-h-[4.25rem] flex-col items-center justify-center gap-1.5 px-1.5 py-2 text-center text-sm font-medium text-ink"
                 )}
               >
                 <PartIcon className="size-5 text-ink-soft" aria-hidden />
-                <span className="max-w-full truncate">
+                <span className="max-w-full break-words">
                   {part === "header" ? ui.shellHeader : part === "footer" ? ui.shellFooter : ui.announcementBar}
                 </span>
               </button>
@@ -563,7 +563,7 @@ export function AnnouncementSection({
             onChange={(messages) => onChange({ ...announcement, messages }, "look:announcement:messages")}
           />
           {announcementIsBlank(announcement.messages) && (
-            <p className="text-xs font-medium text-danger">{ui.announcementNeedsMessage}</p>
+            <p className="text-sm font-medium text-danger">{ui.announcementNeedsMessage}</p>
           )}
 
           <TextField

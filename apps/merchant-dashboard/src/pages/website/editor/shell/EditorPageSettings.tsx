@@ -64,9 +64,9 @@ export function EditorPageSettings({
       details={
         <div className="space-y-3">
           <dl className="rounded-[0.875rem] bg-paper-sunken px-3 py-2.5 text-sm">
-            <dt className="text-xs text-ink-soft">{t.pageInfo}</dt>
+            <dt className="text-sm text-ink-soft">{t.pageInfo}</dt>
             <dd className="font-medium text-ink">{page.title}</dd>
-            <dt className="mt-2 text-xs text-ink-soft">{t.pagePath}</dt>
+            <dt className="mt-2 text-sm text-ink-soft">{t.pagePath}</dt>
             <dd className="text-ink">
               <bdi dir="ltr">{page.path}</bdi>
             </dd>

@@ -157,7 +157,7 @@ describe("a slide of the picture slider, with the hero media switch on", () => {
     expect(screen.getByLabelText("ارتفاع النص على الموبايل")).toBeInTheDocument();
     expect(screen.getByLabelText("طبقة فوق الصورة (%)")).toBeInTheDocument();
     expect(screen.getByLabelText("الطبقة على الموبايل (%)")).toBeInTheDocument();
-    expect(screen.getByText(/إذا تُرك فارغًا تأخذ الشريحة التي بها نص 45، والشريحة بلا نص لا تأخذ شيئًا\. الصفر يترك الصورة كما هي\./)).toBeInTheDocument();
+    expect(screen.getByText(/إذا ترك فارغا تأخذ الشريحة التي بها نص 45، والشريحة بلا نص لا تأخذ شيئا\. الصفر يترك الصورة كما هي\./)).toBeInTheDocument();
   });
 });
 
@@ -266,7 +266,7 @@ describe("a slide's background video", () => {
     expect(screen.getByRole("button", { name: "تغيير الفيديو" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "إزالة الفيديو" })).toBeInTheDocument();
     expect(screen.getByText(/يتأخر تحميله عند العملاء/)).toHaveTextContent("٩٫٤");
-    expect(screen.getByText(/أضف الصورة أيضًا/)).toBeInTheDocument();
+    expect(screen.getByText(/أضف الصورة أيضا/)).toBeInTheDocument();
   });
 });
 

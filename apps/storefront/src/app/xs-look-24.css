@@ -730,21 +730,13 @@
 /* --- a phone -------------------------------------------------------------- */
 
 @media (max-width: 989px) {
+  /* Two by two: every card whole, none cut off at the edge of the screen. */
   .xs-features[data-xs-look="24"] .xs-features__list {
-    display: flex;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
-    margin-inline: -20px;
-    padding-inline: 20px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-  }
-  .xs-features[data-xs-look="24"] .xs-features__list::-webkit-scrollbar {
-    display: none;
   }
   .xs-features[data-xs-look="24"] .xs-features__item {
-    flex: 0 0 44%;
-    scroll-snap-align: start;
+    min-width: 0;
   }
   .xs-products[data-xs-look="24"] .xs-products__grid[data-layout="slider"] {
     grid-auto-columns: calc((100% - 2 * 14px) / 3);

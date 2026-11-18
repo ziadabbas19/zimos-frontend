@@ -38,6 +38,7 @@ export function LogoField({
     <div data-slot="logo-field" className="space-y-3">
       <ImageField
         label={ui.logo}
+        labelHidden
         hint={ui.logoHint}
         value={value ?? ""}
         accept={LOGO_ACCEPT}

@@ -74,11 +74,11 @@ export function Group({
   const heading = (
     <>
       {Glyph && <Glyph className="size-4 shrink-0 text-ink-soft" aria-hidden />}
-      <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-ink">{title}</span>
+      <span className="min-w-0 flex-1 break-words text-sm font-semibold text-ink">{title}</span>
       {mark !== undefined && mark > 0 && (
         <span
           data-slot="inspector-mark"
-          className="inline-flex h-5 shrink-0 items-center rounded-full bg-primary-soft px-2 text-[11px] font-semibold text-primary-dark dark:text-primary"
+          className="inline-flex h-5 shrink-0 items-center rounded-full bg-primary-soft px-2 text-xs font-semibold text-primary-dark dark:text-primary"
         >
           {t.setCount(inspectorNumber(mark, locale))}
         </span>
@@ -128,7 +128,7 @@ export function Group({
       )}
       {open && (
         <div id={bodyId} className="zimos-inspector-reveal space-y-3 pb-4">
-          {hint && <p className="text-xs leading-5 text-ink-soft">{hint}</p>}
+          {hint && <p className="text-sm leading-5 text-ink-soft">{hint}</p>}
           {children}
         </div>
       )}
@@ -307,8 +307,8 @@ export function ColourControl({
           )}
           style={well ? { backgroundColor: well } : undefined}
         />
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{label}</span>
-        <bdi dir={set ? "ltr" : undefined} className={cn("shrink-0 text-xs text-ink-soft", set && "font-mono uppercase")}>
+        <span className="min-w-0 flex-1 break-words text-sm font-medium text-ink">{label}</span>
+        <bdi dir={set ? "ltr" : undefined} className={cn("shrink-0 text-sm text-ink-soft", set && "font-mono uppercase")}>
           {set ?? t.colourDefault}
         </bdi>
         <IconCaretDown
@@ -345,7 +345,7 @@ export function ColourControl({
               {t.colourClear}
             </Button>
           ) : (
-            <p className="text-xs leading-5 text-ink-soft">{t.colourInherits}</p>
+            <p className="text-sm leading-5 text-ink-soft">{t.colourInherits}</p>
           )}
         </div>
       )}
@@ -400,7 +400,7 @@ export function SwitchRow({
         </span>
       </button>
       {hint && (
-        <p id={hintId} className="text-xs leading-5 text-ink-soft">
+        <p id={hintId} className="text-sm leading-5 text-ink-soft">
           {hint}
         </p>
       )}
@@ -456,7 +456,7 @@ export function ChoiceField({
     <div className="space-y-1.5">
       <Label>{label}</Label>
       <Segmented value={value} onChange={onChange} options={options} label={label} size="sm" className="w-full" />
-      {hint && <p className="text-xs leading-5 text-ink-soft">{hint}</p>}
+      {hint && <p className="text-sm leading-5 text-ink-soft">{hint}</p>}
     </div>
   );
 }

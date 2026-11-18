@@ -88,13 +88,13 @@ export function PageSwitcher({
     >
       <PageIcon className="hidden size-4 shrink-0 text-ink-soft md:block" aria-hidden />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] leading-[1.15rem] font-semibold text-ink md:text-sm md:leading-5">
+        <span className="block truncate text-sm leading-[1.15rem] font-semibold text-ink md:text-sm md:leading-5">
           {title ?? page.title}
         </span>
         {caption && (
           <span
             className={cn(
-              "block truncate text-[11px] leading-[0.95rem] lg:hidden",
+              "block truncate text-xs leading-4 lg:hidden",
               captionTone === "alert" ? "font-medium text-danger" : "text-ink-soft"
             )}
           >

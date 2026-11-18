@@ -193,21 +193,21 @@ function SeoForm({ seo, showNoindex, hint, onSave }: { seo: Record<string, unkno
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-ink-soft">{hint}</p>
+      <p className="text-sm text-ink-soft">{hint}</p>
       <div className="space-y-1.5">
         <Label htmlFor="ps-title">{t.seoTitle}</Label>
         <Input id="ps-title" dir="auto" maxLength={300} value={title} onChange={(e) => setTitle(e.target.value)} />
-        <p className="text-xs text-ink-soft">{fmt(t.count, { n: title.length, max: 70 })}</p>
+        <p className="text-sm text-ink-soft">{fmt(t.count, { n: title.length, max: 70 })}</p>
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="ps-description">{t.seoDescription}</Label>
         <Textarea id="ps-description" dir="auto" rows={3} maxLength={1000} value={description} onChange={(e) => setDescription(e.target.value)} />
-        <p className="text-xs text-ink-soft">{fmt(t.count, { n: description.length, max: 160 })}</p>
+        <p className="text-sm text-ink-soft">{fmt(t.count, { n: description.length, max: 160 })}</p>
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="ps-image">{t.image}</Label>
         <Input id="ps-image" type="url" dir="ltr" maxLength={1000} value={image} aria-describedby="ps-image-hint" onChange={(e) => setImage(e.target.value)} />
-        <p id="ps-image-hint" className="text-xs text-ink-soft">
+        <p id="ps-image-hint" className="text-sm text-ink-soft">
           {t.imageHint}
         </p>
       </div>

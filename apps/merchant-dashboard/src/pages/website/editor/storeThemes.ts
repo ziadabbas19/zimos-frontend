@@ -159,7 +159,7 @@ export const THEME_SPECS: Record<ThemeChoice, ThemeSpec> = {
     name: { en: "Glass", ar: "زجاجي" },
     description: {
       en: "Frosted see-through panels floating over a soft colour glow.",
-      ar: "ألواح شفافة كالزجاج تطفو فوق توهّج لوني ناعم.",
+      ar: "ألواح شفافة كالزجاج تطفو فوق توهج لوني ناعم.",
     },
     palette: {
       light: { paper: "#EEF1FA", raised: "#FFFFFF", ink: "#0F172A", inkSoft: "#475569", line: "#D3D9E8", accent: "#6242F5", secondary: "#22B8CF" },

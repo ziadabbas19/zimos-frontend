@@ -98,9 +98,9 @@ const STRINGS = {
     color: "لون النص",
     background: "لون الخلفية",
     fontSize: "حجم النص (px)",
-    fontWeight: "سُمك النص",
+    fontWeight: "سمك النص",
     lineHeight: "ارتفاع السطر (%)",
-    borderWidth: "سُمك الإطار (px)",
+    borderWidth: "سمك الإطار (px)",
     borderStyle: "نوع الإطار",
     borderColor: "لون الإطار",
     radius: "استدارة الزوايا (px)",
@@ -130,10 +130,10 @@ const STRINGS = {
     md: "متوسط",
     lg: "كبير",
     reset: "مسح تغييرات هذه الشاشة",
-    named: "ستايل مسمّى",
+    named: "ستايل مسمى",
     namedNone: "بدون",
-    namedHint: "النمط المشترك تستخدمه عدة عناصر: تغييره يغيّر مظهرها كلها.",
-    saveAs: "حفظ هذا المظهر نمطًا مشتركًا",
+    namedHint: "النمط المشترك تستخدمه عدة عناصر: تغييره يغير مظهرها كلها.",
+    saveAs: "حفظ هذا المظهر نمطا مشتركا",
     newName: "اسم الستايل، مثال: الزرار الأساسي",
     create: "حفظ",
     update: "تحديث النمط المشترك بهذا المظهر",
@@ -491,9 +491,9 @@ export function ElementStylePanel({
           className="w-full"
           options={DEVICES.map((d) => ({ value: d, label: screenName[d] }))}
         />
-        {device !== "base" && <p className="text-xs leading-5 text-ink-soft">{ti.onlyThisScreen(screenName[device])}</p>}
+        {device !== "base" && <p className="text-sm leading-5 text-ink-soft">{ti.onlyThisScreen(screenName[device])}</p>}
         {changed.length > 0 && (
-          <p className="text-xs leading-5 text-ink-soft">{ti.ownChanges(changed.map((d) => screenName[d]).join(ti.joiner))}</p>
+          <p className="text-sm leading-5 text-ink-soft">{ti.ownChanges(changed.map((d) => screenName[d]).join(ti.joiner))}</p>
         )}
       </div>
 
@@ -625,7 +625,7 @@ export function ElementTabs({
           aria-selected={value === tab}
           onClick={() => onChange(tab)}
           className={cn(
-            "-mb-px inline-flex min-h-9 shrink-0 cursor-pointer items-center gap-1 border-b-2 px-3 py-1.5 text-xs font-medium whitespace-nowrap pointer-coarse:min-h-11",
+            "-mb-px inline-flex min-h-9 shrink-0 cursor-pointer items-center gap-1 border-b-2 px-3 py-1.5 text-sm font-medium whitespace-nowrap pointer-coarse:min-h-11",
             value === tab ? "border-primary text-primary" : "border-transparent text-ink-soft hover:text-ink"
           )}
         >

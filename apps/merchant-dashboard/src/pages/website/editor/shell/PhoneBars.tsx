@@ -52,7 +52,7 @@ export function PhoneDock({
             className="pointer-events-auto flex min-h-11 max-w-full cursor-pointer items-center gap-2 rounded-full bg-ink px-4 text-sm font-medium text-paper-raised shadow-[var(--shadow-raised)] transition-[scale] duration-[var(--dur-fade)] ease-[var(--ease-out)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.97] motion-reduce:transition-none"
           >
             <IconEdit className="size-4 shrink-0" aria-hidden />
-            <span className="truncate">{fmt(t.dockEdit, { name: edit.label })}</span>
+            <span className="break-words">{fmt(t.dockEdit, { name: edit.label })}</span>
           </button>
         </div>
       )}
@@ -82,7 +82,7 @@ function DockButton({
       type="button"
       onClick={onClick}
       data-lead={lead || undefined}
-      className="group flex min-h-12 min-w-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-2xl px-1 text-[11px] leading-4 font-medium text-ink-soft transition-[scale,color] duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:text-ink focus-visible:outline-2 focus-visible:outline-primary active:scale-[0.97] motion-reduce:transition-none"
+      className="group flex min-h-12 min-w-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-2xl px-1 text-xs leading-4 font-medium text-ink-soft transition-[scale,color] duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:text-ink focus-visible:outline-2 focus-visible:outline-primary active:scale-[0.97] motion-reduce:transition-none"
     >
       <span
         className={cn(
@@ -92,7 +92,7 @@ function DockButton({
       >
         <Glyph className="size-[22px]" aria-hidden />
       </span>
-      <span className="max-w-full truncate">{label}</span>
+      <span className="max-w-full break-words">{label}</span>
     </button>
   );
 }
@@ -232,7 +232,7 @@ export function PhoneInspectorSheet({
  *  - «شكل المتجر»: the store look, with its two actions pinned under it while
  *    it has changes (the look goes live when saved, so it is never saved for
  *    the merchant);
- *  - «لوّنه بهويتك»: the first-run step — the ready styles alone, in a short
+ *  - «لونه بهويتك»: the first-run step — the ready styles alone, in a short
  *    sheet, so the store stays in view above it while a style is tried on.
  */
 export function PhoneSheets({

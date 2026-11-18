@@ -117,17 +117,17 @@ const HERO_FOCUS_FIELDS: ItemSubField[] = [
   {
     key: "focusY",
     label: "Part of the picture kept in view (up and down)",
-    labelAr: "الجزء الظاهر من الصورة (رأسيًا)",
+    labelAr: "الجزء الظاهر من الصورة (رأسيا)",
     kind: "choice",
     fallback: "center",
     options: FOCUS_HEIGHTS,
     hint: "The slider's box is rarely the shape of the picture, so part of the picture is cut off. Choose the part that must stay in view.",
-    hintAr: "مساحة السلايدر لا تطابق شكل الصورة غالبًا، فيُقتطع جزء من الصورة. اختر الجزء الذي يجب أن يبقى ظاهرًا.",
+    hintAr: "مساحة السلايدر لا تطابق شكل الصورة غالبا، فيقتطع جزء من الصورة. اختر الجزء الذي يجب أن يبقى ظاهرا.",
   },
   {
     key: "focusX",
     label: "Part of the picture kept in view (across)",
-    labelAr: "الجزء الظاهر من الصورة (أفقيًا)",
+    labelAr: "الجزء الظاهر من الصورة (أفقيا)",
     kind: "choice",
     fallback: "center",
     options: SLIDE_SIDES,
@@ -142,7 +142,7 @@ const TILE_FOCUS_FIELDS: ItemSubField[] = HERO_FOCUS_FIELDS.map((field) =>
     ? {
         ...field,
         hint: "A tile's picture fills a square, so part of it is cut off. Choose the part that must stay in view.",
-        hintAr: "صورة القسم تملأ مربعًا، فيُقتطع جزء منها. اختر الجزء الذي يجب أن يبقى ظاهرًا.",
+        hintAr: "صورة القسم تملأ مربعا، فيقتطع جزء منها. اختر الجزء الذي يجب أن يبقى ظاهرا.",
       }
     : field
 );
@@ -217,7 +217,7 @@ const HERO_MEDIA_SLIDE_FIELDS: ItemSubField[] = HERO_MEDIA_ENABLED
         // Empty is the store's own veil, so that is what the field shows and where its steppers start.
         startAt: HERO_DEFAULT_VEIL,
         hint: `Makes the text easier to read: dark under light text, light under dark text. Left empty, a slide with text gets ${HERO_DEFAULT_VEIL} and a slide without text none. 0 leaves the picture as it is.`,
-        hintAr: `تسهّل قراءة النص: داكنة تحت النص الفاتح، وفاتحة تحت النص الداكن. إذا تُرك فارغًا تأخذ الشريحة التي بها نص ${HERO_DEFAULT_VEIL}، والشريحة بلا نص لا تأخذ شيئًا. الصفر يترك الصورة كما هي.`,
+        hintAr: `تسهل قراءة النص: داكنة تحت النص الفاتح، وفاتحة تحت النص الداكن. إذا ترك فارغا تأخذ الشريحة التي بها نص ${HERO_DEFAULT_VEIL}، والشريحة بلا نص لا تأخذ شيئا. الصفر يترك الصورة كما هي.`,
       },
       {
         key: "overlayMobile",
@@ -228,7 +228,7 @@ const HERO_MEDIA_SLIDE_FIELDS: ItemSubField[] = HERO_MEDIA_ENABLED
         max: 60,
         step: 5,
         hint: "Leave empty to use the same strength as on a computer.",
-        hintAr: "اتركه فارغًا لاستخدام القوة نفسها التي على الكمبيوتر.",
+        hintAr: "اتركه فارغا لاستخدام القوة نفسها التي على الكمبيوتر.",
       },
     ]
   : [];
@@ -288,7 +288,7 @@ export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
             step: 20,
             startAt: 600,
             hint: "The widest the text block may get. Leave empty for the store's own width.",
-            hintAr: "أقصى عرض لمساحة النص. اتركه فارغًا لعرض المتجر المعتاد.",
+            hintAr: "أقصى عرض لمساحة النص. اتركه فارغا لعرض المتجر المعتاد.",
           },
         ],
       },
@@ -402,7 +402,7 @@ export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
           { key: "items", label: "Points, one per line", labelAr: "النقاط، كل نقطة في سطر", kind: "lines" },
           { key: "itemsEn", label: "Points (English)", labelAr: "النقاط (إنجليزي)", kind: "lines" },
           { key: "productId", label: "Product", labelAr: "المنتج", kind: "product" },
-          { key: "altProductId", label: "Second product", labelAr: "منتج ثانٍ", kind: "product" },
+          { key: "altProductId", label: "Second product", labelAr: "منتج ثان", kind: "product" },
           { key: "image", label: "Picture instead of the product's", labelAr: "صورة بدل صورة المنتج", kind: "image" },
         ],
       },
@@ -471,7 +471,7 @@ export const SHOWCASE_ELEMENT_SPECS: Record<ShowcaseType, ShowcaseSpec> = {
     fields: [
       { key: "image", label: "Picture", kind: "image" },
       { key: "mobileImage", label: "Picture on a phone", kind: "image" },
-      { key: "alt", label: "Alt text", kind: "text", hint: "Describes the picture to screen readers." },
+      { key: "alt", label: "Picture description", kind: "text", hint: "Describes the picture to screen readers." },
       { key: "heading", label: "Heading", kind: "text" },
       { key: "text", label: "Text", kind: "textarea" },
       { key: "buttonLabel", label: "Button text", kind: "text" },

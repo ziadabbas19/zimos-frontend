@@ -59,9 +59,9 @@ export type ThemeUi = typeof EN;
 
 const AR: ThemeUi = {
   presets: "أنماط جاهزة",
-  presetsHint: "ضغطة واحدة تضبط الثيم والألوان والخط والحواف معًا، ويمكنك تغيير أي شيء بعدها.",
+  presetsHint: "ضغطة واحدة تضبط الثيم والألوان والخط والحواف معا، ويمكنك تغيير أي شيء بعدها.",
   presetUse: (name) => `استخدام نمط ${name}`,
-  presetApplied: (name) => `طُبّق نمط ${name}.`,
+  presetApplied: (name) => `طبق نمط ${name}.`,
   presetUndo: "تراجع",
   presetsPrev: "الأنماط السابقة",
   presetsNext: "أنماط أخرى",
@@ -84,7 +84,7 @@ const AR: ThemeUi = {
   cornersFromTheme: (theme) => `الحواف وشكل الأزرار يأتيان مع ثيم ${theme}.`,
   themeBlockHint: "يحدد شكل الأزرار والبطاقات والمسافات وأعلى الصفحة.",
   themePaid: "مدفوع",
-  themePaidNote: "الثيمات المدفوعة غير متاحة للشراء بعد، وستتاح قريبًا.",
+  themePaidNote: "الثيمات المدفوعة غير متاحة للشراء بعد، وستتاح قريبا.",
   shellTitle: "ثابت في كل الصفحات",
 
   linkTargetTitle: "إلى أين يؤدي هذا الرابط؟",
@@ -95,8 +95,8 @@ const AR: ThemeUi = {
   done: "تم",
   retry: "إعادة المحاولة",
   submenuKept: (n) =>
-    `تتفرّع منه قائمة فيها ${plural(n, { one: "رابط واحد", two: "رابطان", few: "{n} روابط", other: "{n} رابطًا" })}، وستبقى كما هي.`,
-  groupLinks: (n) => plural(n, { one: "رابط واحد", two: "رابطان", few: "{n} روابط", other: "{n} رابطًا" }),
+    `تتفرع منه قائمة فيها ${plural(n, { one: "رابط واحد", two: "رابطان", few: "{n} روابط", other: "{n} رابطا" })}، وستبقى كما هي.`,
+  groupLinks: (n) => plural(n, { one: "رابط واحد", two: "رابطان", few: "{n} روابط", other: "{n} رابطا" }),
 };
 
 export function themeUi(locale: EditorLocale): ThemeUi {

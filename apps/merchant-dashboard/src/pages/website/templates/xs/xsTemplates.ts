@@ -1,5 +1,6 @@
 import type { PageSection, PageTree } from "@store-builder/api-client";
 import { xsTemplatePages } from "../../editor/xsBlocks";
+import { inArabic } from "./demoWords";
 import xs01Shell from "./xs01.shell.json";
 import xs02Shell from "./xs02.shell.json";
 import xs03Shell from "./xs03.shell.json";
@@ -47,6 +48,8 @@ import xs24Shell from "./xs24.shell.json";
  * replaced — addresses, pictures, colours and the bands' settings never are.
  */
 
+export { inArabic };
+
 export interface XsStoreTemplate {
   key: string;
   name: string;
@@ -71,20 +74,6 @@ export interface XsArabic {
 const ARABIC: Record<string, XsArabic> = Object.fromEntries(
   Object.values(import.meta.glob<XsArabic>("./ar/xs*.ar.json", { eager: true, import: "default" })).map((arabic) => [arabic.look, arabic])
 );
-
-/** Props and settings that are never words: what they hold is a choice, an address, a picture or a product's slug. */
-const NOT_WORDS = new Set(["look", "variant", "layout", "image", "images", "phoneImage", "video", "product", "also", "icon", "kind", "url", "collection", "align", "headingWeight", "imageRatio", "imageFit", "endsAt", "xsLook", "primaryColor", "primaryColorSource", "id", "type", "width", "padding"]);
-
-/** `value` with every shown English string that `strings` knows put in Arabic. */
-export function inArabic<T>(value: T, strings: Record<string, string>, key = ""): T {
-  if (NOT_WORDS.has(key) || /(?:Href|href|Color|Url)$/.test(key)) return value;
-  if (typeof value === "string") return (Object.hasOwn(strings, value) ? strings[value] : value) as T;
-  if (Array.isArray(value)) return value.map((item) => inArabic(item, strings, key)) as T;
-  if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, inArabic(v, strings, k)])) as T;
-  }
-  return value;
-}
 
 interface XsDraft {
   look: string;

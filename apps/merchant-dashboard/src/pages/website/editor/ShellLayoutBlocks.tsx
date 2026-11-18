@@ -145,7 +145,7 @@ function SortableRow({
   );
 }
 
-const selectClass = "h-9 rounded-[0.75rem] bg-paper-sunken px-2 text-xs ring-1 ring-line focus-visible:outline-2 focus-visible:outline-primary pointer-coarse:h-11";
+const selectClass = "h-9 rounded-[0.75rem] bg-paper-sunken px-2 text-sm ring-1 ring-line focus-visible:outline-2 focus-visible:outline-primary pointer-coarse:h-11";
 
 /** A box of the header that takes drops even when it is empty. */
 function ZoneBox({ zone, children }: { zone: HeaderZone; children: ReactNode }) {
@@ -216,7 +216,7 @@ export function HeaderLayoutBlock({ saved, onChange }: { saved: unknown; onChang
           : `Drag any part to another place or box, remove it or add one. This is the layout for the ${screenName}.`
       }
     >
-      <div className="flex flex-wrap items-center gap-2 text-xs">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
         {screen !== "base" && own && (
           <Button type="button" size="sm" variant="outline" onClick={() => onChange(withZonesOn(saved, screen, null, look))}>
             {isAr ? "زي ترتيب الكمبيوتر" : "Use the computer's layout"}
@@ -232,7 +232,7 @@ export function HeaderLayoutBlock({ saved, onChange }: { saved: unknown; onChang
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         {HEADER_ZONES.map((zone) => (
           <section key={zone} className="space-y-1.5" aria-label={ZONE_NAMES[zone][isAr ? 1 : 0]}>
-            <h4 className="text-xs font-semibold text-ink-soft">{ZONE_NAMES[zone][isAr ? 1 : 0]}</h4>
+            <h4 className="text-sm font-semibold text-ink-soft">{ZONE_NAMES[zone][isAr ? 1 : 0]}</h4>
             <ZoneBox zone={zone}>
               <SortableContext items={zones[zone].map((p) => p.id)} strategy={verticalListSortingStrategy}>
                 <ul className="space-y-1.5">
@@ -263,7 +263,7 @@ export function HeaderLayoutBlock({ saved, onChange }: { saved: unknown; onChang
                               maxLength={500}
                               aria-label={isAr ? "الرابط" : "Link"}
                               placeholder="/products"
-                              className="h-9 text-xs"
+                              className="h-9 text-sm"
                               onChange={(e) => patchPart(part.id, { href: e.target.value }, "href")}
                             />
                           )}
@@ -382,7 +382,7 @@ export function FooterLayoutBlock({
       title={isAr ? "ترتيب الفوتر" : "Footer layout"}
       hint={
         isAr
-          ? `رتّب الأعمدة بالسحب، وغيّر عرض كل عمود ومحاذاته (العرض لشاشة ${screenName}). سطر حقوق تصميم القالب ثابت بحكم ترخيصه.`
+          ? `رتب الأعمدة بالسحب، وغير عرض كل عمود ومحاذاته (العرض لشاشة ${screenName}). سطر حقوق تصميم القالب ثابت بحكم ترخيصه.`
           : `Drag the columns into order and set each one's width and alignment (widths are for the ${screenName}). The template's licence credit always stays.`
       }
     >
@@ -467,7 +467,7 @@ export function FooterLayoutBlock({
                       <option value="center">{isAr ? "الوسط" : "Centre"}</option>
                       <option value="end">{isAr ? "النهاية" : "End"}</option>
                     </select>
-                    <label className="inline-flex min-h-9 items-center gap-1.5 px-1 text-xs text-ink pointer-coarse:min-h-11">
+                    <label className="inline-flex min-h-9 items-center gap-1.5 px-1 text-sm text-ink pointer-coarse:min-h-11">
                       <input
                         type="checkbox"
                         className="size-4 accent-[var(--color-primary)]"
@@ -510,7 +510,7 @@ export function FooterLayoutBlock({
         </select>
       )}
 
-      <h4 className="pt-2 text-xs font-semibold text-ink-soft">{isAr ? "السطر الأخير" : "Bottom line"}</h4>
+      <h4 className="pt-2 text-sm font-semibold text-ink-soft">{isAr ? "السطر الأخير" : "Bottom line"}</h4>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={sortEnd(bottom, (next) => setBottom(next))}>
         <SortableContext items={bottom.map((p) => p.id)} strategy={verticalListSortingStrategy}>
           <ul className="space-y-1.5">
@@ -543,10 +543,10 @@ export function FooterLayoutBlock({
           </ul>
         </SortableContext>
       </DndContext>
-      <p className="text-xs text-ink-soft">{isAr ? "سطر حقوق تصميم القالب: ثابت ولا يُحذف (شرط ترخيص القالب)." : "The template's design credit: always shown (its licence asks for it)."}</p>
-      <p className="text-xs text-ink-soft">
+      <p className="text-sm text-ink-soft">{isAr ? "سطر حقوق تصميم القالب: ثابت ولا يحذف (شرط ترخيص القالب)." : "The template's design credit: always shown (its licence asks for it)."}</p>
+      <p className="text-sm text-ink-soft">
         {isAr
-          ? "«مدعوم من زيموس» لا يُحذف من هنا: يُخفيه «إخفاء شعار ZIMOS» في إعدادات المتجر ← عام، إن كانت باقتك تتيح ذلك."
+          ? "«مدعوم من زيموس» لا يحذف من هنا: يخفيه «إخفاء شعار ZIMOS» في إعدادات المتجر ← عام، إن كانت باقتك تتيح ذلك."
           : "“Powered by Zimos” is not removed here: “Hide ZIMOS branding” in Store settings → General hides it, where your plan allows."}
       </p>
       <div className="flex flex-wrap gap-2">

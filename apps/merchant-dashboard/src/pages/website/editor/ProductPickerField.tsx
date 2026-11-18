@@ -26,11 +26,11 @@ const STRINGS = {
   ar: {
     search: "ابحث عن منتج",
     searchCollections: "ابحث عن مجموعة",
-    none: "غير محدّد",
+    none: "غير محدد",
     draft: "مسودة",
     archived: "مؤرشف",
-    loading: "جارٍ التحميل…",
-    failed: "تعذّر تحميل القائمة. القيمة الحالية محفوظة كما هي.",
+    loading: "جار التحميل…",
+    failed: "تعذر تحميل القائمة. القيمة الحالية محفوظة كما هي.",
     noMatch: "لا توجد نتائج.",
     unknown: "القيمة المحفوظة: {value}",
     editProduct: "تعديل المنتج",
@@ -130,14 +130,14 @@ export function ProductPickerField({
             ))}
           </Select>
           {list.loading && !list.data && <ZLoader size="sm" label={t.loading} />}
-          {Boolean(list.error) && <p className="text-xs text-danger">{t.failed}</p>}
-          {list.data && options.length === 0 && query.trim() && <p className="text-xs text-ink-soft">{t.noMatch}</p>}
+          {Boolean(list.error) && <p className="text-sm text-danger">{t.failed}</p>}
+          {list.data && options.length === 0 && query.trim() && <p className="text-sm text-ink-soft">{t.noMatch}</p>}
           {editHref && (kind === "collection" || value) && (
             <a
               href={editHref}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex min-h-8 items-center gap-1 rounded-[0.5rem] text-xs font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary pointer-coarse:min-h-11"
+              className="inline-flex min-h-8 items-center gap-1 rounded-[0.5rem] text-sm font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary pointer-coarse:min-h-11"
             >
               <IconExternal className="size-3.5" aria-hidden />
               {kind === "product" ? t.editProduct : t.editCollections}

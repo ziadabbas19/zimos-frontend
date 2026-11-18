@@ -12,7 +12,11 @@ import { leftUi } from "./strings";
 
 function truncate(value: string, max = 90): string {
   const clean = value.replace(/\s+/g, " ").trim();
-  return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean;
+  if (clean.length <= max) return clean;
+  // Cut between words, never inside one.
+  const cut = clean.slice(0, max - 1);
+  const space = cut.lastIndexOf(" ");
+  return `${(space > max / 2 ? cut.slice(0, space) : cut).trimEnd()}…`;
 }
 
 /** A number prop that may have been typed as text. */
@@ -40,7 +44,8 @@ export function elementSummary(element: PageElement, locale: EditorLocale): stri
     const titleKey = list && list.kind === "itemList" ? list.titleKey : "title";
     const firstTitle = items.map((item) => (typeof item?.[titleKey] === "string" ? (item[titleKey] as string) : "")).find((text) => text.trim()) ?? "";
     const listName = list ? (locale === "ar" ? (XS_CONTENT_AR[`${type}.${list.key}`] ?? XS_CONTENT_AR[list.key] ?? list.label) : list.label) : "";
-    return join([str("heading") || firstTitle || str("title"), items.length > 0 && listName && t.listOf(listName, items.length)]);
+    // The words alone when there are any: a count beside them only made the line too long to read.
+    return join([str("heading") || firstTitle || str("title") || (items.length > 0 && listName && t.listOf(listName, items.length))]);
   }
 
   switch (type) {

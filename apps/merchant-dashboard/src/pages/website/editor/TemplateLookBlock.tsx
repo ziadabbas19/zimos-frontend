@@ -15,10 +15,10 @@ import { LookBlock } from "./theme/parts";
 
 /** The storefront's FACES, by key: the label shown here. */
 export const TEMPLATE_FACES: ReadonlyArray<{ key: string; label: string }> = [
-  { key: "poppins", label: "Poppins · تجوّل" },
+  { key: "poppins", label: "Poppins · تجول" },
   { key: "playfair", label: "Playfair Display · المسيري" },
   { key: "inter", label: "Inter · IBM Plex Arabic" },
-  { key: "jost", label: "Jost · تجوّل" },
+  { key: "jost", label: "Jost · تجول" },
   { key: "marcellus", label: "Marcellus · أميري" },
   { key: "montserrat", label: "Montserrat · القاهرة" },
   { key: "nunito", label: "Nunito Sans · المراعي" },
@@ -84,17 +84,17 @@ const WORDS = {
   },
   ar: {
     title: "شكل القالب",
-    hint: "يغيّر كل الأقسام والهيدر والفوتر مرة واحدة. أي حاجة القسم مظبطها لنفسه بتفضل زي ما هي. اللون هو لون البراند اللي فوق.",
+    hint: "يغير كل الأقسام والهيدر والفوتر مرة واحدة. أي حاجة القسم مظبطها لنفسه بتفضل زي ما هي. اللون هو لون البراند اللي فوق.",
     heading: "خط العناوين",
     body: "خط الكلام",
     template: "خط القالب الأصلي",
     corners: "استدارة الأزرار",
-    cornersHint: "٠ مربّعة؛ ٢٠ أو أكتر كبسولة.",
+    cornersHint: "٠ مربعة؛ ٢٠ أو أكتر كبسولة.",
     words: "حجم الكلام",
     spacing: "المسافة بين الأقسام",
     reset: "رجوع لشكل القالب",
     readable: "كلام أسهل في القراية",
-    readableHint: (n: number) => `${n} من ألوان الكلام في القالب ده أفتح من نسبة التباين ٤٫٥:١ اللي القراية المريحة محتاجاها. ده بيغمّقها على قد الحاجة ويحافظ على درجتها.`,
+    readableHint: (n: number) => `${n} من ألوان الكلام في القالب ده أفتح من نسبة التباين ٤٫٥:١ اللي القراية المريحة محتاجاها. ده بيغمقها على قد الحاجة ويحافظ على درجتها.`,
   },
 };
 
@@ -111,7 +111,7 @@ export function TemplateLookBlock({ saved, onChange }: { saved: unknown; onChang
 
   const face = (name: "display" | "sans", label: string) => (
     <label className="block space-y-1">
-      <span className="text-xs font-medium text-ink-soft">{label}</span>
+      <span className="text-sm font-medium text-ink-soft">{label}</span>
       <select className={selectClass} value={tokens[name] ?? ""} onChange={(e) => set({ [name]: e.target.value || undefined })}>
         <option value="">{w.template}</option>
         {TEMPLATE_FACES.map((f) => (
@@ -127,7 +127,7 @@ export function TemplateLookBlock({ saved, onChange }: { saved: unknown; onChang
     const value = tokens[name] ?? 100;
     return (
       <label className="block space-y-1">
-        <span className="flex items-center justify-between text-xs font-medium text-ink-soft">
+        <span className="flex items-center justify-between text-sm font-medium text-ink-soft">
           {label}
           <output className="tabular-nums text-ink">{value}%</output>
         </span>
@@ -149,7 +149,7 @@ export function TemplateLookBlock({ saved, onChange }: { saved: unknown; onChang
       {face("display", w.heading)}
       {face("sans", w.body)}
       <label className="block space-y-1">
-        <span className="flex items-center justify-between text-xs font-medium text-ink-soft">
+        <span className="flex items-center justify-between text-sm font-medium text-ink-soft">
           {w.corners}
           <output className="tabular-nums text-ink">{tokens.radius === undefined ? "—" : `${tokens.radius}px`}</output>
         </span>
@@ -163,7 +163,7 @@ export function TemplateLookBlock({ saved, onChange }: { saved: unknown; onChang
           className="w-full accent-[var(--color-primary)]"
           onChange={(e) => set({ radius: Number(e.target.value) }, "template-look:radius")}
         />
-        <span id="template-look-corners" className="block text-xs text-ink-soft">
+        <span id="template-look-corners" className="block text-sm text-ink-soft">
           {w.cornersHint}
         </span>
       </label>
@@ -177,7 +177,7 @@ export function TemplateLookBlock({ saved, onChange }: { saved: unknown; onChang
           />
           <span>
             <span className="block font-medium">{w.readable}</span>
-            <span className="block text-xs text-ink-soft">{w.readableHint(TOO_LIGHT[look])}</span>
+            <span className="block text-sm text-ink-soft">{w.readableHint(TOO_LIGHT[look])}</span>
           </span>
         </label>
       )}

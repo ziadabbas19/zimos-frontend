@@ -49,7 +49,7 @@ describe("StoreLookPanel — theme", () => {
     expect(screen.queryByRole("radiogroup", { name: "Font" })).toBeNull();
     expect(screen.queryByRole("radiogroup", { name: "Corners" })).toBeNull();
     expect(screen.queryByText("Second colour")).toBeNull();
-    expect(screen.getByText(/A theme sets the fonts, corners, buttons, cards, spacing and hero layout/)).toBeInTheDocument();
+    expect(screen.getByText(/A theme sets the fonts, corners, buttons, cards, spacing and main banner layout/)).toBeInTheDocument();
   });
 });
 

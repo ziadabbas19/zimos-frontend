@@ -123,8 +123,8 @@ export function ThemePresetRow({
                 />
                 <span className="flex items-center gap-1.5 border-t border-line px-2.5 py-2">
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] leading-tight font-semibold text-ink">{name}</span>
-                    <span className="mt-0.5 block truncate text-[11px] leading-tight text-ink-soft">
+                    <span className="block break-words text-sm leading-tight font-semibold text-ink">{name}</span>
+                    <span className="mt-0.5 block break-words text-xs leading-tight text-ink-soft">
                       {preset.note[locale]}
                     </span>
                   </span>
@@ -157,8 +157,8 @@ export function ThemePresetRow({
       </div>
 
       {undo && lastApplied && (
-        <p aria-live="polite" className="flex min-h-8 items-center gap-2 text-xs text-ink-soft">
-          <span className="min-w-0 flex-1 truncate">{t.presetApplied(lastApplied.name[locale])}</span>
+        <p aria-live="polite" className="flex min-h-8 items-center gap-2 text-sm text-ink-soft">
+          <span className="min-w-0 flex-1 break-words">{t.presetApplied(lastApplied.name[locale])}</span>
           <button
             type="button"
             onClick={() => {

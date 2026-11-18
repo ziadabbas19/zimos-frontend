@@ -84,7 +84,7 @@ export function BilingualField({
             </div>
           ))}
         </div>
-        {hint && <p className="text-xs leading-5 text-ink-soft">{hint}</p>}
+        {hint && <p className="text-sm leading-5 text-ink-soft">{hint}</p>}
       </div>
     );
   }
@@ -106,7 +106,7 @@ export function BilingualField({
       </div>
       {children(language, { label: t.inLanguage(label, name(language)), labelHidden: true, dir: dirOf(language) })}
       {empty.length > 0 && <p className="sr-only">{empty.map((l) => t.stillEmpty(name(l))).join(t.joiner)}</p>}
-      {hint && <p className="text-xs leading-5 text-ink-soft">{hint}</p>}
+      {hint && <p className="text-sm leading-5 text-ink-soft">{hint}</p>}
     </div>
   );
 }
@@ -193,7 +193,7 @@ export function LinkTargetNote({ href, onPick }: { href: string; onPick?: (href:
   if (described) {
     const Glyph = described.unclear ? IconWarning : IconLink;
     return (
-      <p className={cn("flex items-start gap-1.5 text-xs leading-5", described.unclear ? "text-accent-dark" : "text-ink-soft")}>
+      <p className={cn("flex items-start gap-1.5 text-sm leading-5", described.unclear ? "text-accent-dark" : "text-ink-soft")}>
         <Glyph className="mt-[3px] size-3.5 shrink-0" aria-hidden />
         <span className="min-w-0 break-words" dir="auto">
           {described.words}
@@ -215,7 +215,7 @@ export function LinkTargetNote({ href, onPick }: { href: string; onPick?: (href:
           key={target}
           type="button"
           onClick={() => onPick(target)}
-          className="inline-flex min-h-8 cursor-pointer items-center rounded-full px-3 text-xs font-medium text-ink-soft ring-1 ring-line-strong transition-colors duration-[var(--dur-fade)] ease-[var(--ease-out)] ring-inset hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none"
+          className="inline-flex min-h-8 cursor-pointer items-center rounded-full px-3 text-sm font-medium text-ink-soft ring-1 ring-line-strong transition-colors duration-[var(--dur-fade)] ease-[var(--ease-out)] ring-inset hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none"
         >
           {words}
         </button>

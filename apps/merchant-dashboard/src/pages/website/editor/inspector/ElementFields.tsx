@@ -133,7 +133,7 @@ function ListShell({
         <IconPlus className="size-4" aria-hidden />
         {addLabel}
       </Button>
-      {hint && <p className="text-xs leading-5 text-ink-soft">{hint}</p>}
+      {hint && <p className="text-sm leading-5 text-ink-soft">{hint}</p>}
     </div>
   );
 }
@@ -460,7 +460,7 @@ export function ElementField({
               onChange={(e) => onChange(spec.key, e.target.value)}
             />
             <LinkTargetNote href={asString(raw)} onPick={(href) => onChange(spec.key, href)} />
-            {hint && <p className="text-xs leading-5 text-ink-soft">{hint}</p>}
+            {hint && <p className="text-sm leading-5 text-ink-soft">{hint}</p>}
           </div>
         );
       }
@@ -795,7 +795,7 @@ function PerScreenField({
     <div className="space-y-1" data-per-screen={spec.key}>
       <ElementField elementType={elementType} spec={{ ...spec, perScreen: false }} props={{ ...props, [spec.key]: own }} onChange={set} inherited={inherited} />
       {screen !== "base" && (
-        <div className="flex min-h-7 flex-wrap items-center gap-2 text-xs">
+        <div className="flex min-h-7 flex-wrap items-center gap-2 text-sm">
           {own !== undefined ? (
             <>
               <span className="rounded-full bg-primary-soft px-2 py-0.5 font-semibold text-primary">{w.own(name(screen))}</span>
@@ -808,7 +808,7 @@ function PerScreenField({
           )}
         </div>
       )}
-      {others.length > 0 && <p className="text-xs text-ink-soft">{w.others(others.map(name).join(" · "))}</p>}
+      {others.length > 0 && <p className="text-sm text-ink-soft">{w.others(others.map(name).join(" · "))}</p>}
     </div>
   );
 }
@@ -820,8 +820,8 @@ function ColorField({ label, hint, value, onChange }: { label: string; hint?: st
   return (
     <ColorWell label={label} hint={hint} value={chosen} fallback="#ffffff" onChange={onChange}>
       {chosen ? (
-        <button type="button" className="text-xs text-ink-soft underline underline-offset-2 hover:text-ink" onClick={() => onChange(undefined)}>
-          {locale === "ar" ? "رجّع لون القالب" : "Back to the template's colour"}
+        <button type="button" className="text-sm text-ink-soft underline underline-offset-2 hover:text-ink" onClick={() => onChange(undefined)}>
+          {locale === "ar" ? "رجع لون القالب" : "Back to the template's colour"}
         </button>
       ) : null}
     </ColorWell>
