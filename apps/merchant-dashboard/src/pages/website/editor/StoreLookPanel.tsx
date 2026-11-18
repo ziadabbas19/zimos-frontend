@@ -23,7 +23,6 @@ import { checkAccent, labelOn, suggestAccent } from "@/lib/contrast";
 import { STORE_SIDEBAR_ENABLED } from "@/lib/features";
 import { formatMoney } from "@/lib/format";
 import { useThemeFonts } from "@/lib/themeFonts";
-import { ImageField } from "./ImageField";
 import { StorePagesBlock } from "./StorePagesBlock";
 import { TemplateLookBlock } from "./TemplateLookBlock";
 import { StoreFontsBlock } from "./StoreFontsBlock";
@@ -41,6 +40,7 @@ import type { NavLayout, ShellPart } from "./storeShell";
 import { ORIGINAL_LOOK, THEME_CHOICES, THEME_SPECS, accentGrounds, type ColorMode } from "./storeThemes";
 import { ThemeSketch } from "./ThemeSketch";
 import { ColorWell, SwatchRow } from "./theme/ColorWell";
+import { LogoField } from "./theme/LogoField";
 import { IconCornerRound, IconCornerSharp, IconCornerSoft } from "./theme/CornerIcons";
 import { LookBlock, LookCheck, SwitchRow, lookCardClass, lookIconButtonClass, lookTextButtonClass } from "./theme/parts";
 import { FontPairList } from "./theme/FontPairList";
@@ -165,11 +165,11 @@ export function StoreLookPanel({
 
       {/* The store's identity first: its logo (the same one the header's panel changes), then its colour and type. */}
       <LookBlock>
-        <ImageField
-          label={ui.logo}
-          hint={ui.logoHint}
-          value={look.logoUrl ?? ""}
-          onChange={(url) => onChange({ ...look, logoUrl: url || null })}
+        <LogoField
+          value={look.logoUrl}
+          size={look.header.logoSize}
+          onChange={(logoUrl) => onChange({ ...look, logoUrl })}
+          onSize={(logoSize) => onChange({ ...look, header: { ...look.header, logoSize } })}
         />
       </LookBlock>
 

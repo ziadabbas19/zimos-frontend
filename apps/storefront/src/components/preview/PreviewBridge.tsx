@@ -364,9 +364,9 @@ let lastTheme: PreviewTheme | null = null;
 
 /** The unsaved logo's classes at each header logo size — StoreHeader's own LOGO_IMG_CLASS. */
 const PREVIEW_LOGO_CLASS: Record<string, string> = {
-  sm: "h-8 w-8 shrink-0 rounded-xl object-contain",
-  md: "h-10 w-10 shrink-0 rounded-xl object-contain",
-  lg: "h-12 w-12 shrink-0 rounded-xl object-contain",
+  sm: "h-8 w-auto max-w-40 shrink-0 rounded-xl object-contain",
+  md: "h-10 w-auto max-w-48 shrink-0 rounded-xl object-contain",
+  lg: "h-12 w-auto max-w-56 shrink-0 rounded-xl object-contain",
 };
 
 /**

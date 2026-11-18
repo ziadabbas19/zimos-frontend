@@ -191,6 +191,52 @@
   height: 100%;
   object-fit: contain;
 }
+/*
+ * A merchant's own logo never decides the header's height: whatever the file's
+ * shape, it is drawn this tall (Small, Medium or Large in the editor), as wide
+ * as its proportions make it, and always inside the bar. A template's own logo
+ * keeps the size its bar was drawn for.
+ */
+.xs-header {
+  --xs-logo-h: 48px;
+}
+.xs-header[data-logo-size="sm"] {
+  --xs-logo-h: 36px;
+}
+.xs-header[data-logo-size="lg"] {
+  --xs-logo-h: 60px;
+}
+@media (max-width: 991px) {
+  .xs-header {
+    --xs-logo-h: 40px;
+  }
+  .xs-header[data-logo-size="sm"] {
+    --xs-logo-h: 32px;
+  }
+  .xs-header[data-logo-size="lg"] {
+    --xs-logo-h: 48px;
+  }
+}
+.xs-header__logo:has(> .xs-header__logo-img:not([data-xs-logo="template"])) {
+  height: var(--xs-logo-h) !important;
+  max-height: 100% !important;
+  align-self: center;
+}
+.xs-header__logo-img:not([data-xs-logo="template"]) {
+  display: block;
+  width: auto !important;
+  height: 100% !important;
+  max-width: min(260px, 46vw) !important;
+  max-height: var(--xs-logo-h, 40px) !important;
+  object-fit: contain !important;
+}
+.xs-footer__logo:not([data-xs-logo="template"]) {
+  width: auto !important;
+  height: auto !important;
+  max-width: min(200px, 60vw) !important;
+  max-height: 64px !important;
+  object-fit: contain !important;
+}
 .xs-header__logo-name {
   font-size: 26px;
   font-weight: 700;

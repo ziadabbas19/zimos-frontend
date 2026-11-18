@@ -55,9 +55,9 @@ import { container } from "./ui";
 
 /** Whole class strings per logo size — Tailwind can't build them at runtime. `md` is the original look. */
 const LOGO_IMG_CLASS: Record<LogoSize, string> = {
-  sm: "h-8 w-8",
-  md: "h-10 w-10",
-  lg: "h-12 w-12",
+  sm: "h-8 w-auto max-w-40",
+  md: "h-10 w-auto max-w-48",
+  lg: "h-12 w-auto max-w-56",
 };
 const LOGO_IMG_PX: Record<LogoSize, number> = { sm: 32, md: 40, lg: 48 };
 const LOGO_MARK_PX: Record<LogoSize, number> = { sm: 26, md: 32, lg: 40 };
@@ -125,7 +125,7 @@ export function StoreHeader({ store, locale }: { store: StorefrontMeta; locale: 
           alt=""
           width={LOGO_IMG_PX[size]}
           height={LOGO_IMG_PX[size]}
-          sizes={`${LOGO_IMG_PX[size]}px`}
+          sizes={`${LOGO_IMG_PX[size] * 4}px`}
           className={`zt-logo-img ${LOGO_IMG_CLASS[size]} shrink-0 rounded-xl object-contain transition-[background-color,box-shadow] duration-200 group-data-[overlay]/header:bg-white/90 group-data-[overlay]/header:p-1 group-data-[overlay]/header:shadow-sm motion-reduce:transition-none`}
         />
       ) : brandingRemoved(store) ? null : (

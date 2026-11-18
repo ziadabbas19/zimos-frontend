@@ -17,6 +17,7 @@ type Rule = (px: number) => string;
 
 const HEADER: Record<string, Rule> = {
   logo: (v) =>
+    `.xs-header[data-zimos-shell]{--xs-logo-h:${v}px}` +
     `.xs-header[data-zimos-shell] .xs-header__logo{height:${v}px!important}` +
     `.xs-header[data-zimos-shell] .xs-header__logo-img{width:auto;max-width:none;height:100%}` +
     `.xs-header[data-zimos-shell] .xs-header__logo-name{font-size:${Math.round(v * 0.6)}px!important}`,
