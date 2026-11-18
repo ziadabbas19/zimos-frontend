@@ -55,6 +55,12 @@ html[lang="ar"] :is([data-slot="editor"], [data-editor-dialog]) :where(p, label,
   line-height: 1.7;
 }
 
+/* Store editor: a control reached with the keyboard always shows where the focus is. */
+[data-slot="editor"] :is(a, button, summary, [role="radio"], [role="switch"], [tabindex]:not(input, select, textarea)):focus-visible {
+  outline-style: solid;
+  outline-width: 2px;
+}
+
 /* Store editor: a segment is drawn inside its track, the finger gets the track's full height. */
 @media (pointer: coarse) {
   [data-slot="editor"] [data-slot="segmented"] button {

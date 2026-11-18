@@ -60,6 +60,31 @@ describe("a dialog and the keyboard", () => {
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "First" }));
   });
 
+  it("gives focus back to a menu's button when it was opened from that menu", () => {
+    function FromMenu() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button aria-haspopup="menu" aria-expanded={!open}>Actions</button>
+          {!open && (
+            <div role="menu">
+              <button role="menuitem" onClick={() => setOpen(true)}>Details</button>
+            </div>
+          )}
+          <Modal open={open} title="Dialog" onClose={() => setOpen(false)}>
+            <button>First</button>
+          </Modal>
+        </>
+      );
+    }
+    render(<FromMenu />);
+    const item = screen.getByRole("menuitem", { name: "Details" });
+    item.focus();
+    fireEvent.click(item);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Actions" }));
+  });
+
   it("closes on Escape", () => {
     const onClose = vi.fn();
     render(<Page onClose={onClose} />);

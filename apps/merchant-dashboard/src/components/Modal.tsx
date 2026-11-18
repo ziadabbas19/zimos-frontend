@@ -52,7 +52,11 @@ export function Modal({ open, onClose, title, description, children, footer, cla
   const target = useRef<HTMLElement | null>(null);
   const panel = useRef<HTMLDivElement>(null);
   // Read while rendering: by the time an effect runs, a field with autoFocus has taken the focus.
-  const focused = () => (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+  const focused = () => {
+    const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    // Opened from a menu: the menu is about to go, its button is where the focus comes back to.
+    return active?.closest('[role="menu"]') ? (document.querySelector<HTMLElement>('[aria-haspopup="menu"][aria-expanded="true"]') ?? active) : active;
+  };
   const [opener, setOpener] = useState(() => (open ? focused() : null));
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {

@@ -41,6 +41,11 @@
  * footer carry a look's token block of their own (data-xs-look), so for them
  * the same holds one level further down.
  */
+/* A template's picture may run past the screen's edge by design: the page never scrolls sideways for it. */
+.brand-theme[data-xs-shell] {
+  overflow-x: clip;
+}
+
 .brand-theme[data-xs-shell] > :not([data-xs-look]),
 .brand-theme[data-xs-shell] > [data-xs-look] > * {
   --font-sans: var(--xs-sans);
