@@ -154,9 +154,10 @@ export function SectionCard({
           data-dragging={isDragging ? "" : undefined}
           data-hidden={hidden ? "" : undefined}
           className={cn(
-            "zimos-section-pill flex items-center rounded-full",
+            "zimos-section-pill flex items-center rounded-[1.5rem]",
             "transition-[background-color,color,box-shadow] duration-[var(--dur-fade)] ease-[var(--ease-out)] motion-reduce:transition-none",
-            touch ? "h-14" : "h-12",
+            // As tall as its words need: a long name wraps instead of being cut.
+            touch ? "min-h-14 py-1" : "min-h-12 py-1",
             selected
               ? "bg-primary text-primary-foreground forced-colors:bg-[color:Highlight] forced-colors:text-[color:HighlightText]"
               : cn("text-ink", isDragging ? "bg-paper-raised ring-1 ring-line" : "hover:bg-paper-sunken"),
@@ -172,7 +173,7 @@ export function SectionCard({
               onClick={onSelect}
               aria-current={selected ? "true" : undefined}
               className={cn(
-                "flex min-w-0 flex-1 cursor-pointer items-center gap-2 self-stretch rounded-full pe-1 text-start outline-none",
+                "flex min-w-0 flex-1 cursor-pointer items-center gap-2 self-stretch rounded-[1.25rem] pe-1 text-start outline-none",
                 "focus-visible:outline-2 focus-visible:-outline-offset-2",
                 selected ? "focus-visible:outline-current" : "focus-visible:outline-primary"
               )}
@@ -186,9 +187,9 @@ export function SectionCard({
                 <NodeIcon icon={icon} className="size-4" />
               </span>
               <span className={cn("min-w-0 flex-1", hidden && "opacity-60")}>
-                <span className="block truncate text-sm font-medium leading-5">{label}</span>
+                <span className="block break-words text-sm font-medium leading-5">{label}</span>
                 {detail && (
-                  <span className={cn("block truncate text-xs leading-4", selected ? "opacity-80" : "text-ink-soft")} dir="auto">
+                  <span className={cn("block break-words text-sm leading-5", selected ? "opacity-80" : "text-ink-soft")} dir="auto">
                     {detail}
                   </span>
                 )}
@@ -282,7 +283,7 @@ export function SectionCard({
           className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 self-stretch rounded-[0.5rem] px-1 text-start outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
         >
           <NodeIcon icon={icon} className="size-4 shrink-0 text-primary" />
-          <span className="truncate text-sm font-medium text-ink">{label}</span>
+          <span className="break-words text-sm font-medium text-ink">{label}</span>
         </button>
         {menuItems ? (
           <RowMenu items={menuItems} label={t.rowMenu(label)} />

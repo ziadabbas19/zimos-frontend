@@ -316,3 +316,15 @@ describe("store look", () => {
     });
   });
 });
+
+describe("lookToPreview — whose colour the frame is showing", () => {
+  const saved = readStoreLook({ logoUrl: null, themeSettings: { primaryColor: "#E8415B", primaryColorSource: "template" } });
+
+  it("says a colour is still the template's, so the frame keeps the template's palette", () => {
+    expect(lookToPreview(saved).primaryColorSource).toBe("template");
+  });
+
+  it("stops saying so the moment the merchant picks one", () => {
+    expect(lookToPreview({ ...saved, primaryColor: "#00A86B", primaryColorFromTemplate: false }).primaryColorSource).toBeUndefined();
+  });
+});

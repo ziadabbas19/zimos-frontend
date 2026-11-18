@@ -110,7 +110,7 @@ export function LayerList({
   announcementOn?: boolean;
   /** `sheet`: inside a sheet on a phone. */
   variant?: "panel" | "sheet";
-  /** «كرّره» in a row's menu, when given. */
+  /** «كرره» in a row's menu, when given. */
   onDuplicate?: (section: PageSection) => void;
   /** «اخفيه / اظهره» in a row's menu, when given. */
   onToggleHidden?: (section: PageSection) => void;
@@ -273,8 +273,8 @@ export function LayerList({
           aria-label={open ? t.hideList : t.showList}
           className="flex min-h-11 w-full shrink-0 cursor-pointer items-center gap-2 px-4 py-2 text-start outline-none transition-colors duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:bg-paper-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none"
         >
-          <span className="min-w-0 flex-1 truncate font-display text-sm font-medium text-ink">{t.listTitle}</span>
-          {sections.length > 0 && <span className="shrink-0 text-xs text-ink-soft tabular-nums">{t.items(sections.length)}</span>}
+          <span className="min-w-0 flex-1 break-words font-display text-sm font-medium text-ink">{t.listTitle}</span>
+          {sections.length > 0 && <span className="shrink-0 text-sm text-ink-soft tabular-nums">{t.items(sections.length)}</span>}
           <IconCaretDown
             className={cn(
               "size-4 shrink-0 text-ink-soft transition-[rotate] duration-[var(--dur-fade)] ease-[var(--ease-out)] motion-reduce:transition-none",
@@ -379,7 +379,7 @@ export function LayerList({
 
 /** The name of one part of the list, above its rows. */
 function GroupTitle({ children }: { children: string }) {
-  return <p className="m-0 px-3 pt-3 pb-1 text-xs font-medium text-ink-soft first:pt-1">{children}</p>;
+  return <p className="m-0 px-3 pt-3 pb-1 text-sm font-medium text-ink-soft first:pt-1">{children}</p>;
 }
 
 /**
@@ -433,8 +433,10 @@ function FixedRow({
       >
         <Glyph className="size-4" aria-hidden />
       </span>
-      <span className={cn("min-w-0 flex-1 truncate text-sm font-medium", muted && !selected && "text-ink-soft")}>{label}</span>
-      <span className={cn("ms-2 hidden shrink-0 text-xs @[15rem]:inline", selected ? "opacity-80" : "text-ink-soft")}>{hint}</span>
+      <span className="min-w-0 flex-1 text-start">
+        <span className={cn("block text-sm font-medium", muted && !selected && "text-ink-soft")}>{label}</span>
+        <span className={cn("block text-xs leading-4", selected ? "opacity-80" : "text-ink-soft")}>{hint}</span>
+      </span>
     </button>
   );
 }

@@ -153,11 +153,25 @@
      default", and any letter the pick has no glyph for, look as they did. */
   --zf-base-sans: var(--font-sans);
   --zf-base-display: var(--font-display);
+
+  /* The store's colours under one set of names, for this mode: what a section
+     that has to work on every template reads. Each resolves from the merchant's
+     Appearance panel (brandTheme.ts) and the look the store wears. */
+  --store-primary: var(--color-primary);
+  --store-on-primary: var(--color-on-primary);
+  --store-accent: var(--color-accent, var(--color-primary));
+  --store-background: var(--color-paper);
+  --store-surface: var(--color-paper-raised);
+  --store-text: var(--color-ink);
+  --store-muted: var(--color-ink-soft);
+  --store-border: var(--color-line);
 }
 
 /* On dark backgrounds the "soft" tints have to sink toward the paper colour
-   rather than white, or they read as glaring light blocks. */
-.dark .brand-theme {
+   rather than white, or they read as glaring light blocks. A store wearing an
+   imported template says it is dark on its own wrapper (lib/storeColorMode). */
+.dark .brand-theme,
+.brand-theme[data-color-mode="dark"] {
   --brand-primary: var(--brand-primary-dark-mode, var(--brand-primary-default));
   --brand-primary-foreground: var(--brand-primary-dark-mode-fg);
 

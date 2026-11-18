@@ -49,7 +49,7 @@ describe("StoreLookPanel — theme", () => {
     expect(screen.queryByRole("radiogroup", { name: "Font" })).toBeNull();
     expect(screen.queryByRole("radiogroup", { name: "Corners" })).toBeNull();
     expect(screen.queryByText("Second colour")).toBeNull();
-    expect(screen.getByText(/A theme sets the fonts, corners, buttons, cards, spacing and hero layout/)).toBeInTheDocument();
+    expect(screen.getByText(/A theme sets the fonts, corners, buttons, cards, spacing and main banner layout/)).toBeInTheDocument();
   });
 });
 
@@ -66,13 +66,14 @@ describe("StoreLookPanel — accent per mode", () => {
     // One deep blue for both modes: fine on white, hard to read on the dark page.
     const { user, onChange, onPreviewMode } = renderPanel(look({ primaryColor: "#1E40AF" }));
     const warning = screen.getByRole("status");
-    expect(within(warning).getByText("Hard to read in dark mode")).toBeInTheDocument();
-    expect(within(warning).getByText(/This colour as text on your background: \d\.\d : 1/)).toBeInTheDocument();
-    expect(within(warning).getByText("Aim for at least 4.5 : 1. You can still save it.")).toBeInTheDocument();
+    expect(within(warning).getByText("This colour is hard to read in dark mode")).toBeInTheDocument();
+    expect(within(warning).getByText(/Links and prices on your page: \d\.\d : 1\. They need 4\.5 : 1\./)).toBeInTheDocument();
+    expect(within(warning).getByText("You can keep this colour, but some shoppers may not be able to read it.")).toBeInTheDocument();
     // Light mode reads fine.
-    expect(screen.getByText(/^Easy to read — button text/)).toBeInTheDocument();
+    expect(screen.getByText(/^Easy to read\. Button text/)).toBeInTheDocument();
 
     const use = within(warning).getByRole("button", { name: /Use the suggested colour #[0-9A-F]{6} in dark mode/ });
+    expect(use).toHaveTextContent(/Use the suggested colour\s*#[0-9A-F]{6}/);
     await user.click(use);
     const next = onChange.mock.lastCall![0];
     expect(next.primaryColor).toBe("#1E40AF");
@@ -87,7 +88,7 @@ describe("StoreLookPanel — accent per mode", () => {
     renderPanel(look({ storeTheme: "bold", primaryColor: "#FFD60A", primaryColorDark: "#FFD60A" }));
     const warnings = screen.getAllByRole("status");
     expect(warnings).toHaveLength(1);
-    expect(within(warnings[0]).getByText("Hard to read in light mode")).toBeInTheDocument();
+    expect(within(warnings[0]).getByText("This colour is hard to read in light mode")).toBeInTheDocument();
   });
 
   it("lets a separate dark colour go back to following light mode", async () => {

@@ -160,13 +160,13 @@ export function ShellPanel({
       {usage > 1 ? (
         <p
           role="alert"
-          className="border-b border-line bg-danger-soft px-[var(--look-gutter)] py-2 text-xs font-medium text-danger"
+          className="border-b border-line bg-danger-soft px-[var(--look-gutter)] py-2 text-sm font-medium text-danger"
         >
           {ui.shellTooLarge}
         </p>
       ) : (
         usage >= 0.8 && (
-          <p className="border-b border-line px-[var(--look-gutter)] py-2 text-xs text-ink-soft">
+          <p className="border-b border-line px-[var(--look-gutter)] py-2 text-sm text-ink-soft">
             {ui.shellSizeWarning(pct)}
           </p>
         )
@@ -191,7 +191,7 @@ export function ShellPanel({
   if (sheet) {
     return (
       <div data-slot="store-shell" data-variant="sheet" data-part={part} style={gutters} className="zimos-look">
-        <p className="pb-1 text-xs text-ink-soft">{hint}</p>
+        <p className="pb-1 text-sm text-ink-soft">{hint}</p>
         {fields}
       </div>
     );
@@ -213,8 +213,8 @@ export function ShellPanel({
           <PartIcon className="size-[18px]" aria-hidden />
         </span>
         <div className="min-w-0 flex-1 py-0.5">
-          <h2 className="truncate text-sm font-semibold text-ink">{shellPartLabel(part, ui)}</h2>
-          <p className="mt-0.5 text-xs text-ink-soft">{hint}</p>
+          <h2 className="break-words text-sm font-semibold text-ink">{shellPartLabel(part, ui)}</h2>
+          <p className="mt-0.5 text-sm text-ink-soft">{hint}</p>
         </div>
         <button
           type="button"
@@ -233,7 +233,7 @@ export function ShellPanel({
 
 /** The small name over a control that has no label of its own (a segmented choice). */
 function ControlLabel({ children }: { children: ReactNode }) {
-  return <p className="text-xs font-medium text-ink-soft">{children}</p>;
+  return <p className="text-sm font-medium text-ink-soft">{children}</p>;
 }
 
 /** The header's, the footer's and the announcement bar's Font block (components/fonts). */
@@ -246,7 +246,7 @@ const SHELL_FONT = {
   ar: {
     header: { title: "خط رأس الصفحة", hint: "اسم المتجر والقائمة وشريط الإعلان. الافتراضي يستخدم خطوط المتجر (الإعدادات ← خطوط المتجر)." },
     footer: { title: "خط تذييل الصفحة", hint: "كل ما في تذييل الصفحة. الافتراضي يستخدم خطوط المتجر (الإعدادات ← خطوط المتجر)." },
-    announcement: { title: "الخط", hint: "شريط الإعلان بيتكتب بخط رأس الصفحة: تغييره هنا بيغيّر رأس الصفحة كمان." },
+    announcement: { title: "الخط", hint: "شريط الإعلان بيتكتب بخط رأس الصفحة: تغييره هنا بيغير رأس الصفحة كمان." },
   },
 } as const;
 
@@ -417,8 +417,8 @@ function ShellColours({
       {wells.map(([key, label, labelAr]) => (
         <ColorWell key={key} label={ar ? labelAr : label} value={colors?.[key] ?? null} fallback="#ffffff" onChange={(hex) => setColour(key, hex)}>
           {colors?.[key] ? (
-            <button type="button" className="text-xs text-ink-soft underline underline-offset-2 hover:text-ink" onClick={() => setColour(key, undefined)}>
-              {ar ? "رجّع لون القالب" : "Back to the template's colour"}
+            <button type="button" className="text-sm text-ink-soft underline underline-offset-2 hover:text-ink" onClick={() => setColour(key, undefined)}>
+              {ar ? "رجع لون القالب" : "Back to the template's colour"}
             </button>
           ) : null}
         </ColorWell>
@@ -457,7 +457,7 @@ function HeaderLogo({ look, onChange }: { look: StoreLook; onChange: OnLookChang
       {asName ? null : template && header.logoImage ? (
         <div className="space-y-2 rounded-xl bg-paper-sunken p-3">
           <img src={storePictureSrc(header.logoImage) ?? undefined} alt="" className="max-h-10 max-w-40 object-contain" />
-          <p className="text-xs text-ink-soft">
+          <p className="text-sm text-ink-soft">
             {ar ? "هذه الترويسة تعرض صورة خاصة بها بدل شعار متجرك." : "This header shows a picture of its own instead of your store's logo."}
           </p>
           <button type="button" onClick={() => set({ logoImage: undefined })} className={lookTextButtonClass}>
@@ -470,7 +470,7 @@ function HeaderLogo({ look, onChange }: { look: StoreLook; onChange: OnLookChang
           hint={
             template
               ? ar
-                ? "يظهر في الترويسة والتذييل وقائمة الموبايل، وكأيقونة متجرك في المتصفح. لو تركته فارغًا يظهر شعار القالب."
+                ? "يظهر في الترويسة والتذييل وقائمة الموبايل، وكأيقونة متجرك في المتصفح. لو تركته فارغا يظهر شعار القالب."
                 : "Shown in the header, the footer and the phone menu, and as your store's browser tab icon. Left empty, the template's own logo shows."
               : ui.logoHint
           }
@@ -636,7 +636,7 @@ function FooterFields({ look, onChange, pages }: { look: StoreLook; onChange: On
         {footer.showLinks &&
           (groups === null ? (
             <>
-              <p className="text-xs text-ink-soft">{ui.footerDefaultNote}</p>
+              <p className="text-sm text-ink-soft">{ui.footerDefaultNote}</p>
               <Button
                 type="button"
                 size="sm"
@@ -664,7 +664,7 @@ function FooterFields({ look, onChange, pages }: { look: StoreLook; onChange: On
                       onChange={(e) => setGroup(group.id, { title: e.target.value }, `shell:footer:group:${group.id}`)}
                       className="h-9 min-w-0 flex-1 text-sm font-medium pointer-coarse:h-11"
                     />
-                    <span className="shrink-0 px-1 text-[11px] text-ink-soft">{t.groupLinks(group.links.length)}</span>
+                    <span className="shrink-0 px-1 text-xs text-ink-soft">{t.groupLinks(group.links.length)}</span>
                     <button
                       type="button"
                       aria-label={ui.removeGroup(i + 1)}
@@ -697,7 +697,7 @@ function FooterFields({ look, onChange, pages }: { look: StoreLook; onChange: On
                   <IconPlus className="size-4" aria-hidden />
                   {ui.addGroup}
                 </Button>
-                <span className="text-xs text-ink-soft">{ui.maxGroups(MAX_FOOTER_GROUPS)}</span>
+                <span className="text-sm text-ink-soft">{ui.maxGroups(MAX_FOOTER_GROUPS)}</span>
               </div>
               <button type="button" onClick={() => set({ groups: null })} className={lookTextButtonClass}>
                 {ui.useStandardGroup}
@@ -814,7 +814,7 @@ function ShellLinksEditor({
           <IconPlus className="size-4" aria-hidden />
           {ui.addLink}
         </Button>
-        <span className="text-xs text-ink-soft">{ui.maxLinks(max)}</span>
+        <span className="text-sm text-ink-soft">{ui.maxLinks(max)}</span>
       </div>
     </div>
   );
@@ -893,8 +893,8 @@ function SortableLinkRow({
       </button>
       <div className="col-span-2 col-start-2 min-w-0 space-y-1.5 pe-1">
         <LinkTargetField link={link} pages={pages} index={index} onPatch={onPatch} />
-        {unlabelled && <p className="text-xs font-medium text-danger">{ui.linkLabelRequired}</p>}
-        {submenu > 0 && <p className="text-xs text-ink-soft">{t.submenuKept(submenu)}</p>}
+        {unlabelled && <p className="text-sm font-medium text-danger">{ui.linkLabelRequired}</p>}
+        {submenu > 0 && <p className="text-sm text-ink-soft">{t.submenuKept(submenu)}</p>}
       </div>
     </li>
   );
@@ -946,7 +946,7 @@ function LinkTargetField({
       aria-haspopup="dialog"
       onClick={phone ? () => setOpen(true) : undefined}
       className={cn(
-        "zimos-look-target flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-[0.75rem] bg-paper-sunken px-2.5 text-start text-xs ring-1 ring-line",
+        "zimos-look-target flex min-h-9 w-full cursor-pointer items-center gap-2 rounded-[0.75rem] bg-paper-sunken px-2.5 text-start text-sm ring-1 ring-line",
         "transition-[scale,box-shadow] duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:ring-line-strong active:scale-[0.99]",
         "focus-visible:outline-2 focus-visible:outline-primary pointer-coarse:min-h-11 pointer-coarse:text-sm motion-reduce:transition-none"
       )}
@@ -955,11 +955,11 @@ function LinkTargetField({
       <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
         <span className={cn("shrink-0", place ? "text-ink-soft" : "font-medium text-ink")}>{kindName}</span>
         {place ? (
-          <bdi dir={placeIsAddress ? "ltr" : undefined} className="min-w-0 truncate font-medium text-ink">
+          <bdi dir={placeIsAddress ? "ltr" : undefined} className="min-w-0 break-all font-medium text-ink">
             {place}
           </bdi>
         ) : (
-          missing && <span className="min-w-0 truncate text-danger">{t.linkTargetEmpty}</span>
+          missing && <span className="min-w-0 break-words text-danger">{t.linkTargetEmpty}</span>
         )}
       </span>
       <IconCaretDown className="size-3.5 shrink-0 text-ink-soft" aria-hidden />
@@ -1065,7 +1065,7 @@ function LinkTargetChooser({
                   className={cn("size-[18px] shrink-0", current ? "text-primary" : "text-ink-soft")}
                   aria-hidden
                 />
-                <span className="min-w-0 flex-1 truncate">{ui.linkKind(kind)}</span>
+                <span className="min-w-0 flex-1 break-words">{ui.linkKind(kind)}</span>
                 {fixed !== null ? (
                   current && <IconCheck className="size-4 shrink-0 text-primary" aria-hidden />
                 ) : (
@@ -1084,7 +1084,7 @@ function LinkTargetChooser({
       <button type="button" aria-label={t.back} title={t.back} onClick={() => go("root")} className={lookIconButtonClass}>
         <IconCaretLeft className="size-4 rtl:-scale-x-100" aria-hidden />
       </button>
-      <p className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{ui.linkKind(step)}</p>
+      <p className="min-w-0 flex-1 break-words text-sm font-semibold text-ink">{ui.linkKind(step)}</p>
     </div>
   );
 
@@ -1113,7 +1113,7 @@ function LinkTargetChooser({
               onPatch({ kind: "url", href: e.target.value }, "href");
             }}
           />
-          <p className="text-xs text-ink-soft">{ui.webAddressHint}</p>
+          <p className="text-sm text-ink-soft">{ui.webAddressHint}</p>
           <div className="flex justify-end pt-1">
             <Button type="submit" size="sm">
               {t.done}
@@ -1197,7 +1197,7 @@ function PickList({
     ? items.filter((item) => `${item.name} ${item.detail ?? ""}`.toLocaleLowerCase().includes(needle))
     : items;
 
-  if (items.length === 0) return <p className="px-2.5 py-3 text-xs text-ink-soft">{empty}</p>;
+  if (items.length === 0) return <p className="px-2.5 py-3 text-sm text-ink-soft">{empty}</p>;
 
   return (
     <div className="space-y-1.5">
@@ -1219,7 +1219,7 @@ function PickList({
         </div>
       )}
       {shown.length === 0 ? (
-        <p className="px-2.5 py-3 text-xs text-ink-soft">{t.noMatches}</p>
+        <p className="px-2.5 py-3 text-sm text-ink-soft">{t.noMatches}</p>
       ) : (
         <ul className={cn("space-y-0.5", !roomy && "max-h-64 overflow-y-auto overscroll-contain")}>
           {shown.map((item) => {
@@ -1233,11 +1233,11 @@ function PickList({
                   className={optionClass}
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate" dir="auto">
+                    <span className="block break-words" dir="auto">
                       {item.name}
                     </span>
                     {item.detail && (
-                      <bdi dir="ltr" className="block truncate text-start text-[11px] text-ink-soft">
+                      <bdi dir="ltr" className="block break-all text-start text-xs text-ink-soft">
                         {item.detail}
                       </bdi>
                     )}
@@ -1344,7 +1344,7 @@ function CatalogPick({
   if (catalog.failed) {
     return (
       <div className="flex items-center gap-2 px-2.5 py-2">
-        <p role="alert" className="min-w-0 flex-1 text-xs text-danger">
+        <p role="alert" className="min-w-0 flex-1 text-sm text-danger">
           {ui.listFailed}
         </p>
         <button type="button" onClick={catalog.retry} className={lookTextButtonClass}>

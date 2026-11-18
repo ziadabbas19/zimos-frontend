@@ -136,9 +136,9 @@ function BlockLibraryPanel({
         <div className="border-b border-line px-4 py-3">
           <h2 className="font-display text-sm font-medium text-ink">{ui.addBlock}</h2>
           {insertPosition === null ? (
-            <p className="text-xs text-ink-soft">{ui.addBlockHint}</p>
+            <p className="text-sm text-ink-soft">{ui.addBlockHint}</p>
           ) : (
-            <p className="mt-1 flex items-center justify-between gap-2 rounded-[0.5rem] bg-primary-soft px-2 py-1 text-xs font-medium text-primary-dark dark:text-primary">
+            <p className="mt-1 flex items-center justify-between gap-2 rounded-[0.5rem] bg-primary-soft px-2 py-1 text-sm font-medium text-primary-dark dark:text-primary">
               <span>{ui.insertingAt(insertPosition)}</span>
               {onCancelInsert && (
                 <button
@@ -188,7 +188,7 @@ function BlockLibraryPanel({
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2.5">
         {showPopular && POPULAR_PRESETS.length > 0 && (
           <div className="mb-3">
-            <p className="mb-1.5 px-0.5 text-[11px] font-semibold text-ink-soft">{ui.popularBlocks}</p>
+            <p className="mb-1.5 px-0.5 text-xs font-semibold text-ink-soft">{ui.popularBlocks}</p>
             <ul className={grid}>
               {POPULAR_PRESETS.map((preset) => (
                 <PanelCard key={preset.key} preset={preset} locale={locale} onAdd={onAdd} onDragStart={onDragStart} onDragEnd={onDragEnd} />
@@ -254,7 +254,7 @@ function PanelCard({
         className="zimos-library-card group flex h-full w-full cursor-grab flex-col gap-1.5 rounded-[0.875rem] bg-paper-raised p-1.5 text-start ring-1 ring-line transition-[box-shadow,background-color] duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:ring-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:cursor-grabbing motion-reduce:transition-none"
       >
         <PresetThumbnail preset={preset} />
-        <span className="px-0.5 pb-0.5 text-[11px] leading-snug font-medium text-ink">{text.label}</span>
+        <span className="px-0.5 pb-0.5 text-xs leading-snug font-medium text-ink">{text.label}</span>
       </button>
     </li>
   );
@@ -371,7 +371,7 @@ function LibraryBrowser({
         </div>
       ) : (
         <section>
-          <h3 className="mb-2 text-xs font-medium text-ink-soft" aria-live="polite">
+          <h3 className="mb-2 text-sm font-medium text-ink-soft" aria-live="polite">
             {t.results(results.length)}
           </h3>
           <ul className={GRID}>{results.map(card)}</ul>
@@ -449,8 +449,8 @@ function LibraryCard({
       >
         <PresetThumbnail preset={preset} />
         <span className="block min-w-0 px-1 pb-1">
-          <span className="block truncate text-sm font-medium text-ink">{text.label}</span>
-          <span className="mt-0.5 line-clamp-2 text-xs leading-[1.125rem] text-ink-soft">{text.description}</span>
+          <span className="block break-words text-sm font-medium text-ink">{text.label}</span>
+          <span className="mt-0.5 line-clamp-2 text-sm leading-[1.125rem] text-ink-soft">{text.description}</span>
         </span>
       </button>
     </li>

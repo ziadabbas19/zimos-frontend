@@ -153,7 +153,7 @@ describe("the website editor", () => {
     await draftSays("All saved");
     await user.click(screen.getByRole("button", { name: "More" }));
     const items = (await screen.findAllByRole("menuitem")).map((item) => item.textContent ?? "");
-    expect(items).toContain("Page settings (SEO)");
+    expect(items).toContain("Page name and Google search");
     expect(items.join(" | ")).not.toMatch(/script|trash|texts|email/i);
   });
 });

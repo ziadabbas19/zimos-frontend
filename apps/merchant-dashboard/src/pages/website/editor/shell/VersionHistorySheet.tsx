@@ -115,18 +115,18 @@ function VersionList({
                     {fmt(t.revision, { n: row.revisionNumber })}
                     {live && <StatusBadge value="published" text={t.liveNow} tone="success" />}
                   </p>
-                  <p className="mt-0.5 text-xs leading-5 text-ink-soft">
+                  <p className="mt-0.5 text-sm leading-5 text-ink-soft">
                     <span title={formatDateTime(row.createdAt)}>{formatRelativeTime(row.createdAt)}</span>
                     <span aria-hidden> · </span>
                     {formatDateTime(row.createdAt)}
                   </p>
-                  <p className="text-xs leading-5 text-ink-soft">
+                  <p className="text-sm leading-5 text-ink-soft">
                     {pluralOf(t, "pages", row.pageCount)}
                     <span aria-hidden> · </span>
                     {user && row.publishedByUserId === user.id ? t.byYou : t.byTeam}
                   </p>
                   {row.note && (
-                    <p dir="auto" className="mt-1 text-xs leading-5 text-ink">
+                    <p dir="auto" className="mt-1 text-sm leading-5 text-ink">
                       {row.note}
                     </p>
                   )}

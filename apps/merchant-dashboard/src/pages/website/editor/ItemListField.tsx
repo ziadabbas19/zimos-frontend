@@ -301,7 +301,7 @@ export function ItemListField({
     <div data-slot="inspector-items" className="space-y-2">
       <Label>{label}</Label>
       {items.length === 0 ? (
-        <p className="text-xs leading-5 text-ink-soft">{t.itemsEmpty}</p>
+        <p className="text-sm leading-5 text-ink-soft">{t.itemsEmpty}</p>
       ) : (
         <ul ref={listRef} className="space-y-2">
           {items.map((item, i) => {
@@ -377,7 +377,7 @@ export function ItemListField({
                       }}
                     />
                   )}
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink" dir="auto">
+                  <span className="min-w-0 flex-1 break-words text-sm font-medium text-ink" dir="auto">
                     {title}
                   </span>
                   <IconCaretDown
@@ -462,8 +462,8 @@ export function ItemListField({
         <IconPlus className="size-4" aria-hidden />
         {t.itemAdd(noun)}
       </Button>
-      {items.length >= max && <p className="text-xs leading-5 text-ink-soft">{t.itemsFull(inspectorNumber(max, locale))}</p>}
-      {hint && <p className="text-xs leading-5 text-ink-soft">{hint}</p>}
+      {items.length >= max && <p className="text-sm leading-5 text-ink-soft">{t.itemsFull(inspectorNumber(max, locale))}</p>}
+      {hint && <p className="text-sm leading-5 text-ink-soft">{hint}</p>}
     </div>
   );
 }

@@ -43,7 +43,7 @@ import { StoreShellProvider } from "@/lib/StoreShellContext";
 import { getStoreLocale, storePhone } from "@/lib/storeLocale";
 import { brandStyle, getStoreCollections, getStoreState, type UnavailableStore } from "@/lib/storeMeta";
 import { storeThemeOf } from "@/lib/brandTheme";
-import { xsOwnAccent, xsShellOf } from "@/lib/xsShell";
+import { xsDarkAccentOf, xsOwnAccent, xsOwnAccentDark, xsShellOf } from "@/lib/xsShell";
 import { readXsStorePages } from "@/lib/xsStorePages";
 import { readAllStoreWords } from "@/lib/storeWords";
 import { XsFooter } from "@/components/xs/XsFooter";
@@ -223,8 +223,8 @@ export default async function StoreLayout({
   const colorMode = await getStoreColorMode(store);
   const dark = Boolean(xsShell) && colorMode === "dark";
   // The store's own brand colour as words on the dark ground (scripts/xs-dark.mjs reads it).
-  const ownAccentText =
-    dark && xsOwnAccent(store.themeSettings) ? lightenToRead(String(store.themeSettings?.primaryColor ?? "")) : null;
+  const darkAccent = dark ? xsDarkAccentOf(store.themeSettings) : null;
+  const ownAccentText = darkAccent ? lightenToRead(darkAccent) : null;
   // The website editor showing this page in its frame, in its unsaved look (lib/editorView).
   const editorView = await getEditorView(workspaceId);
   // The merchant's ad pixels (dashboard → Marketing), loaded only when one is set.
@@ -264,6 +264,7 @@ export default async function StoreLayout({
               data-store-theme={theme ?? undefined}
               data-xs-shell={xsShell ?? undefined}
               data-xs-own-accent={xsOwnAccent(store.themeSettings) ? "" : undefined}
+              data-xs-own-accent-dark={xsOwnAccentDark(store.themeSettings) ? "" : undefined}
               data-color-mode={dark ? "dark" : undefined}
               suppressHydrationWarning
             >

@@ -588,6 +588,14 @@ export interface WebsitePage {
   updatedAt: string;
   /** Present on list/get/update responses: true once the page has been published. */
   isLive?: boolean;
+  /** Listed in the store's header menu. */
+  showInHeader?: boolean;
+  /** Listed in the store's footer. */
+  showInFooter?: boolean;
+  /** Its place in the store's menus; null follows the ordered pages, by address. */
+  menuOrder?: number | null;
+  /** On an update that moved a published page: the old address now sends shoppers here. */
+  redirectCreated?: { fromPath: string; toPath: string; statusCode: number } | null;
 }
 
 /** One published snapshot of a website. `revisionNumber` starts at 1. */
@@ -631,6 +639,9 @@ export interface CreateWebsitePagePayload {
   pageType?: WebsitePage["pageType"];
   draftData?: PageTree;
   seo?: Record<string, unknown>;
+  showInHeader?: boolean;
+  showInFooter?: boolean;
+  menuOrder?: number | null;
 }
 
 /** PATCH body for a page. `.min(1)` server-side — send at least one key. */
@@ -640,6 +651,9 @@ export interface UpdateWebsitePagePayload {
   pageType?: WebsitePage["pageType"];
   draftData?: PageTree;
   seo?: Record<string, unknown>;
+  showInHeader?: boolean;
+  showInFooter?: boolean;
+  menuOrder?: number | null;
 }
 
 export interface CreateWebsitePayload {

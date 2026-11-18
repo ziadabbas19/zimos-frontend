@@ -100,7 +100,7 @@ export function CanvasTips({ onDismiss }: { onDismiss: () => void }) {
     <aside
       data-slot="editor-tips"
       aria-label={t.tips}
-      className="pointer-events-auto flex max-w-full items-center gap-1 rounded-full bg-paper-raised py-1 ps-4 pe-1 text-xs text-ink shadow-[var(--shadow-raised)] ring-1 ring-line"
+      className="pointer-events-auto flex max-w-full items-center gap-1 rounded-full bg-paper-raised py-1 ps-4 pe-1 text-sm text-ink shadow-[var(--shadow-raised)] ring-1 ring-line"
     >
       <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 py-1">
         <span>{t.tipText}</span>
@@ -124,7 +124,7 @@ export function CanvasTips({ onDismiss }: { onDismiss: () => void }) {
 
 /**
  * The first-run steps, for a site that came straight from the template
- * gallery and has never been published: «اختار القالب ✓ → لوّنه بهويتك → انشر».
+ * gallery and has never been published: «اختار القالب ✓ → لونه بهويتك → انشر».
  * Step two opens the store look, step three the publish sheet. It goes away
  * when dismissed, and for good once the site is published.
  */
@@ -140,10 +140,10 @@ export function GuideStrip({
   onDismiss: () => void;
 }) {
   const t = useT(SHELL_STRINGS);
-  const step = "inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium whitespace-nowrap pointer-coarse:min-h-11";
+  const step = "inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-medium whitespace-nowrap pointer-coarse:min-h-11";
   const action =
     "cursor-pointer bg-paper-raised text-ink ring-1 ring-line transition-[scale,background-color] duration-[var(--dur-fade)] ease-[var(--ease-out)] ring-inset hover:bg-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.97] motion-reduce:transition-none";
-  const badge = "flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold tabular-nums";
+  const badge = "flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums";
   const arrow = <IconCaretRight className="size-3.5 shrink-0 text-ink-soft rtl:-scale-x-100" aria-hidden />;
   const done = (
     <span className={cn(badge, "bg-success text-paper-raised")}>

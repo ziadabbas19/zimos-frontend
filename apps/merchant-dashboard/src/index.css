@@ -49,3 +49,26 @@
   position: relative;
   z-index: 30;
 }
+
+/* Store editor: Arabic letters need more room between lines than Latin ones. */
+html[lang="ar"] :is([data-slot="editor"], [data-editor-dialog]) :where(p, label, li, small, summary, h2, h3, h4, dd, dt) {
+  line-height: 1.7;
+}
+
+/* Store editor: a control reached with the keyboard always shows where the focus is. */
+[data-slot="editor"] :is(a, button, summary, [role="radio"], [role="switch"], [tabindex]:not(input, select, textarea)):focus-visible {
+  outline-style: solid;
+  outline-width: 2px;
+}
+
+/* Store editor: a segment is drawn inside its track, the finger gets the track's full height. */
+@media (pointer: coarse) {
+  [data-slot="editor"] [data-slot="segmented"] button {
+    position: relative;
+  }
+  [data-slot="editor"] [data-slot="segmented"] button::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+}

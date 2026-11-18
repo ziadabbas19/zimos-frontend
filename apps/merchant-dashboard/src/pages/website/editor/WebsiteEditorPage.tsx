@@ -25,13 +25,15 @@ import { LayerList } from "./LayerList";
 import { SectionInspector, type InspectorTab } from "./SectionInspector";
 import { namedStylesOf } from "./ElementStylePanel";
 import { StoreLookPanel, ThemePresetRow } from "./StoreLookPanel";
+import { getErrorMessage } from "@/lib/errors";
 import { NewPageDialog } from "./NewPageDialog";
-import { PageTabs } from "./PageTabs";
+import { PageDetailsDialog } from "./PageDetailsDialog";
+import { PageTabs, type PageManagement } from "./PageTabs";
 import { deepTextOf, inlineTextIds, sectionHidden } from "./canvasTools";
 import { ShellPanel } from "./ShellPanels";
 import { sectionElements, sectionLabel, soleElementId, type BlockPreset } from "./blocks";
 import { EditorLocaleContext, editorUi, useEditorLocale } from "./editorLocale";
-import { shellPartLabel, withShellSize, type ShellPart } from "./storeShell";
+import { MAX_MENU_LINKS, newLink, shellPartLabel, withShellSize, type ShellPart } from "./storeShell";
 import { stepEdit, type CanvasEdit } from "@/lib/canvasDrag";
 import { EditorScreenProvider, ShellPartFocusProvider, screenOf } from "./editorScreen";
 import { StorePageList, storePageName, type StorePath } from "./StorePageList";
@@ -42,6 +44,7 @@ import { EditorCanvas } from "./shell/EditorCanvas";
 import { EditorPageSettings } from "./shell/EditorPageSettings";
 import { CanvasTips, EditorStage, GuideStrip, LookBar } from "./shell/EditorStage";
 import type { FocusItem } from "./inspector/env";
+import { DemoLanguageBar } from "./shell/DemoLanguageBar";
 import { EditorToolbar, type EditorMenuItem, type SiteStatus } from "./shell/EditorToolbar";
 import { EndPanel, LookIntro } from "./shell/EndPanel";
 import { PageSwitcher } from "./shell/PageSwitcher";
@@ -123,6 +126,9 @@ function WebsiteEditor() {
   // own pages in the page list, copy and paste — on a store that wears one of those templates (or while
   // XS_ONLY is on). Any other store's editor is as it was.
   const xsEditor = xsLook !== null || XS_ONLY;
+  // The language shoppers get first: the merchant's choice, else the store's own, Arabic (storefront lib/shopperDisplay).
+  const shopperDisplay = currentWorkspace?.themeSettings?.shopperDisplay as { locale?: unknown } | undefined;
+  const storeLanguage = shopperDisplay?.locale === "en" ? "en" : "ar";
   const toast = useToast();
   const locale = useEditorLocale();
   const ui = editorUi(locale);
@@ -208,12 +214,13 @@ function WebsiteEditor() {
   const [sectionsOpen, setSectionsOpen] = useState(false);
   const [lookOpen, setLookOpen] = useState(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
-  /** Below lg, the first-run «لوّنه بهويتك»: the ready styles alone, in a short sheet under the store. */
+  /** Below lg, the first-run «لونه بهويتك»: the ready styles alone, in a short sheet under the store. */
   const [brandOpen, setBrandOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<PageSettingsTab>("seo");
   const [showNewPage, setShowNewPage] = useState(false);
+  const [editingPageId, setEditingPageId] = useState<string | null>(null);
   /** Asked from the keyboard (Delete / Backspace): a stray key should not cost a section. */
   const [pendingDelete, setPendingDelete] = useState<PageSection | null>(null);
   const [pendingPageDelete, setPendingPageDelete] = useState<WebsitePage | null>(null);
@@ -448,6 +455,41 @@ function WebsiteEditor() {
     toast.success(ui.pageCreated(created.title));
   }
 
+  // --- the pages' own tools: details, menus, order and copies -----------------------
+  const editingPage = pages.find((p) => p.id === editingPageId) ?? null;
+  const headerMenu = doc.look.header.menu;
+  const productsMenu = (headerMenu ?? []).some((link) => link.href.split("?")[0] === "/products")
+    ? "added"
+    : (headerMenu?.length ?? 1) >= MAX_MENU_LINKS
+      ? "full"
+      : "available";
+
+  /** The store's own products page, added to the header menu; a store on the built-in menu keeps Home first. */
+  function addProductsToMenu() {
+    const label = storeLanguage === "ar" ? "المنتجات" : "Products";
+    const menu = headerMenu ?? [newLink("home")];
+    doc.updateLook({ ...doc.look, header: { ...doc.look.header, menu: [...menu, { ...newLink("page"), label, href: "/products" }] } });
+    toast.success(ui.productsAdded);
+  }
+
+  /** Runs a page tool, saying what went wrong when the server refuses it. */
+  function pageTool(run: () => Promise<unknown>) {
+    run().catch((err: unknown) => toast.error(getErrorMessage(err)));
+  }
+
+  const pageManagement: PageManagement = {
+    onEdit: (target) => setEditingPageId(target.id),
+    onToggleMenu: (target, place) => pageTool(() => doc.savePageDetails(target.id, { [place]: target[place] !== true })),
+    onReorder: (orderedIds) => pageTool(() => doc.reorderPages(orderedIds)),
+    onDuplicate: (target) =>
+      pageTool(async () => {
+        // The copy is of what the merchant sees: an edit still waiting is stored first.
+        if (!(await doc.flush())) throw new Error(t.switchBody);
+        const created = await doc.duplicatePage(target, ui.pageCopyWord);
+        toast.success(ui.pageCreated(created.title));
+      }),
+  };
+
   async function deletePage(target: WebsitePage) {
     const deleted = await doc.deletePage(target);
     setPendingPageDelete(null);
@@ -595,6 +637,7 @@ function WebsiteEditor() {
     <>
       <PageTabs
         variant="list"
+        manage={pageManagement}
         pages={pages}
         selectedId={shownStoreView ? null : doc.selectedPageId}
         onSelect={(pageId) => {
@@ -713,6 +756,18 @@ function WebsiteEditor() {
       {firstRun && (
         <GuideStrip brandDone={doc.lookSaves > 0} onBrand={openBrand} onPublish={publish.start} onDismiss={dismissGuide} />
       )}
+
+      {/* The template's sample words in the other language than the store's: one press puts them right. */}
+      <DemoLanguageBar
+        xsLook={xsLook}
+        language={storeLanguage}
+        sections={doc.sections}
+        look={doc.look}
+        onApply={(sections, next) => {
+          doc.setSections(() => sections);
+          doc.updateLook(next);
+        }}
+      />
 
       {/* A failed save says so in words, with the reason and the way out. The changes stay in memory. */}
       {doc.saveState === "failed" && (
@@ -952,8 +1007,6 @@ function WebsiteEditor() {
         error={publish.error}
         problems={publish.problems}
         lookDirty={doc.lookDirty}
-        savingLook={doc.savingLook}
-        onSaveLook={() => void saveLookNow()}
         onPublish={() => void publish.publishNow()}
         onOpenPage={(pageId) => {
           publish.setOpen(false);
@@ -982,7 +1035,27 @@ function WebsiteEditor() {
         />
       )}
 
-      <NewPageDialog open={showNewPage} onClose={() => setShowNewPage(false)} onCreate={createPage} />
+      <NewPageDialog
+        open={showNewPage}
+        onClose={() => setShowNewPage(false)}
+        onCreate={createPage}
+        takenPaths={pages.map((p) => p.path)}
+        language={storeLanguage}
+        productsMenu={productsMenu}
+        onAddProductsToMenu={addProductsToMenu}
+      />
+      {editingPage && (
+        <PageDetailsDialog
+          key={editingPage.id}
+          page={editingPage}
+          takenPaths={pages.filter((p) => p.id !== editingPage.id).map((p) => p.path)}
+          onClose={() => setEditingPageId(null)}
+          onSave={async (patch) => {
+            const saved = await doc.savePageDetails(editingPage.id, patch);
+            toast.success(saved.redirectCreated ? ui.pageMoved(saved.redirectCreated.fromPath, saved.path) : ui.pageDetailsSaved(saved.title));
+          }}
+        />
+      )}
 
       {/* Only the keyboard asks: a button deletes at once and offers Undo. */}
       <ConfirmDialog

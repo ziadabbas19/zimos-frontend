@@ -45,7 +45,7 @@ import { headerMenuOf } from "./headerMenu";
 const MAX_TOP_COLLECTIONS = 30;
 const MAX_SUB_COLLECTIONS = 12;
 
-const LOGO_IMG_CLASS: Record<LogoSize, string> = { sm: "h-8 w-8", md: "h-10 w-10", lg: "h-12 w-12" };
+const LOGO_IMG_CLASS: Record<LogoSize, string> = { sm: "h-8 w-auto max-w-32", md: "h-10 w-auto max-w-36", lg: "h-12 w-auto max-w-40" };
 const LOGO_IMG_PX: Record<LogoSize, number> = { sm: 32, md: 40, lg: 48 };
 const LOGO_MARK_PX: Record<LogoSize, number> = { sm: 26, md: 32, lg: 40 };
 

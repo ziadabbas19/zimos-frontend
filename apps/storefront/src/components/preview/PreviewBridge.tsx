@@ -12,6 +12,8 @@ import {
   type PreviewTheme,
 } from "@/lib/brandTheme";
 import { setColorMode } from "@/components/ThemeToggle";
+import { NATIVE_DARK_LOOKS, lightenToRead } from "@/lib/xsDarkPalette.mjs";
+import { xsDarkAccentOf, xsOwnAccent, xsOwnAccentDark } from "@/lib/xsShell";
 import { useSetShellOverride } from "@/lib/StoreShellContext";
 import { useIsClient } from "@/lib/useIsClient";
 import { readShellOverride, type ShellOverride } from "@/lib/storeShell";
@@ -331,12 +333,30 @@ function applyTheme(theme: PreviewTheme | null) {
     if (name in vars) wrapper.style.setProperty(name, vars[name], "important");
     else wrapper.style.removeProperty(name);
   }
+  // Whether the colour is the merchant's own, for each mode: the same switches the store layout sets.
+  const settings = theme as Record<string, unknown>;
+  wrapper.toggleAttribute("data-xs-own-accent", xsOwnAccent(settings));
+  wrapper.toggleAttribute("data-xs-own-accent-dark", xsOwnAccentDark(settings));
+  const darkAccent = xsDarkAccentOf(settings);
+  const accentText = darkAccent ? lightenToRead(darkAccent) : null;
+  if (accentText) wrapper.style.setProperty("--xs-own-accent-text", accentText);
+  else wrapper.style.removeProperty("--xs-own-accent-text");
   applyLogo(theme.logoUrl);
 }
 
-/** The mode the page is showing right now. */
+/** The mode the page is showing right now: a template's store says so on its own wrapper. */
 function pageColorMode(): ColorMode {
-  return document.documentElement.classList.contains("dark") ? "dark" : "light";
+  const wrapper = document.querySelector<HTMLElement>(".brand-theme");
+  return document.documentElement.classList.contains("dark") || wrapper?.getAttribute("data-color-mode") === "dark" ? "dark" : "light";
+}
+
+/** A template that has a dark mode draws it from its wrapper (lib/storeColorMode); the ones dark already have none. */
+function applyWrapperColorMode(mode: ColorMode) {
+  const wrapper = document.querySelector<HTMLElement>(".brand-theme");
+  const look = wrapper?.getAttribute("data-xs-shell");
+  if (!wrapper || !look || NATIVE_DARK_LOOKS.includes(look)) return;
+  if (mode === "dark") wrapper.setAttribute("data-color-mode", "dark");
+  else wrapper.removeAttribute("data-color-mode");
 }
 
 /** The look last laid over the page, so the logo can be re-applied after the header re-renders. */
@@ -344,9 +364,9 @@ let lastTheme: PreviewTheme | null = null;
 
 /** The unsaved logo's classes at each header logo size — StoreHeader's own LOGO_IMG_CLASS. */
 const PREVIEW_LOGO_CLASS: Record<string, string> = {
-  sm: "h-8 w-8 shrink-0 rounded-xl object-contain",
-  md: "h-10 w-10 shrink-0 rounded-xl object-contain",
-  lg: "h-12 w-12 shrink-0 rounded-xl object-contain",
+  sm: "h-8 w-auto max-w-40 shrink-0 rounded-xl object-contain",
+  md: "h-10 w-auto max-w-48 shrink-0 rounded-xl object-contain",
+  lg: "h-12 w-auto max-w-56 shrink-0 rounded-xl object-contain",
 };
 
 /**
@@ -703,6 +723,7 @@ export function PreviewBridge({
         if ("theme" in data) applyTheme(readPreviewTheme(data.theme));
         const mode = readColorMode(data.colorMode);
         if (mode && mode !== pageColorMode()) setColorMode(mode);
+        if (mode) applyWrapperColorMode(mode);
       } else if (data.type === "zimos:patch") {
         // Small edits, applied to the page as it stands (canvasPatch.ts); the
         // outlines measure again, since a text or a padding moves things.

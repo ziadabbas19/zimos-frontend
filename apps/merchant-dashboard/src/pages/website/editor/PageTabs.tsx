@@ -1,8 +1,27 @@
 import type { Ref } from "react";
-import { IconCheck, IconClose, IconDelete, IconHome, IconPage, IconPlus } from "@/components/icons";
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  IconArrowDown,
+  IconArrowUp,
+  IconCheck,
+  IconClose,
+  IconCopy,
+  IconDelete,
+  IconDragHandle,
+  IconEdit,
+  IconHome,
+  IconPage,
+  IconPlus,
+} from "@/components/icons";
 import { cn } from "@store-builder/ui";
 import type { WebsitePage } from "@store-builder/api-client";
+import type { ContextMenuItem } from "@/components/ContextMenu";
 import { fmt, useT, type Messages } from "@/i18n/LocaleContext";
+import { RowMenu } from "./library/RowMenu";
+import { orderPages } from "./pageAddress";
 
 const STRINGS = {
   en: {
@@ -10,16 +29,200 @@ const STRINGS = {
     homeHint: "The home page can't be deleted — your store opens on it.",
     homeBadge: "Home",
     deletePage: "Delete “{name}”",
-    newPage: "New page",
+    newPage: "Add a page",
+    pageActions: "Actions for “{name}”",
+    reorder: "Drag to reorder: {name}",
+    dragHelp: "Press Space to pick up the page, use the arrow keys to move it, and press Space again to drop it.",
+    details: "Name, address and Google",
+    headerOn: "Show in the header menu",
+    headerOff: "Remove from the header menu",
+    footerOn: "Show in the footer",
+    footerOff: "Remove from the footer",
+    duplicate: "Duplicate",
+    moveUp: "Move up",
+    moveDown: "Move down",
+    remove: "Delete",
+    inMenu: "In the menu",
   },
   ar: {
     pages: "الصفحات",
-    homeHint: "الصفحة الرئيسية لا تُحذف — متجرك يفتح عليها.",
+    homeHint: "الصفحة الرئيسية لا تحذف — متجرك يفتح عليها.",
     homeBadge: "الرئيسية",
     deletePage: "حذف «{name}»",
-    newPage: "صفحة جديدة",
+    newPage: "إضافة صفحة",
+    pageActions: "إجراءات «{name}»",
+    reorder: "اسحب لإعادة الترتيب: {name}",
+    dragHelp: "اضغط مسافة لالتقاط الصفحة، وحركها بالأسهم، ثم اضغط مسافة مرة أخرى لوضعها.",
+    details: "الاسم والعنوان وجوجل",
+    headerOn: "إظهارها في القائمة العلوية",
+    headerOff: "إزالتها من القائمة العلوية",
+    footerOn: "إظهارها في أسفل المتجر",
+    footerOff: "إزالتها من أسفل المتجر",
+    duplicate: "نسخ الصفحة",
+    moveUp: "نقل لأعلى",
+    moveDown: "نقل لأسفل",
+    remove: "حذف",
+    inMenu: "في القائمة",
   },
 } satisfies Messages;
+
+/** What the «الصفحات» tab can do to a page, beyond opening it. */
+export interface PageManagement {
+  onEdit: (page: WebsitePage) => void;
+  onDuplicate: (page: WebsitePage) => void;
+  onToggleMenu: (page: WebsitePage, place: "showInHeader" | "showInFooter") => void;
+  /** The pages other than home, in their new order. */
+  onReorder: (orderedIds: string[]) => void;
+}
+
+function ManagedRow({
+  page,
+  index,
+  count,
+  active,
+  order,
+  onSelect,
+  onDelete,
+  manage,
+}: {
+  page: WebsitePage;
+  /** Its place among the pages that can move; -1 for home. */
+  index: number;
+  count: number;
+  active: boolean;
+  order: string[];
+  onSelect: (pageId: string) => void;
+  onDelete: (page: WebsitePage) => void;
+  manage: PageManagement;
+}) {
+  const t = useT(STRINGS);
+  const home = page.pageType === "home";
+  const sortable = useSortable({ id: page.id, disabled: home });
+  const move = (step: number) => manage.onReorder(arrayMove(order, index, index + step));
+  const items: ContextMenuItem[] = [
+    { id: "details", label: t.details, icon: IconEdit, onSelect: () => manage.onEdit(page) },
+    { id: "duplicate", label: t.duplicate, icon: IconCopy, onSelect: () => manage.onDuplicate(page) },
+    ...(home
+      ? []
+      : [
+          {
+            id: "header",
+            label: page.showInHeader ? t.headerOff : t.headerOn,
+            separatorBefore: true,
+            onSelect: () => manage.onToggleMenu(page, "showInHeader"),
+          },
+          { id: "footer", label: page.showInFooter ? t.footerOff : t.footerOn, onSelect: () => manage.onToggleMenu(page, "showInFooter") },
+          { id: "up", label: t.moveUp, icon: IconArrowUp, disabled: index <= 0, separatorBefore: true, onSelect: () => move(-1) },
+          { id: "down", label: t.moveDown, icon: IconArrowDown, disabled: index >= count - 1, onSelect: () => move(1) },
+          { id: "delete", label: t.remove, icon: IconDelete, destructive: true, separatorBefore: true, onSelect: () => onDelete(page) },
+        ]),
+  ];
+
+  return (
+    <li
+      ref={sortable.setNodeRef}
+      data-slot="page-row"
+      data-active={active || undefined}
+      style={{ transform: CSS.Translate.toString(sortable.transform), transition: sortable.transition }}
+      className={cn(
+        "flex items-center rounded-[0.875rem] transition-colors duration-[var(--dur-fade)] ease-[var(--ease-out)] select-none motion-reduce:transition-none",
+        active ? "bg-primary-soft" : "hover:bg-paper-sunken",
+        sortable.isDragging && "relative z-10 bg-paper-raised shadow-md"
+      )}
+    >
+      {home ? (
+        <span className="flex size-11 shrink-0 items-center justify-center text-ink-soft">
+          <IconHome className="size-4" aria-hidden />
+        </span>
+      ) : (
+        <button
+          type="button"
+          ref={sortable.setActivatorNodeRef}
+          {...sortable.attributes}
+          {...sortable.listeners}
+          aria-label={fmt(t.reorder, { name: page.title })}
+          data-slot="page-row-handle"
+          className="flex size-11 shrink-0 cursor-grab touch-none items-center justify-center rounded-full text-ink-soft outline-none hover:text-ink focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-primary active:cursor-grabbing"
+        >
+          <IconDragHandle className="size-[18px]" aria-hidden />
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={() => onSelect(page.id)}
+        aria-current={active ? "page" : undefined}
+        className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[0.875rem] py-1.5 text-start focus-visible:outline-2 focus-visible:outline-primary"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block break-words text-sm font-medium text-ink">{page.title}</span>
+          <span className="block text-sm break-all text-ink-soft">
+            <bdi dir="ltr">{page.path}</bdi>
+          </span>
+          {!home && (page.showInHeader || page.showInFooter) && <span className="block text-xs leading-5 text-ink-soft">{t.inMenu}</span>}
+        </span>
+        {active && <IconCheck className="size-4 shrink-0 text-primary" aria-hidden />}
+      </button>
+      <RowMenu items={items} label={fmt(t.pageActions, { name: page.title })} />
+    </li>
+  );
+}
+
+function ManagedPages({
+  pages,
+  selectedId,
+  onSelect,
+  onDelete,
+  manage,
+}: {
+  pages: WebsitePage[];
+  selectedId: string | null;
+  onSelect: (pageId: string) => void;
+  onDelete: (page: WebsitePage) => void;
+  manage: PageManagement;
+}) {
+  const t = useT(STRINGS);
+  const ordered = orderPages(pages);
+  const order = ordered.filter((page) => page.pageType !== "home").map((page) => page.id);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  function dragEnd({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id) return;
+    const from = order.indexOf(String(active.id));
+    const to = order.indexOf(String(over.id));
+    if (from >= 0 && to >= 0) manage.onReorder(arrayMove(order, from, to));
+  }
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      modifiers={[restrictToVerticalAxis]}
+      accessibility={{ screenReaderInstructions: { draggable: t.dragHelp } }}
+      onDragEnd={dragEnd}
+    >
+      <SortableContext items={order} strategy={verticalListSortingStrategy}>
+        <ul aria-label={t.pages} className="flex flex-col gap-0.5">
+          {ordered.map((page) => (
+            <ManagedRow
+              key={page.id}
+              page={page}
+              index={order.indexOf(page.id)}
+              count={order.length}
+              active={page.id === selectedId}
+              order={order}
+              onSelect={onSelect}
+              onDelete={onDelete}
+              manage={manage}
+            />
+          ))}
+        </ul>
+      </SortableContext>
+    </DndContext>
+  );
+}
 
 /**
  * The site's pages, to switch between.
@@ -44,6 +247,7 @@ export function PageTabs({
   onAdd,
   inline = false,
   variant = "tabs",
+  manage,
   ref,
 }: {
   pages: WebsitePage[];
@@ -53,6 +257,8 @@ export function PageTabs({
   onAdd: () => void;
   inline?: boolean;
   variant?: "tabs" | "list";
+  /** The list with its full tools: reorder, details, menus, duplicate. Left out: open and delete only. */
+  manage?: PageManagement;
   ref?: Ref<HTMLDivElement>;
 }) {
   const t = useT(STRINGS);
@@ -60,6 +266,9 @@ export function PageTabs({
   if (variant === "list") {
     return (
       <div ref={ref} data-slot="editor-pages" className="flex flex-col gap-1.5">
+        {manage ? (
+          <ManagedPages pages={pages} selectedId={selectedId} onSelect={onSelect} onDelete={onDelete} manage={manage} />
+        ) : (
         <ul aria-label={t.pages} className="flex flex-col gap-0.5">
           {pages.map((page) => {
             const active = page.id === selectedId;
@@ -90,14 +299,14 @@ export function PageTabs({
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1.5">
-                      <span className="truncate text-sm font-medium text-ink">{page.title}</span>
+                      <span className="break-words text-sm font-medium text-ink">{page.title}</span>
                       {home && (
-                        <span className="shrink-0 rounded-full bg-paper-sunken px-1.5 py-px text-[11px] font-medium text-ink-soft">
+                        <span className="shrink-0 rounded-full bg-paper-sunken px-1.5 py-px text-xs font-medium text-ink-soft">
                           {t.homeBadge}
                         </span>
                       )}
                     </span>
-                    <span className="block truncate text-xs text-ink-soft">
+                    <span className="block break-words text-sm text-ink-soft">
                       <bdi dir="ltr">{page.path}</bdi>
                     </span>
                   </span>
@@ -118,6 +327,7 @@ export function PageTabs({
             );
           })}
         </ul>
+        )}
         <button
           type="button"
           onClick={onAdd}

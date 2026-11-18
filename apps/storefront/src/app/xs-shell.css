@@ -41,6 +41,20 @@
  * footer carry a look's token block of their own (data-xs-look), so for them
  * the same holds one level further down.
  */
+/*
+ * A template's own logo is drawn for a light ground. Where it is dark, a dark store
+ * shows it white so it can be read. A logo the merchant uploaded is never touched.
+ */
+.brand-theme:is([data-xs-shell="01"], [data-xs-shell="03"], [data-xs-shell="04"], [data-xs-shell="05"], [data-xs-shell="06"], [data-xs-shell="09"], [data-xs-shell="10"], [data-xs-shell="11"], [data-xs-shell="12"], [data-xs-shell="14"])[data-color-mode="dark"] img[data-xs-logo="template"],
+.brand-theme[data-xs-shell="02"][data-color-mode="dark"] .xs-footer img[data-xs-logo="template"] {
+  filter: brightness(0) invert(1);
+}
+
+/* A template's picture may run past the screen's edge by design: the page never scrolls sideways for it. */
+.brand-theme[data-xs-shell] {
+  overflow-x: clip;
+}
+
 .brand-theme[data-xs-shell] > :not([data-xs-look]),
 .brand-theme[data-xs-shell] > [data-xs-look] > * {
   --font-sans: var(--xs-sans);
@@ -54,6 +68,16 @@
   --color-accent: var(--xs-accent, var(--color-accent));
   --radius-card: min(var(--xs-btn-radius, 0.625rem), 14px);
   font-family: var(--xs-sans);
+}
+
+/* The store's colours (globals.css) as the look it wears paints them. */
+.brand-theme[data-xs-shell] {
+  --store-accent: var(--xs-accent, var(--color-primary));
+  --store-background: var(--xs-ground);
+  --store-surface: var(--xs-tint, var(--xs-ground));
+  --store-text: var(--xs-ink);
+  --store-muted: var(--xs-muted, var(--xs-ink-soft));
+  --store-border: var(--xs-line);
 }
 
 /* On a store that wears the shell, the footer carries the attribution. */
@@ -180,6 +204,53 @@
   max-width: 180px;
   height: 100%;
   object-fit: contain;
+}
+/*
+ * A merchant's own logo never decides the header's height: whatever the file's
+ * shape, it is drawn this tall (Small, Medium or Large in the editor), as wide
+ * as its proportions make it, and always inside the bar. A template's own logo
+ * keeps the size its bar was drawn for.
+ */
+.xs-header {
+  --xs-logo-h: 48px;
+}
+.xs-header[data-logo-size="sm"] {
+  --xs-logo-h: 36px;
+}
+.xs-header[data-logo-size="lg"] {
+  --xs-logo-h: 60px;
+}
+@media (max-width: 991px) {
+  .xs-header {
+    --xs-logo-h: 40px;
+  }
+  .xs-header[data-logo-size="sm"] {
+    --xs-logo-h: 32px;
+  }
+  .xs-header[data-logo-size="lg"] {
+    --xs-logo-h: 48px;
+  }
+}
+.xs-header__logo:has(> .xs-header__logo-img:not([data-xs-logo="template"])) {
+  height: var(--xs-logo-h) !important;
+  max-height: 100% !important;
+  align-self: center;
+}
+.xs-header__logo-img:not([data-xs-logo="template"]) {
+  display: block;
+  width: auto !important;
+  height: 100% !important;
+  max-width: min(260px, 46vw) !important;
+  max-height: var(--xs-logo-h, 40px) !important;
+  margin-block: 0 !important;
+  object-fit: contain !important;
+}
+.xs-footer__logo:not([data-xs-logo="template"]) {
+  width: auto !important;
+  height: auto !important;
+  max-width: min(200px, 60vw) !important;
+  max-height: 64px !important;
+  object-fit: contain !important;
 }
 .xs-header__logo-name {
   font-size: 26px;
@@ -414,10 +485,16 @@
 /*
  * A store that picked its own brand colour (Store look → Brand colour) wears
  * it wherever a look would use its accent: buttons, links, badges, the
- * coloured grounds. A store still on the colour the template brought keeps
- * the look's own palette exactly.
+ * coloured grounds, on the wrapper too (the shop pages read the look's tokens
+ * there). Each mode answers for itself: a merchant who only picked a dark-mode
+ * colour keeps the template's palette in light mode. What a look wrote down as
+ * a plain colour follows in its own file (scripts/xs-accent.mjs). A store still
+ * on the colour the template brought keeps the look's own palette exactly.
  */
-.brand-theme[data-xs-own-accent] [data-xs-look] {
+.brand-theme[data-xs-own-accent][data-xs-shell]:not([data-color-mode="dark"]),
+.brand-theme[data-xs-own-accent]:not([data-color-mode="dark"]) [data-xs-look],
+.brand-theme[data-xs-own-accent-dark][data-xs-shell][data-color-mode="dark"],
+.brand-theme[data-xs-own-accent-dark][data-color-mode="dark"] [data-xs-look] {
   --xs-accent: var(--color-primary);
   --xs-brand: var(--color-primary);
   --xs-button: var(--color-primary);

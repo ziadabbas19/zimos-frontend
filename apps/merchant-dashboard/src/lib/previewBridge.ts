@@ -70,6 +70,8 @@ export interface PreviewTheme {
   /** A store theme key, or "original". */
   storeTheme?: string;
   primaryColor?: string;
+  /** "template" while `primaryColor` is the one a template brought, so the frame keeps the template's palette. */
+  primaryColorSource?: string;
   primaryColorDark?: string;
   secondaryColor?: string;
   fontFamily?: string;

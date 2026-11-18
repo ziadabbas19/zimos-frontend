@@ -74,6 +74,6 @@ describe("the picture slider's height on a phone", () => {
         <ElementField elementType="hero_slider" spec={heightField("heightMobile")} props={{}} onChange={() => undefined} />
       </EditorLocaleContext.Provider>
     );
-    expect(screen.getByText("اتركه فارغًا ليأخذ السلايدر شكله المعتاد على الموبايل: ٤ عرضًا إلى ٥ ارتفاعًا، وبحد أقصى ٥٦٠ بكسل.")).toBeInTheDocument();
+    expect(screen.getByText("اتركه فارغا ليأخذ السلايدر شكله المعتاد على الموبايل: ٤ عرضا إلى ٥ ارتفاعا، وبحد أقصى ٥٦٠ بكسل.")).toBeInTheDocument();
   });
 });

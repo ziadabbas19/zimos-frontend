@@ -128,7 +128,7 @@ export function StorePagesBlock({ saved, onChange }: { saved: unknown; onChange:
   const set = (patch: Partial<StorePages>, key?: string) => onChange(writeStorePages({ ...pages, ...patch }, look), key);
   const field = (name: keyof StorePages["titles"], label: string) => (
     <label className="block space-y-1">
-      <span className="text-xs font-medium text-ink-soft">{label}</span>
+      <span className="text-sm font-medium text-ink-soft">{label}</span>
       <Input
         value={pages.titles[name]}
         dir="auto"
@@ -143,7 +143,7 @@ export function StorePagesBlock({ saved, onChange }: { saved: unknown; onChange:
   return (
     <LookBlock title={w.title} hint={w.hint}>
       <div className="space-y-1.5">
-        <p className="text-xs font-medium text-ink-soft">{w.strip}</p>
+        <p className="text-sm font-medium text-ink-soft">{w.strip}</p>
         <Segmented<Strip>
           size="sm"
           label={w.strip}
@@ -160,7 +160,7 @@ export function StorePagesBlock({ saved, onChange }: { saved: unknown; onChange:
         />
       )}
       <div className="space-y-1.5">
-        <p className="text-xs font-medium text-ink-soft">{w.thumbs}</p>
+        <p className="text-sm font-medium text-ink-soft">{w.thumbs}</p>
         <Segmented<"side" | "below">
           size="sm"
           label={w.thumbs}
@@ -173,7 +173,7 @@ export function StorePagesBlock({ saved, onChange }: { saved: unknown; onChange:
         />
       </div>
       <div className="space-y-1.5">
-        <p className="text-xs font-medium text-ink-soft">{w.tabs}</p>
+        <p className="text-sm font-medium text-ink-soft">{w.tabs}</p>
         <Segmented<"center" | "start">
           size="sm"
           label={w.tabs}
@@ -186,12 +186,12 @@ export function StorePagesBlock({ saved, onChange }: { saved: unknown; onChange:
         />
       </div>
       <div className="space-y-2">
-        <p className="text-xs font-medium text-ink-soft">{w.words}</p>
+        <p className="text-sm font-medium text-ink-soft">{w.words}</p>
         {field("catalog", w.catalog)}
         {field("cart", w.cart)}
         {field("checkout", w.checkout)}
         <label className="block space-y-1">
-          <span className="text-xs font-medium text-ink-soft">{w.related}</span>
+          <span className="text-sm font-medium text-ink-soft">{w.related}</span>
           <Input
             value={pages.related}
             dir="auto"

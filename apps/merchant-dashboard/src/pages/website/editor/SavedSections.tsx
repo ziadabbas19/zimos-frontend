@@ -63,7 +63,7 @@ const STRINGS = {
   },
   ar: {
     title: "السكاشن المحفوظة",
-    empty: "لا يوجد شيء محفوظ بعد. افتح قسمًا واحفظه لتستخدمه في أي صفحة.",
+    empty: "لا يوجد شيء محفوظ بعد. افتح قسما واحفظه لتستخدمه في أي صفحة.",
     insert: "إدراج نسخة",
     insertLinked: "إدراج مرتبط",
     saveTitle: "إعادة استخدام هذا القسم",
@@ -219,8 +219,8 @@ export function SavedSectionsLibrary({ onInsert, funnelId }: { onInsert: (sectio
         className="flex min-h-11 w-full cursor-pointer items-center gap-2 px-4 py-2 text-start text-sm font-medium text-ink transition-colors duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:bg-paper-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none"
       >
         <IconBookmark className="size-4 shrink-0 text-ink-soft" aria-hidden />
-        <span className="min-w-0 flex-1 truncate">{t.title}</span>
-        {list.length > 0 && <span className="shrink-0 text-xs font-normal text-ink-soft tabular-nums">{ui.items(list.length)}</span>}
+        <span className="min-w-0 flex-1 break-words">{t.title}</span>
+        {list.length > 0 && <span className="shrink-0 text-sm font-normal text-ink-soft tabular-nums">{ui.items(list.length)}</span>}
         <IconCaretDown
           className={cn(
             "size-4 shrink-0 text-ink-soft transition-[rotate] duration-[var(--dur-fade)] ease-[var(--ease-out)] motion-reduce:transition-none",
@@ -232,12 +232,12 @@ export function SavedSectionsLibrary({ onInsert, funnelId }: { onInsert: (sectio
       {open && (
         <div className="space-y-2 px-3 pb-3">
           {list.length === 0 ? (
-            <p className="px-1 text-xs leading-5 text-ink-soft">{t.empty}</p>
+            <p className="px-1 text-sm leading-5 text-ink-soft">{t.empty}</p>
           ) : (
             list.map((saved) => (
               <div key={saved.id} className="rounded-[0.875rem] bg-paper-raised p-2 ring-1 ring-line">
                 <p className="flex items-center gap-1.5 px-1 text-sm font-medium text-ink">
-                  <span className="truncate" dir="auto">
+                  <span className="break-words" dir="auto">
                     {saved.name}
                   </span>
                   {saved.scope === "funnel" && (
@@ -351,7 +351,7 @@ export function SavedSectionsGrid({
 
   return (
     <div className={className}>
-      <p className="mb-3 text-xs leading-5 text-ink-soft">{t.linkedHint}</p>
+      <p className="mb-3 text-sm leading-5 text-ink-soft">{t.linkedHint}</p>
       <ul className="space-y-3">
         {list.map((saved) => (
           <li
@@ -364,10 +364,10 @@ export function SavedSectionsGrid({
                 <SectionThumbnail section={saved.tree} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-ink" dir="auto">
+                <span className="block break-words text-sm font-medium text-ink" dir="auto">
                   {saved.name}
                 </span>
-                <span className="mt-0.5 block truncate text-xs text-ink-soft">
+                <span className="mt-0.5 block break-words text-sm text-ink-soft">
                   {sectionLabel(saved.tree, locale)} · {t.elements(sectionElements(saved.tree).length)}
                 </span>
                 {saved.scope === "funnel" && (
@@ -482,7 +482,7 @@ export function SaveSectionPanel({ section, onChange, funnelId }: { section: Pag
 
   return (
     <div className="space-y-2 border-t border-line px-4 py-3">
-      <p className="text-xs font-medium text-ink-soft">{t.saveTitle}</p>
+      <p className="text-sm font-medium text-ink-soft">{t.saveTitle}</p>
       <div className="flex items-center gap-2">
         <Input aria-label={t.name} placeholder={t.name} maxLength={120} value={name} disabled={busy} dir="auto" onChange={(e) => setName(e.target.value)} />
         <Button
@@ -506,7 +506,7 @@ export function SaveSectionPanel({ section, onChange, funnelId }: { section: Pag
         </Button>
       </div>
       {funnelId && (
-        <label className="flex min-h-9 cursor-pointer items-center gap-2 text-xs text-ink pointer-coarse:min-h-11">
+        <label className="flex min-h-9 cursor-pointer items-center gap-2 text-sm text-ink pointer-coarse:min-h-11">
           <input
             type="checkbox"
             className="size-4 cursor-pointer accent-primary"

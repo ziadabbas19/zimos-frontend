@@ -32,7 +32,7 @@ export function LookIntro() {
       </span>
       <div className="min-w-0">
         <h2 className="font-display text-sm font-semibold text-ink">{t.lookTitle}</h2>
-        <p className="text-xs leading-5 text-ink-soft">{t.lookHint}</p>
+        <p className="text-sm leading-5 text-ink-soft">{t.lookHint}</p>
       </div>
     </div>
   );

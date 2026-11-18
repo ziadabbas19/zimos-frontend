@@ -173,9 +173,9 @@ export function ElementFieldset({
 
   return (
     <div className="space-y-3 border-b border-line px-4 py-4 last:border-b-0">
-      <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-ink-soft uppercase">
+      <div className="flex items-center gap-2 text-sm font-medium tracking-wide text-ink-soft uppercase">
         <Icon className="size-3.5" aria-hidden />
-        <span className="min-w-0 flex-1 truncate">{elementName(element.type, spec.label, locale)}</span>
+        <span className="min-w-0 flex-1 break-words">{elementName(element.type, spec.label, locale)}</span>
         {actions}
       </div>
       {onSettingsChange && <ElementTabs value={tab} onChange={setTab} />}
@@ -280,9 +280,9 @@ function ElementRow({
           </span>
         )}
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium text-ink">{name}</span>
+          <span className="block break-words text-sm font-medium text-ink">{name}</span>
           {line && (
-            <span className="block truncate text-xs leading-5 text-ink-soft" dir="auto">
+            <span className="block break-words text-sm leading-5 text-ink-soft" dir="auto">
               {line}
             </span>
           )}
@@ -385,7 +385,9 @@ export function SectionInspector({
   }
 
   // --- what is shown: the section, or one element of it ----------------------
-  const wanted = focusElementId ?? null;
+  // A Video section holds one thing to set: its fields open straight away.
+  const loneVideo = elements.length === 1 && elements[0]?.type === "video" ? elements[0].id : null;
+  const wanted = focusElementId ?? loneVideo;
   const [activeId, setActiveId] = useState<string | null>(wanted);
   const [seen, setSeen] = useState({ wanted, sectionId: section.id });
   if (seen.wanted !== wanted || seen.sectionId !== section.id) {
@@ -505,7 +507,7 @@ export function SectionInspector({
       ) : (
         rows.map((row, r) => (
           <div key={row.id} className="space-y-2">
-            {rows.length > 1 && <p className="text-xs font-medium text-ink-soft">{t.row(inspectorNumber(r + 1, locale))}</p>}
+            {rows.length > 1 && <p className="text-sm font-medium text-ink-soft">{t.row(inspectorNumber(r + 1, locale))}</p>}
             {(row.columns ?? []).map((column) => {
               const index = columnIndex++;
               const inside = column.elements ?? [];
@@ -520,13 +522,13 @@ export function SectionInspector({
                     parentFocus.flashId === column.id && "ring-2 ring-primary"
                   )}
                 >
-                  <p className="flex items-center gap-1.5 px-2 pt-1 pb-0.5 text-xs font-medium text-ink-soft">
+                  <p className="flex items-center gap-1.5 px-2 pt-1 pb-0.5 text-sm font-medium text-ink-soft">
                     <IconColumns className="size-3.5 shrink-0" aria-hidden />
-                    <span className="min-w-0 truncate" dir="auto">
+                    <span className="min-w-0 break-words" dir="auto">
                       {columnTitle(column) ?? ui.column(index + 1)}
                     </span>
                   </p>
-                  {inside.length === 0 ? <p className="px-2 py-2 text-xs text-ink-soft">{t.emptyColumn}</p> : <ul className="space-y-0.5">{inside.map((el) => rowOf(el))}</ul>}
+                  {inside.length === 0 ? <p className="px-2 py-2 text-sm text-ink-soft">{t.emptyColumn}</p> : <ul className="space-y-0.5">{inside.map((el) => rowOf(el))}</ul>}
                 </div>
               );
             })}
@@ -697,24 +699,24 @@ export function SectionInspector({
           </span>
           <div className="min-w-0 flex-1">
             {active ? (
-              <nav aria-label={t.path} className="flex min-w-0 items-center gap-1 text-xs text-ink-soft">
+              <nav aria-label={t.path} className="flex min-w-0 items-center gap-1 text-sm text-ink-soft">
                 <button
                   type="button"
                   onClick={stepUp}
                   aria-label={t.backToSection(sectionName)}
-                  className="relative max-w-[60%] shrink-0 cursor-pointer truncate rounded-[0.375rem] font-medium text-primary before:absolute before:-inset-x-2 before:-inset-y-3.5 before:content-[''] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  className="relative max-w-[60%] shrink-0 cursor-pointer break-words rounded-[0.375rem] font-medium text-primary before:absolute before:-inset-x-2 before:-inset-y-3.5 before:content-[''] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
                   {sectionName}
                 </button>
                 <IconCaretRight className="size-3 shrink-0 rtl:-scale-x-100" aria-hidden />
                 {/* The way back keeps its name; the element's, written in full just below, gives way. */}
-                <span aria-current="true" className="min-w-0 truncate">
+                <span aria-current="true" className="min-w-0 break-words">
                   {activeName}
                 </span>
               </nav>
             ) : null}
-            <h2 className="truncate font-display text-sm leading-5 font-semibold text-ink">{active ? activeName : sectionName}</h2>
-            {!active && <p className="truncate text-xs leading-4 text-ink-soft">{ui.elementCount(elements.length)}</p>}
+            <h2 className="break-words font-display text-sm leading-5 font-semibold text-ink">{active ? activeName : sectionName}</h2>
+            {!active && <p className="break-words text-sm leading-5 text-ink-soft">{ui.elementCount(elements.length)}</p>}
           </div>
           {menu}
           <Button type="button" size="icon" variant="ghost" aria-label={ui.closePanel} title={ui.closePanel} onClick={onClose}>

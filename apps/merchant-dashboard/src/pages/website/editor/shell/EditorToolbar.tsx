@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, useId, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { DirectionProvider } from "@base-ui/react/direction-provider";
 import {
@@ -46,7 +46,7 @@ export interface EditorMenuItem {
 
 /** A round 40px button (44px under a finger) for the bar's icon actions. */
 export const TOOL_BUTTON =
-  "zimos-editor-tool inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-soft transition-[color,background-color,scale] duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.97] disabled:pointer-events-none disabled:opacity-35 aria-expanded:bg-paper-sunken aria-expanded:text-ink motion-reduce:transition-none pointer-coarse:size-11";
+  "zimos-editor-tool inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-soft transition-[color,background-color,scale] duration-[var(--dur-fade)] ease-[var(--ease-out)] hover:bg-paper-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.97] disabled:pointer-events-none disabled:opacity-35 aria-expanded:bg-paper-sunken aria-expanded:text-ink motion-reduce:transition-none pointer-coarse:size-11";
 
 // The row of the list kit's menus: 36px under a mouse, 44px under a thumb.
 const MENU_ITEM =
@@ -110,6 +110,7 @@ export function EditorToolbar({
 }) {
   const t = useT(SHELL_STRINGS);
   const { dir } = useLocale();
+  const unpublishedId = useId();
   const statusText: Record<SiteStatus, string> = {
     published: t.statusPublished,
     draft: t.statusDraft,
@@ -123,13 +124,13 @@ export function EditorToolbar({
       <button
         type="button"
         onClick={onSaveNow}
-        className="hidden min-h-9 cursor-pointer items-center gap-1.5 rounded-full bg-danger-soft px-3 text-xs font-medium whitespace-nowrap text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:inline-flex pointer-coarse:min-h-11"
+        className="hidden min-h-9 cursor-pointer items-center gap-1.5 rounded-full bg-danger-soft px-3 text-sm font-medium whitespace-nowrap text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:inline-flex pointer-coarse:min-h-11"
       >
         <IconWarning className="size-4 shrink-0" aria-hidden />
         {t.saveFailed}
       </button>
     ) : (
-      <span className="hidden items-center gap-1.5 px-1 text-xs whitespace-nowrap text-ink-soft lg:inline-flex">
+      <span className="hidden items-center gap-1.5 px-1 text-sm whitespace-nowrap text-ink-soft lg:inline-flex">
         {saveState === "saving" ? (
           <ZLoader size="sm" className="shrink-0" aria-hidden />
         ) : (
@@ -166,7 +167,7 @@ export function EditorToolbar({
           {siteName}
         </h1>
         {status && (
-          <StatusBadge value={status} text={statusText[status]} tone={STATUS_TONE[status]} className="hidden shrink-0 xl:inline-flex" />
+          <StatusBadge value={status} text={statusText[status]} tone={STATUS_TONE[status]} className="hidden shrink-0 lg:inline-flex" />
         )}
         {switcher}
       </div>
@@ -175,7 +176,7 @@ export function EditorToolbar({
         value={device}
         onChange={onDeviceChange}
         label={t.device}
-        size="sm"
+        size="md"
         options={[
           { value: "phone", label: t.devicePhone, icon: IconPhoneDevice },
           { value: "tablet", label: t.deviceTablet, icon: IconTablet },
@@ -252,11 +253,21 @@ export function EditorToolbar({
           type="button"
           onClick={onPublish}
           disabled={publishDisabled}
-          className="ms-1 h-10 shrink-0 rounded-full px-3.5 pointer-coarse:h-11 md:ms-0 md:px-5"
+          aria-describedby={status === "changed" ? unpublishedId : undefined}
+          className="relative ms-1 h-11 shrink-0 rounded-full px-3.5 md:ms-0 md:px-5"
         >
           <IconLaunch className="hidden size-4 md:block" aria-hidden />
           {t.publish}
+          {/* Waiting to go live: seen at a glance, on the phone too, where the words have no room. */}
+          {status === "changed" && (
+            <span data-slot="editor-unpublished-dot" aria-hidden className="absolute -end-0.5 -top-0.5 size-3 rounded-full bg-accent ring-2 ring-paper-raised" />
+          )}
         </Button>
+        {status === "changed" && (
+          <span id={unpublishedId} className="sr-only">
+            {statusText.changed}
+          </span>
+        )}
       </div>
     </header>
   );

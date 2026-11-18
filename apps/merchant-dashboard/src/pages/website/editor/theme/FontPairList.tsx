@@ -42,10 +42,10 @@ export function FontPairList({
             }}
             className={cn(lookCardClass, "min-h-[4.25rem] px-3 py-2.5")}
           >
-            <span className="block truncate text-xl leading-tight text-ink" style={{ fontFamily: option.heading, fontWeight: 600 }}>
+            <span className="block break-words text-xl leading-tight text-ink" style={{ fontFamily: option.heading, fontWeight: 600 }}>
               {FONT_SPECIMEN}
             </span>
-            <span className="mt-1 block truncate pe-5 text-xs text-ink-soft" style={{ fontFamily: option.body }}>
+            <span className="mt-1 block break-words pe-5 text-sm text-ink-soft" style={{ fontFamily: option.body }}>
               {ui.fontName(option.value)}
             </span>
             {active && <LookCheck className="absolute end-2 bottom-2" />}

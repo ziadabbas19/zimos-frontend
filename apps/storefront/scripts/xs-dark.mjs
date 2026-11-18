@@ -22,6 +22,7 @@
  * The looks that are dark already (NATIVE_DARK_LOOKS) are left as they are.
  */
 import postcss from "postcss";
+import { colourTokensOf, xsAccentDarkCss } from "./xs-accent.mjs";
 import {
   ACCENT_TOKENS,
   DARK,
@@ -159,8 +160,12 @@ const WORD_PROPS = /^(color|fill|stroke|caret-color|text-decoration-color|-webki
 const LINE_PROPS = /^(border(-(top|right|bottom|left|block|inline)(-(start|end))?)?(-color)?|outline(-color)?|column-rule(-color)?)$/;
 const ACCENT_NAMES = new Set(ACCENT_TOKENS.map((name) => `--xs-${name}`));
 
-/** The declarations of one rule as they are in the dark, or [] when the tokens already cover it. */
-export function darkDeclarations(decls) {
+/**
+ * The declarations of one rule as they are in the dark, or [] when the tokens
+ * already cover it. `tokens` is the look's own palette: a word drawn in one of
+ * its colours (--uo-navy) is read like a word written in that colour.
+ */
+export function darkDeclarations(decls, tokens = {}) {
   const ground = groundOf(decls);
   const words = decls.filter((d) => d.prop === "color").map((d) => d.value).join(" ");
   // A ground in the template's ink with words in its ground: a pair that flips by itself.
@@ -189,7 +194,9 @@ export function darkDeclarations(decls) {
               ? `var(--xs-ink${fallback === null ? "" : `, ${fallback}`})`
               : ACCENT_NAMES.has(name)
                 ? before(`${name}-text`, name, fallback)
-                : null,
+                : !/^--(xs|color)-/.test(name) && parseColor(tokens[name] ?? "")
+                  ? darkWordColour(tokens[name])
+                  : null,
         });
       }
     } else if (LINE_PROPS.test(decl.prop)) {
@@ -201,13 +208,13 @@ export function darkDeclarations(decls) {
 }
 
 /** Every rule of a stylesheet that needs a dark copy, as dark CSS. */
-export function darkRulesOf(css, from = "xs.css") {
+export function darkRulesOf(css, from = "xs.css", tokens = {}) {
   const root = postcss.parse(css, { from });
   const out = postcss.root();
   root.walkRules((rule) => {
     if (rule.parent?.type === "atrule" && /keyframes$/i.test(rule.parent.name)) return;
     const decls = rule.nodes.filter((node) => node.type === "decl");
-    const dark = darkDeclarations(decls);
+    const dark = darkDeclarations(decls, tokens);
     if (dark.length === 0) return;
     const selectors = rule.selectors.map(darkSelector).filter(Boolean);
     if (selectors.length === 0) return;
@@ -248,8 +255,8 @@ export const DARK_SHARED = `.brand-theme${DARK_ATTR}[data-xs-shell] {
   --color-success: #5cbf8f;
   --color-success-soft: #132b1f;
 }
-.brand-theme${DARK_ATTR}[data-xs-own-accent],
-.brand-theme${DARK_ATTR}[data-xs-own-accent] [data-xs-look] {
+.brand-theme${DARK_ATTR}[data-xs-own-accent-dark],
+.brand-theme${DARK_ATTR}[data-xs-own-accent-dark] [data-xs-look] {
 ${ACCENT_TOKENS.map((name) => `  --xs-${name}-text: var(--xs-own-accent-text, color-mix(in srgb, var(--color-primary) 45%, #fff));`).join("\n")}
 }
 `;
@@ -271,7 +278,9 @@ export function xsDarkCss({ shared, looks, baseTokens }) {
   // After the looks' tokens: a store's own accent wins over the look's.
   parts.push(DARK_SHARED);
   parts.push(darkRulesOf(shared, "xs-shared.css"));
-  for (const look of light) if (looks[look]) parts.push(darkRulesOf(looks[look], `xs-look-${look}.css`));
+  for (const look of light) if (looks[look]) parts.push(darkRulesOf(looks[look], `xs-look-${look}.css`, colourTokensOf(looks[look])));
+  // Last: a store's own colour over the dark copies above (scripts/xs-accent.mjs).
+  parts.push(xsAccentDarkCss({ shared, looks, baseTokens }));
   return parts.join("\n");
 }
 

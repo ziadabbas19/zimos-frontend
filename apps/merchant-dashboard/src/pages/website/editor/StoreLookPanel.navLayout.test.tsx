@@ -60,7 +60,7 @@ describe("StoreLookPanel — navigation (switch on)", () => {
 
   it("is worded in formal Arabic", () => {
     renderPanel(look({}), "ar");
-    const group = screen.getByRole("radiogroup", { name: "التنقّل" });
+    const group = screen.getByRole("radiogroup", { name: "التنقل" });
     expect(within(group).getAllByRole("radio").map((r) => r.textContent)).toEqual(["شريط علوي", "شريط جانبي"]);
     expect(screen.getByText(/على الهاتف يبقى الشريط العلوي وقائمته كما هما\./)).toBeInTheDocument();
   });

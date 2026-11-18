@@ -1,3 +1,4 @@
+import { parseVideoSource } from "@store-builder/api-client/video-embed";
 import { ChevronIcon } from "@/components/Icons";
 import { StoreLink } from "@/components/StoreRoute";
 import { btnPrimary, input } from "@/components/ui";
@@ -5,6 +6,7 @@ import type { Dictionary } from "@/lib/i18n";
 import { Countdown } from "./Countdown";
 import { GallerySlideshow } from "./GallerySlideshow";
 import { PageForm } from "./PageForm";
+import { VideoSection } from "./VideoSection";
 import { pictureFocus, pictureRatio } from "./pictureFrame";
 import {
   COLUMN_CLASS,
@@ -202,64 +204,34 @@ export function ButtonElement({ props }: { props: Props }) {
   );
 }
 
-/** youtube.com/watch?v=, youtu.be/ and vimeo.com/ get a real embed; anything
- *  else is treated as a direct media file. */
-function embedUrlFor(url: string): string | null {
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname.replace(/^www\./, "");
-    if (host === "youtube.com" || host === "m.youtube.com") {
-      const id = parsed.searchParams.get("v");
-      if (id) return `https://www.youtube.com/embed/${id}`;
-      if (parsed.pathname.startsWith("/embed/")) return url;
-    }
-    if (host === "youtu.be") {
-      const id = parsed.pathname.slice(1);
-      if (id) return `https://www.youtube.com/embed/${id}`;
-    }
-    if (host === "vimeo.com") {
-      const id = parsed.pathname.split("/").filter(Boolean)[0];
-      if (id) return `https://player.vimeo.com/video/${id}`;
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
-
 export function VideoElement({ props, t }: { props: Props; t: Dictionary }) {
-  const url = safeUrl(str(props, "url"));
-  if (!url) return null;
-  const title = str(props, "title");
-  const embed = embedUrlFor(url);
-
   return (
-    <div>
-      {title.trim() && <h3 className="mb-3 text-lg font-semibold text-ink">{title}</h3>}
-      <div className="aspect-video w-full overflow-hidden rounded-2xl border border-line bg-primary-soft">
-        {embed ? (
-          <iframe
-            src={embed}
-            title={title || t.renderer.video}
-            loading="lazy"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="h-full w-full border-0"
-          />
-        ) : (
-          <video src={url} controls preload="metadata" className="h-full w-full">
-            {t.renderer.noVideo}
-          </video>
-        )}
-      </div>
-    </div>
+    <VideoSection
+      url={str(props, "url")}
+      title={str(props, "title")}
+      caption={str(props, "caption")}
+      aspect={str(props, "aspect")}
+      autoplay={props.autoplay === true}
+      maxWidth={str(props, "maxWidth")}
+      rounded={props.rounded !== false}
+      playLabel={t.renderer.playVideo}
+      videoLabel={t.renderer.video}
+      noVideoLabel={t.renderer.noVideo}
+    />
   );
 }
 
+/**
+ * The older embed element, no longer offered in the editor. A page that already has
+ * one keeps it: a known video host plays as a video, anything else runs fenced off
+ * from the store, with no access to its pages, popups or cookies.
+ */
 export function EmbedElement({ props, t }: { props: Props; t: Dictionary }) {
   const url = safeUrl(str(props, "url"));
   if (!url) return null;
   const title = str(props, "title");
+  if (parseVideoSource(url).ok) return <VideoElement props={props} t={t} />;
+  if (!/^https:\/\//i.test(url)) return null;
   return (
     <div>
       {title.trim() && <h3 className="mb-3 text-lg font-semibold text-ink">{title}</h3>}
@@ -267,6 +239,7 @@ export function EmbedElement({ props, t }: { props: Props; t: Dictionary }) {
         src={url}
         title={title || t.renderer.embedded}
         loading="lazy"
+        sandbox="allow-scripts allow-forms"
         referrerPolicy="no-referrer"
         className="aspect-video w-full rounded-2xl border border-line"
       />

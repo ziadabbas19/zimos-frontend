@@ -43,7 +43,7 @@ export function StartPanel({
           value={tab}
           onChange={onTabChange}
           label={t.panelTabs}
-          size="sm"
+          size="md"
           className="w-full"
           options={[
             { value: "sections", label: t.tabSections, icon: IconSections },
@@ -57,7 +57,7 @@ export function StartPanel({
       <div className="flex shrink-0 items-center gap-2 border-t border-line p-3">
         <Button type="button" variant="secondary" onClick={onAddSection} className="zimos-editor-soft h-11 min-w-0 flex-1 rounded-full">
           <IconPlus className="size-4" aria-hidden />
-          <span className="truncate">{t.addSection}</span>
+          <span className="break-words">{t.addSection}</span>
         </Button>
       </div>
     </aside>

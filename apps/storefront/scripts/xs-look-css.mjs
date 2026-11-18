@@ -25,12 +25,16 @@
  * The looks' dark mode is one more file, public/xs/dark.<hash>.css, worked out
  * here from the shared base and every look's file (scripts/xs-dark.mjs); only
  * a store that can be dark links it.
+ *
+ * Each look's file also ends with what a store that picked its own brand
+ * colour needs (scripts/xs-accent.mjs), inert for every other store.
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, unlinkSync, watch, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { transform } from "lightningcss";
+import { xsAccentCss } from "./xs-accent.mjs";
 import { tokensOf, xsDarkCss } from "./xs-dark.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -109,12 +113,14 @@ export function xsDarkSource() {
 /** What each file holds, minified: every look's, the phone header's and the dark mode's. */
 export function xsLookBundles() {
   const allFaces = faces();
+  const shared = SHARED.map((name) => read(join(APP, name))).join("\n");
+  const baseTokens = tokensOf(read(join(APP, "xs-sections.css")));
   const bundles = { looks: {}, phone: minify("xs-phone.css", read(join(APP, "xs-phone.css"))), dark: minify("xs-dark.css", xsDarkSource()) };
   for (const look of looks()) {
     const source = lookSource(look);
     const families = familiesOf(source);
     const fonts = allFaces.filter((face) => families.has(face.family)).map((face) => face.rule);
-    bundles.looks[look] = minify(`xs-look-${look}.css`, `${fonts.join("\n")}\n${source}`);
+    bundles.looks[look] = minify(`xs-look-${look}.css`, `${fonts.join("\n")}\n${source}\n${xsAccentCss(look, source, baseTokens, shared)}`);
   }
   return bundles;
 }

@@ -69,11 +69,12 @@ export function ColorWell({
 
   return (
     <div data-slot="color-well" className="space-y-1.5">
+      {/* The name has a line of its own, so it is never cut short beside the controls. */}
+      <label htmlFor={id} className="flex min-w-0 items-start gap-1.5 text-sm leading-6 font-medium text-ink">
+        {icon && <span className="mt-1 shrink-0">{icon}</span>}
+        <span className="min-w-0 break-words">{label}</span>
+      </label>
       <div className="flex items-center gap-2">
-        <label htmlFor={id} className="flex min-w-0 flex-1 items-center gap-1.5 text-sm font-medium text-ink">
-          {icon}
-          <span className="min-w-0 truncate">{label}</span>
-        </label>
         <Input
           value={shown}
           onChange={(e) => type(e.target.value)}
@@ -88,7 +89,7 @@ export function ColorWell({
           dir="ltr"
           aria-label={t.colorCode(label)}
           aria-invalid={valid ? undefined : true}
-          className="h-9 w-[6.25rem] shrink-0 px-2 font-mono text-sm uppercase"
+          className="h-9 w-auto min-w-0 flex-1 px-2 font-mono text-sm uppercase pointer-coarse:h-11"
         />
         <span
           className="zimos-look-well relative block size-9 shrink-0 overflow-hidden rounded-full ring-1 ring-line-strong has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary pointer-coarse:size-11"
@@ -123,9 +124,9 @@ export function ColorWell({
       )}
 
       {valid ? (
-        hint && <p className="text-xs text-ink-soft">{hint}</p>
+        hint && <p className="text-sm leading-6 text-ink-soft">{hint}</p>
       ) : (
-        <p className="text-xs font-medium text-danger">
+        <p className="text-sm leading-6 font-medium text-danger">
           {t.colorInvalid}{" "}
           <bdi dir="ltr" className="font-mono">
             #1F5D5B

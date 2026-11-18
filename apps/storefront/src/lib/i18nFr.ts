@@ -469,6 +469,7 @@ export const fr: Dictionary = {
     video: "Vidéo",
     embedded: "Contenu intégré",
     noVideo: "Votre navigateur ne peut pas lire cette vidéo.",
+    playVideo: "Lire la vidéo",
     link: "Lien",
     rating: (n: number) => `${n} sur 5`,
     yes: "Oui",

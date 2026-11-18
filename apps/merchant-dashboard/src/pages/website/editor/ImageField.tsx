@@ -47,7 +47,7 @@ function LibraryButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-function useUpload() {
+function useUpload(validateFile?: (file: File) => Promise<string | null>) {
   const workspaceId = useWorkspaceId();
   const ui = editorUi(useEditorLocale());
   const [busy, setBusy] = useState(false);
@@ -71,7 +71,7 @@ function useUpload() {
     const rejected: string[] = [];
     const valid: File[] = [];
     for (const file of prepared) {
-      const problem = validateImageFile(file);
+      const problem = validateImageFile(file) ?? (await validateFile?.(file)) ?? null;
       if (problem) rejected.push(problem);
       else valid.push(file);
     }
@@ -174,18 +174,24 @@ export function ImageField({
   onChange,
   onRequestImage,
   labelHidden = false,
+  accept = ACCEPTED_IMAGE_ACCEPT,
+  validateFile,
 }: {
   label: string;
   value: string;
   hint?: string;
   onChange: (url: string) => void;
+  /** The file types the picker offers. */
+  accept?: string;
+  /** A check of its own, after the usual ones: the reason a file can't be used, or null. */
+  validateFile?: (file: File) => Promise<string | null>;
   /** Opens the media library and applies the chosen picture. Absent: upload only, as before. */
   onRequestImage?: RequestImage;
   /** Keeps the label for screen readers only — where a heading right above already names the picture. */
   labelHidden?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const { upload, busy, error } = useUpload();
+  const { upload, busy, error } = useUpload(validateFile);
   const ui = editorUi(useEditorLocale());
   const openLibrary = useLibraryRequest(onRequestImage, onChange);
   // Blank is empty: the storefront draws nothing for it either.
@@ -217,13 +223,13 @@ export function ImageField({
           ) : (
             uploadButton
           )}
-          {hint && <p className="text-xs text-ink-soft">{hint}</p>}
+          {hint && <p className="text-sm leading-6 text-ink-soft">{hint}</p>}
         </div>
       </div>
       <input
         ref={inputRef}
         type="file"
-        accept={ACCEPTED_IMAGE_ACCEPT}
+        accept={accept}
         className="hidden"
         onChange={(e) => {
           void pick(e.target.files);
@@ -307,7 +313,7 @@ export function ImageListField({
           e.target.value = "";
         }}
       />
-      {hint && <p className="text-xs text-ink-soft">{hint}</p>}
+      {hint && <p className="text-sm text-ink-soft">{hint}</p>}
       {error && <Alert variant="danger">{error}</Alert>}
     </div>
   );

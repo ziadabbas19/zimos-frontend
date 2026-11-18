@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
+  UpdateWebsitePagePayload,
   CreateWebsitePagePayload,
   PageSection,
   PageTree,
@@ -14,6 +15,7 @@ import { useSaveThemeSettings } from "@/lib/themeSettingsSave";
 import { ApiError, getErrorMessage, getFieldErrors } from "@/lib/errors";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { createStarterSections, normalizeTree } from "../blocks";
+import { copyPath } from "../pageAddress";
 import { useEditHistory } from "../editHistory";
 import { editorUi, useEditorLocale } from "../editorLocale";
 import {
@@ -322,7 +324,7 @@ export function useEditorDocument(workspaceId: string, websiteId: string) {
       // same request and the page opens saved, with nothing pending.
       const created = await apiClient.createPage(workspaceId, websiteId, {
         ...payload,
-        draftData: { version: 1, sections: createStarterSections(payload.title, locale) },
+        draftData: payload.draftData ?? { version: 1, sections: createStarterSections(payload.title, locale) },
       });
       patchSite((detail) => ({ ...detail, pages: [...detail.pages, created] }));
       // Open it straight away — the canvas re-seeds off the new id.
@@ -341,6 +343,52 @@ export function useEditorDocument(workspaceId: string, websiteId: string) {
       // If that was the open page, the render-time check above reselects home.
       patchSite((detail) => ({ ...detail, pages: detail.pages.filter((p) => p.id !== target.id) }));
       return true;
+    },
+    [workspaceId, websiteId, patchSite]
+  );
+
+  /** A page's name, address, menu places or search words: saved at once, not part of the undo history. */
+  const savePageDetails = useCallback(
+    async (pageId: string, patch: UpdateWebsitePagePayload): Promise<WebsitePage> => {
+      const saved = await apiClient.updateWebsitePage(workspaceId, websiteId, pageId, patch);
+      patchSite((detail) => ({ ...detail, pages: detail.pages.map((p) => (p.id === saved.id ? saved : p)) }));
+      return saved;
+    },
+    [workspaceId, websiteId, patchSite]
+  );
+
+  /** A copy of a page, from what the server holds, opened straight away. */
+  const duplicatePage = useCallback(
+    async (source: WebsitePage, copyWord: string): Promise<WebsitePage> => {
+      const fresh = await apiClient.getWebsitePage(workspaceId, websiteId, source.id);
+      const taken = (live.current.detail?.pages ?? []).map((p) => p.path);
+      const created = await apiClient.createPage(workspaceId, websiteId, {
+        title: `${source.title} (${copyWord})`.slice(0, 200),
+        path: copyPath(source.path, taken),
+        pageType: source.pageType === "home" ? "custom" : source.pageType,
+        draftData: fresh.draftData ?? { version: 1, sections: [] },
+        seo: source.seo,
+      });
+      patchSite((detail) => ({ ...detail, pages: [...detail.pages, created] }));
+      setSelectedPageId(created.id);
+      return created;
+    },
+    [workspaceId, websiteId, patchSite]
+  );
+
+  /** The pages' order in the store's menus: shown at once, put back if the server refuses it. */
+  const reorderPages = useCallback(
+    async (orderedIds: readonly string[]) => {
+      const before = new Map((live.current.detail?.pages ?? []).map((p) => [p.id, p.menuOrder ?? null]));
+      const place = new Map(orderedIds.map((id, index) => [id, index]));
+      const moved = orderedIds.filter((id) => before.get(id) !== place.get(id));
+      patchSite((detail) => ({ ...detail, pages: detail.pages.map((p) => (place.has(p.id) ? { ...p, menuOrder: place.get(p.id) } : p)) }));
+      try {
+        await Promise.all(moved.map((id) => apiClient.updateWebsitePage(workspaceId, websiteId, id, { menuOrder: place.get(id) })));
+      } catch (err) {
+        patchSite((detail) => ({ ...detail, pages: detail.pages.map((p) => (before.has(p.id) ? { ...p, menuOrder: before.get(p.id) } : p)) }));
+        throw err;
+      }
     },
     [workspaceId, websiteId, patchSite]
   );
@@ -427,6 +475,9 @@ export function useEditorDocument(workspaceId: string, websiteId: string) {
 
     createPage,
     deletePage,
+    savePageDetails,
+    duplicatePage,
+    reorderPages,
     saveSeo,
     publish,
     reloadSite,

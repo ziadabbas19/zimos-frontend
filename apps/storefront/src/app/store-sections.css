@@ -2474,8 +2474,9 @@ section[data-zt-section]:has(.zs),
 }
 .zs-footer__logo img {
   display: block;
-  width: 120px;
-  height: 120px;
+  width: auto;
+  height: 64px;
+  max-width: min(200px, 60vw);
   object-fit: contain;
 }
 .zs-footer__contact {

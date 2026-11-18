@@ -51,8 +51,6 @@ function renderSheet(over: Partial<Parameters<typeof PublishSheet>[0]> = {}, loc
     error: null,
     problems: [] as PublishProblem[],
     lookDirty: false,
-    savingLook: false,
-    onSaveLook: vi.fn(),
     onPublish: vi.fn(),
     onOpenPage: vi.fn(),
     ...over,
@@ -145,20 +143,19 @@ describe("the publish sheet", () => {
     expect(screen.getAllByText("/about")).toHaveLength(2);
   });
 
-  it("says the look is not part of a publish, and saves it from there", async () => {
+  it("says the look's changes go live with the publish", async () => {
     serveRevisions();
-    const { user, props } = renderSheet({ lookDirty: true });
-    expect(await screen.findByText(/Your look changes aren't saved yet/)).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "Save the look" }));
-    expect(props.onSaveLook).toHaveBeenCalledTimes(1);
+    renderSheet({ lookDirty: true });
+    expect(await screen.findByText(/go live with this publish/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Save the look" })).toBeNull();
   });
 
   it("reads in the dashboard's own Arabic", async () => {
     serveRevisions();
     renderSheet({}, "ar");
-    expect(await screen.findByText("ما سيتغيّر في متجرك")).toBeTruthy();
+    expect(await screen.findByText("ما سيتغير في متجرك")).toBeTruthy();
     expect(screen.getByRole("button", { name: "انشر الآن" })).toBeTruthy();
-    expect(screen.getByText("عُدّلت")).toBeTruthy();
+    expect(screen.getByText("عدلت")).toBeTruthy();
   });
 });
 

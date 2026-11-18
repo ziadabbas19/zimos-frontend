@@ -17,6 +17,8 @@
     "build:marketing": "npm run build -w apps/marketing",
     "build:all": "npm run build:dashboard && npm run build:admin && npm run build:storefront && npm run build:marketing",
     "test:e2e": "node tests/e2e/carriers.e2e.mjs",
+    "test:colors": "node tests/e2e/template-colors.e2e.mjs",
+    "test:logos": "node tests/e2e/template-logos.e2e.mjs",
     "test:worker": "node --test worker/*.test.mjs"
   },
   "devDependencies": {

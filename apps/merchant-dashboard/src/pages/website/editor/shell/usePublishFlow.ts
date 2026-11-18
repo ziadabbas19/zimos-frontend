@@ -47,6 +47,12 @@ export function usePublishFlow(doc: EditorDocument, slug: string) {
     setPublishing(true);
     setError(null);
     setProblems([]);
+    // What the merchant sees in the preview is what goes live: the look goes with the pages.
+    if (doc.lookDirty && !(await doc.saveLook())) {
+      setPublishing(false);
+      setError(t.publishLookFailed);
+      return;
+    }
     const result = await doc.publish();
     setPublishing(false);
     if (result.ok) {

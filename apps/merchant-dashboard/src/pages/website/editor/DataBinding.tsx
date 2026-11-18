@@ -73,7 +73,7 @@ const STRINGS = {
     src: "الصورة",
     alt: "وصف الصورة",
     pageProduct: "منتج الصفحة",
-    pageProductHint: "الحقول المربوطة والـ repeater وعناصر المنتج التي لم يُحدد لها منتج تستخدم هذا المنتج.",
+    pageProductHint: "الحقول المربوطة والـ repeater وعناصر المنتج التي لم يحدد لها منتج تستخدم هذا المنتج.",
     newest: "أحدث منتج في المتجر",
   },
 } as const;
@@ -165,7 +165,7 @@ export function BindingFields({
           )}
         </Field>
       ))}
-      <p className="text-xs leading-5 text-ink-soft">{t.hint}</p>
+      <p className="text-sm leading-5 text-ink-soft">{t.hint}</p>
     </div>
   );
 }

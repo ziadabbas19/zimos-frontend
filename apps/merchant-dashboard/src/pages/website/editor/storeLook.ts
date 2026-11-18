@@ -212,6 +212,7 @@ export function lookToPreview(look: StoreLook): PreviewTheme {
     // Always spelled out, so switching back to the original look beats a saved theme.
     storeTheme: look.storeTheme,
     ...(accent ? { primaryColor: accent } : {}),
+    ...(accent && look.primaryColorFromTemplate ? { primaryColorSource: TEMPLATE_COLOR_SOURCE } : {}),
     ...(look.primaryColorDark ? { primaryColorDark: look.primaryColorDark } : {}),
     ...(look.secondaryColor ? { secondaryColor: look.secondaryColor } : {}),
     fontFamily: look.fontFamily,

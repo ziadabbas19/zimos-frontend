@@ -1,4 +1,5 @@
 import { PreviewBridge } from "./PreviewBridge";
+import { XsDarkStyles } from "@/components/xs/XsLookStyles";
 import { THEME_FONT_CSS } from "@/app/themeFonts";
 import { brandVars, previewBootScript, type PreviewTheme } from "@/lib/brandTheme";
 import type { EditorView } from "@/lib/editorView";
@@ -18,6 +19,8 @@ export function EditorViewBridge({ view }: { view: EditorView }) {
       {boot && <script dangerouslySetInnerHTML={{ __html: boot }} />}
       {themeCss && <style id="zimos-preview-theme" dangerouslySetInnerHTML={{ __html: themeCss }} />}
       <style dangerouslySetInnerHTML={{ __html: THEME_FONT_CSS }} />
+      {/* The editor's light / dark switch works on any template, whatever shoppers are offered. */}
+      <XsDarkStyles />
       <PreviewBridge parentOrigin={options.parentOrigin ?? ""} editable token={token} initialTheme={options.theme} initialShell={options.shell ?? null} />
     </>
   );
