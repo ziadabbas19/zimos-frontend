@@ -89,6 +89,7 @@ export function elementSummary(element: PageElement, locale: EditorLocale): stri
       return join([str("label"), until]);
     }
     case "video":
+      return truncate(str("title") || (str("url") ? t.videoAdded : t.nothingLinked));
     case "embed":
       return truncate(str("title") || str("url") || t.nothingLinked);
     case "map":

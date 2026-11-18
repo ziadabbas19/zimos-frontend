@@ -433,8 +433,10 @@ function FixedRow({
       >
         <Glyph className="size-4" aria-hidden />
       </span>
-      <span className={cn("min-w-0 flex-1 break-words text-sm font-medium", muted && !selected && "text-ink-soft")}>{label}</span>
-      <span className={cn("ms-2 hidden shrink-0 text-sm @[15rem]:inline", selected ? "opacity-80" : "text-ink-soft")}>{hint}</span>
+      <span className="min-w-0 flex-1 text-start">
+        <span className={cn("block text-sm font-medium", muted && !selected && "text-ink-soft")}>{label}</span>
+        <span className={cn("block text-xs leading-4", selected ? "opacity-80" : "text-ink-soft")}>{hint}</span>
+      </span>
     </button>
   );
 }

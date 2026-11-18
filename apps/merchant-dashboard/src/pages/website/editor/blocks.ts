@@ -59,6 +59,8 @@ export type FieldSpec = (
       hint?: string;
     }
   | { key: string; label: string; kind: "image"; hint?: string }
+  // A pasted video link or embed code, or an uploaded file; only the clean address is stored (VideoSourceField.tsx).
+  | { key: string; label: string; kind: "videoSource"; hint?: string }
   // Picked from the store's catalogue, stored as its id (ProductPickerField.tsx).
   | { key: string; label: string; kind: "product"; hint?: string }
   | { key: string; label: string; kind: "collection"; hint?: string }
@@ -277,10 +279,33 @@ export const ELEMENT_SPECS: Record<PageElementType, ElementSpec> = {
   video: {
     label: "Video",
     icon: IconVideo,
-    defaultProps: { url: "", title: "" },
+    defaultProps: { url: "", title: "", caption: "", rounded: true },
     fields: [
-      { key: "url", label: "Video URL", kind: "text", placeholder: "https://youtube.com/watch?v=…" },
-      { key: "title", label: "Title", kind: "text" },
+      { key: "url", label: "Video link or embed code", kind: "videoSource" },
+      { key: "title", label: "Title (optional)", kind: "text", plain: true, maxLength: 200 },
+      { key: "caption", label: "Caption under the video (optional)", kind: "text", plain: true, maxLength: 400 },
+      {
+        key: "aspect",
+        label: "Video shape",
+        kind: "select",
+        hint: "Leave empty to use the video's own shape.",
+        options: [
+          { value: "16:9", label: "Wide (16:9)" },
+          { value: "9:16", label: "Tall (9:16)" },
+          { value: "1:1", label: "Square (1:1)" },
+          { value: "4:3", label: "Classic (4:3)" },
+        ],
+      },
+      {
+        key: "maxWidth",
+        label: "Video width",
+        kind: "select",
+        options: [
+          { value: "container", label: "Medium" },
+          { value: "full", label: "Full width" },
+        ],
+      },
+      { key: "rounded", label: "Rounded corners", kind: "boolean" },
     ],
   },
   embed: {
@@ -2482,19 +2507,11 @@ const CORE_PRESETS: BlockPreset[] = [
   },
   {
     key: "video",
-    label: "Video",
-    description: "An embedded video.",
+    label: "Video or embed",
+    description: "Paste a video link or embed code, or upload an MP4.",
     icon: IconVideo,
     group: "basics",
     elements: ["video"],
-  },
-  {
-    key: "embed",
-    label: "Embed",
-    description: "Embed an external page by URL.",
-    icon: IconCode,
-    group: "basics",
-    elements: ["embed"],
   },
   {
     key: "map",

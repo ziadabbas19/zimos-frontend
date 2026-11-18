@@ -385,7 +385,9 @@ export function SectionInspector({
   }
 
   // --- what is shown: the section, or one element of it ----------------------
-  const wanted = focusElementId ?? null;
+  // A Video section holds one thing to set: its fields open straight away.
+  const loneVideo = elements.length === 1 && elements[0]?.type === "video" ? elements[0].id : null;
+  const wanted = focusElementId ?? loneVideo;
   const [activeId, setActiveId] = useState<string | null>(wanted);
   const [seen, setSeen] = useState({ wanted, sectionId: section.id });
   if (seen.wanted !== wanted || seen.sectionId !== section.id) {

@@ -12,6 +12,7 @@ import { ItemListField } from "../ItemListField";
 import { plainText } from "../plainText";
 import { ColorWell } from "../theme/ColorWell";
 import { ProductPickerField } from "../ProductPickerField";
+import { VideoSourceField } from "../VideoSourceField";
 import { locateOnCanvas } from "@/lib/previewBridge";
 import { XS_FIELD_GROUPS, isXsType, xsFieldGroup, type XsFieldGroup } from "../xsBlocks";
 import { Group, NumberField, SwitchRow } from "./controls";
@@ -578,6 +579,9 @@ export function ElementField({
 
     case "image":
       return <ImageField label={label} labelHidden={labelHidden} hint={hint} value={asString(raw)} onChange={(url) => onChange(spec.key, url)} />;
+
+    case "videoSource":
+      return <VideoSourceField label={label} value={asString(raw)} autoplay={props.autoplay === true} onChange={onChange} />;
 
     case "imageList":
       return <ImageListField label={label} hint={hint} value={asStringList(raw)} onChange={(urls) => onChange(spec.key, urls)} />;

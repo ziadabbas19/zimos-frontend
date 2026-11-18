@@ -6,7 +6,7 @@ import { XS_ONLY } from "../xsBlocks";
  * picture, line and space. In such a store they take the look's faces and colours (storefront
  * app/xs-shell.css maps the storefront's tokens to the look's; xs-store.css its buttons).
  */
-export const XS_BASICS: readonly string[] = ["heading", "text", "button", "image", "divider", "spacer"];
+export const XS_BASICS: readonly string[] = ["heading", "text", "button", "image", "video", "divider", "spacer"];
 
 /** What the side library offers: every block, or the imported templates' bands and the basics (XS_ONLY). */
 export const LIBRARY_PRESETS: readonly BlockPreset[] = XS_ONLY
