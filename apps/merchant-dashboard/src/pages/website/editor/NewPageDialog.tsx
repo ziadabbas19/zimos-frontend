@@ -226,7 +226,7 @@ export function NewPageDialog({
 
         <fieldset className="min-w-0 space-y-2">
           <legend className="mb-2 text-sm font-medium text-ink">{t.startFrom}</legend>
-          <div className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {PAGE_STARTERS.map((value) => {
               const Glyph = GLYPH[value];
               return (

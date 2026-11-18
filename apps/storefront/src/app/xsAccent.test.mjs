@@ -119,3 +119,14 @@ describe("whose colour it is", () => {
     assert.equal(xsDarkAccentOf({ primaryColor: "#112233", primaryColorSource: "template" }), null);
   });
 });
+
+describe("the built template stylesheets", () => {
+  it("each carry the rules for a store's own colour", () => {
+    const { looks } = JSON.parse(readFileSync(new URL("../lib/xsLookCss.json", import.meta.url), "utf8"));
+    assert.equal(Object.keys(looks).length, 24);
+    for (const [look, file] of Object.entries(looks)) {
+      const css = readFileSync(new URL(`../../public${file}`, import.meta.url), "utf8");
+      assert.ok(css.includes("data-xs-own-accent"), `look ${look}`);
+    }
+  });
+});

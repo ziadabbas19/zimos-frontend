@@ -41,6 +41,15 @@
  * footer carry a look's token block of their own (data-xs-look), so for them
  * the same holds one level further down.
  */
+/*
+ * A template's own logo is drawn for a light ground. Where it is dark, a dark store
+ * shows it white so it can be read. A logo the merchant uploaded is never touched.
+ */
+.brand-theme:is([data-xs-shell="01"], [data-xs-shell="03"], [data-xs-shell="04"], [data-xs-shell="05"], [data-xs-shell="06"], [data-xs-shell="09"], [data-xs-shell="10"], [data-xs-shell="11"], [data-xs-shell="12"], [data-xs-shell="14"])[data-color-mode="dark"] img[data-xs-logo="template"],
+.brand-theme[data-xs-shell="02"][data-color-mode="dark"] .xs-footer img[data-xs-logo="template"] {
+  filter: brightness(0) invert(1);
+}
+
 /* A template's picture may run past the screen's edge by design: the page never scrolls sideways for it. */
 .brand-theme[data-xs-shell] {
   overflow-x: clip;
