@@ -60,8 +60,6 @@ export function PublishSheet({
   error,
   problems,
   lookDirty,
-  savingLook,
-  onSaveLook,
   onPublish,
   onOpenPage,
 }: {
@@ -77,9 +75,8 @@ export function PublishSheet({
   error: string | null;
   /** The server's own list (one per offending page), after a refused publish. */
   problems: PublishProblem[];
+  /** The look has changes: they are saved by the publish itself (usePublishFlow). */
   lookDirty: boolean;
-  savingLook: boolean;
-  onSaveLook: () => void;
   onPublish: () => void;
   onOpenPage: (pageId: string) => void;
 }) {
@@ -156,12 +153,9 @@ export function PublishSheet({
         )}
 
         {lookDirty && (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-[0.875rem] bg-accent-soft px-3 py-2.5">
-            <p className="min-w-0 flex-1 basis-48 text-sm text-ink">{t.lookPending}</p>
-            <Button type="button" variant="secondary" size="sm" className="rounded-full px-3" disabled={savingLook} onClick={onSaveLook}>
-              {savingLook ? t.lookSaving : t.lookSave}
-            </Button>
-          </div>
+          <p data-slot="publish-look-note" className="rounded-[0.875rem] bg-accent-soft px-3 py-2.5 text-sm leading-6 text-ink">
+            {t.lookPending}
+          </p>
         )}
 
         {local.length > 0 && (

@@ -3303,7 +3303,7 @@ export function createSection(preset: BlockPreset, locale: EditorLocale = "ar"):
   return section;
 }
 
-function presetByKey(key: string): BlockPreset {
+export function presetByKey(key: string): BlockPreset {
   const preset = BLOCK_PRESETS.find((p) => p.key === key);
   if (!preset) throw new Error(`Unknown block preset "${key}"`);
   return preset;
