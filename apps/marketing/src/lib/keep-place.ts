@@ -22,7 +22,7 @@ const MAX_AGE_MS = 30_000;
 const ROOTS = "section[id], main, footer";
 
 /** The header and the corner buttons float over the page; never anchors. */
-const FLOATING = ".lz-top, .lz-corner, .zm-hdr, .zx-wa";
+const FLOATING = ".lz-top, .lz-corner, .zm-hdr";
 
 type Spot = { top: true } | { end: true } | { root: string; trail: number[]; fraction: number };
 

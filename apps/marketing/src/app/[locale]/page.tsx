@@ -18,7 +18,6 @@ import { DashboardShow, OrderJourney } from "@/components/home-lazy";
 import { HomePricing } from "@/components/home-pricing";
 import { StartSteps } from "@/components/start-steps";
 import { StoreShowcase } from "@/components/store-showcase";
-import { WhatsAppFloat } from "@/components/whatsapp-float";
 import { WorksWith } from "@/components/works-with";
 import { getPlatformSettings } from "@/lib/platform-settings";
 import { homeJsonLd, jsonLdScript, pageMetadata } from "@/lib/seo";
@@ -31,8 +30,7 @@ import { homeJsonLd, jsonLdScript, pageMetadata } from "@/lib/seo";
  * each one to open and look through; what a merchant gets; three steps to a
  * live store; an order's road from the ad to the profit; real screens of
  * the dashboard; the growth tools; what it costs, with the plans read from
- * the API; and the questions — then the closing band. A WhatsApp button
- * stays at the corner for whoever would rather ask first.
+ * the API; and the questions — then the closing band.
  *
  * Mostly server-rendered: the header, the stores gallery, and (each in a
  * chunk of its own, components/home-lazy.tsx) the order's journey, the
@@ -84,7 +82,6 @@ export default async function MarketingHome({ params }: Params) {
           <HomeFinal copy={dict.finalCta} />
         </main>
         <HomeFooter copy={dict.footer} brand={dict.brand} locale={locale} />
-        <WhatsAppFloat settings={settings} locale={locale} />
         <HomeEffects />
       </div>
     </>

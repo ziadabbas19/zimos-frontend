@@ -1,7 +1,7 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { ExternalLink, PartyPopper, PencilRuler } from "lucide-react";
-import { Button, Card, CardContent, Input, Label, Alert, ZLoader } from "@store-builder/ui";
+import { Button, Card, CardContent, Input, Label, Alert, ZLoader, cn } from "@store-builder/ui";
 import { apiErrorDetails, isApiErrorCode, type PublicPlan, type Workspace } from "@store-builder/api-client";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { useAuth } from "@/context/AuthContext";
@@ -11,6 +11,7 @@ import { useErrorMessage } from "@/lib/errorMessages";
 import { apiClient } from "@/lib/apiClient";
 import { StoreAddressField } from "@/components/StoreAddressField";
 import { CopyButton } from "@/components/CopyButton";
+import { IconCaretDown } from "@/components/icons";
 import { SignOutButton } from "@/components/SignOutButton";
 import { PlanPicker, type PlanChoice } from "@/components/plans/PlanPicker";
 import { useT, fmt, type Messages } from "@/i18n/LocaleContext";
@@ -26,9 +27,10 @@ const STRINGS = {
     open: "Open",
     createTitle: "Create a new store",
     storeName: "Store name",
+    referralToggle: "Do you have a referral code?",
     referral: "Referral code (optional)",
     referralPlaceholder: "e.g. CAIRO10",
-    referralHint: "Got a code from a Zimos agent? Enter it now — it can also be added later in Settings.",
+    referralHint: "Enter it now, or add it later in Settings.",
     planTitle: "Plan for this store",
     create: "Create store",
     creating: "Creating…",
@@ -57,9 +59,10 @@ const STRINGS = {
     open: "فتح",
     createTitle: "إنشاء متجر جديد",
     storeName: "اسم المتجر",
+    referralToggle: "هل لديك كود إحالة؟",
     referral: "كود الإحالة (اختياري)",
     referralPlaceholder: "مثال: CAIRO10",
-    referralHint: "حصلت على كود من أحد مندوبي Zimos؟ أدخله الآن، ويمكنك أيضًا إضافته لاحقًا من الإعدادات.",
+    referralHint: "أدخله الآن، أو أضفه لاحقا من الإعدادات.",
     planTitle: "خطة هذا المتجر",
     create: "إنشاء المتجر",
     creating: "جارٍ الإنشاء…",
@@ -90,6 +93,7 @@ export function WorkspacePickerPage() {
   const errorMessage = useErrorMessage();
   const addressId = useId();
   const referralId = useId();
+  const referralPanelId = useId();
   const planHeadingId = useId();
 
   const [name, setName] = useState("");
@@ -98,8 +102,10 @@ export function WorkspacePickerPage() {
   // case needs no thought. Once they have edited it, it is theirs and the name
   // stops overwriting it.
   const [slugEdited, setSlugEdited] = useState(false);
-  // An agent's referral code: optional, attached to the new store's plan.
+  // A referral code: optional, attached to the new store's plan.
   const [referralCode, setReferralCode] = useState("");
+  // Behind a link until asked for; open from the start when a code is already there.
+  const [referralOpen, setReferralOpen] = useState(() => referralCode !== "");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ workspace: Workspace; addressError?: string; draft: boolean } | null>(null);
@@ -254,7 +260,23 @@ export function WorkspacePickerPage() {
                     </div>
                   )}
 
-                  <div className="space-y-1.5">
+                  <div>
+                    <button
+                      type="button"
+                      aria-expanded={referralOpen}
+                      aria-controls={referralPanelId}
+                      onClick={() => setReferralOpen((open) => !open)}
+                      className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md text-sm font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    >
+                      {t.referralToggle}
+                      <IconCaretDown
+                        className={cn("size-4 shrink-0 transition-transform motion-reduce:transition-none", referralOpen && "rotate-180")}
+                        aria-hidden
+                      />
+                    </button>
+                  </div>
+
+                  <div id={referralPanelId} hidden={!referralOpen} className="space-y-1.5">
                     <Label htmlFor={referralId}>{t.referral}</Label>
                     <Input
                       id={referralId}

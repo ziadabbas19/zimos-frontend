@@ -3641,29 +3641,6 @@ html:has(.zm-viewer[open]) {
   background: var(--card);
 }
 
-/* ══ WhatsApp, at the corner ═════════════════════════════════════════ */
-.zm .zx-wa {
-  position: fixed;
-  inset-block-end: 1.125rem;
-  inset-inline-start: 1.125rem;
-  z-index: 60;
-  display: grid;
-  place-items: center;
-  width: 3.5rem;
-  height: 3.5rem;
-  min-width: 48px;
-  min-height: 48px;
-  border-radius: 50%;
-  background: #25d366;
-  box-shadow: 0 14px 30px -10px rgb(37 211 102 / 0.7);
-  color: #fff;
-  transition: translate 0.25s var(--ease);
-}
-
-.zm .zx-wa:hover {
-  translate: 0 -3px;
-}
-
 /* ══ Computers: the wide sections ════════════════════════════════════
    From 1024px, where the page takes its computer scale, the stores, the
    features and the plans spread to the header's width (the owner,
@@ -4319,11 +4296,6 @@ html:has(.zm-viewer[open]) {
 
   .zm-end-c {
     padding-block: 4rem;
-  }
-
-  .zm .zx-wa {
-    inset-block-end: 0.875rem;
-    inset-inline-start: 0.875rem;
   }
 }
 
