@@ -12,6 +12,8 @@ import { apiClient } from "@/lib/apiClient";
 import { startBootstrap } from "@/lib/bootstrap";
 import { listenForConfirmation, noteCodeSent } from "@/lib/emailConfirm";
 import { leavePushOnSignOut } from "@/lib/push/pushClient";
+import { SITE_VISITOR_DETAILS_ENABLED } from "@/lib/features";
+import { writeSignedInHint } from "@/lib/signedInHint";
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -122,6 +124,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Signed in or not, for the marketing site's visit counts (lib/signedInHint); off, nothing.
+  useEffect(() => {
+    if (!SITE_VISITOR_DETAILS_ENABLED) return;
+    if (status === "authenticated") writeSignedInHint(true);
+    else if (status === "guest") writeSignedInHint(false);
+  }, [status]);
 
   // Back online after a failed page load: try again by itself. Listening from the start, not
   // only once "unavailable" is on screen: an effect added the listener a moment after the

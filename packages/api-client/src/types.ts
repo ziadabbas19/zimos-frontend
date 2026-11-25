@@ -41,6 +41,8 @@ export interface LoginPayload {
   password: string;
   /** The language of a sign-up code sent to an account not confirmed yet. */
   locale?: "ar" | "en";
+  /** The marketing-site session the sign-in link came from (?sv=); an API without it drops it. */
+  siteSessionId?: string;
 }
 
 export interface RegisterPayload {

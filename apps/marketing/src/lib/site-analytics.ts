@@ -20,6 +20,16 @@ export const SITE_ANALYTICS_ENABLED = process.env.NEXT_PUBLIC_SITE_ANALYTICS_ENA
  */
 export const SITE_TRAFFIC_DETAILS_ENABLED = process.env.NEXT_PUBLIC_SITE_TRAFFIC_DETAILS_ENABLED === "true";
 
+/**
+ * Who the visitor is, for the console: each page view also sends the screen
+ * size, the browser's language, the model and OS version from Client Hints
+ * (Chromium only; others send none) and whether the dashboard says this
+ * browser is signed in (its `zimos-signed-in` cookie on .zimos.co); and the
+ * sign-in link carries this session too (?sv=), so the account is tied to the
+ * visits. Turn it on after the API's SITE_VISITOR_DETAILS_ENABLED.
+ */
+export const SITE_VISITOR_DETAILS_ENABLED = process.env.NEXT_PUBLIC_SITE_VISITOR_DETAILS_ENABLED === "true";
+
 const VISITOR_KEY = "zimos.site.visitor";
 const SESSION_KEY = "zimos.site.session";
 export const PING_MS = 15_000;
@@ -37,6 +47,11 @@ type Payload = {
   utmMedium?: string;
   utmCampaign?: string;
   cta?: "register" | "login";
+  screen?: string;
+  language?: string;
+  signedIn?: boolean;
+  uaModel?: string;
+  uaPlatformVersion?: string;
 };
 
 function randomId(): string {
@@ -84,6 +99,70 @@ function localeOf(path: string): "ar" | "en" | undefined {
 
 let firstViewSent = false;
 
+/** The dashboard's sign-in hint: "1" signed in, "0" signed out; none (never opened here) is unknown. */
+export function readSignedIn(cookies: string): boolean | undefined {
+  const value = /(?:^|;\s*)zimos-signed-in=([^;]*)/.exec(cookies)?.[1];
+  return value === "1" ? true : value === "0" ? false : undefined;
+}
+
+type HighEntropy = { model?: string; platformVersion?: string };
+type UserAgentData = { getHighEntropyValues?: (hints: string[]) => Promise<HighEntropy> };
+
+let hints: HighEntropy = {};
+let hintsReady: Promise<void> | null = null;
+
+/** Client Hints, asked once; waited for at most 300 ms so a view is never held back long. */
+function clientHints(): Promise<void> {
+  if (hintsReady) return hintsReady;
+  const data = (navigator as Navigator & { userAgentData?: UserAgentData }).userAgentData;
+  if (!data?.getHighEntropyValues) return (hintsReady = Promise.resolve());
+  const ask = data.getHighEntropyValues(["model", "platformVersion"]).then(
+    (v) => {
+      hints = { model: v.model || undefined, platformVersion: v.platformVersion || undefined };
+    },
+    () => undefined
+  );
+  hintsReady = Promise.race([ask, new Promise<void>((resolve) => window.setTimeout(resolve, 300))]);
+  return hintsReady;
+}
+
+/** What a page view says about the visitor (SITE_VISITOR_DETAILS_ENABLED); anything unreadable is left out. */
+function visitorFields(): Partial<Payload> {
+  const out: Partial<Payload> = {};
+  try {
+    const w = Math.round(window.screen.width);
+    const h = Math.round(window.screen.height);
+    if (w > 0 && h > 0 && w < 100000 && h < 100000) out.screen = `${w}x${h}`;
+  } catch {
+    // No screen: left out.
+  }
+  if (navigator.language && /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8}){0,2}$/.test(navigator.language)) out.language = navigator.language;
+  try {
+    out.signedIn = readSignedIn(document.cookie);
+  } catch {
+    // Cookies blocked: unknown.
+  }
+  if (hints.model) out.uaModel = hints.model.slice(0, 60);
+  if (hints.platformVersion) out.uaPlatformVersion = hints.platformVersion.slice(0, 20);
+  return out;
+}
+
+function post(body: Payload): void {
+  try {
+    // text/plain keeps this a simple request: no CORS preflight.
+    void fetch(`${API_BASE_URL}/public/site-events`, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(body),
+      keepalive: true,
+      credentials: "omit",
+      mode: "cors",
+    }).catch(() => undefined);
+  } catch {
+    // Never surfaces.
+  }
+}
+
 export function sendSiteEvent(event: SiteEvent, path = window.location.pathname, cta?: "register" | "login"): void {
   const current = siteIds();
   if (!current) return;
@@ -106,19 +185,11 @@ export function sendSiteEvent(event: SiteEvent, path = window.location.pathname,
     }
   }
 
-  try {
-    // text/plain keeps this a simple request: no CORS preflight.
-    void fetch(`${API_BASE_URL}/public/site-events`, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify(body),
-      keepalive: true,
-      credentials: "omit",
-      mode: "cors",
-    }).catch(() => undefined);
-  } catch {
-    // Never surfaces.
+  if (SITE_VISITOR_DETAILS_ENABLED && event === "view") {
+    void clientHints().then(() => post({ ...body, ...visitorFields() }));
+    return;
   }
+  post(body);
 }
 
 /** A sign-up or sign-in link into the dashboard, or null for any other link. */

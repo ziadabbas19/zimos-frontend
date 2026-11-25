@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { PING_MS, SITE_ANALYTICS_ENABLED, dashboardCta, sendSiteEvent, siteIds, withSiteSession } from "@/lib/site-analytics";
+import { PING_MS, SITE_ANALYTICS_ENABLED, SITE_VISITOR_DETAILS_ENABLED, dashboardCta, sendSiteEvent, siteIds, withSiteSession } from "@/lib/site-analytics";
 import { isSignedUpPage } from "@/lib/urls";
 
 /**
@@ -26,14 +26,15 @@ export function SiteAnalytics() {
       if (document.visibilityState === "visible") sendSiteEvent("ping");
     }, PING_MS);
 
-    // Sign-up / sign-in clicks; the sign-up link carries the session (?sv=).
+    // Sign-up / sign-in clicks; the sign-up link carries the session (?sv=), and
+    // the sign-in link too with SITE_VISITOR_DETAILS_ENABLED.
     const onClick = (e: MouseEvent) => {
       const anchor = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
       if (!anchor) return;
       const cta = dashboardCta(anchor.href);
       if (!cta) return;
       const current = siteIds();
-      if (cta === "register" && current) anchor.href = withSiteSession(anchor.href, current.sessionId);
+      if (current && (cta === "register" || SITE_VISITOR_DETAILS_ENABLED)) anchor.href = withSiteSession(anchor.href, current.sessionId);
       sendSiteEvent("cta_click", window.location.pathname, cta);
     };
     document.addEventListener("click", onClick, true);
