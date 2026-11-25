@@ -108,6 +108,25 @@ export interface SiteVisitRow {
   signedUp: boolean;
   /** The account the visit created (the console's /users/<id>). */
   userId: string | null;
+  /**
+   * Who the visitor is (SITE_VISITOR_DETAILS_ENABLED on the API). Null for what
+   * is not known, and absent from an API without it: both show a dash.
+   */
+  model?: string | null;
+  os?: string | null;
+  osVersion?: string | null;
+  browserVersion?: string | null;
+  /** "390x844" */
+  screen?: string | null;
+  /** The browser's language, e.g. "ar-EG". */
+  language?: string | null;
+  /** Whether the dashboard said this browser was signed in during the visit. */
+  signedIn?: boolean | null;
+  /** Null: recorded before the visitor was kept from day to day. */
+  returning?: boolean | null;
+  previousVisitAt?: string | null;
+  /** The account this visit created, else the one this browser signed in to (/users/<id>). */
+  account?: { id: string; name: string } | null;
 }
 
 export interface SiteVisitPage {
