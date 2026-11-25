@@ -16,7 +16,15 @@ import { fmt, useLocale, useT } from "@/i18n/LocaleContext";
 import { useAsync } from "@/lib/useAsync";
 import { SITE_LIVE_ENABLED } from "@/lib/features";
 import * as api from "@/lib/siteTrafficApi";
-import { SITE_DETAILS_RANGES, SITE_DEVICES, SITE_VISIT_SORTS, type SiteDetailsRange, type SiteFilters, type SiteVisitSort } from "@/lib/siteTrafficApi";
+import {
+  SITE_DETAILS_RANGES,
+  SITE_DEVICES,
+  SITE_VISIT_SORTS,
+  type SiteDetailsRange,
+  type SiteFilters,
+  type SiteVisitRow,
+  type SiteVisitSort,
+} from "@/lib/siteTrafficApi";
 import { SITE_TRAFFIC_STRINGS, formatDuration } from "@/lib/siteTrafficStrings";
 import { GOVERNORATE_CODES, countryName, formatRatePct, governorateName } from "@/lib/storeTrafficStrings";
 import { formatChartLabel, formatDateTime, formatNumber, formatRelative } from "@/lib/format";
@@ -36,6 +44,76 @@ const isOff = (error: unknown) => error instanceof ApiError && error.status === 
 
 const sourceLabel = (t: Strings, source: string | null | undefined) => (!source || source === "direct" ? t.direct : source);
 const deviceLabel = (t: Strings, device: string | null | undefined) => (device ? (t[`device_${device}` as keyof Strings] ?? device) : "—");
+
+/** detect-browser's names (the API's browser family) as people know them; others as they are. */
+const BROWSER_NAMES: Record<string, string> = {
+  chrome: "Chrome",
+  crios: "Chrome",
+  "chromium-webview": "WebView",
+  firefox: "Firefox",
+  fxios: "Firefox",
+  safari: "Safari",
+  ios: "Safari",
+  "ios-webview": "WebView",
+  edge: "Edge",
+  "edge-chromium": "Edge",
+  "edge-ios": "Edge",
+  samsung: "Samsung Internet",
+  opera: "Opera",
+  "opera-mini": "Opera Mini",
+  facebook: "Facebook",
+  instagram: "Instagram",
+};
+
+const named = (name: string | null | undefined, version: string | null | undefined) => (name ? [name, version].filter(Boolean).join(" ") : null);
+
+type Visitor = Pick<SiteVisitRow, "device" | "browser" | "model" | "os" | "osVersion" | "browserVersion" | "screen" | "language">;
+
+/** The device and model; then the system and browser with versions; then screen and language. Unknown parts are left out. */
+function deviceParts(t: Strings, v: Visitor) {
+  return {
+    device: [deviceLabel(t, v.device), v.model].filter(Boolean).join(" · "),
+    system: [named(v.os, v.osVersion), named(v.browser ? (BROWSER_NAMES[v.browser] ?? v.browser) : null, v.browserVersion)].filter(Boolean).join(" · "),
+    extra: [v.screen?.replace("x", "×"), v.language].filter(Boolean).join(" · "),
+  };
+}
+
+/** First visit or returning, with the previous visit's time as its tooltip; a dash for visits from before it was kept. */
+function VisitorBadge({ t, row }: { t: Strings; row: Pick<SiteVisitRow, "returning" | "previousVisitAt"> }) {
+  if (row.returning === true) {
+    const when = row.previousVisitAt ? formatDateTime(row.previousVisitAt) : null;
+    return (
+      <Badge variant="secondary" title={when ? fmt(t.previousVisitAt, { when }) : undefined}>
+        {t.returning}
+      </Badge>
+    );
+  }
+  if (row.returning === false) return <Badge variant="outline">{t.firstVisit}</Badge>;
+  return <span className="text-ink-soft">—</span>;
+}
+
+/** The account (a link when the console may open users) and whether the browser was signed in; a dash when neither is known. */
+function AccountCell({ t, row, canOpen }: { t: Strings; row: Pick<SiteVisitRow, "account" | "signedIn">; canOpen: boolean }) {
+  const state = row.signedIn === true ? t.signedIn : row.signedIn === false ? t.notSignedIn : null;
+  if (!row.account && !state) return <span className="text-ink-soft">—</span>;
+  return (
+    <div className="flex flex-col items-start">
+      {row.account &&
+        (canOpen ? (
+          <Link
+            to={`/users/${row.account.id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex min-h-11 items-center font-medium text-primary hover:underline"
+          >
+            <bdi>{row.account.name}</bdi>
+          </Link>
+        ) : (
+          <bdi>{row.account.name}</bdi>
+        ))}
+      {state && <span className="text-xs text-ink-soft">{state}</span>}
+    </div>
+  );
+}
 
 /**
  * Site traffic in detail (VITE_SITE_TRAFFIC_DETAILS_ENABLED, overview.view):
@@ -316,6 +394,8 @@ function VisitsTab({
   onPage: (page: number) => void;
   onOpen: (sessionId: string) => void;
 }) {
+  const { can } = useAuth();
+  const canOpenUsers = can(P.WORKSPACES_VIEW);
   const { data, loading, error, refresh } = useAsync(
     () => api.getVisits({ ...filters, page, pageSize: PAGE_SIZE, sort }),
     [filters.range, filters.country, filters.governorate, filters.device, filters.source, sort, page]
@@ -351,41 +431,61 @@ function VisitsTab({
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
                       <Th>{t.when}</Th>
+                      <Th>{t.visitorRow}</Th>
                       <Th>{t.source}</Th>
                       <Th>{t.landingPage}</Th>
                       <Th>{t.place}</Th>
                       <Th>{t.deviceCol}</Th>
+                      <Th>{t.accountCol}</Th>
                       <Th>{t.pages}</Th>
                       <Th>{t.time}</Th>
                       <Th>{t.signedUp}</Th>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {data.sessions.map((r) => (
-                      <TableRow key={r.sessionId} className="cursor-pointer" onClick={() => onOpen(r.sessionId)}>
-                        <Td>
-                          <span title={formatDateTime(r.lastSeenAt)}>{formatRelative(r.lastSeenAt)}</span>
-                        </Td>
-                        <Td>
-                          {sourceLabel(t, r.source)}
-                          {r.utmCampaign && <span className="block text-xs text-ink-soft">{r.utmCampaign}</span>}
-                        </Td>
-                        <Td>{r.landingPath ? <Mono>{r.landingPath}</Mono> : "—"}</Td>
-                        <Td>
-                          <div className="flex flex-col">
-                            <span>{countryName(r.country, locale)}</span>
-                            {r.governorate && <span className="text-xs text-ink-soft">{governorateName(r.governorate, locale)}</span>}
-                          </div>
-                        </Td>
-                        <Td>
-                          {deviceLabel(t, r.device)}
-                          {r.browser && <span className="block text-xs text-ink-soft">{r.browser}</span>}
-                        </Td>
-                        <Td className="tabular-nums">{formatNumber(r.pages)}</Td>
-                        <Td className="tabular-nums">{formatDuration(r.seconds, locale)}</Td>
-                        <Td>{r.signedUp ? <Badge variant="secondary">{t.signedUp}</Badge> : <span className="text-ink-soft">—</span>}</Td>
-                      </TableRow>
-                    ))}
+                    {data.sessions.map((r) => {
+                      const d = deviceParts(t, r);
+                      return (
+                        <TableRow key={r.sessionId} className="cursor-pointer" onClick={() => onOpen(r.sessionId)}>
+                          <Td>
+                            <span title={formatDateTime(r.lastSeenAt)}>{formatRelative(r.lastSeenAt)}</span>
+                          </Td>
+                          <Td>
+                            <VisitorBadge t={t} row={r} />
+                          </Td>
+                          <Td>
+                            {sourceLabel(t, r.source)}
+                            {r.utmCampaign && <span className="block text-xs text-ink-soft">{r.utmCampaign}</span>}
+                          </Td>
+                          <Td>{r.landingPath ? <Mono>{r.landingPath}</Mono> : "—"}</Td>
+                          <Td>
+                            <div className="flex flex-col">
+                              <span>{countryName(r.country, locale)}</span>
+                              {r.governorate && <span className="text-xs text-ink-soft">{governorateName(r.governorate, locale)}</span>}
+                            </div>
+                          </Td>
+                          <Td>
+                            {d.device}
+                            {d.system && (
+                              <span className="block text-xs text-ink-soft">
+                                <bdi dir="ltr">{d.system}</bdi>
+                              </span>
+                            )}
+                            {d.extra && (
+                              <span className="block text-xs text-ink-soft">
+                                <bdi dir="ltr">{d.extra}</bdi>
+                              </span>
+                            )}
+                          </Td>
+                          <Td>
+                            <AccountCell t={t} row={r} canOpen={canOpenUsers} />
+                          </Td>
+                          <Td className="tabular-nums">{formatNumber(r.pages)}</Td>
+                          <Td className="tabular-nums">{formatDuration(r.seconds, locale)}</Td>
+                          <Td>{r.signedUp ? <Badge variant="secondary">{t.signedUp}</Badge> : <span className="text-ink-soft">—</span>}</Td>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -404,6 +504,8 @@ function VisitDrawer({ t, locale, sessionId, onClose }: { t: Strings; locale: Lo
   const { data, loading, error, refresh } = useAsync(() => (sessionId ? api.getVisit(sessionId) : Promise.resolve(null)), [sessionId]);
   const s = data?.session;
   const utm = s ? [s.utmSource, s.utmMedium, s.utmCampaign].filter(Boolean).join(" / ") : "";
+  const d = s ? deviceParts(t, s) : null;
+  const accountId = s?.account?.id ?? s?.userId;
   return (
     <Drawer
       open={Boolean(sessionId)}
@@ -411,8 +513,8 @@ function VisitDrawer({ t, locale, sessionId, onClose }: { t: Strings; locale: Lo
       title={t.visitTitle}
       description={s ? formatDateTime(s.startedAt) : undefined}
       footer={
-        s?.userId && can(P.WORKSPACES_VIEW) ? (
-          <Link to={`/users/${s.userId}`} className="text-sm font-medium text-primary hover:underline">
+        accountId && can(P.WORKSPACES_VIEW) ? (
+          <Link to={`/users/${accountId}`} className="inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline">
             {t.openUser}
           </Link>
         ) : undefined
@@ -428,7 +530,17 @@ function VisitDrawer({ t, locale, sessionId, onClose }: { t: Strings; locale: Lo
                 {countryName(s.country, locale)}
                 {s.governorate ? ` · ${governorateName(s.governorate, locale)}` : ""}
               </DetailRow>
-              <DetailRow label={t.deviceCol}>{[deviceLabel(t, s.device), s.browser].filter(Boolean).join(" · ")}</DetailRow>
+              <DetailRow label={t.visitorRow}>
+                <VisitorBadge t={t} row={s} />
+              </DetailRow>
+              <DetailRow label={t.previousVisit}>{s.previousVisitAt ? formatDateTime(s.previousVisitAt) : "—"}</DetailRow>
+              <DetailRow label={t.accountCol}>
+                <AccountCell t={t} row={s} canOpen={can(P.WORKSPACES_VIEW)} />
+              </DetailRow>
+              <DetailRow label={t.deviceCol}>{d?.device || "—"}</DetailRow>
+              <DetailRow label={t.systemRow}>{d?.system ? <bdi dir="ltr">{d.system}</bdi> : "—"}</DetailRow>
+              <DetailRow label={t.screenSize}>{s.screen ? <bdi dir="ltr">{s.screen.replace("x", "×")}</bdi> : "—"}</DetailRow>
+              <DetailRow label={t.browserLanguage}>{s.language ? <bdi dir="ltr">{s.language}</bdi> : "—"}</DetailRow>
               <DetailRow label={t.language}>{s.locale ?? "—"}</DetailRow>
               <DetailRow label={t.utm}>{utm || "—"}</DetailRow>
               <DetailRow label={t.referrer}>{s.referrerHost ?? t.direct}</DetailRow>

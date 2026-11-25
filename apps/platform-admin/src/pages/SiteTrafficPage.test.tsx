@@ -5,6 +5,7 @@ import { ApiError } from "@store-builder/api-client";
 import { LocaleProvider } from "@/i18n/LocaleContext";
 import type { SiteDetailsSummary, SiteProtectionSummary, SiteTrafficSummary, SiteVisitPage, SiteVisitTimeline } from "@/lib/siteTrafficApi";
 import * as api from "@/lib/siteTrafficApi";
+import { formatDateTime } from "@/lib/format";
 import { SiteTrafficPage } from "./SiteTrafficPage";
 
 /**
@@ -238,6 +239,63 @@ describe("the detailed page", () => {
     expect(within(drawer).getByText("facebook / cpc / eid")).toBeTruthy();
     const links = within(drawer).getAllByRole("link", { name: "Open the account" });
     expect(links.map((a) => a.getAttribute("href"))).toEqual(["/users/user-1", "/users/user-1"]);
+  });
+
+  it("visits: who the visitor is — first or returning, device and account; a dash for what is not known", async () => {
+    const known = {
+      ...VISITS.sessions[0],
+      sessionId: "site-session-2",
+      landingPath: "/en",
+      browser: "chrome",
+      signedUp: false,
+      userId: null,
+      model: "Pixel 7",
+      os: "Android",
+      osVersion: "14",
+      browserVersion: "131",
+      screen: "412x915",
+      language: "ar-EG",
+      signedIn: true,
+      returning: true,
+      previousVisitAt: "2026-10-19T18:30:00.000Z",
+      account: { id: "user-2", name: "Visitor Account" },
+    };
+    const first = { ...known, sessionId: "site-session-3", landingPath: "/en/blog", returning: false, previousVisitAt: null, account: null, signedIn: false };
+    mocked.getVisits.mockResolvedValue({ ...VISITS, total: 3, sessions: [known, first, VISITS.sessions[0]] });
+    mocked.getVisit.mockResolvedValue({ ...TIMELINE, session: { ...TIMELINE.session, ...known } });
+    renderPage("?tab=visits");
+
+    const row = (await screen.findByText("/en")).closest("tr") as HTMLElement;
+    const returning = within(row).getByText("Returning");
+    expect(returning.getAttribute("title")).toBe(`Previous visit: ${formatDateTime("2026-10-19T18:30:00.000Z")}`);
+    expect(within(row).getByText("Mobile · Pixel 7")).toBeTruthy();
+    expect(within(row).getByText("Android 14 · Chrome 131")).toBeTruthy();
+    expect(within(row).getByText("412×915 · ar-EG")).toBeTruthy();
+    expect(within(row).getByRole("link", { name: "Visitor Account" }).getAttribute("href")).toBe("/users/user-2");
+    expect(within(row).getByText("Signed in")).toBeTruthy();
+
+    const firstRow = screen.getByText("/en/blog").closest("tr") as HTMLElement;
+    expect(within(firstRow).getByText("First visit")).toBeTruthy();
+    expect(within(firstRow).getByText("Not signed in")).toBeTruthy();
+    // A visit from before: no badge, no account, the device as it was.
+    const oldRow = screen.getByText("/ar/pricing").closest("tr") as HTMLElement;
+    const cells = within(oldRow).getAllByRole("cell").map((c) => c.textContent);
+    expect(cells[1]).toBe("—");
+    expect(cells[5]).toBe("MobileChrome");
+    expect(cells[6]).toBe("—");
+
+    fireEvent.click(within(row).getByText("/en"));
+    const drawer = await screen.findByRole("dialog");
+    await within(drawer).findByText("What they did");
+    expect(within(drawer).getByText(formatDateTime("2026-10-19T18:30:00.000Z"))).toBeTruthy();
+    expect(within(drawer).getByText("Android 14 · Chrome 131")).toBeTruthy();
+    // The footer's link (the last; the timeline's sign-up step has its own).
+    expect(within(drawer).getAllByRole("link", { name: "Open the account" }).at(-1)?.getAttribute("href")).toBe("/users/user-2");
+
+    // Following the account link from the table does not open that row's visit.
+    mocked.getVisit.mockClear();
+    fireEvent.click(within(row).getByRole("link", { name: "Visitor Account" }));
+    expect(mocked.getVisit).not.toHaveBeenCalled();
   });
 
   it("campaigns: sessions, sign-up clicks, sign-ups and conversion per UTM source / medium / campaign", async () => {

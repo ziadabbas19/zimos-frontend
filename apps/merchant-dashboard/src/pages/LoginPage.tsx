@@ -71,6 +71,10 @@ export function LoginPage() {
   const [twoFactor, setTwoFactor] = useState<TwoFactorChallenge | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  // The marketing-site session this sign-in came from (?sv=), sent with it so
+  // the site's visits are tied to the account. The same shape the API accepts.
+  const sv = new URLSearchParams(location.search).get("sv") ?? "";
+  const siteSessionId = /^[A-Za-z0-9-]{8,64}$/.test(sv) ? sv : undefined;
   // Back where the visitor was sent from, its query included (the invite
   // page's ?token=, pages/InviteAcceptPage).
   const fromLocation = (location.state as { from?: Location })?.from;
@@ -100,7 +104,7 @@ export function LoginPage() {
     setResent(false);
     setSubmitting(true);
     try {
-      const pending = await login({ identifier: identifier.trim(), password, locale });
+      const pending = await login({ identifier: identifier.trim(), password, locale, ...(siteSessionId ? { siteSessionId } : {}) });
       if (pending) {
         setChallenge(pending);
         return;

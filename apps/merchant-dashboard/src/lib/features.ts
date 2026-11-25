@@ -264,3 +264,9 @@ export const REALTIME_ENABLED = import.meta.env.VITE_REALTIME_ENABLED === "true"
  * worker a browser kept from an earlier build is unregistered (lib/push).
  */
 export const PUSH_ENABLED = import.meta.env.VITE_PUSH_ENABLED === "true";
+
+/**
+ * Tells the marketing site whether this browser is signed in (lib/signedInHint), for
+ * the console's Site visits. Turn on with the API's SITE_VISITOR_DETAILS_ENABLED.
+ */
+export const SITE_VISITOR_DETAILS_ENABLED = import.meta.env.VITE_SITE_VISITOR_DETAILS_ENABLED === "true";
