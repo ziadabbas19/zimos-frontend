@@ -257,8 +257,16 @@ export interface Workspace {
   logoUrl?: string | null;
   tagline?: string | null;
   themeSettings?: Record<string, unknown>;
+  /** What the store sells, from the store setup (BUSINESS_TYPES); null when not answered. */
+  businessType?: BusinessType | null;
+  /** The merchant's words when businessType is "other". */
+  businessTypeOther?: string | null;
   updatedAt?: string;
 }
+
+/** The store setup's "what do you sell?" choices (the backend's workspaces/businessTypes.js). */
+export const BUSINESS_TYPES = ["fashion", "electronics", "beauty", "food", "home", "accessories", "kids", "sports", "services", "other"] as const;
+export type BusinessType = (typeof BUSINESS_TYPES)[number];
 
 export interface Membership {
   id: string;
@@ -2851,6 +2859,9 @@ export interface AdminWorkspaceOverview {
   status: string;
   defaultCurrency: string;
   createdAt: string;
+  /** What the store sells, from the store setup (migration 753); null when not answered or from an older API. */
+  businessType?: BusinessType | null;
+  businessTypeOther?: string | null;
   /** Plan name, or "—" when the workspace has no subscription. */
   plan: string;
   planId: string | null;

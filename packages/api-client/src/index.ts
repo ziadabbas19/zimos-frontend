@@ -19,6 +19,7 @@ export {
   resolveFraudRules,
   isCityDistrictLevels,
   isAreaUnmatchedDetails,
+  BUSINESS_TYPES,
 } from "./types";
 export { formatMoney, formatMoneyRange, parseMoney } from "./money";
 export { SHOPPER_TOKEN_HEADER, isShopperToken, shopperTokenHeaders } from "./shopperToken";

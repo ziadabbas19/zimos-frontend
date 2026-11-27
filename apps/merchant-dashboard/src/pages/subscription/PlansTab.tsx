@@ -89,6 +89,7 @@ export function PlansTab({
   onPlansChange,
   onBillingChange,
   onChanged,
+  hideTrial = false,
 }: {
   view: SubscriptionPlans;
   billing: WorkspaceBilling | null;
@@ -96,6 +97,8 @@ export function PlansTab({
   onBillingChange: (next: WorkspaceBilling) => void;
   /** Something changed that the summary and the banners show. */
   onChanged: () => void;
+  /** The store setup's plans step: no trial note and no trial length anywhere (the actions are the same). */
+  hideTrial?: boolean;
 }) {
   const t = useT(SUBSCRIPTION_STRINGS);
   const bt = useT(BILLING_STRINGS);
@@ -141,7 +144,7 @@ export function PlansTab({
 
   return (
     <div className="space-y-5">
-      {view.trial.available && (
+      {view.trial.available && !hideTrial && (
         <Alert role="status">
           {t.trialNote} {t.trialEndNote}
         </Alert>
@@ -182,6 +185,7 @@ export function PlansTab({
             onPlansChange={onPlansChange}
             onChanged={onChanged}
             onSwitch={(target) => setSwitchTarget(target)}
+            hideTrial={hideTrial}
           />
         ))}
         <PayPerOrderCard view={view} onPlansChange={onPlansChange} onChanged={onChanged} onSwitch={(target) => setSwitchTarget(target)} />
@@ -200,6 +204,7 @@ function PlanCard({
   onPlansChange,
   onChanged,
   onSwitch,
+  hideTrial,
 }: {
   plan: SubscriptionPlan;
   view: SubscriptionPlans;
@@ -210,6 +215,8 @@ function PlanCard({
   onChanged: () => void;
   /** Opens the switch's confirmation for this card (PlanSwitchDialog). */
   onSwitch: (target: SwitchTarget) => void;
+  /** No trial length on the card (PlansTab's hideTrial). */
+  hideTrial: boolean;
 }) {
   const t = useT(SUBSCRIPTION_STRINGS);
   const p = useT(PAY_STRINGS);
@@ -296,7 +303,7 @@ function PlanCard({
           ...plan,
           monthlyPrice: plan.prices.monthly.net,
           yearlyPrice: plan.prices.yearly.net,
-          trialDays: view.move?.available || selfServeSwitch(view) ? 0 : plan.trialDays,
+          trialDays: hideTrial ? undefined : view.move?.available || selfServeSwitch(view) ? 0 : plan.trialDays,
         }}
         billingCycle={cycle}
       />
@@ -323,7 +330,7 @@ function PlanCard({
         )}
         {(action === "trial" || action === "choose") && (
           <Button type="button" className="min-h-11 w-full" disabled={busy} onClick={() => void act()}>
-            {action === "trial" ? fmt(t.startTrial, { days: formatDays(plan.trialDays, locale) }) : t.choosePlan}
+            {action === "trial" ? (hideTrial ? t.startPlan : fmt(t.startTrial, { days: formatDays(plan.trialDays, locale) })) : t.choosePlan}
           </Button>
         )}
         {action === "move" && (
@@ -535,10 +542,10 @@ function CodeField({
           placeholder={t.codePlaceholder}
           maxLength={32}
           dir="ltr"
-          className="min-w-0 flex-1 font-mono"
+          className="min-h-11 min-w-0 flex-1 font-mono"
           disabled={busy !== null}
         />
-        <Button type="submit" variant="outline" className="min-h-10 shrink-0" disabled={busy !== null || code.trim().length < 3}>
+        <Button type="submit" variant="outline" className="min-h-11 shrink-0" disabled={busy !== null || code.trim().length < 3}>
           {busy === "check" ? t.checking : t.check}
         </Button>
       </div>
@@ -548,7 +555,7 @@ function CodeField({
             {fmt(t.withCode, { code: preview.code, price: formatMinorMoney(preview.price.net, plan.currency) })}
           </p>
           {preview.schedule && <ScheduleTable rows={preview.schedule} currency={plan.currency} />}
-          <Button type="button" variant="outline" className="min-h-10 w-full" disabled={busy !== null} onClick={() => void apply()}>
+          <Button type="button" variant="outline" className="min-h-11 w-full" disabled={busy !== null} onClick={() => void apply()}>
             {busy === "apply" ? t.applying : t.applyCode}
           </Button>
         </div>
