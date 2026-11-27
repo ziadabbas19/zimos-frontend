@@ -67,6 +67,9 @@ describe("the store setup", () => {
     setUp("ar");
     expect(await screen.findByRole("group", { name: "ماذا يبيع متجرك؟" })).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/إحالة/);
+    // The address field speaks Arabic too, and the address itself stays left to right.
+    const address = screen.getByLabelText("عنوان المتجر");
+    expect(address.closest("[dir]")).toHaveAttribute("dir", "ltr");
   });
 
   it("sends the business type picked with one tap, and nothing when skipped", async () => {
