@@ -96,6 +96,14 @@ beforeEach(() => {
   mocked.listPlans.mockResolvedValue([PLAN]);
   mocked.listCodeRedemptions.mockResolvedValue({ redemptions: [], total: 0, limit: 50, offset: 0 });
   mocked.listAgentLinkRequests.mockResolvedValue({ requests: [], total: 0, limit: 50, offset: 0 });
+  mocked.simulateReferralCode.mockResolvedValue({
+    plan: { id: "p1", name: "Basic", currency: "EGP" },
+    cycle: "monthly",
+    currency: "EGP",
+    commissionBasis: "paid",
+    rows: [],
+    totals: { listPrice: 0, discount: 0, merchantPays: 0, commission: 0, platformNet: 0 },
+  });
 });
 
 afterEach(() => {
@@ -199,34 +207,83 @@ describe("a new code", () => {
     expect(input.terms?.yearly).toEqual(input.terms?.monthly);
   });
 
-  it("the simulator shows the first payments of the unsaved settings", async () => {
-    const sim: AdminReferralSimulation = {
-      plan: { id: "p1", name: "Basic", currency: "EGP" },
-      cycle: "monthly",
-      currency: "EGP",
-      commissionBasis: "paid",
-      rows: Array.from({ length: 12 }, (_, i) => ({
-        paymentNo: i + 1,
-        listPrice: 30000,
-        discount: i === 0 ? 30000 : 0,
-        merchantPays: i === 0 ? 0 : 30000,
-        commissionRateBp: null,
-        commission: 0,
-        platformNet: i === 0 ? 0 : 30000,
-      })),
-      totals: { listPrice: 360000, discount: 30000, merchantPays: 330000, commission: 0, platformNet: 330000 },
-    };
-    mocked.simulateReferralCode.mockResolvedValue(sim);
+  // The period chosen at the top is the one previewed: a yearly code is priced on the yearly price.
+  const simulation = (cycle: "monthly" | "yearly", list: number, discount: number): AdminReferralSimulation => ({
+    plan: { id: "p1", name: "Basic", currency: "EGP" },
+    cycle,
+    currency: "EGP",
+    commissionBasis: "paid",
+    rows: Array.from({ length: 12 }, (_, i) => ({
+      paymentNo: i + 1,
+      listPrice: list,
+      discount: i === 0 ? discount : 0,
+      merchantPays: i === 0 ? list - discount : list,
+      commissionRateBp: null,
+      commission: 0,
+      platformNet: i === 0 ? list - discount : list,
+    })),
+    totals: { listPrice: list * 12, discount, merchantPays: list * 12 - discount, commission: 0, platformNet: list * 12 - discount },
+  });
+
+  it("puts the period first and previews what the customer pays on that period, live", async () => {
+    mocked.simulateReferralCode.mockImplementation(async (body) =>
+      body.billingCycle === "yearly" ? simulation("yearly", 300000, 75000) : simulation("monthly", 30000, 7500)
+    );
     renderAt("/referral-codes");
     fireEvent.click(await screen.findByRole("button", { name: /New code/ }));
     const dialog = await screen.findByRole("dialog");
-    fireEvent.change(within(dialog).getByLabelText("Percent"), { target: { value: "100" } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Show payments" }));
-    await waitFor(() => expect(mocked.simulateReferralCode).toHaveBeenCalled());
-    expect(mocked.simulateReferralCode.mock.calls[0][0]).toMatchObject({ planId: "p1", billingCycle: "monthly", hasAgent: false });
-    const table = within(within(dialog).getByRole("region", { name: "Simulator" })).getByRole("table");
-    // A header, twelve payments and the total.
-    expect(within(table).getAllByRole("row")).toHaveLength(14);
+    const period = within(dialog).getByRole("group", { name: "Billing period" });
+    // First in the form.
+    expect(dialog.querySelector("form fieldset")).toBe(period);
+    expect((within(period).getByRole("radio", { name: "Monthly" }) as HTMLInputElement).checked).toBe(true);
+
+    const preview = within(dialog).getByRole("region", { name: "What the customer pays" });
+    expect(within(preview).getByText("Fill in the discount to see what the customer pays.")).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText("Percent"), { target: { value: "25" } });
+    expect(await within(preview).findByText(/The customer pays EGP\s?225(\.00)? instead of EGP\s?300(\.00)? on the first payment \(Monthly\)\./)).toBeTruthy();
+
+    fireEvent.click(within(period).getByRole("radio", { name: "Yearly" }));
+    expect(await within(preview).findByText(/The customer pays EGP\s?2,250(\.00)? instead of EGP\s?3,000(\.00)? on the first payment \(Yearly\)\./)).toBeTruthy();
+    const last = mocked.simulateReferralCode.mock.calls.at(-1)![0];
+    expect(last).toMatchObject({ planId: "p1", billingCycle: "yearly", hasAgent: false });
+    // The same schedule is sent for both periods while they share one.
+    expect(last.terms.yearly).toEqual(last.terms.monthly);
+
+    // All twelve payments on demand: a header, twelve payments and the total.
+    fireEvent.click(within(preview).getByText("All 12 payments"));
+    expect(within(within(preview).getByRole("table")).getAllByRole("row")).toHaveLength(14);
+  });
+
+  it("shows only the chosen period's discount once the periods differ, and saves each", async () => {
+    mocked.simulateReferralCode.mockResolvedValue(simulation("monthly", 30000, 0));
+    mocked.createStandaloneReferralCode.mockResolvedValue({ ...CODE, id: "c3", code: "YEARLY" });
+    renderAt("/referral-codes");
+    fireEvent.click(await screen.findByRole("button", { name: /New code/ }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText(/^Code/), { target: { value: "yearly" } });
+    fireEvent.click(within(dialog).getByRole("switch", { name: "Same for monthly and yearly" }));
+    fireEvent.change(within(dialog).getByLabelText("Percent"), { target: { value: "10" } });
+    fireEvent.click(within(dialog).getByRole("radio", { name: "Yearly" }));
+    expect(within(dialog).getByRole("heading", { name: "Discount · Yearly" })).toBeTruthy();
+    fireEvent.change(within(dialog).getByLabelText("Percent"), { target: { value: "30" } });
+    // Limited to yearly from "Who can use it".
+    fireEvent.change(within(dialog).getByLabelText("Periods it works on"), { target: { value: "yearly" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Create code" }));
+    await waitFor(() => expect(mocked.createStandaloneReferralCode).toHaveBeenCalled());
+    const input = mocked.createStandaloneReferralCode.mock.calls[0][0];
+    expect(input.allowedCycles).toEqual(["yearly"]);
+    expect(input.terms?.monthly.discount).toEqual([{ count: 1, type: "percentage", value: 1000 }]);
+    expect(input.terms?.yearly.discount).toEqual([{ count: 1, type: "percentage", value: 3000 }]);
+  });
+
+  it("keeps the rarely used fields under Advanced options", async () => {
+    renderAt("/referral-codes");
+    fireEvent.click(await screen.findByRole("button", { name: /New code/ }));
+    const dialog = await screen.findByRole("dialog");
+    const advanced = within(dialog).getByText("Advanced options").closest("details")!;
+    expect(advanced.open).toBe(false);
+    expect(within(advanced).getByLabelText("Minimum plan price")).toBeTruthy();
+    expect(within(advanced).getByLabelText("One-time benefit")).toBeTruthy();
   });
 });
 
