@@ -1,8 +1,8 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { ExternalLink, PartyPopper, PencilRuler } from "lucide-react";
-import { Button, Card, CardContent, Input, Label, Alert, ZLoader, cn } from "@store-builder/ui";
-import { apiErrorDetails, isApiErrorCode, type PublicPlan, type Workspace } from "@store-builder/api-client";
+import { Button, Card, CardContent, Input, Label, Alert, ZLoader } from "@store-builder/ui";
+import { apiErrorDetails, isApiErrorCode, type BusinessType, type PublicPlan, type Workspace } from "@store-builder/api-client";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { useAuth } from "@/context/AuthContext";
 import { useSlugCheck } from "@/lib/useSlugCheck";
@@ -11,12 +11,12 @@ import { useErrorMessage } from "@/lib/errorMessages";
 import { apiClient } from "@/lib/apiClient";
 import { StoreAddressField } from "@/components/StoreAddressField";
 import { CopyButton } from "@/components/CopyButton";
-import { IconCaretDown } from "@/components/icons";
 import { SignOutButton } from "@/components/SignOutButton";
 import { PlanPicker, type PlanChoice } from "@/components/plans/PlanPicker";
+import { BusinessTypeField } from "@/components/BusinessTypeField";
 import { useT, fmt, type Messages } from "@/i18n/LocaleContext";
 import { AuthShell } from "./AuthShell";
-import { REFERRAL_CODE_STRINGS, referralErrorMap } from "./subscription/referralCodeStrings";
+import { PlansStep } from "./subscription/PlansStep";
 
 const STRINGS = {
   en: {
@@ -27,10 +27,6 @@ const STRINGS = {
     open: "Open",
     createTitle: "Create a new store",
     storeName: "Store name",
-    referralToggle: "Do you have a referral code?",
-    referral: "Referral code (optional)",
-    referralPlaceholder: "e.g. CAIRO10",
-    referralHint: "Enter it now, or add it later in Settings.",
     planTitle: "Plan for this store",
     create: "Create store",
     creating: "Creating…",
@@ -47,7 +43,6 @@ const STRINGS = {
     addressError: "We couldn't give your store the address you picked — {error} It was created at the address below instead.",
     linkLabel: "Your store link",
     linkHint: "You can always find this link at the top of your dashboard.",
-    toDashboard: "Go to dashboard",
     visit: "Visit store",
     copyLink: "Copy link",
   },
@@ -59,10 +54,6 @@ const STRINGS = {
     open: "فتح",
     createTitle: "إنشاء متجر جديد",
     storeName: "اسم المتجر",
-    referralToggle: "هل لديك كود إحالة؟",
-    referral: "كود الإحالة (اختياري)",
-    referralPlaceholder: "مثال: CAIRO10",
-    referralHint: "أدخله الآن، أو أضفه لاحقا من الإعدادات.",
     planTitle: "خطة هذا المتجر",
     create: "إنشاء المتجر",
     creating: "جارٍ الإنشاء…",
@@ -79,7 +70,6 @@ const STRINGS = {
     addressError: "تعذّر منح متجرك العنوان الذي اخترته — {error} وأُنشئ على العنوان أدناه بدلًا منه.",
     linkLabel: "رابط متجرك",
     linkHint: "تجد هذا الرابط دائمًا أعلى لوحة التحكم.",
-    toDashboard: "الانتقال إلى لوحة التحكم",
     visit: "زيارة المتجر",
     copyLink: "نسخ الرابط",
   },
@@ -92,8 +82,6 @@ export function WorkspacePickerPage() {
   const navigate = useNavigate();
   const errorMessage = useErrorMessage();
   const addressId = useId();
-  const referralId = useId();
-  const referralPanelId = useId();
   const planHeadingId = useId();
 
   const [name, setName] = useState("");
@@ -102,10 +90,9 @@ export function WorkspacePickerPage() {
   // case needs no thought. Once they have edited it, it is theirs and the name
   // stops overwriting it.
   const [slugEdited, setSlugEdited] = useState(false);
-  // A referral code: optional, attached to the new store's plan.
-  const [referralCode, setReferralCode] = useState("");
-  // Behind a link until asked for; open from the start when a code is already there.
-  const [referralOpen, setReferralOpen] = useState(() => referralCode !== "");
+  // What the store sells: optional, one tap ("other" adds a few words).
+  const [businessType, setBusinessType] = useState<BusinessType | null>(null);
+  const [businessOther, setBusinessOther] = useState("");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<{ workspace: Workspace; addressError?: string; draft: boolean } | null>(null);
@@ -145,7 +132,6 @@ export function WorkspacePickerPage() {
     navigate("/");
   }
 
-  const rt = useT(REFERRAL_CODE_STRINGS);
   function describe(err: unknown): string {
     if (isApiErrorCode(err, "PLAN_LIMIT_REACHED")) {
       const details = apiErrorDetails<{ limit?: string; max?: number; used?: number }>(err);
@@ -154,8 +140,7 @@ export function WorkspacePickerPage() {
     }
     if (isApiErrorCode(err, "PLAN_NOT_AVAILABLE")) return t.planGone;
     if (isApiErrorCode(err, "PLAN_REQUIRED")) return t.planRequired;
-    // A refused referral code says why (expired, used, for existing merchants only, ...).
-    return errorMessage(err, referralErrorMap(rt)) || t.createFailed;
+    return errorMessage(err) || t.createFailed;
   }
 
   async function handleCreate(event: FormEvent) {
@@ -167,12 +152,11 @@ export function WorkspacePickerPage() {
     }
     setCreating(true);
     try {
-      const result = await createWorkspace(
-        name.trim(),
-        slug,
-        referralCode.trim() || undefined,
-        askForPlan && plan.planId ? { planId: plan.planId, billingCycle: plan.billingCycle } : undefined
-      );
+      const result = await createWorkspace(name.trim(), slug, {
+        plan: askForPlan && plan.planId ? { planId: plan.planId, billingCycle: plan.billingCycle } : undefined,
+        businessType,
+        businessTypeOther: businessType === "other" ? businessOther.trim() || null : null,
+      });
       // A store made while subscriptions are required starts as a draft.
       const access = await apiClient.getWorkspaceAccess(result.workspace.id).catch(() => null);
       setCreated({ ...result, draft: Boolean(access?.draft) });
@@ -251,6 +235,14 @@ export function WorkspacePickerPage() {
 
                   <StoreAddressField id={addressId} value={slug} onChange={onSlugChange} state={slugCheck} disabled={creating} />
 
+                  <BusinessTypeField
+                    value={businessType}
+                    other={businessOther}
+                    onChange={setBusinessType}
+                    onOtherChange={setBusinessOther}
+                    disabled={creating}
+                  />
+
                   {askForPlan && (
                     <div className="space-y-2">
                       <h3 id={planHeadingId} className="text-sm font-medium text-ink">
@@ -259,37 +251,6 @@ export function WorkspacePickerPage() {
                       <PlanPicker plans={plans} value={plan} onChange={setPlan} disabled={creating} labelledBy={planHeadingId} />
                     </div>
                   )}
-
-                  <div>
-                    <button
-                      type="button"
-                      aria-expanded={referralOpen}
-                      aria-controls={referralPanelId}
-                      onClick={() => setReferralOpen((open) => !open)}
-                      className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md text-sm font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                    >
-                      {t.referralToggle}
-                      <IconCaretDown
-                        className={cn("size-4 shrink-0 transition-transform motion-reduce:transition-none", referralOpen && "rotate-180")}
-                        aria-hidden
-                      />
-                    </button>
-                  </div>
-
-                  <div id={referralPanelId} hidden={!referralOpen} className="space-y-1.5">
-                    <Label htmlFor={referralId}>{t.referral}</Label>
-                    <Input
-                      id={referralId}
-                      value={referralCode}
-                      onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                      placeholder={t.referralPlaceholder}
-                      maxLength={32}
-                      dir="ltr"
-                      className="min-h-11 max-w-60 font-mono"
-                      disabled={creating}
-                    />
-                    <p className="text-xs text-ink-soft">{t.referralHint}</p>
-                  </div>
 
                   <Button type="submit" className="min-h-11" disabled={!canSubmit}>
                     {creating ? t.creating : t.create}
@@ -304,13 +265,11 @@ export function WorkspacePickerPage() {
 }
 
 /**
- * What a merchant sees the moment their store exists.
- *
- * The link is the whole point of this screen: it is the first time the store
- * has a public address, and it is the thing they will need to send to someone.
- * So it gets the screen to itself rather than a line in a toast that is gone in
- * four seconds. A draft store's address works once it is subscribed, which
- * the screen says instead of calling it live.
+ * What a merchant sees the moment their store exists: the store's link (the
+ * first time it has a public address, and the thing they will need to send to
+ * someone), then the plans (PlansStep) with "Explore first, decide later",
+ * which goes straight to the dashboard. A draft store's address works once it
+ * is subscribed, which the screen says instead of calling it live.
  */
 function StoreCreated({
   workspace,
@@ -327,7 +286,8 @@ function StoreCreated({
   const url = storeUrl(workspace.slug);
 
   return (
-    <AuthShell size="lg">
+    <AuthShell size="lg" className="max-w-5xl">
+      <div className="max-w-2xl">
         <div className={draft ? "flex size-12 items-center justify-center rounded-full bg-primary-soft" : "flex size-12 items-center justify-center rounded-full bg-success-soft"}>
           {draft ? <PencilRuler className="size-6 text-primary" aria-hidden /> : <PartyPopper className="size-6 text-success" aria-hidden />}
         </div>
@@ -355,23 +315,22 @@ function StoreCreated({
               </a>
             )}
             <CopyButton value={url} label={t.copyLink} />
+            {!draft && (
+              <Button variant="outline" className="min-h-11" asChild>
+                <a href={url} target="_blank" rel="noreferrer">
+                  <ExternalLink className="size-4" aria-hidden />
+                  {t.visit}
+                </a>
+              </Button>
+            )}
           </div>
           <p className="mt-3 text-xs text-ink-soft">{t.linkHint}</p>
         </div>
+      </div>
 
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Button className="min-h-11" onClick={onOpenDashboard}>
-            {t.toDashboard}
-          </Button>
-          {!draft && (
-            <Button variant="outline" className="min-h-11" asChild>
-              <a href={url} target="_blank" rel="noreferrer">
-                <ExternalLink className="size-4" aria-hidden />
-                {t.visit}
-              </a>
-            </Button>
-          )}
-        </div>
+      <div className="mt-10">
+        <PlansStep onExplore={onOpenDashboard} />
+      </div>
     </AuthShell>
   );
 }

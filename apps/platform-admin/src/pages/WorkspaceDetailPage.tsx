@@ -10,6 +10,7 @@ import { Mono, Panel } from "@/components/Panel";
 import { PricingBadge, Status, StatusBadge } from "@/components/StatusBadge";
 import { StoreLinks } from "@/components/StoreLink";
 import { WorkspaceStatus } from "@/components/workspace";
+import { BusinessTypeRow } from "@/components/businessType";
 import { SubscriptionCharges } from "@/components/charges";
 import { StoreAccessPanel } from "@/components/storeAccess";
 import { FeatureOverridesPanel, ManualSubscriptionPanel, StoreAuditPanel } from "@/components/storeBilling";
@@ -120,6 +121,7 @@ export function WorkspaceDetailPage() {
                   <Status value={ws.status} />
                 </DetailRow>
                 <DetailRow label="Currency">{ws.defaultCurrency}</DetailRow>
+                <BusinessTypeRow workspace={ws} />
                 <DetailRow label="Created">
                   {formatDate(ws.createdAt)}
                   <span className="ms-2 text-xs text-ink-soft">{formatRelative(ws.createdAt)}</span>

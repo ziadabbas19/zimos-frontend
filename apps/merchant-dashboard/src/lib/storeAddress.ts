@@ -1,4 +1,3 @@
-import type { SlugRejectionReason } from "@store-builder/api-client";
 
 /**
  * A store's public address — the slug it is served on.
@@ -45,22 +44,4 @@ export function suggestSlug(name: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 63)
     .replace(/-+$/, "");
-}
-
-/**
- * What the merchant sees while typing. `taken` and `reserved` are kept apart
- * because they call for different reactions — one is bad luck, the other will
- * never be free however many times they try.
- */
-const REASON_MESSAGES: Record<SlugRejectionReason, string> = {
-  taken: "That address is already taken. Try another.",
-  reserved: "That address is reserved and can't be used.",
-  too_short: "Addresses need at least 3 characters.",
-  too_long: "Addresses can be at most 63 characters.",
-  invalid_format:
-    "Use lowercase letters, numbers and hyphens only — and don't start or end with a hyphen.",
-};
-
-export function slugRejectionMessage(reason: SlugRejectionReason | undefined): string {
-  return reason ? REASON_MESSAGES[reason] : "That address can't be used.";
 }

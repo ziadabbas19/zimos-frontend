@@ -52,6 +52,7 @@ import type {
   VerificationSent,
   EmailCodeSent,
   BillingCycle,
+  BusinessType,
   AdminWorkspaceCharges,
   AdminCommission,
   AdminCommissionPage,
@@ -1009,10 +1010,23 @@ export class ApiClient {
    * server requires plans (422 PLAN_NOT_AVAILABLE / PLAN_REQUIRED); 403
    * PLAN_LIMIT_REACHED past the owner's store or draft limit.
    */
-  async createWorkspace(name: string, referralCode?: string, plan?: { planId: string; billingCycle?: BillingCycle }) {
+  /**
+   * `plan`: one of the public plans, while the server requires plans.
+   * `businessType`: what the store sells (optional), with `businessTypeOther`
+   * for "other". A discount code is entered on the plans, not here.
+   */
+  async createWorkspace(
+    name: string,
+    options: { plan?: { planId: string; billingCycle?: BillingCycle }; businessType?: BusinessType | null; businessTypeOther?: string | null } = {}
+  ) {
+    const { plan, businessType, businessTypeOther } = options;
     const { workspace } = await this.request<{ workspace: Workspace }>("/workspaces", {
       method: "POST",
-      body: { name, ...(referralCode ? { referralCode } : {}), ...(plan ? plan : {}) },
+      body: {
+        name,
+        ...(plan ? plan : {}),
+        ...(businessType ? { businessType, ...(businessType === "other" && businessTypeOther?.trim() ? { businessTypeOther: businessTypeOther.trim() } : {}) } : {}),
+      },
     });
     return workspace;
   }

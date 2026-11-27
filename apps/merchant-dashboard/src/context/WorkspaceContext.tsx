@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import type { BillingCycle, Workspace } from "@store-builder/api-client";
+import type { BillingCycle, BusinessType, Workspace } from "@store-builder/api-client";
 import { getErrorMessage } from "@/lib/errors";
 import { apiClient } from "@/lib/apiClient";
 import { CURRENT_WORKSPACE_KEY } from "@/lib/currentWorkspace";
@@ -16,19 +16,22 @@ export interface CreateWorkspaceResult {
   addressError?: string;
 }
 
+export interface NewStoreDetails {
+  plan?: { planId: string; billingCycle?: BillingCycle };
+  businessType?: BusinessType | null;
+  businessTypeOther?: string | null;
+}
+
 interface WorkspaceContextValue {
   workspaces: Workspace[];
   currentWorkspace: Workspace | null;
   loading: boolean;
   selectWorkspace: (workspaceId: string) => void;
-  /** `referralCode`: an agent's code, attached to the new store's subscription. */
-  /** `plan`: one of the public plans, while the server requires plans (see GET /auth/signup-options). */
-  createWorkspace: (
-    name: string,
-    slug?: string,
-    referralCode?: string,
-    plan?: { planId: string; billingCycle?: BillingCycle }
-  ) => Promise<CreateWorkspaceResult>;
+  /**
+   * `plan`: one of the public plans, while the server requires plans (see GET /auth/signup-options).
+   * `businessType`: what the store sells (optional), with `businessTypeOther` for "other".
+   */
+  createWorkspace: (name: string, slug?: string, details?: NewStoreDetails) => Promise<CreateWorkspaceResult>;
   /**
    * Re-read the workspace list. `silent` keeps the current list on screen —
    * without it `loading` flips and RequireWorkspace swaps the whole layout
@@ -126,10 +129,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
        * the picker still shows its "creating" state and the new store is in the
        * list, with its role, before anything navigates into it.
        */
-      async createWorkspace(name, slug, referralCode, plan) {
-        // A bad referral code refuses the whole creation (422
-        // REFERRAL_CODE_INVALID), so nothing exists yet to clean up.
-        const created = await apiClient.createWorkspace(name, referralCode || undefined, plan);
+      async createWorkspace(name, slug, details = {}) {
+        const created = await apiClient.createWorkspace(name, details);
         let workspace = created;
         let addressError: string | undefined;
 
